@@ -147,9 +147,7 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     let updatedContainers = containers.filter(
       (c) => c.name !== this.sidecarName && c.name !== TRACER_INIT_CONTAINER_NAME
     )
-    const updatedVolumes = volumes.filter(
-      (v) => v.name !== this.sharedVolumeName && v.name !== TRACER_VOLUME_NAME
-    )
+    const updatedVolumes = volumes.filter((v) => v.name !== this.sharedVolumeName && v.name !== TRACER_VOLUME_NAME)
 
     if (updatedContainers.length === containers.length) {
       this.context.stdout.write(

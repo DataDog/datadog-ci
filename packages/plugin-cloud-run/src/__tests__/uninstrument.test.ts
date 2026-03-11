@@ -458,9 +458,7 @@ describe('UninstrumentCommand', () => {
           containers: [
             {
               name: 'main',
-              env: [
-                {name: 'JAVA_TOOL_OPTIONS', value: '-javaagent:/dd-tracer/dd-java-agent.jar'},
-              ],
+              env: [{name: 'JAVA_TOOL_OPTIONS', value: '-javaagent:/dd-tracer/dd-java-agent.jar'}],
               volumeMounts: [],
             },
           ],
