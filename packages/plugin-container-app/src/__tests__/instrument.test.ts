@@ -34,9 +34,14 @@ jest.mock('@azure/arm-resources', () => ({
   })),
 }))
 
-import {ContainerApp, ContainerAppsAPIClient} from '@azure/arm-appcontainers'
+import {ContainerApp, Container, ContainerAppsAPIClient} from '@azure/arm-appcontainers'
 import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  SSI_LANGUAGE_CONFIGS,
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
@@ -1591,6 +1596,90 @@ Ensure you copied the value and not the Key ID.
           ],
         },
       })
+    })
+  })
+
+  describe('SSI validation', () => {
+    beforeEach(() => {
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      containerAppsOperations.get.mockReset().mockResolvedValue(DEFAULT_CONTAINER_APP)
+      containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: []})
+      updateTags.mockClear().mockResolvedValue({})
+      validateApiKey.mockClear().mockResolvedValue(true)
+      handleSourceCodeIntegration.mockClear().mockResolvedValue(undefined)
+    })
+
+    test('fails if --ssi is set without --language', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--ssi'])
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('--ssi requires --language')
+    })
+
+    test('fails if --ssi is set with unsupported language', async () => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--ssi', '--language', 'go'])
+      expect(code).toBe(1)
+    })
+  })
+
+  describe('SSI instrumentation', () => {
+    beforeEach(() => {
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      containerAppsOperations.get.mockReset().mockResolvedValue(DEFAULT_CONTAINER_APP)
+      containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: []})
+      updateTags.mockClear().mockResolvedValue({})
+      validateApiKey.mockClear().mockResolvedValue(true)
+      handleSourceCodeIntegration.mockClear().mockResolvedValue(undefined)
+    })
+
+    test.each(['python', 'nodejs', 'java'] as const)('instruments with SSI for %s', async (language) => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--ssi', '--language', language])
+      expect(code).toBe(0)
+
+      const ssiConfig = SSI_LANGUAGE_CONFIGS[language]
+      const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+      const template = updatedApp.template!
+
+      // Should have init container
+      expect(template.initContainers).toHaveLength(1)
+      const initContainer = template.initContainers![0]
+      expect(initContainer.name).toBe(TRACER_INIT_CONTAINER_NAME)
+      expect(initContainer.image).toBe(ssiConfig.initImage)
+      expect(initContainer.args).toEqual(['cp -r /datadog-init/package/* /dd-tracer/'])
+      expect(initContainer.volumeMounts).toEqual([{volumeName: TRACER_VOLUME_NAME, mountPath: '/dd-tracer'}])
+
+      // Should have dd-tracer volume
+      expect(template.volumes?.some((v) => v.name === TRACER_VOLUME_NAME)).toBe(true)
+
+      // App container should have SSI env var and volume mount
+      const appContainer = template.containers?.find((c: Container) => c.name === 'main-container')
+      expect(appContainer?.env?.some((e) => e.name === ssiConfig.envVar && e.value === ssiConfig.envValue)).toBe(true)
+      expect(appContainer?.volumeMounts?.some((vm) => vm.volumeName === TRACER_VOLUME_NAME)).toBe(true)
+
+      // Sidecar should NOT have SSI env var
+      const sidecar = template.containers?.find((c: Container) => c.name === 'datadog-sidecar')
+      expect(sidecar?.env?.some((e) => e.name === ssiConfig.envVar)).toBe(false)
+    })
+
+    test('idempotency: instrumenting twice does not duplicate SSI artifacts', async () => {
+      // First instrument
+      const {code: code1} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--ssi', '--language', 'python'])
+      expect(code1).toBe(0)
+      const firstResult = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+
+      // Mock get to return the already-instrumented app
+      containerAppsOperations.get.mockReset().mockResolvedValue(firstResult)
+      containerAppsOperations.listSecrets
+        .mockReset()
+        .mockResolvedValue({value: firstResult.configuration?.secrets ?? []})
+      containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+
+      // Second instrument — should succeed without errors
+      const {code: code2} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--ssi', '--language', 'python'])
+      expect(code2).toBe(0)
     })
   })
 })

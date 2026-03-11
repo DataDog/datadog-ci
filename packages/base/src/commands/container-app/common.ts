@@ -6,6 +6,7 @@ import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
 import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
+import type {SSILanguage} from '../../helpers/serverless/ssi'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -42,6 +43,8 @@ export type ContainerAppConfigOptions = Partial<{
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
   extraTags: string
+  ssi: boolean
+  language: SSILanguage
 }>
 
 export abstract class ContainerAppCommand extends BaseCommand {

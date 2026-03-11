@@ -9,10 +9,10 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import * as cloudRunPromptModule from '../prompt'
-import {TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME} from '../ssi'
 import * as utils from '../utils'
 
 jest.mock('../utils', () => ({
