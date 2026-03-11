@@ -6,13 +6,17 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
+  SSI_ENV_VAR_NAMES,
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
-import {SSI_ENV_VAR_NAMES, TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 export class PluginCommand extends CloudRunUninstrumentCommand {
