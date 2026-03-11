@@ -4,11 +4,16 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 import {API_KEY_ENV_VAR, SERVICE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+  TRACER_VOLUME_PATH,
+  SSI_LANGUAGE_CONFIGS,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
-import {TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME, TRACER_VOLUME_PATH, SSI_LANGUAGE_CONFIGS} from '../ssi'
 import * as utils from '../utils'
 
 jest.mock('@datadog/datadog-ci-base/helpers/apikey')
@@ -487,7 +492,7 @@ describe('InstrumentCommand', () => {
       ;(command as any).ssi = true
     })
 
-    test.each(['python', 'nodejs', 'java'])('instruments with SSI for %s', (language) => {
+    test.each(['python', 'nodejs', 'java'] as const)('instruments with SSI for %s', (language) => {
       ;(command as any).language = language
 
       const service = {

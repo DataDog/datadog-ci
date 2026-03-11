@@ -24,6 +24,7 @@ jest.mock('@azure/arm-resources', () => ({
 import {ContainerApp, Container} from '@azure/arm-appcontainers'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
@@ -111,6 +112,7 @@ describe('container-app uninstrument', () => {
               volumeMounts: [],
             },
           ],
+          initContainers: [],
           volumes: [],
         },
       })
@@ -252,6 +254,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
               volumeMounts: [],
             },
           ],
+          initContainers: [],
           volumes: [],
         },
       })
@@ -304,6 +307,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
               volumeMounts: [],
             },
           ],
+          initContainers: [],
           volumes: [],
         },
       })
@@ -504,6 +508,75 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
           },
         },
       })
+    })
+  })
+
+  describe('SSI uninstrumentation', () => {
+    const SSI_INSTRUMENTED_APP: ContainerApp = {
+      ...INSTRUMENTED_CONTAINER_APP,
+      template: {
+        ...INSTRUMENTED_CONTAINER_APP.template,
+        initContainers: [
+          {
+            name: TRACER_INIT_CONTAINER_NAME,
+            image: 'gcr.io/datadoghq/dd-lib-python-init:latest',
+            command: ['/bin/sh', '-c'],
+            args: ['cp -r /datadog-init/package/* /dd-tracer/'],
+            resources: {cpu: 0.25, memory: '0.5Gi'},
+            volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: '/dd-tracer'}],
+          },
+        ],
+        containers: [
+          {
+            ...INSTRUMENTED_CONTAINER_APP.template!.containers![0],
+            env: [
+              ...INSTRUMENTED_CONTAINER_APP.template!.containers![0].env!,
+              {name: 'PYTHONPATH', value: '/dd-tracer'},
+            ],
+            volumeMounts: [
+              ...(INSTRUMENTED_CONTAINER_APP.template!.containers![0].volumeMounts || []),
+              {volumeName: TRACER_VOLUME_NAME, mountPath: '/dd-tracer'},
+            ],
+          },
+          INSTRUMENTED_CONTAINER_APP.template!.containers![1],
+        ],
+        volumes: [
+          ...(INSTRUMENTED_CONTAINER_APP.template!.volumes || []),
+          {name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'},
+        ],
+      },
+    }
+
+    beforeEach(() => {
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      containerAppsOperations.get.mockReset().mockResolvedValue(SSI_INSTRUMENTED_APP)
+      containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      updateTags.mockClear().mockResolvedValue({})
+    })
+
+    test('removes SSI artifacts (initContainer, dd-tracer volume, SSI env vars)', async () => {
+      const {code} = await runCLI(DEFAULT_ARGS)
+      expect(code).toBe(0)
+
+      const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+      const template = updatedApp.template!
+
+      // Should remove tracer-init initContainer
+      expect(template.initContainers).toHaveLength(0)
+
+      // Should remove dd-tracer volume (and shared-volume)
+      expect(template.volumes?.some((v) => v.name === TRACER_VOLUME_NAME)).toBe(false)
+
+      // Should remove PYTHONPATH from app container
+      const appContainer = template.containers?.find((c: Container) => c.name === 'main-container')
+      expect(appContainer?.env?.some((e) => e.name === 'PYTHONPATH')).toBeFalsy()
+
+      // Should remove dd-tracer volume mount from app container
+      expect(appContainer?.volumeMounts?.some((vm) => vm.volumeName === TRACER_VOLUME_NAME)).toBeFalsy()
+
+      // Should also remove sidecar container
+      expect(template.containers?.some((c: Container) => c.name === DEFAULT_SIDECAR_NAME)).toBe(false)
     })
   })
 })
