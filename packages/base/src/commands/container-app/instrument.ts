@@ -1,7 +1,7 @@
 import type {ContainerAppConfigOptions} from './common'
 
 import {Command, Option} from 'clipanion'
-import {isNumber} from 'typanion'
+import {isEnum, isNumber} from 'typanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 import {
@@ -10,6 +10,7 @@ import {
   DEFAULT_VOLUME_NAME,
   DEFAULT_SIDECAR_NAME,
 } from '../../helpers/serverless/constants'
+import {SSI_LANGUAGES} from '../../helpers/serverless/ssi'
 
 import {ContainerAppCommand} from './common'
 
@@ -70,6 +71,16 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: 'Additional tags to add to the app in the format "key1:value1,key2:value2".',
   })
 
+  private ssi = Option.Boolean('--ssi', false, {
+    description:
+      'Enable Single Step Instrumentation (SSI). Requires --language to be set to a supported language (python, nodejs, java).',
+  })
+  private language = Option.String('--language', {
+    description:
+      'Set the language for SSI auto-instrumentation. Required when --ssi is set. Supported values: python, nodejs, java.',
+    validator: isEnum(SSI_LANGUAGES),
+  })
+
   public get additionalConfig(): Partial<ContainerAppConfigOptions> {
     return {
       service: this.service,
@@ -84,6 +95,8 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
+      ssi: this.ssi,
+      language: this.language,
     }
   }
 

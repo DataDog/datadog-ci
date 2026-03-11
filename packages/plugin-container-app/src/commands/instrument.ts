@@ -1,4 +1,4 @@
-import type {ContainerApp, Container, Secret} from '@azure/arm-appcontainers'
+import type {ContainerApp, Container, InitContainer, Secret, Volume, VolumeMount} from '@azure/arm-appcontainers'
 import type {TagsOperations} from '@azure/arm-resources'
 import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 
@@ -22,6 +22,12 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {DEFAULT_HEALTH_CHECK_PORT, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {
+  SSI_LANGUAGE_CONFIGS,
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+  TRACER_VOLUME_PATH,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
@@ -58,6 +64,14 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
             process.env.DD_API_KEY ?? ''
           )}\nEnsure you copied the value and not the Key ID.`
         )
+      )
+
+      return 1
+    }
+
+    if (config.ssi && !config.language) {
+      this.context.stdout.write(
+        renderError('--ssi requires --language to be set to a supported language (python, nodejs, java).\n')
       )
 
       return 1
@@ -257,10 +271,85 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       updatedSecrets.push({name: DD_API_KEY_SECRET_NAME, value: process.env.DD_API_KEY!})
     }
 
-    return {
+    const result: ContainerApp = {
       ...containerApp,
       configuration: {...containerApp.configuration, secrets: updatedSecrets},
       template: updatedTemplate,
+    }
+
+    if (config.ssi && config.language) {
+      return this.applySSI(result, config)
+    }
+
+    return result
+  }
+
+  public applySSI(containerApp: ContainerApp, config: ContainerAppConfigOptions): ContainerApp {
+    const ssiConfig = SSI_LANGUAGE_CONFIGS[config.language!]
+    const template = containerApp.template ?? {}
+    const containers: Container[] = template.containers || []
+    const initContainers: InitContainer[] = template.initContainers || []
+    const volumes: Volume[] = template.volumes || []
+
+    // Add dd-tracer EmptyDir volume if not present
+    const hasTracerVolume = volumes.some((v) => v.name === TRACER_VOLUME_NAME)
+    const updatedVolumes = hasTracerVolume
+      ? volumes
+      : [...volumes, {name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'} as Volume]
+
+    const tracerVolumeMount: VolumeMount = {volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_VOLUME_PATH}
+
+    // Add tracer-init to initContainers if not present
+    const hasTracerInit = initContainers.some((c) => c.name === TRACER_INIT_CONTAINER_NAME)
+    const tracerInitContainer: InitContainer = {
+      name: TRACER_INIT_CONTAINER_NAME,
+      image: ssiConfig.initImage,
+      command: ['/bin/sh', '-c'],
+      args: ['cp -r /datadog-init/package/* /dd-tracer/'],
+      resources: {
+        cpu: 0.25,
+        memory: '0.5Gi',
+      },
+      volumeMounts: [tracerVolumeMount],
+    }
+
+    const updatedInitContainers = hasTracerInit
+      ? initContainers.map((c) => (c.name === TRACER_INIT_CONTAINER_NAME ? tracerInitContainer : c))
+      : [...initContainers, tracerInitContainer]
+
+    // Add language-specific env var and volume mount to app containers
+    const updatedContainers = containers.map((container) => {
+      if (container.name === config.sidecarName) {
+        return container
+      }
+
+      const existingEnv = container.env || []
+      const hasSSIEnvVar = existingEnv.some((e) => e.name === ssiConfig.envVar)
+      const updatedEnv = hasSSIEnvVar
+        ? existingEnv.map((e) =>
+            e.name === ssiConfig.envVar ? {name: ssiConfig.envVar, value: ssiConfig.envValue} : e
+          )
+        : [...existingEnv, {name: ssiConfig.envVar, value: ssiConfig.envValue}]
+
+      const existingMounts = container.volumeMounts || []
+      const hasTracerMount = existingMounts.some((m) => m.volumeName === TRACER_VOLUME_NAME)
+      const updatedMounts = hasTracerMount ? existingMounts : [...existingMounts, tracerVolumeMount]
+
+      return {
+        ...container,
+        env: updatedEnv,
+        volumeMounts: updatedMounts,
+      }
+    })
+
+    return {
+      ...containerApp,
+      template: {
+        ...template,
+        containers: updatedContainers,
+        initContainers: updatedInitContainers,
+        volumes: updatedVolumes,
+      },
     }
   }
 }
