@@ -508,9 +508,7 @@ describe('InstrumentCommand', () => {
       expect(containerNames).toContain(TRACER_INIT_CONTAINER_NAME)
 
       // Tracer-init container should have correct image
-      const tracerInit = result.template?.containers?.find(
-        (c: IContainer) => c.name === TRACER_INIT_CONTAINER_NAME
-      )
+      const tracerInit = result.template?.containers?.find((c: IContainer) => c.name === TRACER_INIT_CONTAINER_NAME)
       expect(tracerInit?.image).toBe(config.initImage)
       expect(tracerInit?.volumeMounts?.some((vm: IVolumeMount) => vm.name === TRACER_VOLUME_NAME)).toBe(true)
       expect(tracerInit?.startupProbe?.tcpSocket?.port).toBe(18999)

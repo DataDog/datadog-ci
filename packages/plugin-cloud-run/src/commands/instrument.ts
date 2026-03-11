@@ -1,7 +1,7 @@
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume, IVolumeMount} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
-import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -359,7 +359,9 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       name: TRACER_INIT_CONTAINER_NAME,
       image: config.initImage,
       command: ['/bin/sh', '-c'],
-      args: ['cp -r /datadog-init/package/* /dd-tracer/ && while true; do echo -e "HTTP/1.1 200 OK\\r\\n\\r\\nok" | nc -l -p 18999 || true; done'],
+      args: [
+        'cp -r /datadog-init/package/* /dd-tracer/ && while true; do echo -e "HTTP/1.1 200 OK\\r\\n\\r\\nok" | nc -l -p 18999 || true; done',
+      ],
       startupProbe: {
         tcpSocket: {
           port: TRACER_INIT_HEALTH_PORT,
