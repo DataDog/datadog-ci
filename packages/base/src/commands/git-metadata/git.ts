@@ -3,6 +3,7 @@ import {URL} from 'url'
 import * as simpleGit from 'simple-git'
 import {GitConfigScope} from 'simple-git'
 
+import {isCI} from '../../helpers/ci'
 import {gitRemote} from '../../helpers/git/get-git-data'
 
 import {CommitInfo} from './interfaces'
@@ -18,12 +19,16 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
 
   const git = simpleGit.simpleGit(options)
 
-  try {
-    // In some CI envs repo may be checked out as a different user than the one running the command.
-    // To be able to run git commands, we need to add the current directory as a safe directory.
-    await git.addConfig('safe.directory', currentDir, true, GitConfigScope.global)
-  } catch (e) {
-    // Ignore the error
+  const isDocker = (await import('is-docker')).default
+
+  if (isCI() || isDocker()) {
+    try {
+      // In some CI envs repo may be checked out as a different user than the one running the command.
+      // To be able to run git commands, we need to add the current directory as a safe directory.
+      await git.addConfig('safe.directory', currentDir, true, GitConfigScope.global)
+    } catch (e) {
+      // Ignore the error
+    }
   }
 
   // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command

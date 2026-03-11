@@ -129,6 +129,7 @@
     "form-data": "^4.0.4",
     "glob": "^13.0.5",
     "inquirer": "^8.2.6",
+    "is-docker": "^4.0.0",
     "jest-diff": "^30.2.0",
     "js-yaml": "4.1.1",
     "jszip": "^3.10.1",

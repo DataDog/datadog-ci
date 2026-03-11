@@ -1000,6 +1000,10 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   )
 }
 
+export const isCI = (): boolean => {
+  return 'CI' in process.env || getCIProvider() !== 'unknown'
+}
+
 export const getCIProvider = (): string => {
   if (process.env.CIRCLECI) {
     return CI_ENGINES.CIRCLECI
