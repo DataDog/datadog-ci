@@ -741,6 +741,20 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
 
 export type WrapperConfig = Partial<RunTestsCommandConfig>
 
+export interface EphemeralPrivateLocation {
+  id: string
+  accessKey: string
+  secretAccessKey: string
+}
+
+export interface RunLocalCommandConfig extends SyntheticsCIConfig {
+  testId: string
+  overrideDomain?: string
+  ignoreTlsErrors?: boolean
+  batchTimeout: number
+  subdomain: string
+}
+
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   configPath: string
   mobileApplicationVersionFilePath?: string

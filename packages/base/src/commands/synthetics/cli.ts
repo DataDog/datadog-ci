@@ -1,6 +1,7 @@
 /* eslint-disable import-x/order */
 import {SyntheticsDeployTestsCommand} from './deploy-tests'
 import {SyntheticsImportTestsCommand} from './import-tests'
+import {SyntheticsRunLocalCommand} from './run-local'
 import {SyntheticsRunTestsCommand} from './run-tests'
 import {SyntheticsUploadApplicationCommand} from './upload-application'
 
@@ -8,6 +9,7 @@ import {SyntheticsUploadApplicationCommand} from './upload-application'
 export const commands = [
   SyntheticsDeployTestsCommand,
   SyntheticsImportTestsCommand,
+  SyntheticsRunLocalCommand,
   SyntheticsRunTestsCommand,
   SyntheticsUploadApplicationCommand,
 ]

@@ -657,6 +657,8 @@ export const getApiHelper = () => {
 export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
   return {
     getBatch: jest.fn(),
+    createPrivateLocation: jest.fn(),
+    deletePrivateLocation: jest.fn(),
     getMobileApplicationPresignedURLs: jest.fn(),
     getTest: jest.fn(),
     getTestVersion: jest.fn(),

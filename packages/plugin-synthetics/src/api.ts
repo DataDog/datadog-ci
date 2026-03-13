@@ -10,6 +10,7 @@ import {
   APIConfiguration,
   APIHelperConfig,
   Batch,
+  EphemeralPrivateLocation,
   LocalTestDefinition,
   MobileAppUploadResult,
   MobileApplicationNewVersionParams,
@@ -389,6 +390,44 @@ export const pollMobileApplicationUploadResponse =
     return response.data
   }
 
+const createPrivateLocation =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<any>) => async (name: string): Promise<EphemeralPrivateLocation> => {
+    const resp = await retryRequest(
+      {
+        data: {
+          description: 'Ephemeral private location for datadog-ci synthetics run-local',
+          metadata: {restricted_roles: []},
+          name,
+          tags: ['datadog-ci:run-local'],
+        },
+        method: 'POST',
+        url: '/synthetics/private-locations',
+      },
+      request
+    )
+
+    // The creation response includes a `config` object with the worker credentials
+    const config = resp.data.config as {access_key: string; secret_access_key: string}
+    const plId = (resp.data.private_location?.id ?? resp.data.id) as string
+
+    return {
+      id: plId,
+      accessKey: config.access_key,
+      secretAccessKey: config.secret_access_key,
+    }
+  }
+
+const deletePrivateLocation =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (plId: string): Promise<void> => {
+    await retryRequest(
+      {
+        method: 'DELETE',
+        url: `/synthetics/private-locations/${plId}`,
+      },
+      request
+    )
+  }
+
 const retryWithJitter = (delay: number = DELAY_BETWEEN_429_RETRIES) => delay + Math.floor(Math.random() * delay)
 
 export type RetryPolicy = {
@@ -461,6 +500,8 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
   return {
     getBatch: getBatch(requestV1),
+    createPrivateLocation: createPrivateLocation(requestV1),
+    deletePrivateLocation: deletePrivateLocation(requestV1),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
     getTest: getTest(requestV1),
     getTestVersion: getTestVersion(requestV2),
