@@ -48,6 +48,7 @@ export type MockedReporter = {
 }
 
 export const mockReporter: MainReporter = {
+  dryRunEnd: jest.fn(),
   error: jest.fn(),
   initErrors: jest.fn(),
   log: jest.fn(),
@@ -684,6 +685,7 @@ export const getMobileTestWithOverride = (appId: string): MobileTestWithOverride
   return {
     test: getMobileTest('abc-def-ghi', appId),
     overriddenConfig: getTestPayload(),
+    executionRule: ExecutionRule.BLOCKING,
   }
 }
 

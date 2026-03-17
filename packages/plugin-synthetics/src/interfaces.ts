@@ -1,5 +1,7 @@
 import {Writable} from 'stream'
 
+import type {InitialSummary} from './utils/public'
+
 import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -19,6 +21,12 @@ export interface MainReporter {
   resultEnd(result: Result, baseUrl: string, batchId: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
+  dryRunEnd(
+    summary: InitialSummary,
+    testPlan: TestPlan,
+    config: RunTestsCommandConfig,
+    orgSettings?: SyntheticsOrgSettings
+  ): void
 }
 
 export interface ReporterContext {
@@ -202,6 +210,17 @@ export interface Summary {
   /** The number of results that failed due to the CI batch timing out. */
   timedOut: number // XXX: When a batch times out, all the results that were in progress are timed out.
 }
+
+export interface TestPlanItem {
+  /** The execution rule to apply to the test. This is read-only and only here for filtering purposes. To apply overrides, you may edit the `testOverrides`. */
+  executionRule: Readonly<ExecutionRule>
+  /** The definition of the test to run. This is read-only and only here for filtering purposes. To apply overrides, you may edit the `testOverrides`. */
+  test: Readonly<Test>
+  /** The overrides to apply to the test. You can edit this to alter the test plan. */
+  testOverrides: TestPayload
+}
+
+export type TestPlan = TestPlanItem[]
 
 // Note: This is exposed in CI integrations as a JSON-encoded string in the `rawResults` output.
 export interface BaseResult {
@@ -633,12 +652,15 @@ export interface TestMissing {
 }
 
 export interface TestSkipped {
+  test: Test
   overriddenConfig: TestPayload
+  executionRule: ExecutionRule.SKIPPED
 }
 
 export interface TestWithOverride {
   test: Test
   overriddenConfig: TestPayload
+  executionRule: ExecutionRule
 }
 
 export interface MobileTestWithOverride extends TestWithOverride {

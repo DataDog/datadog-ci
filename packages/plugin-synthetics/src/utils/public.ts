@@ -25,6 +25,8 @@ import {
   SyntheticsOrgSettings,
   Test,
   TestPayload,
+  TestPlan,
+  TestPlanItem,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
@@ -295,6 +297,13 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
     for (const reporter of reporters) {
       if (typeof reporter.resultReceived === 'function') {
         reporter.resultReceived(result)
+      }
+    }
+  },
+  dryRunEnd: (summary, testPlan, config, orgSettings) => {
+    for (const reporter of reporters) {
+      if (typeof reporter.dryRunEnd === 'function') {
+        reporter.dryRunEnd(summary, testPlan, config, orgSettings)
       }
     }
   },
@@ -610,5 +619,21 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
 
     default:
       reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
+  }
+}
+
+export const filterTestPlan = (
+  testPlan: TestPlan,
+  initialSummary: InitialSummary,
+  predicate: (item: TestPlanItem) => boolean
+): {testPlan: TestPlan; initialSummary: InitialSummary} => {
+  const filteredPlan = testPlan.filter(predicate)
+
+  return {
+    testPlan: filteredPlan,
+    initialSummary: {
+      ...initialSummary,
+      skipped: filteredPlan.filter((item) => item.executionRule === ExecutionRule.SKIPPED).length,
+    },
   }
 }

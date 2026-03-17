@@ -95,10 +95,10 @@ describe('getTestsToTrigger', () => {
       {suite: 'Suite 2', id: '987-654-321'},
       {suite: 'Suite 3', id: 'ski-ppe-d01'},
     ]
-    const {tests, overriddenTestsToTrigger, initialSummary} = await getTestsToTrigger(api, triggerConfigs, mockReporter)
+    const {testPlan, initialSummary} = await getTestsToTrigger(api, triggerConfigs, mockReporter)
 
-    expect(tests).toStrictEqual([fakeTests['123-456-789']])
-    expect(overriddenTestsToTrigger).toStrictEqual([
+    expect(testPlan.map((item) => item.test)).toStrictEqual([fakeTests['123-456-789'], fakeTests['ski-ppe-d01']])
+    expect(testPlan.map((item) => item.testOverrides)).toStrictEqual([
       {public_id: '123-456-789', version: undefined},
       {public_id: 'ski-ppe-d01', version: undefined},
     ])
@@ -142,7 +142,9 @@ describe('getTestsToTrigger', () => {
     test('trim and warn if from search', async () => {
       const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
       const tests = await getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
-      expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
+      expect(tests.testPlan.filter((item) => item.executionRule !== ExecutionRule.SKIPPED).length).toBe(
+        MAX_TESTS_TO_TRIGGER
+      )
       expect(mockReporter.initErrors).toMatchSnapshot()
     })
 
@@ -156,7 +158,9 @@ describe('getTestsToTrigger', () => {
     test('does not account for skipped/not found tests outside of search', async () => {
       const tooManyTests = [...Array(MAX_TESTS_TO_TRIGGER).fill({id: 'stu-vwx-yza'}), {id: 'skipped'}, {id: 'missing'}]
       const tests = await getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
-      expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
+      expect(tests.testPlan.filter((item) => item.executionRule !== ExecutionRule.SKIPPED).length).toBe(
+        MAX_TESTS_TO_TRIGGER
+      )
     })
   })
 

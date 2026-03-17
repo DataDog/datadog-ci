@@ -17,7 +17,7 @@ import {CiError} from '../errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
-import {executeTests, getDefaultConfig} from '../run-tests-lib'
+import {planDryRun, executeTests, getDefaultConfig} from '../run-tests-lib'
 import {RecursivePartial, toExecutionRule, validateAndParseOverrides} from '../utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
 
@@ -87,6 +87,22 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
     let results: Result[]
     let summary: Summary
 
+    const orgSettings = await getOrgSettings(this.reporter, this.config)
+
+    if (this.dryRun) {
+      try {
+        const {testPlan, initialSummary} = await planDryRun(this.reporter, this.config)
+
+        this.reporter.dryRunEnd(initialSummary, testPlan, this.config, orgSettings)
+      } catch (error) {
+        reportExitLogs(this.reporter, this.config, {error})
+
+        return toExitCode(getExitReason(this.config, {error}))
+      }
+
+      return 0
+    }
+
     let teardown = async () => {}
 
     const [_, command] = this.path ?? []
@@ -122,8 +138,6 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
     } finally {
       await teardown()
     }
-
-    const orgSettings = await getOrgSettings(this.reporter, this.config)
 
     renderResults({
       config: this.config,

@@ -39,9 +39,8 @@ describe('run-test', () => {
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [],
         })
       )
       jest.spyOn(batchUtils, 'runTests').mockImplementation()
@@ -77,9 +76,8 @@ describe('run-test', () => {
     test('Use appropriate list of locations for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [],
         })
       )
 
@@ -109,9 +107,8 @@ describe('run-test', () => {
     test('should not wait for `skipped` only tests batch results', async () => {
       const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [],
         })
       )
 
@@ -142,9 +139,8 @@ describe('run-test', () => {
     test('should not open tunnel if no test to run', async () => {
       const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [],
         })
       )
 
@@ -185,9 +181,14 @@ describe('run-test', () => {
 
       jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [
+            {
+              test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: '123-456-789'} as any,
+              testOverrides: {} as any,
+              executionRule: ExecutionRule.BLOCKING,
+            },
+          ],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: '123-456-789'} as any],
         })
       )
 
@@ -280,9 +281,14 @@ describe('run-test', () => {
     test('getTunnelPresignedURL throws', async () => {
       jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [
+            {
+              test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any,
+              testOverrides: {} as any,
+              executionRule: ExecutionRule.BLOCKING,
+            },
+          ],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
 
@@ -308,6 +314,7 @@ describe('run-test', () => {
         Promise.resolve({
           overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
           test: mobileTest,
+          executionRule: ExecutionRule.NON_BLOCKING,
         })
       )
 
@@ -342,6 +349,7 @@ describe('run-test', () => {
         Promise.resolve({
           overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
           test: mobileTest,
+          executionRule: ExecutionRule.NON_BLOCKING,
         })
       )
 
@@ -381,9 +389,14 @@ describe('run-test', () => {
 
       jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [
+            {
+              test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any,
+              testOverrides: {public_id: 'publicId'} as any,
+              executionRule: ExecutionRule.BLOCKING,
+            },
+          ],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
 
@@ -404,7 +417,7 @@ describe('run-test', () => {
       ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
-          '[] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
+          '[publicId] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
@@ -423,9 +436,14 @@ describe('run-test', () => {
         .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
       const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
       jest.spyOn(testUtils, 'getTestsToTrigger').mockResolvedValue({
+        testPlan: [
+          {
+            test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any,
+            testOverrides: {} as any,
+            executionRule: ExecutionRule.BLOCKING,
+          },
+        ],
         initialSummary: utils.createInitialSummary(),
-        overriddenTestsToTrigger: [],
-        tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
       })
       jest.spyOn(batchUtils, 'runTests').mockResolvedValue({...mockTriggerInfo, locations: [location]})
 
@@ -457,9 +475,14 @@ describe('run-test', () => {
     test('log when selective rerun is rate-limited', async () => {
       jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [
+            {
+              test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any,
+              testOverrides: {} as any,
+              executionRule: ExecutionRule.BLOCKING,
+            },
+          ],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any],
         })
       )
       jest.spyOn(batchUtils, 'runTests').mockImplementation(async () => ({
@@ -491,9 +514,14 @@ describe('run-test', () => {
     test('selective rerun defaults to undefined', async () => {
       jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
+          testPlan: [
+            {
+              test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any,
+              testOverrides: {} as any,
+              executionRule: ExecutionRule.BLOCKING,
+            },
+          ],
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
-          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any],
         })
       )
 
@@ -513,7 +541,7 @@ describe('run-test', () => {
       })
 
       expect(triggerTestsSpy).toHaveBeenCalledWith({
-        tests: [],
+        tests: expect.any(Array),
         options: {
           batch_timeout: ciConfig.batchTimeout,
           selective_rerun: undefined,
@@ -549,6 +577,8 @@ describe('run-test', () => {
       expect(runTests.executeTests).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining(runConfig),
+        undefined,
+        undefined,
         undefined
       )
     })
@@ -559,7 +589,9 @@ describe('run-test', () => {
       expect(runTests.executeTests).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({files: []}),
-        suites
+        suites,
+        undefined,
+        undefined
       )
     })
 
@@ -1008,5 +1040,60 @@ describe('run-test', () => {
         },
       ])
     })
+  })
+})
+
+describe('filterTestPlan', () => {
+  const makeItem = (publicId: string, executionRule: ExecutionRule) => ({
+    test: {public_id: publicId} as any,
+    testOverrides: {} as any,
+    executionRule,
+  })
+
+  const blocking = makeItem('aaa', ExecutionRule.BLOCKING)
+  const nonBlocking = makeItem('bbb', ExecutionRule.NON_BLOCKING)
+  const skipped = makeItem('ccc', ExecutionRule.SKIPPED)
+
+  const makeSummary = (overrides = {}) => ({
+    ...utils.createInitialSummary(),
+    testsNotFound: new Set(['missing-test']),
+    testsNotAuthorized: new Set(['forbidden-test']),
+    skipped: 1,
+    ...overrides,
+  })
+
+  test('filters items by predicate', () => {
+    const {testPlan} = utils.filterTestPlan(
+      [blocking, nonBlocking, skipped],
+      makeSummary(),
+      (item) => item.executionRule === ExecutionRule.BLOCKING
+    )
+    expect(testPlan).toEqual([blocking])
+  })
+
+  test('adjusts skipped count based on filtered plan', () => {
+    const {initialSummary} = utils.filterTestPlan(
+      [blocking, skipped],
+      makeSummary({skipped: 1}),
+      (item) => item.executionRule !== ExecutionRule.SKIPPED
+    )
+    expect(initialSummary.skipped).toBe(0)
+  })
+
+  test('preserves testsNotFound and testsNotAuthorized', () => {
+    const original = makeSummary()
+    const {initialSummary} = utils.filterTestPlan(
+      [blocking, nonBlocking],
+      original,
+      (item) => item.executionRule === ExecutionRule.BLOCKING
+    )
+    expect(initialSummary.testsNotFound).toBe(original.testsNotFound)
+    expect(initialSummary.testsNotAuthorized).toBe(original.testsNotAuthorized)
+  })
+
+  test('returns empty plan when no items match', () => {
+    const {testPlan, initialSummary} = utils.filterTestPlan([blocking, nonBlocking], makeSummary(), () => false)
+    expect(testPlan).toEqual([])
+    expect(initialSummary.skipped).toBe(0)
   })
 })
