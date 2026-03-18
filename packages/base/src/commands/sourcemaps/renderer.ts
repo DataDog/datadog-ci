@@ -105,7 +105,7 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 export const renderCommandInfo = (
   basePath: string,
   minifiedPathPrefix: string,
-  projectPath: string,
+  projectPath: string | undefined,
   releaseVersion: string,
   service: string,
   poolLimit: number,
@@ -123,9 +123,13 @@ export const renderCommandInfo = (
     `Will match JS files for errors on files starting with ${minifiedPathPrefix}\n`
   )
   fullStr += minifiedPathPrefixStr
-  const serviceVersionProjectPathStr = chalk.green(
-    `version: ${releaseVersion} service: ${service} project path: ${projectPath}\n`
-  )
+
+  const serviceVersionProjectPathStr =
+    [
+      `${chalk.green('Version:')} ${chalk.cyan(releaseVersion)}`,
+      `${chalk.green('Service:')} ${chalk.cyan(service)}`,
+      `${chalk.green('Project path:')} ${projectPath !== undefined ? chalk.cyan(projectPath) : chalk.dim('<empty>')}`,
+    ].join(' · ') + '\n\n'
   fullStr += serviceVersionProjectPathStr
 
   return fullStr

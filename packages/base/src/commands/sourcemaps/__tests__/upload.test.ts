@@ -325,9 +325,9 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[2]).toContain(`Will look for sourcemaps in ${expected.basePath}`)
   expect(output[3]).toContain(`Will match JS files for errors on files starting with ${expected.minifiedPathPrefix}`)
   expect(output[4]).toContain(
-    `version: ${expected.version} service: ${expected.service} project path: ${expected.projectPath}`
+    `Version: ${expected.version} · Service: ${expected.service} · Project path: ${expected.projectPath}`
   )
-  const uploadedFileLines = output.slice(5, -4)
+  const uploadedFileLines = output.slice(6, -4)
   expect(expected.sourcemapsPaths.length).toEqual(uploadedFileLines.length) // Safety check
   expect(expected.jsFilesURLs.length).toEqual(uploadedFileLines.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
