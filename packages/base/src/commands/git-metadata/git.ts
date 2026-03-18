@@ -1,43 +1,9 @@
 import {URL} from 'url'
 
-import * as simpleGit from 'simple-git'
-import {GitConfigScope} from 'simple-git'
-
-import {isCI} from '../../helpers/ci'
 import {gitRemote} from '../../helpers/git/get-git-data'
+import {GitClient} from '../../helpers/git/git-client'
 
 import {CommitInfo} from './interfaces'
-
-// Returns a configured SimpleGit.
-export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
-  const currentDir = process.cwd()
-  const options = {
-    baseDir: currentDir,
-    binary: 'git',
-    maxConcurrentProcesses: 1,
-  }
-
-  const git = simpleGit.simpleGit(options)
-
-  const isDocker = (await import('is-docker')).default
-
-  if (isCI() || isDocker()) {
-    try {
-      // In some CI envs repo may be checked out as a different user than the one running the command.
-      // To be able to run git commands, we need to add the current directory as a safe directory.
-      await git.addConfig('safe.directory', currentDir, true, GitConfigScope.global)
-    } catch (e) {
-      // Ignore the error
-    }
-  }
-
-  // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command
-  // returns the tracked files paths relative to the root of the repository.
-  const root = await git.revparse('--show-toplevel')
-  options.baseDir = root
-
-  return simpleGit.simpleGit(options)
-}
 
 // StripCredentials removes credentials from a remote HTTP url.
 export const stripCredentials = (remote: string) => {
@@ -53,17 +19,17 @@ export const stripCredentials = (remote: string) => {
 }
 
 // Returns the hash of the current repository.
-const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
+const gitHash = async (git: GitClient): Promise<string> => git.revparse('HEAD')
 
 // Returns the tracked files of the current repository.
-export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
+export const gitTrackedFiles = async (git: GitClient): Promise<string[]> => {
   const files = await git.raw('ls-files')
 
   return files.split(/\r\n|\r|\n/).filter((s) => s !== '')
 }
 
 // Returns the current hash, remote URL and tracked files paths.
-export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: string): Promise<CommitInfo> => {
+export const getCommitInfo = async (git: GitClient, repositoryURL?: string): Promise<CommitInfo> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promise.allSettled since we want to fail early if
   // any of the promises fails.
@@ -80,13 +46,13 @@ export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: st
   return new CommitInfo(hash, remote, trackedFiles)
 }
 
-export const getMergeBase = async (git: simpleGit.SimpleGit, target: string, source: string): Promise<string> => {
+export const getMergeBase = async (git: GitClient, target: string, source: string): Promise<string> => {
   const result = await git.raw(['merge-base', target, source])
 
   return result.trim()
 }
 
-export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: string): Promise<DiffData> => {
+export const getGitDiff = async (git: GitClient, from: string, to: string): Promise<DiffData> => {
   const fromResolved = await git.revparse(from)
   const toResolved = await git.revparse(to)
 
@@ -106,7 +72,7 @@ export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: str
   }
 }
 
-export const getGitFileHash = async (git: simpleGit.SimpleGit, path: string): Promise<string> => {
+export const getGitFileHash = async (git: GitClient, path: string): Promise<string> => {
   return git.revparse([`HEAD:${path}`])
 }
 

@@ -1,4 +1,5 @@
 import * as apikey from '../../../helpers/apikey'
+import * as gitClient from '../../../helpers/git/git-client'
 import * as upload from '../../../helpers/upload'
 
 import * as git from '../git'
@@ -14,13 +15,13 @@ describe('library', () => {
           throw Error()
         },
       } as any
-      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
+      jest.spyOn(gitClient, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
       await expect(isGitRepo()).resolves.toEqual(false)
     })
 
     test('should return false git is not installed', async () => {
-      jest.spyOn(git, 'newSimpleGit').mockImplementation(() => {
+      jest.spyOn(gitClient, 'newSimpleGit').mockImplementation(() => {
         throw new Error('git is not installed')
       })
       await expect(isGitRepo()).resolves.toEqual(false)
@@ -28,7 +29,7 @@ describe('library', () => {
 
     test('should return true if datadog API key is set, git is installed, and we are in a repo', async () => {
       const simpleGitClient = {checkIsRepo: () => true} as any
-      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
+      jest.spyOn(gitClient, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
       await expect(isGitRepo()).resolves.toEqual(true)
     })
@@ -36,7 +37,7 @@ describe('library', () => {
 
   describe('addSourceCodeIntegration', () => {
     test('source code integration fails if simpleGitOrFail throws an exception', async () => {
-      jest.spyOn(git, 'newSimpleGit').mockImplementation(() => {
+      jest.spyOn(gitClient, 'newSimpleGit').mockImplementation(() => {
         throw new Error('git is not installed')
       })
 
@@ -47,7 +48,7 @@ describe('library', () => {
 
     test('source code integration returns the correct hash and url', async () => {
       const simpleGitClient = {checkIsRepo: () => true} as any
-      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
+      jest.spyOn(gitClient, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
       jest.spyOn(git, 'getCommitInfo').mockImplementation(async (_, repositoryURL) => {
         expect(repositoryURL).toEqual(undefined)
@@ -75,7 +76,7 @@ describe('library', () => {
 
     test('source code integration returns the correct hash and overriden url', async () => {
       const simpleGitClient = {checkIsRepo: () => true} as any
-      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(simpleGitClient)
+      jest.spyOn(gitClient, 'newSimpleGit').mockResolvedValue(simpleGitClient)
 
       jest.spyOn(git, 'getCommitInfo').mockImplementation(async (_, repositoryURL) => {
         expect(repositoryURL).toEqual('customUrl')

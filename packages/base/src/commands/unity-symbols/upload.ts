@@ -12,11 +12,8 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {
-  RepositoryData,
-  getRepositoryData,
-  newSimpleGit,
-} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {RepositoryData, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'

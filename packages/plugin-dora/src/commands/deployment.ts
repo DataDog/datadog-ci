@@ -3,11 +3,11 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitHash} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
+import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {AxiosError} from 'axios'
 import chalk from 'chalk'
-import simpleGit from 'simple-git'
 
 import {apiConstructor} from '../api'
 import {APIHelper, DeploymentEvent, GitInfo} from '../interfaces'
@@ -72,12 +72,7 @@ export class PluginCommand extends DoraDeploymentCommand {
   }
 
   private async getGitInfo(): Promise<GitInfo> {
-    const git = simpleGit({
-      baseDir: process.cwd(),
-      binary: 'git',
-      // We are invoking at most 5 git commands at the same time.
-      maxConcurrentProcesses: 5,
-    })
+    const git = await newSimpleGit(5)
     const [repoURL, commitSHA] = await Promise.all([gitRepositoryURL(git), gitHash(git)])
 
     return {repoURL, commitSHA}

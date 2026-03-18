@@ -3,7 +3,9 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import path from 'upath'
 
-import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
+import {newSimpleGit} from '../../../helpers/git/git-client'
+
+import {getCommitInfo, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
 interface MockConfig {
   hash?: string

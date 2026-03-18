@@ -391,6 +391,11 @@ export default defineConfig(
               importNames: ['default'],
               message: 'Please only import what you need from axios, e.g. `import {isAxiosError} from "axios"`',
             },
+            {
+              name: 'simple-git',
+              message:
+                'Please use `GitClient` and `newSimpleGit` from `packages/base/src/helpers/git/git-client` instead of importing `simple-git` directly.',
+            },
           ],
         },
       ],
@@ -411,6 +416,24 @@ export default defineConfig(
   {
     files: ['jest.config*.mjs', 'jest.setup.ts', 'bin/*.ts', 'packages/datadog-ci/scripts/esbuild.mjs'],
     extends: [tseslint.configs.disableTypeChecked],
+  },
+  {
+    files: ['packages/base/src/helpers/git/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            ...restrictedImports,
+            {
+              name: 'axios',
+              importNames: ['default'],
+              message: 'Please only import what you need from axios, e.g. `import {isAxiosError} from "axios"`',
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     files: ['**/*.test.ts'],

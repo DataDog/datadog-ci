@@ -7,7 +7,7 @@ import fsPromises from 'fs/promises'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {gitTrackedFiles} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
-import * as simpleGit from 'simple-git'
+import {GitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import upath from 'upath'
 
 import {FileFixes} from './interfaces'
@@ -302,10 +302,7 @@ const collectResults = (results: FileFixResult[]): FileFixes => {
   return fileFixes
 }
 
-export const generateFileFixes = async (
-  git: simpleGit.SimpleGit | undefined,
-  searchPath?: string
-): Promise<FileFixes> => {
+export const generateFileFixes = async (git: GitClient | undefined, searchPath?: string): Promise<FileFixes> => {
   let repoRoot: string
   let supportedFiles: string[]
 

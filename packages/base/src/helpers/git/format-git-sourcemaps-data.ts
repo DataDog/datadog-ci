@@ -1,29 +1,7 @@
 import fs from 'fs'
 
-import * as simpleGit from 'simple-git'
-
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
-
-// Returns a configured SimpleGit.
-export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
-  const options = {
-    baseDir: process.cwd(),
-    binary: 'git',
-    // We are invoking at most 3 git commands at the same time.
-    maxConcurrentProcesses: 3,
-  }
-  try {
-    // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command
-    // returns the tracked files paths relative to the root of the repository.
-    const git = simpleGit.simpleGit(options)
-    const root = await git.revparse('--show-toplevel')
-    options.baseDir = root
-  } catch {
-    // Ignore exception as it will fail if we are not inside a git repository.
-  }
-
-  return simpleGit.simpleGit(options)
-}
+import {GitClient} from './git-client'
 
 export interface RepositoryData {
   hash: string
@@ -34,10 +12,7 @@ export interface RepositoryData {
 // Returns the current hash and remote as well as a TrackedFilesMatcher.
 //
 // To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' method.
-export const getRepositoryData = async (
-  git: simpleGit.SimpleGit,
-  repositoryURL: string | undefined
-): Promise<RepositoryData> => {
+export const getRepositoryData = async (git: GitClient, repositoryURL: string | undefined): Promise<RepositoryData> => {
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promise.allSettled since we want to fail early if
   // any of the promises fails.

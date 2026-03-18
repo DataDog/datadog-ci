@@ -1,6 +1,5 @@
 import fs from 'fs'
 
-import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {TerraformUploadCommand} from '@datadog/datadog-ci-base/commands/terraform/upload'
@@ -9,6 +8,7 @@ import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {GitClient, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
@@ -16,7 +16,6 @@ import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import * as simpleGit from 'simple-git'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
 import {TerraformArtifactPayload} from '../interfaces'
@@ -40,7 +39,7 @@ export class PluginCommand extends TerraformUploadCommand {
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
-  private git: simpleGit.SimpleGit | undefined = undefined
+  private git: GitClient | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)

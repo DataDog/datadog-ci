@@ -1,8 +1,9 @@
 import {BaseContext, Cli} from 'clipanion'
 
-import {getCommitInfo, newSimpleGit} from '../../commands/git-metadata/git'
+import {getCommitInfo} from '../../commands/git-metadata/git'
 import {GitMetadataUploadCommand} from '../../commands/git-metadata/upload'
 
+import {newSimpleGit} from '../git/git-client'
 import {renderSoftWarning} from '../renderer'
 import {filterAndFormatGithubRemote} from '../utils'
 

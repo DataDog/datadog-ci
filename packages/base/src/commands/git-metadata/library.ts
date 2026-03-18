@@ -1,13 +1,12 @@
-import {SimpleGit} from 'simple-git'
-
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {GitClient, newSimpleGit} from '../../helpers/git/git-client'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
 import {cliVersion} from '../../version'
 
-import {getCommitInfo, newSimpleGit} from './git'
+import {getCommitInfo} from './git'
 import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
 
@@ -53,7 +52,7 @@ export const uploadGitCommitHash = async (
   ]).then(() => [payload.remote, payload.hash])
 }
 
-const syncGitDB = async (simpleGit: SimpleGit, apiKey: string, datadogSite: string, repositoryURL: string) => {
+const syncGitDB = async (simpleGit: GitClient, apiKey: string, datadogSite: string, repositoryURL: string) => {
   // no-op logger
   const log = new Logger((s: string) => {}, LogLevel.INFO)
 

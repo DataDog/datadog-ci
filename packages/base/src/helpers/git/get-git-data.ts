@@ -1,12 +1,13 @@
 import {URL} from 'url'
 
-import * as simpleGit from 'simple-git'
-import {BranchSummary} from 'simple-git'
+import type {BranchSummary} from 'simple-git'
 
 import {GitAuthorAndCommitterMetadata} from '../interfaces'
 
+import {GitClient} from './git-client'
+
 // Returns the remote of the current repository.
-export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
+export const gitRemote = async (git: GitClient): Promise<string> => {
   const remotes = await git.getRemotes(true)
   if (remotes.length === 0) {
     throw new Error('No git remotes available')
@@ -23,7 +24,7 @@ export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   return stripCredentials(remotes[0].refs.push)
 }
 
-export const getDefaultRemoteName = async (git: simpleGit.SimpleGit): Promise<string> => {
+export const getDefaultRemoteName = async (git: GitClient): Promise<string> => {
   try {
     return (await git.getConfig('clone.defaultRemoteName'))?.value ?? 'origin'
   } catch (e) {
@@ -45,27 +46,27 @@ export const stripCredentials = (remote: string) => {
 }
 
 // Returns the hash of the current repository.
-export const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
+export const gitHash = async (git: GitClient): Promise<string> => git.revparse('HEAD')
 
 // Returns the tracked files of the current repository.
-export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
+export const gitTrackedFiles = async (git: GitClient): Promise<string[]> => {
   const files = await git.raw('ls-files')
 
   return files.split(/\r\n|\r|\n/)
 }
 
-export const gitBranch = async (git: simpleGit.SimpleGit): Promise<BranchSummary> => git.branch()
+export const gitBranch = async (git: GitClient): Promise<BranchSummary> => git.branch()
 
-export const gitCurrentBranch = async (git: simpleGit.SimpleGit): Promise<string> => {
+export const gitCurrentBranch = async (git: GitClient): Promise<string> => {
   const branch = await git.raw(['branch', '--show-current'])
 
   return branch.trim()
 }
 
-export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
+export const gitMessage = async (git: GitClient): Promise<string> => git.show(['-s', '--format=%s'])
 
 // Returns the author and committer information of the current commit.
-export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<GitAuthorAndCommitterMetadata> => {
+export const gitAuthorAndCommitter = async (git: GitClient): Promise<GitAuthorAndCommitterMetadata> => {
   const info = await git.show([
     '-s',
     `--format=${['authorName:%an', 'authorEmail:%ae', 'authorDate:%aI', 'committerName:%cn', 'committerEmail:%ce', 'committerDate:%cI'].join('%n')}`,
@@ -81,10 +82,10 @@ export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<G
   return output as GitAuthorAndCommitterMetadata
 }
 
-export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
+export const gitRepositoryURL = async (git: GitClient): Promise<string> =>
   git.listRemote(['--get-url']).then((url) => url.trim())
 
-export const gitLocalCommitShas = async (git: simpleGit.SimpleGit, branchName: string): Promise<string[]> => {
+export const gitLocalCommitShas = async (git: GitClient, branchName: string): Promise<string[]> => {
   const gitShas = await git.raw(['log', branchName, '--not', '--remotes', '--format=%H', '-n', '10'])
 
   return gitShas.split(/\r\n|\r|\n/).filter(Boolean) // split by new line and discarding empty lines

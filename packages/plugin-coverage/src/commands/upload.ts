@@ -2,13 +2,7 @@ import os from 'os'
 import {gzipSync} from 'zlib'
 
 import {CoverageUploadCommand} from '@datadog/datadog-ci-base/commands/coverage/upload'
-import {
-  DiffData,
-  getGitDiff,
-  getGitFileHash,
-  getMergeBase,
-  newSimpleGit,
-} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import {DiffData, getGitDiff, getGitFileHash, getMergeBase} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -17,6 +11,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {partitionFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {GitClient, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {RequestBuilder, SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -33,7 +28,6 @@ import {
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
@@ -73,7 +67,7 @@ export class PluginCommand extends CoverageUploadCommand {
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
-  private git: simpleGit.SimpleGit | undefined = undefined
+  private git: GitClient | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)

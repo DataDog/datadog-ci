@@ -7,10 +7,10 @@ import type {AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 import {lte} from 'semver'
-import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
+import {GitClient} from '../../helpers/git/git-client'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
@@ -24,12 +24,7 @@ const MAX_HISTORY = {
   oldestCommits: '1 month ago',
 }
 
-const getCommitsToInclude = async (
-  log: Logger,
-  request: RequestBuilder,
-  git: simpleGit.SimpleGit,
-  repositoryURL: string
-) => {
+const getCommitsToInclude = async (log: Logger, request: RequestBuilder, git: GitClient, repositoryURL: string) => {
   let latestCommits: string[]
   try {
     latestCommits = await getLatestLocalCommits(git)
@@ -67,7 +62,7 @@ const getCommitsToInclude = async (
 export const uploadToGitDB = async (
   log: Logger,
   request: RequestBuilder,
-  git: simpleGit.SimpleGit,
+  git: GitClient,
   dryRun: boolean,
   repositoryURL?: string
 ) => {
@@ -148,14 +143,14 @@ export const uploadToGitDB = async (
   }
 }
 
-const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
+const getLatestLocalCommits = async (git: GitClient) => {
   // we add some boundaries to avoid retrieving ALL commits here.
   const logResult = await git.log([`-n ${MAX_HISTORY.maxCommits}`, `--since="${MAX_HISTORY.oldestCommits}"`])
 
   return logResult.all.map((c) => c.hash)
 }
 
-const isShallowRepository = async (git: simpleGit.SimpleGit) => {
+const isShallowRepository = async (git: GitClient) => {
   const gitversion = String(await git.version())
   if (lte(gitversion, '2.27.0')) {
     return false
@@ -164,7 +159,7 @@ const isShallowRepository = async (git: simpleGit.SimpleGit) => {
   return (await git.revparse('--is-shallow-repository')) === 'true'
 }
 
-const unshallowRepository = async (log: Logger, git: simpleGit.SimpleGit) => {
+const unshallowRepository = async (log: Logger, git: GitClient) => {
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
 
   const [headCommit, remoteName] = await Promise.all([git.revparse('HEAD'), getDefaultRemoteName(git)])
@@ -269,7 +264,7 @@ const validateCommit = (sha: string) => {
   return sha
 }
 
-const getObjectsToUpload = async (git: simpleGit.SimpleGit, commitsToInclude: string[], commitsToExclude: string[]) => {
+const getObjectsToUpload = async (git: GitClient, commitsToInclude: string[], commitsToExclude: string[]) => {
   const rawResponse = await git.raw(
     ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', `--since="${MAX_HISTORY.oldestCommits}"`]
       .concat(commitsToExclude.map((sha) => '^' + sha))

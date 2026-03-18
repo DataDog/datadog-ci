@@ -13,11 +13,8 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {
-  getRepositoryData,
-  newSimpleGit,
-  RepositoryData,
-} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'

@@ -5,13 +5,13 @@ import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
+import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
-import simpleGit from 'simple-git'
 
 export class PluginCommand extends DeploymentCorrelateCommand {
   private config = {
@@ -56,11 +56,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
       ...envVars,
     }
 
-    const git = simpleGit({
-      baseDir: process.cwd(),
-      binary: 'git',
-      maxConcurrentProcesses: 2, // max 2 git commands at the same time
-    })
+    const git = await newSimpleGit(2)
 
     if (!this.configurationRepo) {
       this.configurationRepo = await gitRepositoryURL(git)
