@@ -79,6 +79,7 @@ export const githubWellKnownDiagnosticDirsWin = [
 ]
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
+const githubJodIDRegex = /"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/
 
 /**
  * Properly unescape a JSON string value by leveraging JSON.parse
@@ -153,7 +154,7 @@ const resolveTilde = (filePath: string | undefined) => {
   return filePath
 }
 
-export const getCISpanTags = (fallbackGithubJobName?: string): SpanTags | undefined => {
+export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobID?: string): SpanTags | undefined => {
   const env = process.env
   let tags: SpanTags = {}
 
@@ -372,9 +373,11 @@ export const getCISpanTags = (fallbackGithubJobName?: string): SpanTags | undefi
 
     tags = {
       [CI_JOB_NAME]: GITHUB_JOB,
-      [CI_JOB_ID]: GITHUB_JOB,
+      [CI_JOB_ID]: fallbackGithubJobID ?? GITHUB_JOB,
       [CI_JOB_URL]: filterSensitiveInfoFromRepository(
-        `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
+        fallbackGithubJobID
+          ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/job/${fallbackGithubJobID}`
+          : `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
       ),
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
       [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
@@ -1089,6 +1092,10 @@ export const shouldGetGithubJobDisplayName = (): boolean => {
   return getCIProvider() === CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME === undefined
 }
 
+export const shouldGetGithubJobID = (): boolean => {
+  return getCIProvider() === CI_ENGINES.GITHUB
+}
+
 export const isGithubWindowsRunner = (): boolean => {
   const os = process.env.RUNNER_OS
   if (!os) {
@@ -1098,37 +1105,16 @@ export const isGithubWindowsRunner = (): boolean => {
   return os.toLowerCase() === 'windows'
 }
 
-/**
- * Extracts the job display name from the GitHub Actions diagnostic log files.
- *
- * In Github Actions, the GITHUB_JOB environment variable points to the job name
- * defined in the workflow file, but users can change the name by using the 'name'
- * property or matrix jobs. In this case the correlation will not work as GITHUB_JOB
- * contains a 'fake' job name.
- *
- * Previous to this, users had to set manually the DD_GITHUB_JOB_NAME env variable
- * pointing to the real job name.
- *
- * The diagnostic log files from the runner contain the display name, which enables
- * the correlation to happen without manually setting the environment variable.
- *
- * @returns The job display name, or undefined if not found
- */
-export const getGithubJobNameFromLogs = (context: BaseContext): string | undefined => {
-  if (!shouldGetGithubJobDisplayName()) {
-    return
-  }
-  context.stdout.write('Determining GitHub job name\n')
+const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | undefined => {
+  let foundDiagDir = ''
+  let workerLogFiles: string[] = []
 
   let wellKnownDirs = uniq([...getGithubDiagnosticDirsFromEnv(), ...githubWellKnownDiagnosticDirsUnix])
   if (isGithubWindowsRunner()) {
     wellKnownDirs = uniq([...getGithubDiagnosticDirsFromEnv(), ...githubWellKnownDiagnosticDirsWin])
   }
 
-  let foundDiagDir = ''
-  let workerLogFiles: string[] = []
-
-  // 1. Iterate through well known directories to check for worker logs
+  // Iterate through well known directories to check for worker logs
   for (const currentDir of wellKnownDirs) {
     try {
       const files = fs.readdirSync(currentDir, {withFileTypes: true})
@@ -1157,6 +1143,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
       return
     }
   }
+
   if (workerLogFiles.length === 0 || foundDiagDir === '') {
     context.stderr.write(
       `${chalk.yellow.bold('[WARNING]')} could not find GitHub diagnostic log files (Worker_*.log). Looked in: ${wellKnownDirs.join(
@@ -1167,7 +1154,16 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     return
   }
 
-  // 2. Get the job display name via regex
+  return [foundDiagDir, workerLogFiles]
+}
+
+const getGithubJobAttributeFromLogFiles = (
+  context: BaseContext,
+  foundDiagDir: string,
+  workerLogFiles: string[],
+  jobAttributeRegex: RegExp
+): string | undefined => {
+  // Get the job attribute via regex
   // For non-ephemeral runners, multiple Worker logs may exist from different jobs
   // Use ACTIONS_ORCHESTRATION_ID to identify the correct log if available
   const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
@@ -1204,18 +1200,85 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     const filePath = upath.join(foundDiagDir, logFile)
     const content = fs.readFileSync(filePath, 'utf-8')
 
-    const match = content.match(githubJobDisplayNameRegex)
+    const match = content.match(jobAttributeRegex)
 
     if (match && match[1]) {
-      // match[1] is the captured group with the JSON-escaped display name
-      const unescapedName = unescapeJsonString(match[1])
-      context.stdout.write(`Successfully extracted job name: ${unescapedName}\n`)
+      // match[1] is the captured group with the JSON-escaped attribute
+      const unescapedAttribute = unescapeJsonString(match[1])
 
-      return unescapedName
+      return unescapedAttribute
     }
   }
 
-  context.stderr.write(
-    `${chalk.yellow.bold('[WARNING]')} could not find "jobDisplayName" attribute in GitHub diagnostic logs`
+  return
+}
+
+/**
+ * Extracts the job display name from the GitHub Actions diagnostic log files.
+ *
+ * In Github Actions, the GITHUB_JOB environment variable points to the job name
+ * defined in the workflow file, but users can change the name by using the 'name'
+ * property or matrix jobs. In this case the correlation will not work as GITHUB_JOB
+ * contains a 'fake' job name.
+ *
+ * Previous to this, users had to set manually the DD_GITHUB_JOB_NAME env variable
+ * pointing to the real job name.
+ *
+ * The diagnostic log files from the runner contain the display name, which enables
+ * the correlation to happen without manually setting the environment variable.
+ *
+ * @returns The job display name, or undefined if not found
+ */
+export const getGithubJobNameFromLogs = (context: BaseContext): string | undefined => {
+  if (!shouldGetGithubJobDisplayName()) {
+    return
+  }
+  context.stdout.write('Determining GitHub job name\n')
+
+  const result = getGithubWorkerLogFiles(context)
+  if (!result) {
+    return
+  }
+  const [foundDiagDir, workerLogFiles] = result
+
+  const jobDisplayName = getGithubJobAttributeFromLogFiles(
+    context,
+    foundDiagDir,
+    workerLogFiles,
+    githubJobDisplayNameRegex
   )
+
+  if (!jobDisplayName) {
+    context.stderr.write(
+      `${chalk.yellow.bold('[WARNING]')} could not find "jobDisplayName" attribute in GitHub diagnostic logs`
+    )
+  } else {
+    context.stdout.write(`Successfully extracted job name: ${jobDisplayName}\n`)
+
+    return jobDisplayName
+  }
+}
+
+export const getGithubJobIDFromLogs = (context: BaseContext): string | undefined => {
+  if (!shouldGetGithubJobID()) {
+    return
+  }
+
+  context.stdout.write('Determining GitHub job ID\n')
+
+  const result = getGithubWorkerLogFiles(context)
+  if (!result) {
+    return
+  }
+  const [foundDiagDir, workerLogFiles] = result
+
+  const jobID = getGithubJobAttributeFromLogFiles(context, foundDiagDir, workerLogFiles, githubJodIDRegex)
+
+  if (!jobID) {
+    context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find "jobID" attribute in GitHub diagnostic logs`)
+  } else {
+    context.stdout.write(`Successfully extracted job ID: ${jobID}\n`)
+
+    return jobID
+  }
 }
