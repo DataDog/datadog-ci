@@ -1,23 +1,21 @@
 # Container App E2E Test Infrastructure
 
-The CI e2e tests create ephemeral container apps per run and delete them afterward.
-The only prerequisite is a shared Container App Environment (and its Log Analytics Workspace),
-which is provisioned once via the Bicep template.
+CI creates ephemeral container apps per run and deletes them afterward. The only prerequisite is a shared Container App Environment, which is provisioned once.
 
-## Resources (provisioned once)
+## Setup
 
-- **Log Analytics Workspace** - required by the Container App Environment
-- **Container App Environment** - hosting environment for ephemeral apps
-
-## Initial Setup
-
-### 1. Create a resource group
+### 1. Create a resource group and environment
 
 ```bash
 az group create --name datadog-ci-e2e --location eastus
+
+az containerapp env create \
+  --name dd-ci-e2e-capp-env \
+  --resource-group datadog-ci-e2e \
+  --location eastus
 ```
 
-### 2. Create a service principal
+### 2. Create a service principal with OIDC
 
 ```bash
 az ad sp create-for-rbac \
@@ -26,19 +24,9 @@ az ad sp create-for-rbac \
   --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/datadog-ci-e2e
 ```
 
-Then configure OIDC federated identity credentials for GitHub Actions
-(see the Datadog SECENG guide for details).
+Then configure OIDC federated identity credentials for GitHub Actions (see the Datadog SECENG guide for details).
 
-### 3. Deploy the environment
-
-```bash
-az deployment group create \
-  --resource-group datadog-ci-e2e \
-  --template-file main.bicep \
-  --parameters environmentName=dd-ci-e2e-capp-env
-```
-
-### 4. Add GitHub Actions secrets
+### 3. Add GitHub Actions secrets
 
 | Secret | Value |
 |--------|-------|
