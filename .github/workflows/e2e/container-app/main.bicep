@@ -1,12 +1,10 @@
-// Defines the "clean" (uninstrumented) state of Container Apps used for e2e tests.
-// Deployed before each test run to reset the apps to a known baseline.
+// Defines the shared Container App Environment for e2e tests.
+// Container apps are created/deleted per CI run; this only needs to be deployed once.
 
 param location string = resourceGroup().location
-param containerAppNamePrefix string
+param environmentName string
 
-var logAnalyticsName = '${containerAppNamePrefix}-logs'
-var environmentName = '${containerAppNamePrefix}-env'
-var nodeVersions = [20, 22, 24]
+var logAnalyticsName = '${environmentName}-logs'
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsName
@@ -32,35 +30,3 @@ resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
     }
   }
 }
-
-resource containerApps 'Microsoft.App/containerApps@2024-03-01' = [
-  for nodeVersion in nodeVersions: {
-    name: '${containerAppNamePrefix}-node-${nodeVersion}'
-    location: location
-    properties: {
-      managedEnvironmentId: environment.id
-      configuration: {
-        ingress: {
-          external: true
-          targetPort: 80
-        }
-      }
-      template: {
-        containers: [
-          {
-            name: 'hello-world'
-            image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-            resources: {
-              cpu: json('0.25')
-              memory: '0.5Gi'
-            }
-          }
-        ]
-        scale: {
-          minReplicas: 0
-          maxReplicas: 1
-        }
-      }
-    }
-  }
-]

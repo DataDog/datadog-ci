@@ -1,12 +1,13 @@
 # Container App E2E Test Infrastructure
 
-Bicep template that defines the "clean" (uninstrumented) state of an Azure Container App used by the CI e2e tests. Deployed before each test run to reset the app to a known baseline.
+The CI e2e tests create ephemeral container apps per run and delete them afterward.
+The only prerequisite is a shared Container App Environment (and its Log Analytics Workspace),
+which is provisioned once via the Bicep template.
 
-## Resources
+## Resources (provisioned once)
 
 - **Log Analytics Workspace** - required by the Container App Environment
-- **Container App Environment** - hosting environment
-- **Container App** - minimal hello-world container (`mcr.microsoft.com/azuredocs/containerapps-helloworld:latest`)
+- **Container App Environment** - hosting environment for ephemeral apps
 
 ## Initial Setup
 
@@ -25,15 +26,16 @@ az ad sp create-for-rbac \
   --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/datadog-ci-e2e
 ```
 
-Save the output — you'll need `appId`, `password`, and `tenant`.
+Then configure OIDC federated identity credentials for GitHub Actions
+(see the Datadog SECENG guide for details).
 
-### 3. Deploy the template (first time)
+### 3. Deploy the environment
 
 ```bash
 az deployment group create \
   --resource-group datadog-ci-e2e \
   --template-file main.bicep \
-  --parameters containerAppName=datadog-ci-e2e-app
+  --parameters environmentName=dd-ci-e2e-capp-env
 ```
 
 ### 4. Add GitHub Actions secrets
@@ -41,8 +43,7 @@ az deployment group create \
 | Secret | Value |
 |--------|-------|
 | `AZURE_CLIENT_ID_E2E` | Service principal `appId` |
-| `AZURE_CLIENT_SECRET_E2E` | Service principal `password` |
 | `AZURE_TENANT_ID_E2E` | Azure `tenant` |
 | `AZURE_SUBSCRIPTION_ID_E2E` | Azure subscription ID |
 | `AZURE_RESOURCE_GROUP_E2E` | Resource group name (e.g. `datadog-ci-e2e`) |
-| `AZURE_CONTAINER_APP_NAME_E2E` | Container app name (e.g. `datadog-ci-e2e-app`) |
+| `AZURE_CONTAINER_APP_ENV_E2E` | Environment name (e.g. `dd-ci-e2e-capp-env`) |
