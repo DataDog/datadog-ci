@@ -3,6 +3,7 @@
 import fs from 'fs'
 
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as ci from '@datadog/datadog-ci-base/helpers/ci'
 
 type RunCLIType = ReturnType<typeof makeRunCLI>
 
@@ -10,6 +11,10 @@ type RunCLIType = ReturnType<typeof makeRunCLI>
 
 export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) => {
   describe('execute', () => {
+    beforeEach(() => {
+      jest.spyOn(ci, 'getGithubJobIDFromLogs').mockReturnValue(undefined)
+    })
+
     afterEach(() => {
       jest.resetAllMocks()
     })
@@ -139,7 +144,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
           path: '',
         },
       ])
-      jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name"}`)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name", "job": {"v": 12345}}`)
       const {context, code} = await runCLI(runCLIArgs, {
         GITHUB_ACTIONS: 'true',
         GITHUB_SERVER_URL: 'http://github',

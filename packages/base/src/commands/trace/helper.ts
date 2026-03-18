@@ -7,7 +7,12 @@ import {Option} from 'clipanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
-import {getCIProvider, getCISpanTags, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
+import {
+  getCIProvider,
+  getCISpanTags,
+  getGithubJobNameFromLogs,
+  getGithubJobIDFromLogs,
+} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
@@ -56,8 +61,9 @@ export abstract class CustomSpanCommand extends BaseCommand {
       return 1
     }
     const realGithubJobName = getGithubJobNameFromLogs(this.context)
+    const realGithubJobID = process.env.JOB_CHECK_RUN_ID ?? getGithubJobIDFromLogs(this.context)
 
-    const ciSpanTags = getCISpanTags(realGithubJobName)
+    const ciSpanTags = getCISpanTags(realGithubJobName, realGithubJobID)
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
     const cliMeasures = this.measures ? parseTags(this.measures) : {}

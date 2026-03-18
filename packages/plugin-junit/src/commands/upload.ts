@@ -6,7 +6,7 @@ import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitd
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {JunitUploadCommand} from '@datadog/datadog-ci-base/commands/junit/upload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {getCISpanTags, getGithubJobNameFromLogs, getGithubJobIDFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
@@ -248,7 +248,9 @@ export class PluginCommand extends JunitUploadCommand {
   }
 
   private async getSpanTags(): Promise<SpanTags> {
-    const ciSpanTags = getCISpanTags()
+    const jobName = getGithubJobNameFromLogs(this.context)
+    const jobID = process.env.JOB_CHECK_RUN_ID ?? getGithubJobIDFromLogs(this.context)
+    const ciSpanTags = getCISpanTags(jobName, jobID)
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
