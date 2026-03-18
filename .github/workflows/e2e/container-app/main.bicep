@@ -1,11 +1,12 @@
-// Defines the "clean" (uninstrumented) state of a Container App used for e2e tests.
-// Deployed before each test run to reset the app to a known baseline.
+// Defines the "clean" (uninstrumented) state of Container Apps used for e2e tests.
+// Deployed before each test run to reset the apps to a known baseline.
 
 param location string = resourceGroup().location
-param containerAppName string
+param containerAppNamePrefix string
 
-var logAnalyticsName = '${containerAppName}-logs'
-var environmentName = '${containerAppName}-env'
+var logAnalyticsName = '${containerAppNamePrefix}-logs'
+var environmentName = '${containerAppNamePrefix}-env'
+var nodeVersions = [20, 22, 24]
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsName
@@ -32,32 +33,34 @@ resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
-resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: containerAppName
-  location: location
-  properties: {
-    managedEnvironmentId: environment.id
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: 80
-      }
-    }
-    template: {
-      containers: [
-        {
-          name: 'hello-world'
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-          resources: {
-            cpu: json('0.25')
-            memory: '0.5Gi'
-          }
+resource containerApps 'Microsoft.App/containerApps@2024-03-01' = [
+  for nodeVersion in nodeVersions: {
+    name: '${containerAppNamePrefix}-node-${nodeVersion}'
+    location: location
+    properties: {
+      managedEnvironmentId: environment.id
+      configuration: {
+        ingress: {
+          external: true
+          targetPort: 80
         }
-      ]
-      scale: {
-        minReplicas: 0
-        maxReplicas: 1
+      }
+      template: {
+        containers: [
+          {
+            name: 'hello-world'
+            image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+            resources: {
+              cpu: json('0.25')
+              memory: '0.5Gi'
+            }
+          }
+        ]
+        scale: {
+          minReplicas: 0
+          maxReplicas: 1
+        }
       }
     }
   }
-}
+]

@@ -205,52 +205,46 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
       - name: Azure login (OIDC)
-        if: matrix.version == '22'
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID_E2E }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID_E2E }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-      - name: Reset container app to clean state
-        if: matrix.version == '22'
+      - name: Reset container apps to clean state
         run: |
           az deployment group create \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --template-file artifacts/e2e/container-app/main.bicep \
-            --parameters containerAppName="$AZURE_CONTAINER_APP_NAME"
+            --parameters containerAppNamePrefix="$AZURE_CONTAINER_APP_NAME_PREFIX"
         env:
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_E2E }}
+          AZURE_CONTAINER_APP_NAME_PREFIX: ${{ secrets.AZURE_CONTAINER_APP_NAME_PREFIX_E2E }}
       - name: Run container-app instrument test
-        if: matrix.version == '22'
-        run: yarn datadog-ci container-app instrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "$AZURE_CONTAINER_APP_NAME" --no-source-code-integration
+        run: yarn datadog-ci container-app instrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "$AZURE_CONTAINER_APP_NAME_PREFIX-node-${{ matrix.version }}" --no-source-code-integration
         env:
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_E2E }}
+          AZURE_CONTAINER_APP_NAME_PREFIX: ${{ secrets.AZURE_CONTAINER_APP_NAME_PREFIX_E2E }}
       - name: Verify container app is instrumented
-        if: matrix.version == '22'
         run: node artifacts/e2e/container-app/verify-container-app.js instrumented
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_E2E }}
+          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_PREFIX_E2E }}-node-${{ matrix.version }}
       - name: Run container-app uninstrument test
-        if: matrix.version == '22'
-        run: yarn datadog-ci container-app uninstrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "$AZURE_CONTAINER_APP_NAME"
+        run: yarn datadog-ci container-app uninstrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "$AZURE_CONTAINER_APP_NAME_PREFIX-node-${{ matrix.version }}"
         env:
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_E2E }}
+          AZURE_CONTAINER_APP_NAME_PREFIX: ${{ secrets.AZURE_CONTAINER_APP_NAME_PREFIX_E2E }}
       - name: Verify container app is uninstrumented
-        if: matrix.version == '22'
         run: node artifacts/e2e/container-app/verify-container-app.js uninstrumented
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_E2E }}
+          AZURE_CONTAINER_APP_NAME: ${{ secrets.AZURE_CONTAINER_APP_NAME_PREFIX_E2E }}-node-${{ matrix.version }}
       - name: Check that version can be run without git repository
         run: |
           rm -rf .git
