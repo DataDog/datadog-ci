@@ -411,13 +411,23 @@ const dependencies = [
   .map((name) => `    "${name}": "./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join(',\n')
 
+const e2eTestDependencies = [
+  '"jest": "29.6.2"',
+  '"ts-jest": "29.1.1"',
+  '"typescript": "5.1.6"',
+  '"@datadog/datadog-api-client": "^1.0.0"',
+]
+  .map((dep) => `    ${dep}`)
+  .join(',\n')
+
 const e2eProjectPackageJson = `{
   "name": "datadog-ci-e2e-tests",
   "resolutions": {
 ${resolutions}
   },
   "dependencies": {
-${dependencies}
+${dependencies},
+${e2eTestDependencies}
   }
 }`
 
