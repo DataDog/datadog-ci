@@ -2,7 +2,6 @@
   "name": "datadog-ci-monorepo",
   "scripts": {
     "build": "yarn tsc:build",
-    "check-junit-upload": "node bin/check-junit-upload.js",
     "check-licenses": "node bin/check-licenses.js",
     "check-npm-packages": "bin/check-npm-packages.sh",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
@@ -10,6 +9,7 @@
     "dev": "yarn tsc:build --watch",
     "dist-standalone": "FORCE_COLOR=1 yarn workspace @datadog/datadog-ci bundle && pkg --sea packages/datadog-ci/dist/bundle.js",
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
+    "e2e:test": "jest --config ./jest.config-e2e.mjs --colors",
     "format": "yarn lint:all --fix",
     "generate-json-schemas:synthetics": "ts-json-schema-generator --markdown-description --no-type-check --no-top-ref --additional-properties --path packages/plugin-synthetics/src/interfaces.ts --type TestConfig > packages/plugin-synthetics/src/test-config.schema.json && prettier --write packages/plugin-synthetics/src/test-config.schema.json",
     "knip": "knip --include dependencies --no-config-hints",
@@ -37,6 +37,7 @@
     "version:all": "yarn loop-packages version ${0} --immediate"
   },
   "devDependencies": {
+    "@datadog/datadog-api-client": "^1.0.0",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@stylistic/eslint-plugin": "^5.3.1",
     "@types/node": "^20.19.18",

@@ -58,7 +58,6 @@ jobs:
       - run: |
           mkdir artifacts
           yarn loop-packages pack --out ../../artifacts/%s-${{ matrix.version }}.tgz
-          cp -r .github/workflows/e2e artifacts/
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: artifacts-${{ matrix.version }}
@@ -114,9 +113,9 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Only checkout the files we need from the `DataDog/datadog-ci` repo.
-          # See https://github.com/actions/checkout#fetch-only-a-single-file
-          sparse-checkout: bin/check-junit-upload.js
+          sparse-checkout: |
+            e2e/
+            jest.config-e2e.mjs
           sparse-checkout-cone-mode: false
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -150,118 +149,37 @@ jobs:
               "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-stepfunctions": "./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-synthetics": "./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-terraform": "./artifacts/@datadog-datadog-ci-plugin-terraform-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-terraform": "./artifacts/@datadog-datadog-ci-plugin-terraform-${{ matrix.version }}.tgz",
+              "@types/jest": "29.5.14",
+              "jest": "29.6.2",
+              "ts-jest": "29.1.1",
+              "typescript": "5.1.6",
+              "@datadog/datadog-api-client": "^1.0.0"
             }
           }' > package.json
 
           yarn set version stable
           yarn install --no-immutable
-      - name: Run synthetics test
-        run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
-        env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
-          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
-      - name: Run sourcemaps upload test
-        run: yarn datadog-ci sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
-        env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
-          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
-      - name: Run junit upload test (measures)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Check that test data can be queried (measures)
-        run: |
-          yarn add @datadog/datadog-api-client
-          yarn node bin/check-junit-upload.js
-        env:
-          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
-          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
-          DD_SERVICE: datadog-ci-e2e-tests-junit
-      - name: Run junit upload test (measures), passing glob as literal string
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Check that test data can be queried (measures)
-        run: |
-          yarn add @datadog/datadog-api-client
-          yarn node bin/check-junit-upload.js
-        env:
-          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
-          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
-          DD_SERVICE: datadog-ci-e2e-tests-junit
-      - name: Run sarif upload test
-        run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Run sbom upload test
-        run: yarn datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
       - name: Azure login (OIDC)
         if: needs.check-container-app-changes.outputs.should_run == 'true'
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID_E2E }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID_E2E }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-      - name: Create ephemeral container app
-        if: needs.check-container-app-changes.outputs.should_run == 'true'
-        run: |
-          az containerapp create \
-            --name "dd-ci-${{ github.run_id }}-n${{ matrix.version }}" \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --environment "$AZURE_CONTAINER_APP_ENV" \
-            --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
-            --cpu 0.25 --memory 0.5Gi \
-            --min-replicas 0 --max-replicas 1 \
-            --ingress external --target-port 80 \
-            --output none
+          client-id: ${{ vars.AZURE_CLIENT_ID_E2E }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID_E2E }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+      - name: Run e2e tests
+        run: yarn jest --config jest.config-e2e.mjs --colors
         env:
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_ENV: ${{ secrets.AZURE_CONTAINER_APP_ENV_E2E }}
-      - name: Run container-app instrument
-        if: needs.check-container-app-changes.outputs.should_run == 'true'
-        run: yarn datadog-ci container-app instrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "dd-ci-${{ github.run_id }}-n${{ matrix.version }}" --no-source-code-integration
-        env:
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-      - name: Verify container app is instrumented
-        if: needs.check-container-app-changes.outputs.should_run == 'true'
-        run: node artifacts/e2e/container-app/verify-container-app.js instrumented
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
+          AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
           AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
-      - name: Run container-app uninstrument
-        if: needs.check-container-app-changes.outputs.should_run == 'true'
-        run: yarn datadog-ci container-app uninstrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "dd-ci-${{ github.run_id }}-n${{ matrix.version }}"
-        env:
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-      - name: Verify container app is uninstrumented
-        if: needs.check-container-app-changes.outputs.should_run == 'true'
-        run: node artifacts/e2e/container-app/verify-container-app.js uninstrumented
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
-      - name: Delete ephemeral container app
-        if: always() && needs.check-container-app-changes.outputs.should_run == 'true'
-        run: az containerapp delete --name "dd-ci-${{ github.run_id }}-n${{ matrix.version }}" --resource-group "$AZURE_RESOURCE_GROUP" --yes --output none
-        env:
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-      - name: Check that version can be run without git repository
-        run: |
-          rm -rf .git
-          yarn datadog-ci version
 
   check-container-app-changes:
     name: Check container-app changes
@@ -278,7 +196,9 @@ jobs:
               - 'packages/plugin-container-app/**'
               - 'packages/base/package.json'
               - 'packages/base/src/helpers/serverless/**'
-              - '.github/workflows/e2e/container-app/**'
+              - 'e2e/fixtures/container-app/**'
+              - 'e2e/container-app.test.ts'
+              - 'e2e/helpers/container-app-verifier.ts'
               - '.github/workflows/ci.yml'
 
   e2e-test-windows:
@@ -295,9 +215,9 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Only checkout the files we need from the `DataDog/datadog-ci` repo.
-          # See https://github.com/actions/checkout#fetch-only-a-single-file
-          sparse-checkout: bin/check-junit-upload.js
+          sparse-checkout: |
+            e2e/
+            jest.config-e2e.mjs
           sparse-checkout-cone-mode: false
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -331,63 +251,26 @@ jobs:
               "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-stepfunctions": "./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-synthetics": "./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-terraform": "./artifacts/@datadog-datadog-ci-plugin-terraform-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-terraform": "./artifacts/@datadog-datadog-ci-plugin-terraform-${{ matrix.version }}.tgz",
+              "@types/jest": "29.5.14",
+              "jest": "29.6.2",
+              "ts-jest": "29.1.1",
+              "typescript": "5.1.6",
+              "@datadog/datadog-api-client": "^1.0.0"
             }
           }' > package.json
 
           yarn set version stable
           yarn install --no-immutable
-      - name: Run synthetics test
-        run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
+      - name: Run e2e tests
+        run: yarn jest --config jest.config-e2e.mjs --colors
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
-      - name: Run sourcemaps upload test
-        run: yarn datadog-ci sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
-        env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
-          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
-      - name: Run junit upload test (measures)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Check that test data can be queried (measures)
-        run: |
-          yarn add @datadog/datadog-api-client
-          yarn node bin/check-junit-upload.js
-        env:
-          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
-          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
-          DD_SERVICE: datadog-ci-e2e-tests-junit
-      - name: Run junit upload test (measures), passing glob as literal string
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Check that test data can be queried (measures)
-        run: |
-          yarn add @datadog/datadog-api-client
-          yarn node bin/check-junit-upload.js
-        env:
-          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
-          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
-          DD_SERVICE: datadog-ci-e2e-tests-junit
-      - name: Run sarif upload test
-        run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Run sbom upload test
-        run: yarn datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
-      - name: Check that version can be run without git repository
-        run: |
-          Remove-Item -Recurse -Force .git
-          yarn datadog-ci version
+          GITHUB_SHA: ${{ github.sha }}
+          SKIP_CONTAINER_APP_TESTS: 'true'
 
   # We only test with a single plugin and a single Node.js version.
   test-plugin-auto-install-during-npx:
