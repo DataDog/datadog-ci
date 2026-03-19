@@ -9,6 +9,7 @@ describe('junit', () => {
       `${DATADOG_CI_COMMAND} junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
+        DATADOG_API_KEY: undefined,
       }
     )
     expect(result.exitCode).toBe(0)
@@ -33,6 +34,7 @@ describe('junit', () => {
       `${DATADOG_CI_COMMAND} junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
+        DATADOG_API_KEY: undefined,
       }
     )
     expect(result.exitCode).toBe(0)

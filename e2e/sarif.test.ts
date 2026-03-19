@@ -6,6 +6,7 @@ describe('sarif', () => {
       `${DATADOG_CI_COMMAND} sarif upload --service=datadog-ci-e2e-tests-sarif e2e/fixtures/sarif-reports`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
+        DATADOG_API_KEY: undefined,
       }
     )
 

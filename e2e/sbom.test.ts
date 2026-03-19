@@ -7,6 +7,7 @@ describe('sbom', () => {
       {
         DD_API_KEY: process.env.DD_API_KEY,
         DD_APP_KEY: process.env.DD_APP_KEY,
+        DATADOG_API_KEY: undefined,
       }
     )
 
