@@ -11,7 +11,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {partitionFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {GitClient, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {GitClient, newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {RequestBuilder, SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -92,7 +92,7 @@ export class PluginCommand extends CoverageUploadCommand {
     const isGitRepository = await isGitRepo()
 
     if (isGitRepository) {
-      this.git = await newSimpleGit()
+      this.git = await newGitClient()
     }
 
     if (!this.skipGitMetadataUpload) {

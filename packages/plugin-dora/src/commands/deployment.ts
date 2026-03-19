@@ -3,7 +3,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitHash} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
-import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {AxiosError} from 'axios'
@@ -72,7 +72,7 @@ export class PluginCommand extends DoraDeploymentCommand {
   }
 
   private async getGitInfo(): Promise<GitInfo> {
-    const git = await newSimpleGit(5)
+    const git = await newGitClient(5)
     const [repoURL, commitSHA] = await Promise.all([gitRepositoryURL(git), gitHash(git)])
 
     return {repoURL, commitSHA}

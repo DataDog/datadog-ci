@@ -11,7 +11,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {SpanTags, RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -173,7 +173,7 @@ export class PluginCommand extends JunitUploadCommand {
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newGitClient(), this.dryRun, this.gitRepositoryURL)
   }
 
   private getApiHelper(): APIHelper {

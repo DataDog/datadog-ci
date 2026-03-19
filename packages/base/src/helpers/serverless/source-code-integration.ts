@@ -3,7 +3,7 @@ import {BaseContext, Cli} from 'clipanion'
 import {getCommitInfo} from '../../commands/git-metadata/git'
 import {GitMetadataUploadCommand} from '../../commands/git-metadata/upload'
 
-import {newSimpleGit} from '../git/git-client'
+import {newGitClient} from '../git/git-client'
 import {renderSoftWarning} from '../renderer'
 import {filterAndFormatGithubRemote} from '../utils'
 
@@ -53,12 +53,12 @@ const getGitData = async () => {
 
 // Only exported to be mocked in unit tests
 export const getCurrentGitStatus = async () => {
-  const simpleGit = await newSimpleGit()
-  const gitCommitInfo = await getCommitInfo(simpleGit)
+  const git = await newGitClient()
+  const gitCommitInfo = await getCommitInfo(git)
   if (gitCommitInfo === undefined) {
     throw new Error('Git commit info is not defined')
   }
-  const status = await simpleGit.status()
+  const status = await git.status()
 
   return {
     isClean: status.isClean(),

@@ -394,7 +394,7 @@ export default defineConfig(
             {
               name: 'simple-git',
               message:
-                'Please use `GitClient` and `newSimpleGit` from `packages/base/src/helpers/git/git-client` instead of importing `simple-git` directly.',
+                'Please use `GitClient` and `newGitClient` from `packages/base/src/helpers/git/git-client` instead of importing `simple-git` directly.',
             },
           ],
         },

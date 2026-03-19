@@ -1,9 +1,9 @@
 import fs from 'fs'
 
-import * as simpleGit from 'simple-git'
+import * as sg from 'simple-git'
 import path from 'upath'
 
-import {newSimpleGit} from '../../../helpers/git/git-client'
+import {newGitClient} from '../../../helpers/git/git-client'
 
 import {getCommitInfo, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
@@ -120,30 +120,30 @@ describe('git', () => {
     })
   })
 
-  describe('newSimpleGit', () => {
+  describe('newGitClient', () => {
     test('should throw an error if git is not installed', async () => {
-      jest.spyOn(simpleGit, 'simpleGit').mockImplementation(() => {
+      jest.spyOn(sg, 'simpleGit').mockImplementation(() => {
         throw Error('gitp error')
       })
-      await expect(newSimpleGit()).rejects.toThrow('gitp error')
+      await expect(newGitClient()).rejects.toThrow('gitp error')
     })
 
     test('should throw an error if revparse throws an error', async () => {
       const mock = createMockSimpleGit({}) as any
-      jest.spyOn(simpleGit, 'simpleGit').mockReturnValue(mock)
+      jest.spyOn(sg, 'simpleGit').mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockImplementation(async () => {
         throw Error('revparse error')
       })
 
-      await expect(newSimpleGit()).rejects.toThrow('revparse error')
+      await expect(newGitClient()).rejects.toThrow('revparse error')
     })
 
     test('should not throw any errors', async () => {
       const mock = createMockSimpleGit({}) as any
-      jest.spyOn(simpleGit, 'simpleGit').mockReturnValue(mock)
+      jest.spyOn(sg, 'simpleGit').mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockResolvedValue('1234')
 
-      await expect(newSimpleGit()).resolves.not.toThrow()
+      await expect(newGitClient()).resolves.not.toThrow()
     })
   })
 })

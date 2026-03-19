@@ -7,7 +7,7 @@ jest.mock('@datadog/datadog-ci-base/commands/git-metadata/library', () => ({
   isGitRepo: jest.fn().mockResolvedValue(false),
 }))
 jest.mock('@datadog/datadog-ci-base/commands/git-metadata/git', () => ({
-  newSimpleGit: jest.fn(),
+  newGitClient: jest.fn(),
 }))
 jest.mock('@datadog/datadog-ci-base/commands/git-metadata/gitdb', () => ({
   uploadToGitDB: jest.fn(),

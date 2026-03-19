@@ -5,7 +5,7 @@ import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
-import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
@@ -56,7 +56,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
       ...envVars,
     }
 
-    const git = await newSimpleGit(2)
+    const git = await newGitClient(2)
 
     if (!this.configurationRepo) {
       this.configurationRepo = await gitRepositoryURL(git)

@@ -1,4 +1,4 @@
-import * as simpleGit from 'simple-git'
+import * as sg from 'simple-git'
 
 import {isCI} from '../ci'
 
@@ -10,11 +10,11 @@ type ConcurrencyTuple<N extends number, T extends 0[] = []> = number extends N
     ? T
     : ConcurrencyTuple<N, [...T, 0]>
 
-export type GitClient<MinConcurrency extends number = 0> = simpleGit.SimpleGit & {
+export type GitClient<MinConcurrency extends number = 0> = sg.SimpleGit & {
   readonly [concurrencyBrand]: readonly [...ConcurrencyTuple<MinConcurrency>, ...0[]]
 }
 
-export const newSimpleGit = async <N extends number = 1>(
+export const newGitClient = async <N extends number = 1>(
   maxConcurrentProcesses?: N,
   baseDir?: string
 ): Promise<GitClient<N>> => {
@@ -26,13 +26,13 @@ export const newSimpleGit = async <N extends number = 1>(
     maxConcurrentProcesses: concurrency,
   }
 
-  const git = simpleGit.simpleGit(options)
+  const git = sg.simpleGit(options)
 
   const isDocker = (await import('is-docker')).default
 
   if (isCI() || isDocker()) {
     try {
-      await git.addConfig('safe.directory', currentDir, true, simpleGit.GitConfigScope.global)
+      await git.addConfig('safe.directory', currentDir, true, sg.GitConfigScope.global)
     } catch (e) {
       // Ignore the error
     }
@@ -45,5 +45,5 @@ export const newSimpleGit = async <N extends number = 1>(
     // Ignore exception as it will fail if we are not inside a git repository.
   }
 
-  return simpleGit.simpleGit(options) as unknown as GitClient<N>
+  return sg.simpleGit(options) as unknown as GitClient<N>
 }

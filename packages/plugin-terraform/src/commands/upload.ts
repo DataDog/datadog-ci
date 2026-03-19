@@ -8,7 +8,7 @@ import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {GitClient, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {GitClient, newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
@@ -59,7 +59,7 @@ export class PluginCommand extends TerraformUploadCommand {
     // Initialize git if in a repository
     const isGitRepository = await isGitRepo()
     if (isGitRepository) {
-      this.git = await newSimpleGit()
+      this.git = await newGitClient()
     }
 
     // Sync git metadata if needed (only once for all files)

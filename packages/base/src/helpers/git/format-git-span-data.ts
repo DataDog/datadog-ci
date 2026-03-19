@@ -15,11 +15,11 @@ import {
 import {filterSensitiveInfoFromRepository} from '../utils'
 
 import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
-import {newSimpleGit} from './git-client'
+import {newGitClient} from './git-client'
 
 export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags> => {
   try {
-    const git = await newSimpleGit(5, repositoryPath)
+    const git = await newGitClient(5, repositoryPath)
 
     const [commitSHA, branch, repositoryUrl, message, authorAndCommitter] = await Promise.all([
       gitHash(git),

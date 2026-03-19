@@ -13,7 +13,7 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getRepositoryData, RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
@@ -244,7 +244,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
 
   private async getGitMetadata(): Promise<RepositoryData | undefined> {
     try {
-      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
+      return await getRepositoryData(await newGitClient(), this.repositoryUrl)
     } catch (e) {
       this.context.stdout.write(renderGitWarning(e))
     }

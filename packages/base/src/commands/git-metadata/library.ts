@@ -1,5 +1,5 @@
 import {newApiKeyValidator} from '../../helpers/apikey'
-import {GitClient, newSimpleGit} from '../../helpers/git/git-client'
+import {GitClient, newGitClient} from '../../helpers/git/git-client'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
@@ -12,8 +12,8 @@ import {CommitInfo} from './interfaces'
 
 export const isGitRepo = async (): Promise<boolean> => {
   try {
-    const simpleGit = await newSimpleGit()
-    const isRepo = simpleGit.checkIsRepo()
+    const git = await newGitClient()
+    const isRepo = git.checkIsRepo()
 
     return isRepo
   } catch {
@@ -26,8 +26,8 @@ export const isGitRepo = async (): Promise<boolean> => {
 // git prefix normalized.
 // ("git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/")
 export const getGitCommitInfo = async (filterAndFormatGitRepoUrl = true): Promise<[string, string]> => {
-  const simpleGit = await newSimpleGit()
-  const payload = await getCommitInfo(simpleGit)
+  const git = await newGitClient()
+  const payload = await getCommitInfo(git)
 
   const gitRemote = filterAndFormatGitRepoUrl ? filterAndFormatGithubRemote(payload.remote) : payload.remote
 
@@ -43,25 +43,25 @@ export const uploadGitCommitHash = async (
   datadogSite: string,
   repositoryURL?: string
 ): Promise<[string, string]> => {
-  const simpleGit = await newSimpleGit()
-  const payload = await getCommitInfo(simpleGit, repositoryURL)
+  const git = await newGitClient()
+  const payload = await getCommitInfo(git, repositoryURL)
 
   return Promise.all([
-    syncGitDB(simpleGit, apiKey, datadogSite, payload.remote),
+    syncGitDB(git, apiKey, datadogSite, payload.remote),
     uploadToSrcmapTrack(apiKey, datadogSite, payload),
   ]).then(() => [payload.remote, payload.hash])
 }
 
-const syncGitDB = async (simpleGit: GitClient, apiKey: string, datadogSite: string, repositoryURL: string) => {
+const syncGitDB = async (git: GitClient, apiKey: string, datadogSite: string, repositoryURL: string) => {
   // no-op logger
-  const log = new Logger((s: string) => {}, LogLevel.INFO)
+  const log = new Logger((_: string) => {}, LogLevel.INFO)
 
   const requestBuilder = getRequestBuilder({
     apiKey,
     baseUrl: 'https://api.' + datadogSite,
   })
 
-  await uploadToGitDB(log, requestBuilder, simpleGit, false, repositoryURL)
+  await uploadToGitDB(log, requestBuilder, git, false, repositoryURL)
 }
 
 // uploadToSrcmapTrack uploads the payload with tracked files to the sourcemap intake

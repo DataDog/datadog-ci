@@ -14,7 +14,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getRepositoryData, RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/git-client'
+import {newGitClient} from '@datadog/datadog-ci-base/helpers/git/git-client'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
@@ -166,7 +166,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Fills the 'repository' field of each payload with data gathered using git.
   private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
     try {
-      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
+      const repositoryData = await getRepositoryData(await newGitClient(), this.repositoryURL)
       await Promise.all(
         payloads.map(async (payload) => {
           const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)

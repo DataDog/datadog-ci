@@ -7,7 +7,7 @@ import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
 import {ICONS} from '../../helpers/formatting'
-import {newSimpleGit} from '../../helpers/git/git-client'
+import {newGitClient} from '../../helpers/git/git-client'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
@@ -153,7 +153,7 @@ export class GitMetadataUploadCommand extends BaseCommand {
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.repositoryURL)
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newGitClient(), this.dryRun, this.repositoryURL)
   }
 
   private async uploadToSrcmapTrack(opts: {
@@ -163,7 +163,7 @@ export class GitMetadataUploadCommand extends BaseCommand {
   }) {
     const generatePayload = async () => {
       try {
-        return await getCommitInfo(await newSimpleGit(), this.repositoryURL)
+        return await getCommitInfo(await newGitClient(), this.repositoryURL)
       } catch (e) {
         if (e instanceof Error) {
           this.logger.error(renderFailedUpload(e.message))
