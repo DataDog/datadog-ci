@@ -10,6 +10,10 @@ describe('sarif', () => {
       }
     )
 
+    if (result.exitCode !== 0) {
+      console.log('sarif upload stdout:', result.stdout)
+      console.log('sarif upload stderr:', result.stderr)
+    }
     expect(result.exitCode).toBe(0)
   })
 })
