@@ -104,7 +104,10 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [build-and-test, check-container-app-changes]
+    permissions:
+      contents: read
+      id-token: write
     env:
       FORCE_COLOR: 1
 
@@ -200,10 +203,83 @@ jobs:
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+      - name: Azure login (OIDC)
+        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID_E2E }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID_E2E }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
+      - name: Create ephemeral container app
+        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        run: |
+          az containerapp create \
+            --name "dd-ci-${{ github.run_id }}-n${{ matrix.version }}" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --environment "$AZURE_CONTAINER_APP_ENV" \
+            --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
+            --cpu 0.25 --memory 0.5Gi \
+            --min-replicas 0 --max-replicas 1 \
+            --ingress external --target-port 80 \
+            --output none
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
+          AZURE_CONTAINER_APP_ENV: ${{ secrets.AZURE_CONTAINER_APP_ENV_E2E }}
+      - name: Run container-app instrument
+        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        run: yarn datadog-ci container-app instrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "dd-ci-${{ github.run_id }}-n${{ matrix.version }}" --no-source-code-integration
+        env:
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
+      - name: Verify container app is instrumented
+        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        run: node artifacts/e2e/container-app/verify-container-app.js instrumented
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
+          AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
+      - name: Run container-app uninstrument
+        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        run: yarn datadog-ci container-app uninstrument -s "$AZURE_SUBSCRIPTION_ID" -g "$AZURE_RESOURCE_GROUP" -n "dd-ci-${{ github.run_id }}-n${{ matrix.version }}"
+        env:
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
+      - name: Verify container app is uninstrumented
+        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        run: node artifacts/e2e/container-app/verify-container-app.js uninstrumented
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
+          AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
+      - name: Delete ephemeral container app
+        if: always() && needs.check-container-app-changes.outputs.should_run == 'true'
+        run: az containerapp delete --name "dd-ci-${{ github.run_id }}-n${{ matrix.version }}" --resource-group "$AZURE_RESOURCE_GROUP" --yes --output none
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
       - name: Check that version can be run without git repository
         run: |
           rm -rf .git
           yarn datadog-ci version
+
+  check-container-app-changes:
+    name: Check container-app changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.container-app }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        id: filter
+        with:
+          filters: |
+            container-app:
+              - 'packages/plugin-container-app/**'
+              - 'packages/base/package.json'
+              - 'packages/base/src/helpers/serverless/**'
+              - '.github/workflows/e2e/container-app/**'
+              - '.github/workflows/ci.yml'
 
   e2e-test-windows:
     strategy:
