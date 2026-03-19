@@ -23,6 +23,7 @@ import {
   TestWithOverride,
   TriggerConfig,
   UserConfigOverride,
+  LocalTestPayload,
 } from '../interfaces'
 
 import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './public'
@@ -110,7 +111,11 @@ export const isTimedOutRetry = (
 }
 
 export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConfig is LocalTriggerConfig => {
-  return triggerConfig ? 'localTestDefinition' in triggerConfig : false
+  return !!triggerConfig && 'localTestDefinition' in triggerConfig
+}
+
+export const isLocalTestPayload = (testPayload: TestPayload): testPayload is LocalTestPayload => {
+  return !!testPayload && 'local_test_definition' in testPayload
 }
 
 export const isBrowserServerResult = (serverResult: ServerResult): serverResult is BrowserServerResult => {

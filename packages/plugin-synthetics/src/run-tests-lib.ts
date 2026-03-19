@@ -6,6 +6,7 @@ import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
+  ExecutionRule,
   MainReporter,
   Reporter,
   Result,
@@ -15,6 +16,7 @@ import {
   SupportedReporter,
   Test,
   TestPayload,
+  TestPlan,
   TriggerConfig,
   TriggerInfo,
   WrapperConfig,
@@ -27,11 +29,13 @@ import {Tunnel} from './tunnel'
 import {
   getDefaultConfig as getDefaultConfigBase,
   getTriggerConfigPublicId,
+  isLocalTestPayload,
   isLocalTriggerConfig,
 } from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
+  createInitialSummary,
   InitialSummary,
   parsePublicIdWithVersion,
   renderResults,
@@ -41,10 +45,12 @@ import {
 } from './utils/public'
 
 type ExecuteOptions = {
+  initialSummary?: InitialSummary
   jUnitReport?: string
   reporters?: (SupportedReporter | Reporter)[]
   runId?: string
   suites?: Suite[]
+  testPlan?: TestPlan
 }
 
 export const getDefaultConfig = (): RunTestsCommandConfig => {
@@ -67,14 +73,15 @@ export const getDefaultConfig = (): RunTestsCommandConfig => {
 export const executeTests = async (
   reporter: MainReporter,
   config: RunTestsCommandConfig,
-  suites?: Suite[]
+  suites?: Suite[],
+  testPlan?: TestPlan,
+  providedInitialSummary?: InitialSummary
 ): Promise<{
   results: Result[]
   summary: Summary
 }> => {
   const api = getApiHelper(config)
   let tunnel: Tunnel | undefined
-  let triggerConfigs: TriggerConfig[] = []
 
   const stopTunnel = async () => {
     if (tunnel) {
@@ -82,49 +89,59 @@ export const executeTests = async (
     }
   }
 
-  try {
-    triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
-  } catch (error) {
-    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
-  }
+  let hasLTD: boolean
+  let tests: Test[]
+  let overriddenTestsToTrigger: TestPayload[]
+  let initialSummary: InitialSummary
 
-  let hasLTD = false
-  for (const triggerConfig of triggerConfigs) {
-    if (isLocalTriggerConfig(triggerConfig)) {
-      hasLTD = true
-      break
-    }
-  }
+  if (testPlan) {
+    overriddenTestsToTrigger = testPlan.map((item) => item.testOverrides)
+    tests = testPlan.filter((item) => item.executionRule !== ExecutionRule.SKIPPED).map((item) => item.test)
+    initialSummary = providedInitialSummary ?? createInitialSummary()
+    hasLTD = overriddenTestsToTrigger.some(isLocalTestPayload)
+  } else {
+    let triggerConfigs: TriggerConfig[] = []
 
-  if (triggerConfigs.length === 0) {
-    throw new CiError('NO_TESTS_TO_RUN')
-  }
-
-  let testsToTriggerResult: {
-    initialSummary: InitialSummary
-    overriddenTestsToTrigger: TestPayload[]
-    tests: Test[]
-  }
-
-  try {
-    const triggerFromSearch = !!config.testSearchQuery
-    testsToTriggerResult = await getTestsToTrigger(
-      api,
-      triggerConfigs,
-      reporter,
-      triggerFromSearch,
-      config.failOnMissingTests,
-      config.tunnel
-    )
-  } catch (error) {
-    if (error instanceof CiError) {
-      throw error
+    try {
+      triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
+    } catch (error) {
+      throw new CriticalError(
+        isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG',
+        error.message
+      )
     }
 
-    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
-  }
+    hasLTD = triggerConfigs.some(isLocalTriggerConfig)
 
-  const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
+    if (triggerConfigs.length === 0) {
+      throw new CiError('NO_TESTS_TO_RUN')
+    }
+
+    try {
+      const triggerFromSearch = !!config.testSearchQuery
+      let resolvedTestPlan: TestPlan
+      ;({testPlan: resolvedTestPlan, initialSummary} = await getTestsToTrigger(
+        api,
+        triggerConfigs,
+        reporter,
+        triggerFromSearch,
+        config.failOnMissingTests,
+        config.tunnel
+      ))
+      overriddenTestsToTrigger = resolvedTestPlan.map((item) => item.testOverrides)
+      tests = resolvedTestPlan.filter((item) => item.executionRule !== ExecutionRule.SKIPPED).map((item) => item.test)
+      hasLTD = overriddenTestsToTrigger.some(isLocalTestPayload)
+    } catch (error) {
+      if (error instanceof CiError) {
+        throw error
+      }
+
+      throw new CriticalError(
+        isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG',
+        error.message
+      )
+    }
+  }
 
   // All tests have been skipped or are missing.
   if (!tests.length) {
@@ -306,9 +323,52 @@ export const getTriggerConfigs = async (
   return triggerConfigsWithId.concat(localTriggerConfigsWithoutId)
 }
 
+export const planDryRun = async (
+  reporter: MainReporter,
+  runConfig: WrapperConfig,
+  suites?: Suite[]
+): Promise<{testPlan: TestPlan; initialSummary: InitialSummary}> => {
+  const config = {
+    ...getDefaultConfig(),
+    ...runConfig,
+  }
+  const api = getApiHelper(config)
+  let triggerConfigs: TriggerConfig[]
+
+  try {
+    triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
+  } catch (error) {
+    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
+  }
+
+  if (triggerConfigs.length === 0) {
+    throw new CiError('NO_TESTS_TO_RUN')
+  }
+
+  try {
+    const triggerFromSearch = !!config.testSearchQuery
+    const {testPlan, initialSummary} = await getTestsToTrigger(
+      api,
+      triggerConfigs,
+      reporter,
+      triggerFromSearch,
+      config.failOnMissingTests,
+      false
+    )
+
+    return {testPlan, initialSummary}
+  } catch (error) {
+    if (error instanceof CiError) {
+      throw error
+    }
+
+    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
+  }
+}
+
 export const executeWithDetails = async (
   runConfig: WrapperConfig,
-  {jUnitReport, reporters, runId, suites}: ExecuteOptions
+  {initialSummary, jUnitReport, reporters, runId, suites, testPlan}: ExecuteOptions
 ): Promise<{
   results: Result[]
   summary: Summary
@@ -348,7 +408,7 @@ export const executeWithDetails = async (
   }
 
   const mainReporter = getReporter(localReporters)
-  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
+  const {results, summary} = await executeTests(mainReporter, localConfig, suites, testPlan, initialSummary)
 
   const orgSettings = await getOrgSettings(mainReporter, localConfig)
 

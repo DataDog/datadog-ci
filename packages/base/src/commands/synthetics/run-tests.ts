@@ -131,6 +131,10 @@ export class SyntheticsRunTestsCommand extends BaseCommand {
     description: 'The build command to generate the assets to run the tests against.',
   })
 
+  public dryRun = Option.Boolean('--dryRun,--dry-run', {
+    description: 'List the tests that would be triggered without actually running them.',
+  })
+
   public async execute(): Promise<number | void> {
     return executePluginCommand(this)
   }

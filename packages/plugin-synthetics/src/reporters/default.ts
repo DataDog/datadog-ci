@@ -20,6 +20,8 @@ import {
   ResultInBatch,
   TestRequest,
   ReporterContext,
+  RunTestsCommandConfig,
+  TestPlan,
 } from '../interfaces'
 import {isBaseResult, isTimedOutRetry, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
@@ -33,6 +35,7 @@ import {
   pluralize,
   readableOperation,
   ResultOutcome,
+  InitialSummary,
 } from '../utils/public'
 
 import {ICONS} from './constants'
@@ -398,6 +401,74 @@ export class DefaultReporter implements MainReporter {
 
   public resultReceived(result: ResultInBatch): void {
     return
+  }
+
+  public dryRunEnd(
+    summary: InitialSummary,
+    testPlan: TestPlan,
+    config: RunTestsCommandConfig,
+    orgSettings?: SyntheticsOrgSettings
+  ) {
+    const {bold: b, gray, red, yellow} = chalk
+
+    const lines: string[] = []
+
+    if (summary.testsNotFound.size > 0) {
+      const testsNotFoundListStr = gray(`(${[...summary.testsNotFound].join(', ')})`)
+      lines.push(
+        `${yellow(
+          `${b(summary.testsNotFound.size)} ${pluralize('test', summary.testsNotFound.size)} not found`
+        )} ${testsNotFoundListStr}\n`
+      )
+    }
+
+    if (summary.testsNotAuthorized.size > 0) {
+      const testsNotAuthorizedListStr = gray(`(${[...summary.testsNotAuthorized].join(', ')})`)
+      lines.push(
+        `${red(
+          `${b(summary.testsNotAuthorized.size)} ${pluralize('test', summary.testsNotAuthorized.size)} not authorized`
+        )} ${testsNotAuthorizedListStr}\n`
+      )
+    }
+
+    const testsToTriggerCount = testPlan.filter((item) => item.executionRule !== ExecutionRule.SKIPPED).length
+    lines.push(`${b('Dry Run Summary:')}`)
+    lines.push(`• Would trigger ${b(testsToTriggerCount)} ${pluralize('test', testsToTriggerCount)}`)
+
+    const skippedCount = testPlan.filter((item) => item.executionRule === ExecutionRule.SKIPPED).length
+    if (skippedCount) {
+      lines.push(`• ${b(skippedCount)} skipped`)
+    }
+
+    if (config.defaultTestOverrides) {
+      const defaultOverrideKeys = Object.keys(config.defaultTestOverrides)
+      if (defaultOverrideKeys.length > 0) {
+        lines.push(`• Default overrides applied to all tests: ${gray(defaultOverrideKeys.join(', '))}`)
+      }
+    }
+
+    if (config) {
+      const {batchTimeout, failOnCriticalErrors, failOnMissingTests, failOnTimeout, selectiveRerun, tunnel} = config
+      lines.push(`• Fail on timeout: ${b(failOnTimeout)}`)
+      lines.push(`• Fail on missing tests: ${b(failOnMissingTests)}`)
+      lines.push(`• Fail on critical errors: ${b(failOnCriticalErrors)}`)
+      if (selectiveRerun !== undefined) {
+        lines.push(`• Selective rerun: ${b(selectiveRerun)}`)
+      }
+      if (tunnel) {
+        lines.push(`• Tunnel: ${b('enabled')}`)
+      }
+      if (batchTimeout !== undefined) {
+        lines.push(`• Batch timeout: ${b(batchTimeout)}ms`)
+      }
+    }
+
+    if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
+      const cap = orgSettings.onDemandConcurrencyCap
+      lines.push(`• Max parallelization configured: ${b(cap)} ${pluralize('test', cap)} running at the same time`)
+    }
+
+    this.write(lines.join('\n') + '\n')
   }
 
   public runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings) {

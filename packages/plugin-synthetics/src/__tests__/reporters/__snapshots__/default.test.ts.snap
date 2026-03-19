@@ -1,5 +1,105 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Default reporter dryRunEnd Simple case: 1 blocking test to trigger 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
+exports[`Default reporter dryRunEnd With all config options 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mfalse[22m
+• Fail on missing tests: [1mtrue[22m
+• Fail on critical errors: [1mtrue[22m
+• Selective rerun: [1mtrue[22m
+• Tunnel: [1menabled[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
+exports[`Default reporter dryRunEnd With default overrides 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Default overrides applied to all tests: [90mstartUrl, body[39m
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
+exports[`Default reporter dryRunEnd With onDemandConcurrencyCap set 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
+exports[`Default reporter dryRunEnd With skipped tests 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m2[22m tests
+• [1m1[22m skipped
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
+exports[`Default reporter dryRunEnd With tests not found and not authorized 1`] = `
+"[33m[1m1[22m test not found[39m [90m(aaa-aaa-aaa)[39m
+
+[31m[1m2[22m tests not authorized[39m [90m(bbb-bbb-bbb, ccc-ccc-ccc)[39m
+
+[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
+exports[`Default reporter dryRunEnd communicates N tests parallelization 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+• Max parallelization configured: [1m3[22m tests running at the same time
+"
+`;
+
+exports[`Default reporter dryRunEnd communicates no parallelization (1 test at a time) 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+• Max parallelization configured: [1m1[22m test running at the same time
+"
+`;
+
+exports[`Default reporter dryRunEnd does not communicate for uncapped orgs 1`] = `
+"[1mDry Run Summary:[22m
+• Would trigger [1m1[22m test
+• Fail on timeout: [1mtrue[22m
+• Fail on missing tests: [1mfalse[22m
+• Fail on critical errors: [1mfalse[22m
+• Batch timeout: [1m120000[22mms
+"
+`;
+
 exports[`Default reporter renderApiRequestDescription dns result 1`] = `"Query for example.org"`;
 
 exports[`Default reporter renderApiRequestDescription dns result 2`] = `"Query for example.org on server 1.2.3.4"`;

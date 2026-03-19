@@ -15,7 +15,7 @@ import {
   TestMissing,
   TestSkipped,
   TestWithOverride,
-  TestPayload,
+  TestPlanItem,
   DeployTestsCommandConfig,
 } from './interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
@@ -138,19 +138,12 @@ export const getTestsToTrigger = async (
     testsAndConfigsOverride.filter(isMobileTestWithOverride)
   )
 
-  const overriddenTestsToTrigger: TestPayload[] = []
-  const waitedTests: Test[] = []
+  const testPlan: TestPlanItem[] = []
   testsAndConfigsOverride.forEach((item) => {
     if ('errorMessage' in item) {
       errorMessages.push(item.errorMessage)
-    }
-
-    if ('overriddenConfig' in item) {
-      overriddenTestsToTrigger.push(item.overriddenConfig)
-    }
-
-    if ('test' in item) {
-      waitedTests.push(item.test)
+    } else {
+      testPlan.push({test: item.test, testOverrides: item.overriddenConfig, executionRule: item.executionRule})
     }
   })
 
@@ -167,16 +160,16 @@ export const getTestsToTrigger = async (
     throw new CiError('UNAUTHORIZED_TESTS', testsNotAuthorizedListStr)
   }
 
-  if (!overriddenTestsToTrigger.length) {
+  if (!testPlan.length) {
     throw new CiError('NO_TESTS_TO_RUN')
-  } else if (overriddenTestsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
+  } else if (testPlan.length > MAX_TESTS_TO_TRIGGER) {
     throw new CriticalError(
       'TOO_MANY_TESTS_TO_TRIGGER',
       `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
     )
   }
 
-  return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
+  return {testPlan, initialSummary}
 }
 
 export const getTestAndOverrideConfig = async (
@@ -215,7 +208,7 @@ export const getTestAndOverrideConfig = async (
   if (executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
 
-    return {overriddenConfig}
+    return {test, overriddenConfig, executionRule: ExecutionRule.SKIPPED}
   }
   reporter.testWait(test)
 
@@ -240,7 +233,7 @@ export const getTestAndOverrideConfig = async (
     )
   }
 
-  return {test, overriddenConfig}
+  return {test, overriddenConfig, executionRule}
 }
 
 const getTest = async (

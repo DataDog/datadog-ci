@@ -16,15 +16,19 @@ import {
   ExecutionRule,
   MainReporter,
   Result,
+  RunTestsCommandConfig,
   SelectiveRerunDecision,
   ServerTest,
   Summary,
+  TestPlan,
   UserConfigOverride,
 } from '../../interfaces'
 import {DefaultReporter, renderApiRequestDescription} from '../../reporters/default'
 import {isTimedOutRetry} from '../../utils/internal'
+import {createInitialSummary, InitialSummary} from '../../utils/public'
 
 import {
+  ciConfig,
   getApiResult,
   getApiTest,
   getBrowserResult,
@@ -545,6 +549,98 @@ describe('Default reporter', () => {
       )
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
+    })
+  })
+
+  describe('dryRunEnd', () => {
+    beforeEach(() => {
+      writeMock.mockClear()
+    })
+
+    const baseConfig: RunTestsCommandConfig = ciConfig
+
+    const makeTestPlan = (items: {executionRule: ExecutionRule}[]): TestPlan =>
+      items.map(({executionRule}) => ({
+        executionRule,
+        test: getApiTest(),
+        testOverrides: {public_id: getApiTest().public_id},
+      }))
+
+    const baseSummary: InitialSummary = createInitialSummary()
+
+    const cases: {description: string; summary: InitialSummary; testPlan: TestPlan; config: RunTestsCommandConfig}[] = [
+      {
+        description: 'Simple case: 1 blocking test to trigger',
+        summary: baseSummary,
+        testPlan: makeTestPlan([{executionRule: ExecutionRule.BLOCKING}]),
+        config: baseConfig,
+      },
+      {
+        description: 'With skipped tests',
+        summary: baseSummary,
+        testPlan: makeTestPlan([
+          {executionRule: ExecutionRule.BLOCKING},
+          {executionRule: ExecutionRule.BLOCKING},
+          {executionRule: ExecutionRule.SKIPPED},
+        ]),
+        config: baseConfig,
+      },
+      {
+        description: 'With tests not found and not authorized',
+        summary: {
+          ...baseSummary,
+          testsNotFound: new Set(['aaa-aaa-aaa']),
+          testsNotAuthorized: new Set(['bbb-bbb-bbb', 'ccc-ccc-ccc']),
+        },
+        testPlan: makeTestPlan([{executionRule: ExecutionRule.BLOCKING}]),
+        config: baseConfig,
+      },
+      {
+        description: 'With default overrides',
+        summary: baseSummary,
+        testPlan: makeTestPlan([{executionRule: ExecutionRule.BLOCKING}]),
+        config: {...baseConfig, defaultTestOverrides: {startUrl: 'https://example.org', body: 'payload'}},
+      },
+      {
+        description: 'With all config options',
+        summary: baseSummary,
+        testPlan: makeTestPlan([{executionRule: ExecutionRule.BLOCKING}]),
+        config: {
+          ...baseConfig,
+          batchTimeout: 120000,
+          failOnCriticalErrors: true,
+          failOnMissingTests: true,
+          failOnTimeout: false,
+          selectiveRerun: true,
+          tunnel: true,
+        },
+      },
+      {
+        description: 'With onDemandConcurrencyCap set',
+        summary: baseSummary,
+        testPlan: makeTestPlan([{executionRule: ExecutionRule.BLOCKING}]),
+        config: baseConfig,
+      },
+    ]
+
+    test.each(cases)('$description', ({summary, testPlan, config}) => {
+      reporter.dryRunEnd(summary, testPlan, config)
+      const output = writeMock.mock.calls.map((c) => c[0]).join('')
+      expect(output).toMatchSnapshot()
+    })
+
+    const onDemandConcurrencyCaps: {description: string; cap: number}[] = [
+      {cap: 0, description: 'does not communicate for uncapped orgs'},
+      {cap: 1, description: 'communicates no parallelization (1 test at a time)'},
+      {cap: 3, description: 'communicates N tests parallelization'},
+    ]
+
+    test.each(onDemandConcurrencyCaps)('$description', ({cap}) => {
+      reporter.dryRunEnd(baseSummary, makeTestPlan([{executionRule: ExecutionRule.BLOCKING}]), baseConfig, {
+        onDemandConcurrencyCap: cap,
+      })
+      const output = writeMock.mock.calls.map((c) => c[0]).join('')
+      expect(output).toMatchSnapshot()
     })
   })
 })
