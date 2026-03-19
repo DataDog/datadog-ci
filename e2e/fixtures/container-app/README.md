@@ -26,10 +26,10 @@ az ad sp create-for-rbac \
 
 Then configure OIDC federated identity credentials for GitHub Actions (see the Datadog SECENG guide for details).
 
-### 3. Add GitHub Actions secrets
+### 3. Add GitHub Actions variables
 
-| Secret | Value |
-|--------|-------|
+| Variable | Value |
+|----------|-------|
 | `AZURE_CLIENT_ID_E2E` | Service principal `appId` |
 | `AZURE_TENANT_ID_E2E` | Azure `tenant` |
 | `AZURE_SUBSCRIPTION_ID_E2E` | Azure subscription ID |

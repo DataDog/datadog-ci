@@ -164,9 +164,9 @@ jobs:
         if: needs.check-container-app-changes.outputs.should_run == 'true'
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID_E2E }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID_E2E }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
+          client-id: ${{ vars.AZURE_CLIENT_ID_E2E }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID_E2E }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
       - name: Run e2e tests
         run: yarn jest --config jest.config-e2e.mjs --colors
         env:
@@ -176,9 +176,9 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_E2E }}
-          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_E2E }}
-          AZURE_CONTAINER_APP_ENV: ${{ secrets.AZURE_CONTAINER_APP_ENV_E2E }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
+          AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
           AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
 
   check-container-app-changes:
