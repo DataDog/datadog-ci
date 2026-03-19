@@ -412,6 +412,7 @@ const dependencies = [
   .join(',\n')
 
 const e2eTestDependencies = [
+  '"@types/jest": "29.5.14"',
   '"jest": "29.6.2"',
   '"ts-jest": "29.1.1"',
   '"typescript": "5.1.6"',
