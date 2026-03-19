@@ -70,7 +70,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private minifiedPathPrefix = Option.String('--minified-path-prefix')
-  private projectPath = Option.String('--project-path', '')
+  private projectPath = Option.String('--project-path')
   private releaseVersion = Option.String('--release-version')
   private repositoryURL = Option.String('--repository-url')
   private service = Option.String('--service')
@@ -103,7 +103,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
     }
 
     if (!this.minifiedPathPrefix) {
-      this.context.stderr.write('Missing minified path\n')
+      this.context.stderr.write('Missing minified path prefix\n')
 
       return 1
     }
@@ -181,7 +181,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
         })
       )
     } catch (e) {
-      this.context.stdout.write(renderGitWarning(e))
+      this.context.stdout.write(renderGitWarning(e) + '\n')
     }
   }
 
@@ -358,7 +358,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
         this.cliVersion,
         this.service!,
         this.releaseVersion!,
-        this.projectPath
+        this.projectPath ?? ''
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
