@@ -16,7 +16,7 @@ export const execPromise = async (command: string, env?: Record<string, string |
     child_process.exec(command, {env: {...process.env, ...env}}, (error, stdout, stderr) => {
       if (error) {
         resolve({
-          exitCode: error.code || 1,
+          exitCode: typeof error.code === 'number' ? error.code : 1,
           stdout: stdout.trim(),
           stderr: stderr.trim(),
         })

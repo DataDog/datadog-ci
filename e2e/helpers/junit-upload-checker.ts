@@ -23,17 +23,17 @@ export const checkJunitUpload = async (options: CheckJunitUploadOptions): Promis
   const baseFilterQuery = `@test.service:${service} @git.commit.sha:${commitSha}`
   const finalFilterQuery = `${baseFilterQuery} test_level:${testLevel} ${extraFilter}`
 
-  const params = {
-    filterQuery: finalFilterQuery,
-    filterFrom: new Date(new Date().getTime() + -300 * 1000), // Last 5 minutes
-    filterTo: new Date(),
-    pageLimit: 5,
-  }
-
   let numAttempts = 0
   let data: unknown[] = []
 
   while (numAttempts++ < MAX_NUM_ATTEMPTS) {
+    const params = {
+      filterQuery: finalFilterQuery,
+      filterFrom: new Date(new Date().getTime() + -300 * 1000), // Last 5 minutes
+      filterTo: new Date(),
+      pageLimit: 5,
+    }
+
     console.log(`Querying CI Visibility tests with ${finalFilterQuery}.`)
 
     try {
