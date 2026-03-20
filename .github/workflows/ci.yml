@@ -180,7 +180,6 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
           AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
-          AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
           AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
 
