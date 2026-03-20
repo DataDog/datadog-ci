@@ -31,6 +31,29 @@ export const execPromise = async (command: string, env?: Record<string, string |
   })
 }
 
+export const execPromiseWithRetries = async (
+  command: string,
+  env?: Record<string, string | undefined>,
+  {maxAttempts = 3, delaySeconds = 30}: {maxAttempts?: number; delaySeconds?: number} = {}
+): Promise<ExecResult> => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const result = await execPromise(command, env)
+    if (result.exitCode === 0) {
+      return result
+    }
+    if (attempt < maxAttempts) {
+      console.log(`Command failed (attempt ${attempt}/${maxAttempts}), retrying in ${delaySeconds}s...`)
+      console.log(`stdout: ${result.stdout}`)
+      console.log(`stderr: ${result.stderr}`)
+      await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000))
+    } else {
+      return result
+    }
+  }
+  // Unreachable, but satisfies TypeScript
+  throw new Error('Unexpected: exhausted retries without returning')
+}
+
 export const execSync = (command: string, env?: Record<string, string | undefined>): string => {
   return child_process.execSync(command, {
     encoding: 'utf-8',

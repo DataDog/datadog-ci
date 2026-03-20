@@ -4,7 +4,7 @@ import {
   verifyWindowsInstrumented,
   verifyWindowsUninstrumented,
 } from './helpers/aas-verifier'
-import {DATADOG_CI_COMMAND, execPromise} from './helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
 const describeOrSkip = process.env.SKIP_AAS_TESTS === 'true' ? describe.skip : describe
 
@@ -40,32 +40,24 @@ describeOrSkip('aas (Linux)', () => {
   })
 
   it('linux instrument and verify', async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${linuxAppName}" --no-source-code-integration`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
       }
     )
-    if (result.exitCode !== 0) {
-      console.error('stdout:', result.stdout)
-      console.error('stderr:', result.stderr)
-    }
     expect(result.exitCode).toBe(0)
 
     verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
   })
 
   it('linux uninstrument and verify', async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${linuxAppName}"`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
       }
     )
-    if (result.exitCode !== 0) {
-      console.error('stdout:', result.stdout)
-      console.error('stderr:', result.stderr)
-    }
     expect(result.exitCode).toBe(0)
 
     verifyLinuxUninstrumented(linuxAppName, resourceGroup, subscriptionId)
@@ -104,32 +96,24 @@ describeOrSkip('aas (Windows)', () => {
   })
 
   it('windows instrument and verify', async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}" --windows-runtime node --no-source-code-integration`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
       }
     )
-    if (result.exitCode !== 0) {
-      console.error('stdout:', result.stdout)
-      console.error('stderr:', result.stderr)
-    }
     expect(result.exitCode).toBe(0)
 
     verifyWindowsInstrumented(windowsAppName, resourceGroup, subscriptionId)
   })
 
   it('windows uninstrument and verify', async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}"`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
       }
     )
-    if (result.exitCode !== 0) {
-      console.error('stdout:', result.stdout)
-      console.error('stderr:', result.stderr)
-    }
     expect(result.exitCode).toBe(0)
 
     verifyWindowsUninstrumented(windowsAppName, resourceGroup, subscriptionId)
