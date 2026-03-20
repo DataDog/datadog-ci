@@ -1,0 +1,21 @@
+{
+  "name": "e2e-cleanup-function",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/src/functions/cleanupResources.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "func start",
+    "prestart": "npm run build"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/arm-resources": "^6.0.0",
+    "@azure/arm-appcontainers": "^2.0.0",
+    "@azure/arm-appservice": "^15.0.0",
+    "@azure/identity": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
