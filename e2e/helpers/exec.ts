@@ -34,7 +34,7 @@ export const execPromise = async (command: string, env?: Record<string, string |
 export const execPromiseWithRetries = async (
   command: string,
   env?: Record<string, string | undefined>,
-  {maxAttempts = 3, delaySeconds = 30}: {maxAttempts?: number; delaySeconds?: number} = {}
+  {maxAttempts = 3, delaySeconds = 5}: {maxAttempts?: number; delaySeconds?: number} = {}
 ): Promise<ExecResult> => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const result = await execPromise(command, env)
