@@ -20,7 +20,7 @@ describeOrSkip('aas (Linux)', () => {
         ` --name "${linuxAppName}"` +
         ` --resource-group "${resourceGroup}"` +
         ` --plan "${linuxPlan}"` +
-        ` --runtime 'NODE:20-lts'` +
+        ` --runtime "NODE:20-lts"` +
         ` --https-only true` +
         ` --output none`
     )
@@ -84,7 +84,7 @@ describeOrSkip('aas (Windows)', () => {
         ` --name "${windowsAppName}"` +
         ` --resource-group "${resourceGroup}"` +
         ` --plan "${windowsPlan}"` +
-        ` --runtime 'NODE:20LTS'` +
+        ` --runtime "NODE:20LTS"` +
         ` --https-only true` +
         ` --output none`
     )
