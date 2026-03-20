@@ -7,8 +7,8 @@ export interface ExecResult {
 }
 
 // In CI the synthetic project installs @datadog/datadog-ci from artifact
-// tarballs, so `yarn datadog-ci` works. Locally, `yarn launch` runs from
-// source via tsx. Override with DATADOG_CI_COMMAND env var.
+// tarballs, so `yarn datadog-ci` works. Locally, create an e2e/.env.local
+// file with DATADOG_CI_COMMAND='yarn launch' to run from source via tsx.
 export const DATADOG_CI_COMMAND = process.env.DATADOG_CI_COMMAND ?? 'yarn datadog-ci'
 
 export const execPromise = async (command: string, env?: Record<string, string | undefined>): Promise<ExecResult> => {
