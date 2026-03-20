@@ -1,3 +1,5 @@
+import crypto from 'node:crypto'
+
 import {
   verifyLinuxInstrumented,
   verifyLinuxUninstrumented,
@@ -6,12 +8,14 @@ import {
 } from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
+const randomSuffix = () => crypto.randomBytes(4).toString('hex')
+
 const describeOrSkip = process.env.SKIP_AAS_TESTS === 'true' ? describe.skip : describe
 
 describeOrSkip('aas (Linux)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
-  const linuxAppName = process.env.AZURE_AAS_LINUX_NAME!
+  const linuxAppName = `dd-ci-aas-linux-${randomSuffix()}`
   const linuxPlan = process.env.AZURE_AAS_LINUX_PLAN!
 
   beforeAll(async () => {
@@ -67,7 +71,7 @@ describeOrSkip('aas (Linux)', () => {
 describeOrSkip('aas (Windows)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
-  const windowsAppName = process.env.AZURE_AAS_WINDOWS_NAME!
+  const windowsAppName = `dd-ci-aas-win-${randomSuffix()}`
   const windowsPlan = process.env.AZURE_AAS_WINDOWS_PLAN!
 
   beforeAll(async () => {
@@ -95,6 +99,7 @@ describeOrSkip('aas (Windows)', () => {
     }
   })
 
+  // Windows site extension installs are slow (~4min) and may need retries
   it('windows instrument and verify', async () => {
     const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}" --windows-runtime node --no-source-code-integration`,
@@ -105,7 +110,7 @@ describeOrSkip('aas (Windows)', () => {
     expect(result.exitCode).toBe(0)
 
     verifyWindowsInstrumented(windowsAppName, resourceGroup, subscriptionId)
-  })
+  }, 900_000)
 
   it('windows uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(
@@ -117,5 +122,5 @@ describeOrSkip('aas (Windows)', () => {
     expect(result.exitCode).toBe(0)
 
     verifyWindowsUninstrumented(windowsAppName, resourceGroup, subscriptionId)
-  })
+  }, 600_000)
 })

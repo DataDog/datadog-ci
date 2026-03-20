@@ -183,8 +183,6 @@ jobs:
           AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
           AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
-          AZURE_AAS_LINUX_NAME: dd-ci-aas-linux-${{ github.run_id }}-n${{ matrix.version }}
-          AZURE_AAS_WINDOWS_NAME: dd-ci-aas-win-${{ github.run_id }}-n${{ matrix.version }}
 
   check-container-app-changes:
     name: Check container-app changes
