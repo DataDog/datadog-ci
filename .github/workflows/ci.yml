@@ -220,7 +220,8 @@ jobs:
               - 'packages/base/package.json'
               - 'packages/base/src/helpers/serverless/**'
               - 'packages/base/src/commands/aas/**'
-              - 'e2e/aas.test.ts'
+              - 'e2e/aas-linux.test.ts'
+              - 'e2e/aas-windows.test.ts'
               - 'e2e/helpers/aas-verifier.ts'
               - '.github/workflows/ci.yml'
 
