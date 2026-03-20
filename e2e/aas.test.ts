@@ -1,0 +1,133 @@
+import {
+  verifyLinuxInstrumented,
+  verifyLinuxUninstrumented,
+  verifyWindowsInstrumented,
+  verifyWindowsUninstrumented,
+} from './helpers/aas-verifier'
+import {DATADOG_CI_COMMAND, execPromise} from './helpers/exec'
+
+const describeOrSkip = process.env.SKIP_AAS_TESTS === 'true' ? describe.skip : describe
+
+describeOrSkip('aas (Linux)', () => {
+  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
+  const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
+  const linuxAppName = process.env.AZURE_AAS_LINUX_NAME!
+  const linuxPlan = process.env.AZURE_AAS_LINUX_PLAN!
+
+  beforeAll(async () => {
+    const result = await execPromise(
+      `az webapp create` +
+        ` --name "${linuxAppName}"` +
+        ` --resource-group "${resourceGroup}"` +
+        ` --plan "${linuxPlan}"` +
+        ` --runtime 'NODE:20-lts'` +
+        ` --https-only true` +
+        ` --output none`
+    )
+    if (result.exitCode !== 0) {
+      throw new Error(`Failed to create Linux web app (exit code ${result.exitCode}): ${result.stderr}`)
+    }
+  })
+
+  afterAll(async () => {
+    try {
+      await execPromise(`az webapp delete --name "${linuxAppName}" --resource-group "${resourceGroup}" --output none`)
+    } catch (error) {
+      console.error('Failed to delete ephemeral Linux web app:', error)
+    }
+  })
+
+  it('linux instrument and verify', async () => {
+    const result = await execPromise(
+      `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${linuxAppName}" --no-source-code-integration`,
+      {
+        DD_API_KEY: process.env.DD_API_KEY,
+      }
+    )
+    if (result.exitCode !== 0) {
+      console.error('stdout:', result.stdout)
+      console.error('stderr:', result.stderr)
+    }
+    expect(result.exitCode).toBe(0)
+
+    verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
+  })
+
+  it('linux uninstrument and verify', async () => {
+    const result = await execPromise(
+      `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${linuxAppName}"`,
+      {
+        DD_API_KEY: process.env.DD_API_KEY,
+      }
+    )
+    if (result.exitCode !== 0) {
+      console.error('stdout:', result.stdout)
+      console.error('stderr:', result.stderr)
+    }
+    expect(result.exitCode).toBe(0)
+
+    verifyLinuxUninstrumented(linuxAppName, resourceGroup, subscriptionId)
+  })
+})
+
+describeOrSkip('aas (Windows)', () => {
+  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
+  const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
+  const windowsAppName = process.env.AZURE_AAS_WINDOWS_NAME!
+  const windowsPlan = process.env.AZURE_AAS_WINDOWS_PLAN!
+
+  beforeAll(async () => {
+    const result = await execPromise(
+      `az webapp create` +
+        ` --name "${windowsAppName}"` +
+        ` --resource-group "${resourceGroup}"` +
+        ` --plan "${windowsPlan}"` +
+        ` --runtime 'NODE:20LTS'` +
+        ` --https-only true` +
+        ` --output none`
+    )
+    if (result.exitCode !== 0) {
+      throw new Error(`Failed to create Windows web app (exit code ${result.exitCode}): ${result.stderr}`)
+    }
+  })
+
+  afterAll(async () => {
+    try {
+      await execPromise(`az webapp delete --name "${windowsAppName}" --resource-group "${resourceGroup}" --output none`)
+    } catch (error) {
+      console.error('Failed to delete ephemeral Windows web app:', error)
+    }
+  })
+
+  it('windows instrument and verify', async () => {
+    const result = await execPromise(
+      `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}" --windows-runtime node --no-source-code-integration`,
+      {
+        DD_API_KEY: process.env.DD_API_KEY,
+      }
+    )
+    if (result.exitCode !== 0) {
+      console.error('stdout:', result.stdout)
+      console.error('stderr:', result.stderr)
+    }
+    expect(result.exitCode).toBe(0)
+
+    verifyWindowsInstrumented(windowsAppName, resourceGroup, subscriptionId)
+  })
+
+  it('windows uninstrument and verify', async () => {
+    const result = await execPromise(
+      `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}"`,
+      {
+        DD_API_KEY: process.env.DD_API_KEY,
+      }
+    )
+    if (result.exitCode !== 0) {
+      console.error('stdout:', result.stdout)
+      console.error('stderr:', result.stderr)
+    }
+    expect(result.exitCode).toBe(0)
+
+    verifyWindowsUninstrumented(windowsAppName, resourceGroup, subscriptionId)
+  })
+})

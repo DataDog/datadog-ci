@@ -103,7 +103,7 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
-    needs: [build-and-test, check-container-app-changes]
+    needs: [build-and-test, check-container-app-changes, check-aas-changes]
     permissions:
       contents: read
       id-token: write
@@ -161,7 +161,7 @@ jobs:
           yarn set version stable
           yarn install --no-immutable
       - name: Azure login (OIDC)
-        if: needs.check-container-app-changes.outputs.should_run == 'true'
+        if: needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true'
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID_E2E }}
@@ -176,10 +176,15 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' }}
+          SKIP_AAS_TESTS: ${{ needs.check-aas-changes.outputs.should_run != 'true' }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
           AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
           AZURE_CONTAINER_APP_NAME: dd-ci-${{ github.run_id }}-n${{ matrix.version }}
+          AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
+          AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
+          AZURE_AAS_LINUX_NAME: dd-ci-aas-linux-${{ github.run_id }}-n${{ matrix.version }}
+          AZURE_AAS_WINDOWS_NAME: dd-ci-aas-win-${{ github.run_id }}-n${{ matrix.version }}
 
   check-container-app-changes:
     name: Check container-app changes
@@ -199,6 +204,26 @@ jobs:
               - 'e2e/fixtures/container-app/**'
               - 'e2e/container-app.test.ts'
               - 'e2e/helpers/container-app-verifier.ts'
+              - '.github/workflows/ci.yml'
+
+  check-aas-changes:
+    name: Check aas changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.aas }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        id: filter
+        with:
+          filters: |
+            aas:
+              - 'packages/plugin-aas/**'
+              - 'packages/base/package.json'
+              - 'packages/base/src/helpers/serverless/**'
+              - 'packages/base/src/commands/aas/**'
+              - 'e2e/aas.test.ts'
+              - 'e2e/helpers/aas-verifier.ts'
               - '.github/workflows/ci.yml'
 
   e2e-test-windows:
@@ -271,6 +296,7 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           SKIP_CONTAINER_APP_TESTS: 'true'
+          SKIP_AAS_TESTS: 'true'
 
   # We only test with a single plugin and a single Node.js version.
   test-plugin-auto-install-during-npx:
