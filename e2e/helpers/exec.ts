@@ -31,6 +31,15 @@ export const execPromise = async (command: string, env?: Record<string, string |
   })
 }
 
+// Transient Azure errors that are safe to retry
+const RETRYABLE_PATTERNS = ['GatewayTimeout', 'RestError', 'Operation was canceled', 'ETIMEDOUT', 'ECONNRESET']
+
+const isRetryable = (result: ExecResult): boolean => {
+  const output = `${result.stdout} ${result.stderr}`
+
+  return RETRYABLE_PATTERNS.some((pattern) => output.includes(pattern))
+}
+
 export const execPromiseWithRetries = async (
   command: string,
   env?: Record<string, string | undefined>,
@@ -41,8 +50,10 @@ export const execPromiseWithRetries = async (
     if (result.exitCode === 0) {
       return result
     }
-    if (attempt < maxAttempts) {
-      console.log(`Command failed (attempt ${attempt}/${maxAttempts}), retrying in ${delaySeconds}s...`)
+    if (attempt < maxAttempts && isRetryable(result)) {
+      console.log(
+        `Command failed with retryable error (attempt ${attempt}/${maxAttempts}), retrying in ${delaySeconds}s...`
+      )
       console.log(`stdout: ${result.stdout}`)
       console.log(`stderr: ${result.stderr}`)
       await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000))
