@@ -31,7 +31,9 @@ describeOrSkip('aas (Linux)', () => {
 
   afterAll(async () => {
     try {
-      await execPromise(`az webapp delete --name "${linuxAppName}" --resource-group "${resourceGroup}" --output none`)
+      await execPromise(
+        `az webapp delete --name "${linuxAppName}" --resource-group "${resourceGroup}" --keep-empty-plan --output none`
+      )
     } catch (error) {
       console.error('Failed to delete ephemeral Linux web app:', error)
     }
@@ -93,7 +95,9 @@ describeOrSkip('aas (Windows)', () => {
 
   afterAll(async () => {
     try {
-      await execPromise(`az webapp delete --name "${windowsAppName}" --resource-group "${resourceGroup}" --output none`)
+      await execPromise(
+        `az webapp delete --name "${windowsAppName}" --resource-group "${resourceGroup}" --keep-empty-plan --output none`
+      )
     } catch (error) {
       console.error('Failed to delete ephemeral Windows web app:', error)
     }
