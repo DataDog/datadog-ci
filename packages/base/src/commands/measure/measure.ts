@@ -6,7 +6,8 @@ import {Command, Option} from 'clipanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import {envDDGithubJobName, getGithubJobNameFromLogs, getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
+import {envDDGithubJobName, getCIEnv, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
+import {CILevel, LEVEL_TO_NUMBER, validateLevel} from '@datadog/datadog-ci-base/helpers/ci-levels'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -69,11 +70,13 @@ export class MeasureCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    if (this.level !== 'pipeline' && this.level !== 'job') {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
+    const levelError = validateLevel(this.level)
+    if (levelError) {
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${levelError}\n`)
 
       return 1
     }
+    const level = this.level as CILevel
 
     const cliMeasures: string[] | undefined = this.measures
     if (!cliMeasures && !this.measuresFile) {
@@ -103,14 +106,14 @@ export class MeasureCommand extends BaseCommand {
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      if (this.level !== 'pipeline') {
+      if (level !== 'pipeline') {
         const jobName = getGithubJobNameFromLogs(this.context)
         if (jobName) {
           ciEnv[envDDGithubJobName] = jobName
         }
       }
 
-      const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)
+      const exitStatus = await this.sendMeasures(ciEnv, LEVEL_TO_NUMBER[level], provider, measures)
       if (exitStatus !== 0 && this.noFail) {
         this.context.stderr.write(
           `${chalk.yellow.bold('[WARNING]')} sending measures failed but continuing due to --no-fail\n`

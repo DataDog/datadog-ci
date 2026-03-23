@@ -321,9 +321,15 @@ describe('getCIEnv', () => {
       getCIEnv()
     }).toThrow()
 
-    process.env = {GITLAB_CI: 'true', CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'}
+    process.env = {
+      GITLAB_CI: 'true',
+      CI_PIPELINE_ID: 'build-id',
+      CI_JOB_ID: '10',
+      CI_PROJECT_URL: 'url',
+      CI_JOB_STAGE: 'test',
+    }
     expect(getCIEnv()).toEqual({
-      ciEnv: {CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url'},
+      ciEnv: {CI_PIPELINE_ID: 'build-id', CI_JOB_ID: '10', CI_PROJECT_URL: 'url', CI_JOB_STAGE: 'test'},
       provider: 'gitlab',
     })
   })
@@ -337,6 +343,18 @@ describe('getCIEnv', () => {
     process.env = {JENKINS_URL: 'something', DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'}
     expect(getCIEnv()).toEqual({
       ciEnv: {DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id'},
+      provider: 'jenkins',
+    })
+
+    // DD_CUSTOM_STAGE_ID is optional (allowed to be missing)
+    process.env = {
+      JENKINS_URL: 'something',
+      DD_CUSTOM_PARENT_ID: 'span-id',
+      DD_CUSTOM_TRACE_ID: 'trace-id',
+      DD_CUSTOM_STAGE_ID: 'stage-id',
+    }
+    expect(getCIEnv()).toEqual({
+      ciEnv: {DD_CUSTOM_PARENT_ID: 'span-id', DD_CUSTOM_TRACE_ID: 'trace-id', DD_CUSTOM_STAGE_ID: 'stage-id'},
       provider: 'jenkins',
     })
   })
@@ -354,6 +372,58 @@ describe('getCIEnv', () => {
     })
   })
 
+  test('github', () => {
+    process.env = {GITHUB_ACTIONS: 'true'}
+    expect(() => {
+      getCIEnv()
+    }).toThrow()
+
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_SERVER_URL: 'https://github.com',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_RUN_ID: '123',
+      GITHUB_RUN_ATTEMPT: '1',
+      GITHUB_JOB: 'build',
+      GITHUB_ACTION: 'run1',
+    }
+    expect(getCIEnv()).toEqual({
+      ciEnv: {
+        GITHUB_SERVER_URL: 'https://github.com',
+        GITHUB_REPOSITORY: 'owner/repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'build',
+        GITHUB_ACTION: 'run1',
+      },
+      provider: 'github',
+    })
+
+    // DD_GITHUB_JOB_NAME is optional (allowed to be missing)
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_SERVER_URL: 'https://github.com',
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_RUN_ID: '123',
+      GITHUB_RUN_ATTEMPT: '1',
+      GITHUB_JOB: 'build',
+      GITHUB_ACTION: 'run1',
+      DD_GITHUB_JOB_NAME: 'my-job',
+    }
+    expect(getCIEnv()).toEqual({
+      ciEnv: {
+        GITHUB_SERVER_URL: 'https://github.com',
+        GITHUB_REPOSITORY: 'owner/repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'build',
+        GITHUB_ACTION: 'run1',
+        DD_GITHUB_JOB_NAME: 'my-job',
+      },
+      provider: 'github',
+    })
+  })
+
   test('azurepipelines', () => {
     process.env = {TF_BUILD: 'something'}
     expect(() => {
@@ -365,9 +435,17 @@ describe('getCIEnv', () => {
       SYSTEM_TEAMPROJECTID: 'project-id',
       BUILD_BUILDID: '55',
       SYSTEM_JOBID: 'job-id',
+      SYSTEM_STAGENAME: 'Build',
+      SYSTEM_STAGEATTEMPT: '1',
     }
     expect(getCIEnv()).toEqual({
-      ciEnv: {SYSTEM_TEAMPROJECTID: 'project-id', BUILD_BUILDID: '55', SYSTEM_JOBID: 'job-id'},
+      ciEnv: {
+        SYSTEM_TEAMPROJECTID: 'project-id',
+        BUILD_BUILDID: '55',
+        SYSTEM_JOBID: 'job-id',
+        SYSTEM_STAGENAME: 'Build',
+        SYSTEM_STAGEATTEMPT: '1',
+      },
       provider: 'azurepipelines',
     })
   })

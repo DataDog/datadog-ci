@@ -63,10 +63,11 @@ export const CI_ENGINES = {
 }
 
 export const envDDGithubJobName = 'DD_GITHUB_JOB_NAME'
+const envJenkinsCustomStageID = 'DD_CUSTOM_STAGE_ID'
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
 // to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
-const envAllowedToBeMissing = [envDDGithubJobName]
+const envAllowedToBeMissing = [envDDGithubJobName, envJenkinsCustomStageID]
 
 export const githubWellKnownDiagnosticDirsUnix = [
   '/home/runner/actions-runner/cached/_diag', // for SaaS
@@ -951,7 +952,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
   if (process.env.GITLAB_CI) {
     return {
-      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID']),
+      ciEnv: filterEnv(['CI_PROJECT_URL', 'CI_PIPELINE_ID', 'CI_JOB_ID', 'CI_JOB_STAGE']),
       provider: 'gitlab',
     }
   }
@@ -965,6 +966,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
         'GITHUB_RUN_ATTEMPT',
         'GITHUB_JOB',
         envDDGithubJobName,
+        'GITHUB_ACTION',
       ]),
       provider: 'github',
     }
@@ -986,14 +988,20 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
   if (process.env.JENKINS_URL) {
     return {
-      ciEnv: filterEnv(['DD_CUSTOM_PARENT_ID', 'DD_CUSTOM_TRACE_ID']),
+      ciEnv: filterEnv(['DD_CUSTOM_PARENT_ID', envJenkinsCustomStageID, 'DD_CUSTOM_TRACE_ID']),
       provider: 'jenkins',
     }
   }
 
   if (process.env.TF_BUILD) {
     return {
-      ciEnv: filterEnv(['SYSTEM_TEAMPROJECTID', 'BUILD_BUILDID', 'SYSTEM_JOBID']),
+      ciEnv: filterEnv([
+        'SYSTEM_TEAMPROJECTID',
+        'BUILD_BUILDID',
+        'SYSTEM_JOBID',
+        'SYSTEM_STAGENAME',
+        'SYSTEM_STAGEATTEMPT',
+      ]),
       provider: 'azurepipelines',
     }
   }

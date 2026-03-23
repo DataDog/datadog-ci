@@ -63,9 +63,96 @@ describe('execute', () => {
   })
 
   test('should fail if an invalid level given', async () => {
-    const {context, code} = await runCLI('stage', ['key:1'], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'})
+    const {context, code} = await runCLI('invalid', ['key:1'], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'})
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('Level must be one of [pipeline, job]')
+    expect(context.stderr.toString()).toContain('Level must be one of [pipeline, job, stage, step]')
+  })
+
+  test('should fail if stage level is used with unsupported provider', async () => {
+    const {context, code} = await runCLI('stage', ['key:1'], {
+      BUILDKITE: 'true',
+      BUILDKITE_BUILD_ID: 'id',
+      BUILDKITE_JOB_ID: 'id',
+    })
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain("Level 'stage' is only supported for providers")
+  })
+
+  test('should fail if step level is used with non-github provider', async () => {
+    const {context, code} = await runCLI('step', ['key:1'], {
+      BUILDKITE: 'true',
+      BUILDKITE_BUILD_ID: 'id',
+      BUILDKITE_JOB_ID: 'id',
+    })
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain("Level 'step' is only supported for provider [github]")
+  })
+
+  test('stage level works for gitlab', async () => {
+    const result = await runCLI(
+      'stage',
+      ['key:12345'],
+      {
+        GITLAB_CI: 'true',
+        CI_PROJECT_URL: 'url',
+        CI_PIPELINE_ID: 'id',
+        CI_JOB_ID: 'job-id',
+        CI_JOB_STAGE: 'test',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('"ci_level": 2')
+  })
+
+  test('stage level works for jenkins', async () => {
+    const result = await runCLI(
+      'stage',
+      ['key:12345'],
+      {
+        JENKINS_URL: 'url',
+        DD_CUSTOM_PARENT_ID: 'span-id',
+        DD_CUSTOM_TRACE_ID: 'trace-id',
+        DD_CUSTOM_STAGE_ID: 'stage-id',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('"ci_level": 2')
+  })
+
+  test('stage level fails for jenkins without DD_CUSTOM_STAGE_ID', async () => {
+    const {context, code} = await runCLI('stage', ['key:12345'], {
+      JENKINS_URL: 'url',
+      DD_CUSTOM_PARENT_ID: 'span-id',
+      DD_CUSTOM_TRACE_ID: 'trace-id',
+    })
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain(
+      "Level 'stage' for Jenkins requires the Datadog plugin version to be >= 9.2"
+    )
+  })
+
+  test('step level works for github actions', async () => {
+    const result = await runCLI(
+      'step',
+      ['key:12345'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'build',
+        GITHUB_ACTION: 'run1',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('"ci_level": 3')
   })
 
   test('should fail if no measures provided', async () => {
@@ -140,6 +227,7 @@ describe('execute', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'fake job name',
+        GITHUB_ACTION: 'run1',
       },
       ['--dry-run']
     )
@@ -160,6 +248,7 @@ describe('execute', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'fake job name',
+        GITHUB_ACTION: 'run1',
       },
       ['--dry-run']
     )
