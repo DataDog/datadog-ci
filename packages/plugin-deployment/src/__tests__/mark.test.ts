@@ -55,6 +55,7 @@ describe('mark', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'fake job name',
+        GITHUB_ACTION: 'run1',
       })
       expect(code).toBe(0)
       const out = context.stdout.toString()
