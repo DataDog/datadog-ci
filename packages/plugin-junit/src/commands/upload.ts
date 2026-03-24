@@ -42,6 +42,8 @@ import {
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
+const xmlValidationOptions = {processEntities: false}
+type ParsedJunitXml = Record<string, unknown>
 
 const isJunitXmlReport = (file: string): boolean => {
   if (upath.extname(file) !== '.xml') {
@@ -59,12 +61,12 @@ const isJunitXmlReport = (file: string): boolean => {
 
 const validateXml = (xmlFilePath: string) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
-  const validationOutput = XMLValidator.validate(xmlFileContentString)
+  const validationOutput = XMLValidator.validate(xmlFileContentString, xmlValidationOptions)
   if (validationOutput !== true) {
     return validationOutput.err.msg
   }
-  const xmlParser = new XMLParser()
-  const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
+  const xmlParser = new XMLParser(xmlValidationOptions)
+  const xmlFileJSON = xmlParser.parse(String(xmlFileContentString)) as ParsedJunitXml
   if (!('testsuites' in xmlFileJSON) && !('testsuite' in xmlFileJSON)) {
     return 'Neither <testsuites> nor <testsuite> are the root tag.'
   } else if (!xmlFileJSON.testsuite && !xmlFileJSON.testsuites) {
