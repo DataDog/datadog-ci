@@ -1,3 +1,4 @@
+import {execSync} from 'child_process'
 import fs from 'fs'
 import os from 'os'
 
@@ -39,6 +40,16 @@ const commonMetadata = {
   overwrite: false,
 }
 
+const requireObjcopy = () => {
+  try {
+    execSync('objcopy --version', {stdio: 'ignore'})
+  } catch {
+    throw new Error(
+      'objcopy is not installed — these tests require binutils.\nTo install on macOS: brew install binutils'
+    )
+  }
+}
+
 describe('elf-symbols upload', () => {
   const runCommand = async (prepFunction: (command: ElfSymbolsUploadCommand) => void) => {
     const command = createCommand(ElfSymbolsUploadCommand)
@@ -72,6 +83,7 @@ describe('elf-symbols upload', () => {
     })
 
     test('uses API Key from env over config from JSON file', async () => {
+      requireObjcopy()
       const {exitCode, context} = await runCommand((cmd) => {
         cmd['configPath'] = `${fixtureDir}/config/datadog-ci.json`
         cmd['symbolsLocations'] = [fixtureDir]
@@ -197,6 +209,7 @@ describe('elf-symbols upload', () => {
     })
 
     test('uploads correct multipart payload with multiple locations', async () => {
+      requireObjcopy()
       const {exitCode} = await runCommand((cmd) => {
         cmd['symbolsLocations'] = [
           `${fixtureDir}/dyn_aarch64`,
@@ -253,6 +266,7 @@ describe('elf-symbols upload', () => {
     })
 
     test('uploads correct multipart payload without repository', async () => {
+      requireObjcopy()
       const {exitCode} = await runCommand((cmd) => {
         cmd['symbolsLocations'] = [fixtureDir]
       })
@@ -331,6 +345,7 @@ describe('elf-symbols upload', () => {
     })
 
     test('skips upload on dry run', async () => {
+      requireObjcopy()
       const {exitCode} = await runCommand((cmd) => {
         cmd['symbolsLocations'] = [fixtureDir]
         cmd['dryRun'] = true

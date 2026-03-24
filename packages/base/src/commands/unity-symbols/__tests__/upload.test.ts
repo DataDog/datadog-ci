@@ -1,3 +1,5 @@
+import {execSync} from 'child_process'
+
 import type {
   MultipartFileValue,
   MultipartPayload,
@@ -22,6 +24,16 @@ import {
 import {UnitySymbolsUploadCommand} from '../upload'
 
 const fixtureDir = 'src/commands/unity-symbols/__tests__/fixtures'
+
+const requireObjcopy = () => {
+  try {
+    execSync('objcopy --version', {stdio: 'ignore'})
+  } catch {
+    throw new Error(
+      'objcopy is not installed — these tests require binutils.\nTo install on macOS: brew install binutils'
+    )
+  }
+}
 
 jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
   ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
@@ -242,6 +254,7 @@ describe('unity-symbols upload', () => {
     })
 
     test('uploads correct multipart payloads without repository', async () => {
+      requireObjcopy()
       ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
 
       await runCommand((cmd) => {
