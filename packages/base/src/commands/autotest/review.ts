@@ -303,7 +303,7 @@ export class AutotestCommand extends BaseCommand {
             description:
               'Captures live production inputs for changed functions using Datadog Live Debugger. Takes 1-2 minutes. Start immediately and in the background.',
             prompt: PROD_DATA_COLLECTOR_PROMPT,
-            tools: ['Read', 'Grep', 'Glob', 'Bash', 'mcp__datadog-mcp__*'],
+            // Omit tools to inherit ALL parent tools including MCP.
           },
         },
       },
