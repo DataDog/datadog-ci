@@ -45,7 +45,8 @@ In addition, some optional parameters are available:
 * `--quiet` (default: false): suppresses individual line output for each upload. Success and error logs are never suppressed.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths. See details in the [dedicated section](#setting-the-project-path).
-* `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
+* `--repository-url` (default: empty): overrides the repository remote with a custom URL, for example, https://github.com/my-company/my-project. Can also be set via the `DD_GIT_REPOSITORY_URL` environment variable.
+* `--commit-sha` (default: empty): overrides the git commit SHA. Can also be set via the `DD_GIT_COMMIT_SHA` environment variable.
 
 ### Link errors with your source code
 
@@ -70,6 +71,14 @@ The value can be overridden with `--repository-url`.
 
 Example: With a remote `git@github.com:Datadog/example.git`, links pointing to `https://github.com/Datadog/example` are generated.
 This behavior can be overridden with links to `https://gitlab.com/Datadog/example` with the flag `--repository-url=https://gitlab.com/Datadog/example`.
+
+#### Bypassing git invocations
+
+If your build environment does not have access to the `.git/` folder, you can bypass git invocations by providing both `--repository-url` and `--commit-sha` (or `DD_GIT_REPOSITORY_URL` and `DD_GIT_COMMIT_SHA`).
+
+In this mode:
+- The source files are directly extracted from the `sources` field of each sourcemap, which means **untracked files may be sent to Datadog**.
+- The repository root is assumed to be the folder from which datadog-ci is run.
 
 #### Setting the project path
 

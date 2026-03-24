@@ -146,6 +146,56 @@ describe('upload', () => {
       expect(sourcemaps[0].gitData!.gitCommitSha).toHaveLength(40)
       expect(sourcemaps[0].gitData!.gitRepositoryPayload).toBeDefined()
     })
+
+    test('skips git when both --repository-url and --commit-sha are provided', async () => {
+      const write = jest.fn()
+      const command = createCommand(SourcemapsUploadCommand, {stdout: {write}})
+      command['repositoryURL'] = 'https://github.com/my-org/my-repo'
+      command['commitSha'] = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      const sourcemaps = new Array<Sourcemap>(
+        new Sourcemap(
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
+          'http://example/common.min.js',
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          '',
+          ''
+        )
+      )
+      await command['addRepositoryDataToPayloads'](sourcemaps)
+      expect(sourcemaps[0].gitData).toBeDefined()
+      expect(sourcemaps[0].gitData!.gitRepositoryURL).toBe('https://github.com/my-org/my-repo')
+      expect(sourcemaps[0].gitData!.gitCommitSha).toBe('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+      // The sourcemap sources are extracted directly, so the payload should be defined
+      expect(sourcemaps[0].gitData!.gitRepositoryPayload).toBeDefined()
+      const payload = JSON.parse(sourcemaps[0].gitData!.gitRepositoryPayload!)
+      expect(payload.data[0].hash).toBe('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+      expect(payload.data[0].repository_url).toBe('https://github.com/my-org/my-repo')
+      expect(payload.data[0].files).toContain('src/commands/sourcemaps/__tests__/git.test.ts')
+    })
+
+    test('reads repository-url and commit-sha from env vars', async () => {
+      const write = jest.fn()
+      const savedEnv = process.env
+      process.env = {
+        ...savedEnv,
+        DD_GIT_REPOSITORY_URL: 'https://github.com/my-org/my-repo',
+        DD_GIT_COMMIT_SHA: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      }
+      const command = createCommand(SourcemapsUploadCommand, {stdout: {write}})
+      const sourcemaps = new Array<Sourcemap>(
+        new Sourcemap(
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
+          'http://example/common.min.js',
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          '',
+          ''
+        )
+      )
+      await command['addRepositoryDataToPayloads'](sourcemaps)
+      process.env = savedEnv
+      expect(sourcemaps[0].gitData!.gitRepositoryURL).toBe('https://github.com/my-org/my-repo')
+      expect(sourcemaps[0].gitData!.gitCommitSha).toBe('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')
+    })
   })
 })
 

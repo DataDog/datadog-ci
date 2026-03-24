@@ -9,13 +9,17 @@ import {Sourcemap} from './interfaces'
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}
 Make sure the command is running within your git repository to fully leverage Datadog's git integration.
-To ignore this warning use the --disable-git flag.\n`)
+To ignore this warning use the --disable-git flag.
+You can also provide both --repository-url and --commit-sha (or DD_GIT_REPOSITORY_URL and DD_GIT_COMMIT_SHA) to use an alternative algorithm that does not require git.\n`)
 
 export const renderGitDataNotAttachedWarning = (sourcemap: string, errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} Could not attach git data for sourcemap ${sourcemap}: ${errorMessage}\n`)
 
 export const renderSourcesNotFoundWarning = (sourcemap: string) =>
   chalk.yellow(`${ICONS.WARNING} No tracked files found for sources contained in ${sourcemap}\n`)
+
+export const renderAbsolutePathWarning = (source: string) =>
+  chalk.yellow(`${ICONS.WARNING} Absolute path "${source}" is not supported and will be skipped\n`)
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
 

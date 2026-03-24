@@ -1,6 +1,7 @@
 import fs from 'fs'
 
 import * as simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
 
@@ -36,28 +37,91 @@ export interface RepositoryData {
 // To obtain the list of tracked files paths tied to a specific sourcemap, invoke the 'matchSourcemap' method.
 export const getRepositoryData = async (
   git: simpleGit.SimpleGit,
-  repositoryURL: string | undefined
+  repositoryURL?: string,
+  commitHash?: string
 ): Promise<RepositoryData> => {
-  // Invoke git commands to retrieve the remote, hash and tracked files.
-  // We're using Promise.all instead of Promise.allSettled since we want to fail early if
-  // any of the promises fails.
-  let remote: string
-  let hash: string
-  let trackedFiles: string[]
-  if (repositoryURL) {
-    ;[hash, trackedFiles] = await Promise.all([gitHash(git), gitTrackedFiles(git)])
-    remote = repositoryURL
-  } else {
-    ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
-  }
+  // Fetch remote/hash from git only when not overridden. Tracked files always come from git.
+  // Promise.all (not allSettled) fails fast if any git call rejects.
+  const [remote, hash, trackedFiles] = await Promise.all([
+    repositoryURL ? Promise.resolve(repositoryURL) : gitRemote(git),
+    commitHash ? Promise.resolve(commitHash) : gitHash(git),
+    gitTrackedFiles(git),
+  ])
 
-  const data = {
+  return {
     hash,
     remote,
     trackedFilesMatcher: new TrackedFilesMatcher(trackedFiles),
   }
+}
 
-  return data
+// Normalizes a list of sourcemap source paths to repository-relative file paths.
+//
+// Sourcemap sources often contain bundler-specific prefixes (e.g. "webpack:///./src/foo.ts").
+// This function strips those prefixes and the optional projectPath prefix, returning clean
+// relative paths suitable for use in the repository payload.
+// baseDir and cwd are intentionally separate:
+// - baseDir is the directory containing the sourcemap, used to resolve relative paths like "../src/foo.ts"
+//   (e.g. "../src/foo.ts" resolved from "/repo/dist/" gives "/repo/src/foo.ts")
+// - cwd is the repo root, used to turn the resolved path back into a repo-relative path
+//   (e.g. "/repo/src/foo.ts" relative to "/repo" gives "src/foo.ts")
+export const normalizeSources = (
+  sources: string[],
+  baseDir: string,
+  cwd: string,
+  onAbsolutePath?: (source: string) => void
+): string[] => {
+  const result: string[] = []
+  const seen = new Set<string>()
+
+  for (const source of sources) {
+    const normalized = normalizeSourcePath(source, baseDir, cwd, onAbsolutePath)
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized)
+      result.push(normalized)
+    }
+  }
+
+  return result
+}
+
+const normalizeSourcePath = (
+  source: string,
+  baseDir: string,
+  cwd: string,
+  onAbsolutePath?: (source: string) => void
+): string | undefined => {
+  let p: string
+
+  // Strip URL scheme (e.g. "webpack:///./src/foo.ts" or "webpack://MyProject/src/foo.ts")
+  const schemeMatch = source.match(/^[a-z][a-z0-9+\-.]*:\/\/([^/?#]*)(\/?.*)/)
+  if (schemeMatch) {
+    const host = schemeMatch[1]
+    const pathname = schemeMatch[2].replace(/^\//, '')
+    p = host ? `${host}/${pathname}` : pathname
+  } else {
+    p = source
+  }
+
+  // Strip leading ./
+  p = p.replace(/^\.\//, '')
+
+  if (upath.isAbsolute(p)) {
+    onAbsolutePath?.(source)
+
+    return undefined
+  }
+
+  // Normalize ../ paths to be relative to cwd (repo root)
+  if (p.startsWith('..')) {
+    p = upath.relative(cwd, upath.resolve(baseDir, p))
+  }
+
+  if (!p) {
+    return undefined
+  }
+
+  return p
 }
 
 // TrackedFilesMatcher can compute the list of tracked files related to a particular sourcemap.
