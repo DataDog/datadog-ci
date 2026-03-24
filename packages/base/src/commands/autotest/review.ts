@@ -144,10 +144,11 @@ Intentional behavior changes that were not flagged.
 ## Validation gaps
 What you could not validate.
 
-## Post results
+### Phase 3: Post results
 
-After writing validation_report.md, if the create_pr_comment tool is available, post
-the report as a PR comment. Use the full markdown report as the comment body.
+After writing validation_report.md, you MUST post the report as a PR comment using
+the create_pr_comment tool. Use the full markdown report as the comment body.
+This is a required step — do not skip it.
 
 ## Important constraints
 - Prefer execution over speculation.
