@@ -43,7 +43,6 @@ const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 const xmlValidationOptions = {processEntities: false}
-const xmlValidatorOptions = xmlValidationOptions as unknown as Parameters<typeof XMLValidator.validate>[1]
 
 const isJunitXmlReport = (file: string): boolean => {
   if (upath.extname(file) !== '.xml') {
@@ -61,7 +60,7 @@ const isJunitXmlReport = (file: string): boolean => {
 
 const validateXml = (xmlFilePath: string) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
-  const validationOutput = XMLValidator.validate(xmlFileContentString, xmlValidatorOptions)
+  const validationOutput = XMLValidator.validate(xmlFileContentString, xmlValidationOptions as any)
   if (validationOutput !== true) {
     return validationOutput.err.msg
   }
