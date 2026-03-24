@@ -1,14 +1,24 @@
-import {createWriteStream, mkdirSync} from 'fs'
+import {createWriteStream} from 'fs'
 import {join} from 'path'
-
-import {exec} from 'child_process'
-import {promisify} from 'util'
 
 import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
 import {detectDiffContext, getDiff} from './diff-context'
+
+const GITHUB_API_BASE = 'https://api.github.com'
+const GITHUB_USER_AGENT = 'datadog-ci-autotest'
+const GITHUB_PR_URL_RE = /github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/
+
+const parseGitHubPrUrl = (url: string): {repo: string; number: number} | undefined => {
+  const match = url.match(GITHUB_PR_URL_RE)
+  if (!match) {
+    return undefined
+  }
+
+  return {repo: match[1], number: parseInt(match[2], 10)}
+}
 
 const PROD_DATA_COLLECTOR_PROMPT = `You are a production data collector. Your ONLY job is to capture live
 production inputs using Datadog Live Debugger logpoints.
@@ -195,7 +205,7 @@ export class AutotestCommand extends BaseCommand {
   })
 
   private pr = Option.String('--pr', {
-    description: 'GitHub PR URL to validate. Uses `gh pr diff` to fetch the diff.',
+    description: 'GitHub PR URL to validate. Fetches the diff via the GitHub API.',
     required: false,
   })
 
@@ -223,10 +233,7 @@ export class AutotestCommand extends BaseCommand {
     if (this.pr) {
       // Fetch diff from GitHub via `gh pr diff`.
       this.context.stderr.write(`Fetching diff from ${this.pr}…\n`)
-      const match = this.pr.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
-      if (match) {
-        prInfo = {repo: match[1], number: parseInt(match[2], 10)}
-      }
+      prInfo = parseGitHubPrUrl(this.pr)
       try {
         diff = await this.fetchPrDiff(this.pr)
       } catch (error) {
@@ -287,17 +294,16 @@ export class AutotestCommand extends BaseCommand {
   }
 
   private async fetchPrDiff(prUrl: string): Promise<string> {
-    const match = prUrl.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
-    if (!match) {
+    const pr = parseGitHubPrUrl(prUrl)
+    if (!pr) {
       throw new Error(`Invalid GitHub PR URL: ${prUrl}`)
     }
-    const [, repo, prNumber] = match
     const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
 
-    const response = await fetch(`https://api.github.com/repos/${repo}/pulls/${prNumber}`, {
+    const response = await fetch(`${GITHUB_API_BASE}/repos/${pr.repo}/pulls/${pr.number}`, {
       headers: {
         Accept: 'application/vnd.github.v3.diff',
-        'User-Agent': 'datadog-ci-autotest',
+        'User-Agent': GITHUB_USER_AGENT,
         ...(token ? {Authorization: `token ${token}`} : {}),
       },
     })
@@ -312,56 +318,43 @@ export class AutotestCommand extends BaseCommand {
   private async runReview(diff: string, prInfo?: {repo: string; number: number}): Promise<number> {
     const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
     const {z} = await import('zod')
-    const execAsync = promisify(exec)
 
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
-    // GitHub PR tools — let the agent post/update comments on the PR.
-    // Uses the GitHub REST API directly (no gh CLI dependency).
-    // Auth: GITHUB_TOKEN (auto-available in GitHub Actions) or GH_TOKEN.
+    // GitHub PR tools — uses the REST API directly (no gh CLI dependency).
     const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+
+    const githubApiFetch = async (path: string, method: string, body?: object) => {
+      const response = await fetch(`${GITHUB_API_BASE}${path}`, {
+        method,
+        headers: {
+          Authorization: `token ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          'User-Agent': GITHUB_USER_AGENT,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      })
+      if (!response.ok) {
+        return {
+          content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${await response.text()}`}],
+          isError: true,
+        }
+      }
+
+      return {content: [{type: 'text' as const, text: JSON.stringify(await response.json())}]}
+    }
+
     const githubTools = prInfo && githubToken
       ? (() => {
           const {repo, number: prNumber} = prInfo
-          const headers = {
-            Authorization: `token ${githubToken}`,
-            Accept: 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json',
-            'User-Agent': 'datadog-ci-autotest',
-          }
 
           const createPrComment = tool(
             'create_pr_comment',
             'Post a new comment on the pull request. Use this to share your validation report.',
             {body: z.string().describe('Markdown body of the comment')},
-            async (args: {body: string}) => {
-              try {
-                const response = await fetch(
-                  `https://api.github.com/repos/${repo}/issues/${prNumber}/comments`,
-                  {method: 'POST', headers, body: JSON.stringify({body: args.body})}
-                )
-                if (!response.ok) {
-                  const text = await response.text()
-
-                  return {
-                    content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${text}`}],
-                    isError: true,
-                  }
-                }
-                const data = (await response.json()) as {id: number; html_url: string}
-
-                return {
-                  content: [
-                    {type: 'text' as const, text: `Comment posted: ${data.html_url} (id: ${data.id})`},
-                  ],
-                }
-              } catch (error) {
-                return {
-                  content: [{type: 'text' as const, text: `Failed to post comment: ${error}`}],
-                  isError: true,
-                }
-              }
-            }
+            async (args: {body: string}) =>
+              githubApiFetch(`/repos/${repo}/issues/${prNumber}/comments`, 'POST', {body: args.body})
           )
 
           const editPrComment = tool(
@@ -371,29 +364,8 @@ export class AutotestCommand extends BaseCommand {
               comment_id: z.string().describe('The comment ID to edit'),
               body: z.string().describe('New markdown body for the comment'),
             },
-            async (args: {comment_id: string; body: string}) => {
-              try {
-                const response = await fetch(
-                  `https://api.github.com/repos/${repo}/issues/comments/${args.comment_id}`,
-                  {method: 'PATCH', headers, body: JSON.stringify({body: args.body})}
-                )
-                if (!response.ok) {
-                  const text = await response.text()
-
-                  return {
-                    content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${text}`}],
-                    isError: true,
-                  }
-                }
-
-                return {content: [{type: 'text' as const, text: 'Comment updated successfully.'}]}
-              } catch (error) {
-                return {
-                  content: [{type: 'text' as const, text: `Failed to edit comment: ${error}`}],
-                  isError: true,
-                }
-              }
-            }
+            async (args: {comment_id: string; body: string}) =>
+              githubApiFetch(`/repos/${repo}/issues/comments/${args.comment_id}`, 'PATCH', {body: args.body})
           )
 
           return createSdkMcpServer({
@@ -428,6 +400,7 @@ export class AutotestCommand extends BaseCommand {
       mcpServers['github-pr'] = githubTools
     }
 
+    try {
     for await (const message of query({
       prompt: userPrompt,
       options: {
@@ -492,8 +465,10 @@ export class AutotestCommand extends BaseCommand {
       }
     }
 
-    spinner.stop()
-    logStream.end()
+    } finally {
+      spinner.stop()
+      logStream.end()
+    }
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
     return 0
