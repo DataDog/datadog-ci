@@ -199,7 +199,7 @@ Start now by:
 4. using those captured inputs as test fixtures to build and run a temporary validation
 5. writing validation_report.md`
 
-const MODEL = 'claude-sonnet-4-20250514'
+const MODEL = 'claude-opus-4-6-20250603'
 
 const MAX_DIFF_LENGTH = 512 * 1024 // 512 KB — keep within reasonable prompt size
 
