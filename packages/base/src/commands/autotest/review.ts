@@ -406,6 +406,7 @@ export class AutotestCommand extends BaseCommand {
       options: {
         mcpServers,
         cwd: logDir,
+        settingSources: ['project'],
         allowedTools: ['*'],
         permissionMode: 'bypassPermissions',
         systemPrompt: SYSTEM_PROMPT,
