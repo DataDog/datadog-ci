@@ -311,9 +311,18 @@ export class AutotestCommand extends BaseCommand {
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // GitHub PR tools — let the agent post/update comments on the PR.
-    const githubTools = prInfo
+    // Uses the GitHub REST API directly (no gh CLI dependency).
+    // Auth: GITHUB_TOKEN (auto-available in GitHub Actions) or GH_TOKEN.
+    const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+    const githubTools = prInfo && githubToken
       ? (() => {
           const {repo, number: prNumber} = prInfo
+          const headers = {
+            Authorization: `token ${githubToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'datadog-ci-autotest',
+          }
 
           const createPrComment = tool(
             'create_pr_comment',
@@ -321,12 +330,25 @@ export class AutotestCommand extends BaseCommand {
             {body: z.string().describe('Markdown body of the comment')},
             async (args: {body: string}) => {
               try {
-                const {stdout} = await execAsync(
-                  `gh pr comment ${prNumber} --repo ${repo} --body ${JSON.stringify(args.body)}`,
-                  {maxBuffer: 10 * 1024 * 1024}
+                const response = await fetch(
+                  `https://api.github.com/repos/${repo}/issues/${prNumber}/comments`,
+                  {method: 'POST', headers, body: JSON.stringify({body: args.body})}
                 )
+                if (!response.ok) {
+                  const text = await response.text()
 
-                return {content: [{type: 'text' as const, text: stdout || 'Comment posted successfully.'}]}
+                  return {
+                    content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${text}`}],
+                    isError: true,
+                  }
+                }
+                const data = (await response.json()) as {id: number; html_url: string}
+
+                return {
+                  content: [
+                    {type: 'text' as const, text: `Comment posted: ${data.html_url} (id: ${data.id})`},
+                  ],
+                }
               } catch (error) {
                 return {
                   content: [{type: 'text' as const, text: `Failed to post comment: ${error}`}],
@@ -345,12 +367,20 @@ export class AutotestCommand extends BaseCommand {
             },
             async (args: {comment_id: string; body: string}) => {
               try {
-                const {stdout} = await execAsync(
-                  `gh api repos/${repo}/issues/comments/${args.comment_id} -X PATCH -f body=${JSON.stringify(args.body)}`,
-                  {maxBuffer: 10 * 1024 * 1024}
+                const response = await fetch(
+                  `https://api.github.com/repos/${repo}/issues/comments/${args.comment_id}`,
+                  {method: 'PATCH', headers, body: JSON.stringify({body: args.body})}
                 )
+                if (!response.ok) {
+                  const text = await response.text()
 
-                return {content: [{type: 'text' as const, text: stdout || 'Comment updated successfully.'}]}
+                  return {
+                    content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${text}`}],
+                    isError: true,
+                  }
+                }
+
+                return {content: [{type: 'text' as const, text: 'Comment updated successfully.'}]}
               } catch (error) {
                 return {
                   content: [{type: 'text' as const, text: `Failed to edit comment: ${error}`}],
