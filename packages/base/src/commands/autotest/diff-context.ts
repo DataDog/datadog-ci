@@ -5,10 +5,16 @@ import {getGitHubEventPayload} from '../../helpers/utils'
 
 const execAsync = promisify(exec)
 
+export interface PrInfo {
+  repo: string // e.g. "DataDog/dd-go"
+  number: number
+}
+
 export interface DiffContext {
   baseSha: string
   headSha: string
   provider: string
+  pr?: PrInfo
 }
 
 const getGitHubDiffContext = (): DiffContext | undefined => {
@@ -23,7 +29,12 @@ const getGitHubDiffContext = (): DiffContext | undefined => {
     return undefined
   }
 
-  return {baseSha, headSha, provider: 'GitHub Actions'}
+  const pr =
+    process.env.GITHUB_REPOSITORY && eventPayload.pull_request.number
+      ? {repo: process.env.GITHUB_REPOSITORY, number: eventPayload.pull_request.number}
+      : undefined
+
+  return {baseSha, headSha, provider: 'GitHub Actions', pr}
 }
 
 const getGitLabDiffContext = (): DiffContext | undefined => {
@@ -37,7 +48,11 @@ const getGitLabDiffContext = (): DiffContext | undefined => {
     return undefined
   }
 
-  return {baseSha, headSha, provider: 'GitLab CI'}
+  const prNumber = process.env.CI_MERGE_REQUEST_IID ? parseInt(process.env.CI_MERGE_REQUEST_IID, 10) : undefined
+  const pr =
+    process.env.CI_PROJECT_PATH && prNumber ? {repo: process.env.CI_PROJECT_PATH, number: prNumber} : undefined
+
+  return {baseSha, headSha, provider: 'GitLab CI', pr}
 }
 
 export const detectDiffContext = (): DiffContext | undefined => {

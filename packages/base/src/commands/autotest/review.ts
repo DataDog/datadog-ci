@@ -217,10 +217,15 @@ export class AutotestCommand extends BaseCommand {
     }
 
     let diff: string
+    let prInfo: {repo: string; number: number} | undefined
 
     if (this.pr) {
       // Fetch diff from GitHub via `gh pr diff`.
       this.context.stderr.write(`Fetching diff from ${this.pr}…\n`)
+      const match = this.pr.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
+      if (match) {
+        prInfo = {repo: match[1], number: parseInt(match[2], 10)}
+      }
       try {
         diff = await this.fetchPrDiff(this.pr)
       } catch (error) {
@@ -243,6 +248,7 @@ export class AutotestCommand extends BaseCommand {
         return 1
       }
 
+      prInfo = diffContext.pr
       this.context.stderr.write(`Detected ${diffContext.provider} — computing diff…\n`)
       try {
         diff = await getDiff(diffContext)
@@ -270,7 +276,7 @@ export class AutotestCommand extends BaseCommand {
     this.context.stderr.write('Starting AI validation…\n')
 
     try {
-      return await this.runReview(diff)
+      return await this.runReview(diff, prInfo)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.context.stderr.write(`Error: AI review failed: ${message}\n`)
@@ -296,7 +302,7 @@ export class AutotestCommand extends BaseCommand {
     return stdout
   }
 
-  private async runReview(diff: string): Promise<number> {
+  private async runReview(diff: string, prInfo?: {repo: string; number: number}): Promise<number> {
     const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
     const {z} = await import('zod')
     const execAsync = promisify(exec)
@@ -304,14 +310,9 @@ export class AutotestCommand extends BaseCommand {
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // GitHub PR tools — let the agent post/update comments on the PR.
-    const prUrl = this.pr
-    const githubTools = prUrl
+    const githubTools = prInfo
       ? (() => {
-          const match = prUrl.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
-          if (!match) {
-            return undefined
-          }
-          const [, repo, prNumber] = match
+          const {repo, number: prNumber} = prInfo
 
           const createPrComment = tool(
             'create_pr_comment',
