@@ -16,6 +16,8 @@ jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 import * as fs from 'fs'
 
+import type {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
+
 import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
@@ -40,7 +42,6 @@ import {
   AWS_SESSION_TOKEN_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
 } from '../constants'
-import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {
   requestAWSCredentials,
   requestDatadogEnvVars,

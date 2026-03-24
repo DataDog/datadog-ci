@@ -1,7 +1,10 @@
-import {ContainerAppsAPIClient, ContainerApp, Container, Secret} from '@azure/arm-appcontainers'
-import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
+import type {ContainerApp, Container, Secret} from '@azure/arm-appcontainers'
+import type {TagsOperations} from '@azure/arm-resources'
+import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
+
+import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
+import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 import {
   ContainerAppInstrumentCommand,
   DEFAULT_SIDECAR_CPU,

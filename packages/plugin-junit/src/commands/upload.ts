@@ -1,6 +1,9 @@
 import fs from 'fs'
 import os from 'os'
 
+import type {APIHelper, Payload} from '../interfaces'
+import type {SpanTags, RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
@@ -14,7 +17,6 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
-import {SpanTags, RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseTags, parseMetrics} from '@datadog/datadog-ci-base/helpers/tags'
@@ -25,7 +27,6 @@ import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
-import {APIHelper, Payload} from '../interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,

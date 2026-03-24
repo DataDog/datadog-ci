@@ -1,8 +1,10 @@
+import type {AasConfigOptions, WindowsRuntime} from './common'
+
 import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-import {AasCommand, AasConfigOptions, WindowsRuntime} from './common'
+import {AasCommand} from './common'
 
 export class AasInstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]

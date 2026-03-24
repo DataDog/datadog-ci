@@ -1,5 +1,11 @@
 import fs from 'fs'
 
+import type {ElfFileMetadata} from './elf'
+import type {MappingMetadata} from './interfaces'
+import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
@@ -11,14 +17,10 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {
-  RepositoryData,
-  getRepositoryData,
-  newSimpleGit,
-} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globAsync} from '@datadog/datadog-ci-base/helpers/glob'
-import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {
   buildPath,
   DEFAULT_CONFIG_PATHS,
@@ -30,7 +32,6 @@ import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {
-  ElfFileMetadata,
   getElfFileMetadata,
   isSupportedElfType,
   getBuildIdWithArch,
@@ -39,7 +40,7 @@ import {
   isSupportedArch,
 } from './elf'
 import {getElfRequestBuilder, uploadMultipartHelper} from './helpers'
-import {ELF_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_ELF_DEBUG_INFOS, VALUE_NAME_ELF_DEBUG_INFOS} from './interfaces'
+import {ELF_DEBUG_INFOS_FILENAME, TYPE_ELF_DEBUG_INFOS, VALUE_NAME_ELF_DEBUG_INFOS} from './interfaces'
 import {
   renderArgumentMissingError,
   renderCommandInfo,

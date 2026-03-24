@@ -1,5 +1,6 @@
-import {ContainerApp} from '@azure/arm-appcontainers'
-import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
+import type {ContainerApp} from '@azure/arm-appcontainers'
+import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
+
 import {
   DEFAULT_LOGS_PATH,
   DEFAULT_VOLUME_PATH,

@@ -2,13 +2,9 @@ import fs from 'fs'
 import process from 'process'
 import stream from 'stream'
 
-import {
-  CloudWatchLogsClient,
-  DescribeLogStreamsCommand,
-  GetLogEventsCommand,
-  LogStream,
-  OutputLogEvent,
-} from '@aws-sdk/client-cloudwatch-logs'
+import type {LogStream, OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
+
+import {CloudWatchLogsClient, DescribeLogStreamsCommand, GetLogEventsCommand} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {
   makeRunCLI,

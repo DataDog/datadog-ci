@@ -1,10 +1,11 @@
 jest.mock('fs/promises')
 import * as fsPromises from 'fs/promises'
 
+import type {TriggerConfig} from '../interfaces'
+
 import * as api from '../api'
 import {PluginCommand as ImportTestsCommand} from '../commands/import-tests'
 import {importTests} from '../import-tests-lib'
-import {TriggerConfig} from '../interfaces'
 import * as tests from '../test'
 
 import {getApiLocalTestDefinition, mockApi, mockReporter} from './fixtures'

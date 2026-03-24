@@ -1,13 +1,10 @@
-import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
+import type {StringDictionary} from '@azure/arm-appservice'
+import type {AasConfigOptions, WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
+
+import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {
-  AasConfigOptions,
-  getExtensionId,
-  renderWebApp,
-  resourceIdSegment,
-  WebApp,
-} from '@datadog/datadog-ci-base/commands/aas/common'
+import {getExtensionId, renderWebApp, resourceIdSegment} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'

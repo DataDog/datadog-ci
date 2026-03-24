@@ -1,5 +1,8 @@
-import {DeleteRolePolicyCommand, GetRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
-import {GetFunctionCommand, LambdaClient} from '@aws-sdk/client-lambda'
+import type {IAMClient} from '@aws-sdk/client-iam'
+import type {LambdaClient} from '@aws-sdk/client-lambda'
+
+import {DeleteRolePolicyCommand, GetRolePolicyCommand, PutRolePolicyCommand} from '@aws-sdk/client-iam'
+import {GetFunctionCommand} from '@aws-sdk/client-lambda'
 
 import {DD_LAMBDA_EXTENSION_LAYER_NAME} from '../constants'
 

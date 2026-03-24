@@ -1,13 +1,15 @@
+import type {APIHelper} from '../api'
+import type {InitialSummary} from '../utils/public'
+import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
+
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import {default as axios} from 'axios'
 
-import {APIHelper, apiConstructor} from '../api'
+import {apiConstructor} from '../api'
 import {CiError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import * as mobile from '../mobile'
 import {getTestAndOverrideConfig, getTestsFromSearchQuery, getTestsToTrigger, MAX_TESTS_TO_TRIGGER} from '../test'
-import {InitialSummary} from '../utils/public'
 
 import {getApiTest, getSummary, mockReporter} from './fixtures'
 

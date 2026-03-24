@@ -1,9 +1,8 @@
+import type {DeploymentEvent} from './interfaces'
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {DeploymentEvent} from './interfaces'
 
 export const apiUrl = getApiUrl()
 

@@ -1,36 +1,41 @@
-import {
-  DescribeSubscriptionFiltersCommand,
+import type {
   DescribeLogGroupsResponse,
   DescribeSubscriptionFiltersResponse,
   ServiceInputTypes as CWLServiceInputTypes,
   ServiceOutputTypes as CWLServiceOutputTypes,
-  DescribeLogGroupsCommand,
-  CreateLogGroupCommand,
-  DeleteSubscriptionFilterCommand,
-  PutSubscriptionFilterCommand,
   LogStream,
-  DescribeLogStreamsCommand,
-  GetLogEventsCommand,
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {
   FunctionConfiguration as LFunctionConfiguration,
   ServiceInputTypes as LServiceInputTypes,
   ServiceOutputTypes as LServiceOutputTypes,
-  GetLayerVersionCommand,
-  GetFunctionCommand,
-  ListFunctionsCommand,
-  UpdateFunctionConfigurationCommand,
-  TagResourceCommand,
-  ListTagsCommand,
   ListTagsResponse,
   GetLayerVersionCommandInput,
   ServiceInputTypes,
   ServiceOutputTypes,
   ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
+import type {AwsStub} from 'aws-sdk-client-mock'
+
+import {
+  DescribeSubscriptionFiltersCommand,
+  DescribeLogGroupsCommand,
+  CreateLogGroupCommand,
+  DeleteSubscriptionFilterCommand,
+  PutSubscriptionFilterCommand,
+  DescribeLogStreamsCommand,
+  GetLogEventsCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {
+  GetLayerVersionCommand,
+  GetFunctionCommand,
+  ListFunctionsCommand,
+  UpdateFunctionConfigurationCommand,
+  TagResourceCommand,
+  ListTagsCommand,
+} from '@aws-sdk/client-lambda'
 import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {AwsStub} from 'aws-sdk-client-mock'
 
 export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes, any>) => {
   lambdaClientMock.on(UpdateFunctionConfigurationCommand).resolves({})

@@ -1,8 +1,4 @@
-import type {AxiosPromise, AxiosRequestConfig} from 'axios'
-
-import {BaseContext} from 'clipanion'
-
-import {
+import type {
   CI_ENV_VARS,
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -36,6 +32,8 @@ import {
   PR_NUMBER,
   CI_JOB_ID,
 } from './tags'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {BaseContext} from 'clipanion'
 
 export interface Metadata {
   ci: {

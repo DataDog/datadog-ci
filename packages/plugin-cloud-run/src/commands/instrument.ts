@@ -1,4 +1,5 @@
 import type {IContainer, IEnvVar, IService, IServiceTemplate} from '../types'
+import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -10,7 +11,6 @@ import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/r
 import {
   generateConfigDiff,
   createInstrumentedTemplate,
-  ServerlessConfigOptions,
   getBaseEnvVars,
 } from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {

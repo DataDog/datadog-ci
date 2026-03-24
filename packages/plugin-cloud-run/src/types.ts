@@ -1,4 +1,4 @@
-import {ServicesClient} from '@google-cloud/run'
+import type {ServicesClient} from '@google-cloud/run'
 
 type LastOverload<T> = T extends (...args: infer A) => infer R ? (...args: A) => R : never
 

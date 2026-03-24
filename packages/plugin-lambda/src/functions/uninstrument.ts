@@ -1,10 +1,13 @@
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {LayerKey} from '../constants'
+import type {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import type {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   Runtime,
   UpdateFunctionConfigurationRequest,
 } from '@aws-sdk/client-lambda'
+
 import {
   API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -28,7 +31,6 @@ import {
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LayerKey,
   LAYER_LOOKUP,
   LOG_ENABLED_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
@@ -45,7 +47,6 @@ import {
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
-import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
 

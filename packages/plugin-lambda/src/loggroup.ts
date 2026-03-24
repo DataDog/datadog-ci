@@ -1,20 +1,23 @@
-import {
+import type {LogGroupConfiguration} from './interfaces'
+import type {
   CloudWatchLogsClient,
-  CreateLogGroupCommand,
   CreateLogGroupCommandInput,
-  DeleteSubscriptionFilterCommand,
   DeleteSubscriptionFilterCommandInput,
-  DescribeLogGroupsCommand,
   DescribeLogGroupsCommandInput,
-  DescribeSubscriptionFiltersCommand,
   DescribeSubscriptionFiltersCommandInput,
-  PutSubscriptionFilterCommand,
   PutSubscriptionFilterCommandInput,
   SubscriptionFilter,
 } from '@aws-sdk/client-cloudwatch-logs'
 
+import {
+  CreateLogGroupCommand,
+  DeleteSubscriptionFilterCommand,
+  DescribeLogGroupsCommand,
+  DescribeSubscriptionFiltersCommand,
+  PutSubscriptionFilterCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+
 import {SUBSCRIPTION_FILTER_NAME} from './constants'
-import {LogGroupConfiguration} from './interfaces'
 
 export enum SubscriptionState {
   Empty,

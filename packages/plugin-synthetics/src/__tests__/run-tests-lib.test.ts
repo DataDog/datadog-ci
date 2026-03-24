@@ -1,13 +1,15 @@
 import fs from 'fs'
 import os from 'os'
 
+import type {Suite, Summary} from '../interfaces'
+
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import * as api from '../api'
 import * as batchUtils from '../batch'
 import {CiError, CriticalError} from '../errors'
-import {ExecutionRule, Suite, Summary} from '../interfaces'
+import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'

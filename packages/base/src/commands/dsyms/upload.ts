@@ -1,5 +1,10 @@
 import {promises} from 'fs'
 
+import type {Dsym, DWARF} from './interfaces'
+import type {ApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
@@ -7,21 +12,20 @@ import upath from 'upath'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
-import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
-import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
-import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {CompressedDsym, Dsym, DWARF} from './interfaces'
+import {CompressedDsym} from './interfaces'
 import {
   renderCommandDetail,
   renderCommandInfo,

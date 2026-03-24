@@ -1,3 +1,6 @@
+import type {StateMachineDefinitionType} from '../helpers'
+import type {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+
 import {
   CloudWatchLogsClient,
   CreateLogGroupCommand,
@@ -12,7 +15,6 @@ import {
   UntagResourceCommand,
   UpdateStateMachineCommand,
   SFNClient,
-  DescribeStateMachineCommandOutput,
   LogLevel,
 } from '@aws-sdk/client-sfn'
 import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
@@ -31,7 +33,7 @@ import {
   attachPolicyToStateMachineIamRole,
   updateStateMachineDefinition,
 } from '../awsCommands'
-import {buildLogAccessPolicyName, StateMachineDefinitionType} from '../helpers'
+import {buildLogAccessPolicyName} from '../helpers'
 
 describe('awsCommands test', () => {
   const expectedResp = {fakeKey: 'fakeValue'} as any

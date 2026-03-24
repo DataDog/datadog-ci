@@ -1,6 +1,9 @@
+import type {FunctionConfiguration, LambdaConfigOptions} from '../interfaces'
+import type {LambdaClientConfig} from '@aws-sdk/client-lambda'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {LambdaClient} from '@aws-sdk/client-lambda'
 import {LambdaUninstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -21,7 +24,6 @@ import {
   maskConfig,
 } from '../functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from '../functions/uninstrument'
-import {FunctionConfiguration, LambdaConfigOptions} from '../interfaces'
 import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import * as commonRenderer from '../renderers/common-renderer'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'

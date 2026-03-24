@@ -1,5 +1,8 @@
+import type {BaseResult, Batch, PollResult, Result, ResultInBatch, ServerResult, Test, TriggerInfo} from '../interfaces'
+import type {RecursivePartial} from '../utils/internal'
+import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
+
 import {MOCK_BASE_URL, getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 
@@ -8,19 +11,8 @@ process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 import {apiConstructor} from '../api'
 import {getResultsToReport, reportReceivedResults, runTests, waitForResults} from '../batch'
 import {BatchTimeoutRunawayError} from '../errors'
-import {
-  BaseResult,
-  Batch,
-  ExecutionRule,
-  PollResult,
-  Result,
-  ResultInBatch,
-  ServerResult,
-  Test,
-  TriggerInfo,
-} from '../interfaces'
+import {ExecutionRule} from '../interfaces'
 import {getDefaultConfig} from '../run-tests-lib'
-import {RecursivePartial} from '../utils/internal'
 import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
 

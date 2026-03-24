@@ -1,20 +1,20 @@
-import {Writable} from 'stream'
-
-import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
+import type {LayerKey} from '../constants'
+import type {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
+import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
+import type {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   GetFunctionCommandInput,
   ListFunctionsCommandOutput,
-  ListFunctionsCommand,
-  GetFunctionCommand,
-  UpdateFunctionConfigurationCommand,
   UpdateFunctionConfigurationCommandInput,
   Runtime,
 } from '@aws-sdk/client-lambda'
-import {FromIniInit} from '@aws-sdk/credential-provider-ini'
+import type {FromIniInit} from '@aws-sdk/credential-provider-ini'
+import type {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
+import type {Writable} from 'stream'
+
+import {ListFunctionsCommand, GetFunctionCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
-import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {
   API_KEY_ENV_VAR,
@@ -36,14 +36,12 @@ import {
   CI_KMS_API_KEY_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
-  LayerKey,
   LAYER_LOOKUP,
   EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
   RuntimeType,
   RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
-import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'

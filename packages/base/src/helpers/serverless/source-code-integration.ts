@@ -1,4 +1,6 @@
-import {BaseContext, Cli} from 'clipanion'
+import type {BaseContext} from 'clipanion'
+
+import {Cli} from 'clipanion'
 
 import {getCommitInfo, newSimpleGit} from '../../commands/git-metadata/git'
 import {GitMetadataUploadCommand} from '../../commands/git-metadata/upload'

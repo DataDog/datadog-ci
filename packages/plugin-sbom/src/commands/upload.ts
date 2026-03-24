@@ -1,6 +1,10 @@
 import fs from 'fs'
 import process from 'process'
 
+import type {ScaRequest} from '../types'
+import type Ajv from 'ajv'
+import type {AxiosPromise, AxiosResponse} from 'axios'
+
 import {SbomUploadCommand} from '@datadog/datadog-ci-base/commands/sbom/upload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -12,8 +16,7 @@ import {
   getMissingRequiredGitTags,
   GIT_BRANCH,
 } from '@datadog/datadog-ci-base/helpers/tags'
-import Ajv from 'ajv'
-import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
+import {isAxiosError} from 'axios'
 
 import {getApiHelper} from '../api'
 import {generatePayload} from '../payload'
@@ -28,7 +31,6 @@ import {
   renderSuccessfulCommand,
   renderUploading,
 } from '../renderer'
-import {ScaRequest} from '../types'
 import {
   filterInvalidDependencies,
   getValidator,

@@ -1,18 +1,12 @@
 import * as http from 'http'
-import * as net from 'net'
 import {URL} from 'url'
 
-import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
-import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
-import WebSocket, {Server as WebSocketServer} from 'ws'
-
-import {APIHelper, apiConstructor} from '../api'
-import {
+import type {APIHelper} from '../api'
+import type {
   ApiServerResult,
   BaseResult,
   Batch,
   BrowserServerResult,
-  ExecutionRule,
   Location,
   MainReporter,
   MultiStep,
@@ -40,6 +34,15 @@ import {
   LocalTestDefinition,
   TriggerInfo,
 } from '../interfaces'
+import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
+import type * as net from 'net'
+import type WebSocket from 'ws'
+
+import {Server as WebSocketServer} from 'ws'
+
+import {apiConstructor} from '../api'
+import {ExecutionRule} from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
 

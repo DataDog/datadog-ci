@@ -1,10 +1,11 @@
 import fs from 'fs'
 
+import type {Metadata, SpanTag, SpanTags} from './interfaces'
+import type {BaseContext} from 'clipanion'
+
 import chalk from 'chalk'
-import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
-import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
   CI_ENV_VARS,
   CI_JOB_NAME,

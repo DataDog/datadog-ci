@@ -1,6 +1,8 @@
+import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type {MultipartPayload, UploadOptions} from '@datadog/datadog-ci-base/helpers/upload'
+
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
-import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
-import {MultipartPayload, upload, UploadOptions} from '@datadog/datadog-ci-base/helpers/upload'
+import {upload} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const getUnityRequestBuilder = (apiKey: string, cliVersion: string, site: string) =>

@@ -1,7 +1,8 @@
 import {writeFile} from 'fs/promises'
 
+import type {ImportTestsCommandConfig, LocalTriggerConfig, MainReporter, TestConfig} from './interfaces'
+
 import {getApiHelper} from './api'
-import {ImportTestsCommandConfig, LocalTriggerConfig, MainReporter, TestConfig} from './interfaces'
 import {getTestConfigs} from './test'
 import {isLocalTriggerConfig} from './utils/internal'
 

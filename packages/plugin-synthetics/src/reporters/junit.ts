@@ -1,16 +1,9 @@
 import fs from 'fs'
 
-import type {Writable} from 'stream'
-
-import c from 'chalk'
-import upath from 'upath'
-import {Builder} from 'xml2js'
-
-import {
+import type {
   ApiServerResult,
   Assertion,
   BaseResult,
-  ExecutionRule,
   MultiStep,
   Reporter,
   ReporterContext,
@@ -21,6 +14,13 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
+import type {Writable} from 'stream'
+
+import c from 'chalk'
+import upath from 'upath'
+import {Builder} from 'xml2js'
+
+import {ExecutionRule} from '../interfaces'
 import {hasDefinedResult, isBaseResult, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
   getBatchUrl,

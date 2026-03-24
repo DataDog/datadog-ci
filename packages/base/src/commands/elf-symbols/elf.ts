@@ -1,6 +1,7 @@
-import {ExecException} from 'child_process'
 import {createHash} from 'crypto'
 import fs from 'fs'
+
+import type {ExecException} from 'child_process'
 
 import {createReadFunctions, FileReader} from '@datadog/datadog-ci-base/helpers/filereader'
 import {execute} from '@datadog/datadog-ci-base/helpers/utils'

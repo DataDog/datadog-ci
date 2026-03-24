@@ -3,9 +3,9 @@ import {once} from 'events'
 import {promises as fs} from 'fs'
 import http from 'http'
 
-import upath from 'upath'
+import type {MainReporter} from './interfaces'
 
-import {MainReporter} from './interfaces'
+import upath from 'upath'
 
 interface ReportedBuild {
   outputDirectory: string // the path to the assets directory, absolute or relative to the CWD

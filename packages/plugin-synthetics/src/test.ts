@@ -1,8 +1,5 @@
-import chalk from 'chalk'
-
-import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError, isForbiddenError} from './api'
-import {CiError, CriticalError} from './errors'
-import {
+import type {APIHelper} from './api'
+import type {
   RemoteTriggerConfig,
   MainReporter,
   RunTestsCommandConfig,
@@ -11,13 +8,19 @@ import {
   TriggerConfig,
   LocalTestDefinition,
   ImportTestsCommandConfig,
-  ExecutionRule,
   TestMissing,
   TestSkipped,
   TestWithOverride,
   TestPlanItem,
   DeployTestsCommandConfig,
 } from './interfaces'
+import type {InitialSummary} from './utils/public'
+
+import chalk from 'chalk'
+
+import {EndpointError, formatBackendErrors, isNotFoundError, isForbiddenError} from './api'
+import {CiError, CriticalError} from './errors'
+import {ExecutionRule} from './interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
 import {
   getPublicIdOrPlaceholder,
@@ -26,7 +29,6 @@ import {
   isMobileTestWithOverride,
 } from './utils/internal'
 import {
-  InitialSummary,
   createInitialSummary,
   getSuites,
   isTestSupportedByTunnel,

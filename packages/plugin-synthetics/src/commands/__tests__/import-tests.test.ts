@@ -1,7 +1,7 @@
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
-import {ImportTestsCommandConfig} from '../../interfaces'
+import type {ImportTestsCommandConfig} from '../../interfaces'
 
 import {PluginCommand as ImportTestsCommand} from '../import-tests'
 

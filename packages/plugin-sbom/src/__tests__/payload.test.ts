@@ -1,7 +1,9 @@
 import fs from 'fs'
 import os from 'os'
 
-import {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
+import type {Location} from '../types'
+import type {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
+
 import {
   getSpanTags,
   getMissingRequiredGitTags,
@@ -12,7 +14,7 @@ import simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {generatePayload} from '../payload'
-import {DependencyLanguage, Location} from '../types'
+import {DependencyLanguage} from '../types'
 
 describe('generation of payload', () => {
   beforeEach(() => {

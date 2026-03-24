@@ -1,8 +1,9 @@
+import type {DeploymentEvent} from '../interfaces'
+
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as gitFunctions from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 
 import {PluginCommand as DORADeploymentCommand} from '../commands/deployment'
-import {DeploymentEvent} from '../interfaces'
 
 describe('deployment', () => {
   describe('getApiHelper', () => {

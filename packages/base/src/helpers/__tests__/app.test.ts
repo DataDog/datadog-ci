@@ -1,5 +1,6 @@
+import type {SpanTags} from '../interfaces'
+
 import {getCommonAppBaseURL, getTestRunsUrlPath} from '../app'
-import {SpanTags} from '../interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL} from '../tags'
 
 describe('getCommonAppBaseUrl', () => {

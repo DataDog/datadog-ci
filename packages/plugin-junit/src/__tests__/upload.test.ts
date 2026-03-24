@@ -1,8 +1,9 @@
 import os from 'os'
 
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import id from '@datadog/datadog-ci-base/helpers/id'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
 import {PluginCommand as JunitUploadCommand} from '../commands/upload'

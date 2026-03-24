@@ -1,16 +1,13 @@
 import fs from 'fs'
 import os from 'os'
 
+import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import upath from 'upath'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {
-  MultipartFileValue,
-  MultipartPayload,
-  MultipartStringValue,
-  UploadStatus,
-} from '@datadog/datadog-ci-base/helpers/upload'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {ElfClass} from '../elf-constants'

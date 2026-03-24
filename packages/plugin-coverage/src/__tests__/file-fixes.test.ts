@@ -1,10 +1,11 @@
 import fsPromises from 'fs/promises'
 
+import type {FileFixes} from '../interfaces'
+
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import upath from 'upath'
 
 import {generateFileFixes} from '../file-fixes'
-import {FileFixes} from '../interfaces'
 
 jest.mock('fs/promises')
 jest.mock('@datadog/datadog-ci-base/helpers/file-finder')

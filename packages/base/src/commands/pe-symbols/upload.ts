@@ -1,5 +1,11 @@
 import fs from 'fs'
 
+import type {MappingMetadata} from './interfaces'
+import type {PEFileMetadata} from './pe'
+import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
@@ -10,14 +16,10 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {
-  RepositoryData,
-  getRepositoryData,
-  newSimpleGit,
-} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
-import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {
   buildPath,
   DEFAULT_CONFIG_PATHS,
@@ -29,8 +31,8 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {getBreakpadSymMetadata} from './breakpad'
 import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
-import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
-import {getBuildId, getPEFileMetadata, PEFileMetadata} from './pe'
+import {PE_DEBUG_INFOS_FILENAME, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
+import {getBuildId, getPEFileMetadata} from './pe'
 import {MachineArchitecture} from './pe-constants'
 import {
   renderArgumentMissingError,

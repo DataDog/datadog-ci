@@ -1,4 +1,5 @@
-import {ExecutionRule, ResultInBatch} from '../../interfaces'
+import type {ResultInBatch} from '../../interfaces'
+import {ExecutionRule} from '../../interfaces'
 import {
   getOverriddenExecutionRule,
   hasResultPassed,

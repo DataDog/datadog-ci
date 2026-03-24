@@ -1,7 +1,10 @@
-import {ContainerAppsAPIClient, ContainerApp, Container, VolumeMount} from '@azure/arm-appcontainers'
-import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
+import type {ContainerApp, Container, VolumeMount} from '@azure/arm-appcontainers'
+import type {TagsOperations} from '@azure/arm-resources'
+import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
+
+import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
+import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'

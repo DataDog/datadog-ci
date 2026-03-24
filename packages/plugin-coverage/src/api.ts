@@ -1,14 +1,13 @@
 import fs from 'fs'
 import {createGzip, gzipSync} from 'zlib'
 
+import type {Payload} from './interfaces'
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
-
-import {Payload} from './interfaces'
 
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.

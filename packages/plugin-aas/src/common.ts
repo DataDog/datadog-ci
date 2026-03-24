@@ -1,5 +1,6 @@
-import {Site} from '@azure/arm-appservice'
-import {AasConfigOptions, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
+import type {Site} from '@azure/arm-appservice'
+import type {AasConfigOptions, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
+
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 // Path to tracing libraries, copied within the Docker file

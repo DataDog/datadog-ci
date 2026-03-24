@@ -1,6 +1,6 @@
 import {existsSync} from 'fs'
 
-import {RNPlatform} from './interfaces'
+import type {RNPlatform} from './interfaces'
 
 export const getReactNativeVersion = (packageJsonPath: string): undefined | string => {
   if (!existsSync(packageJsonPath)) {

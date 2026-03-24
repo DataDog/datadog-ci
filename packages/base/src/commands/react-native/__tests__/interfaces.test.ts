@@ -1,8 +1,9 @@
 import fs from 'fs/promises'
 
-import {CommandContext} from '@datadog/datadog-ci-base'
+import type {CommandContext} from '@datadog/datadog-ci-base'
+import type {MultipartFileValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {MultipartFileValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {RNSourcemap} from '../interfaces'
 

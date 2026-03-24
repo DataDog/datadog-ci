@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
+import type {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from '../interfaces'
+import type {RecursivePartial} from '../utils/internal'
+
 import {SyntheticsRunTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/run-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
@@ -14,11 +17,10 @@ import deepExtend from 'deep-extend'
 
 import {buildAssets} from '../build-and-test'
 import {CiError} from '../errors'
-import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import {planDryRun, executeTests, getDefaultConfig} from '../run-tests-lib'
-import {RecursivePartial, toExecutionRule, validateAndParseOverrides} from '../utils/internal'
+import {toExecutionRule, validateAndParseOverrides} from '../utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
 
 export class PluginCommand extends SyntheticsRunTestsCommand {

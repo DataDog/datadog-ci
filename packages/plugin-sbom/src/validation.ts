@@ -1,6 +1,9 @@
 import fs from 'fs'
 
-import Ajv, {ErrorObject} from 'ajv'
+import type {Dependency} from './types'
+import type {ErrorObject} from 'ajv'
+
+import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import {PackageURL} from 'packageurl-js'
 
@@ -9,7 +12,7 @@ import cycloneDxSchema15 from './json-schema/cyclonedx/bom-1.5.schema.json'
 import cycloneDxSchema16 from './json-schema/cyclonedx/bom-1.6.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
 import spdxSchema from './json-schema/spdx/spdx.schema.json'
-import {Dependency, DependencyLanguage} from './types'
+import {DependencyLanguage} from './types'
 
 /**
  * Get the validate function. Read all the schemas and return

@@ -9,11 +9,11 @@ Object.defineProperty(process, 'platform', {
   writable: true,
 })
 
-import {CommandContext} from '@datadog/datadog-ci-base'
+import type {CommandContext} from '@datadog/datadog-ci-base'
+
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {
-  ExecutionRule,
+import type {
   MainReporter,
   Result,
   RunTestsCommandConfig,
@@ -23,9 +23,11 @@ import {
   TestPlan,
   UserConfigOverride,
 } from '../../interfaces'
+import {ExecutionRule} from '../../interfaces'
 import {DefaultReporter, renderApiRequestDescription} from '../../reporters/default'
 import {isTimedOutRetry} from '../../utils/internal'
-import {createInitialSummary, InitialSummary} from '../../utils/public'
+import type {InitialSummary} from '../../utils/public'
+import {createInitialSummary} from '../../utils/public'
 
 import {
   ciConfig,

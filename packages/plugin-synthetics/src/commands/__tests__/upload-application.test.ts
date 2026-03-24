@@ -5,7 +5,7 @@ import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 import {EndpointError} from '../../api'
 import {PluginCommand as UploadApplicationCommand} from '../../commands/upload-application'
 import {CriticalError} from '../../errors'
-import {MobileAppUploadResult, UploadApplicationCommandConfig} from '../../interfaces'
+import type {MobileAppUploadResult, UploadApplicationCommandConfig} from '../../interfaces'
 import * as mobile from '../../mobile'
 
 describe('upload-application', () => {

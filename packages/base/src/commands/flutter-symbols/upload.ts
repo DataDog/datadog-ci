@@ -1,5 +1,11 @@
 import fs from 'fs'
 
+import type {MappingMetadata} from './interfaces'
+import type {UploadInfo} from './renderer'
+import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
@@ -13,10 +19,10 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getRepositoryData, RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
-import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {
   buildPath,
   DEFAULT_CONFIG_PATHS,
@@ -33,7 +39,6 @@ import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper
 import {
   DART_SYMBOL_FILE_NAME,
   JVM_MAPPING_FILE_NAME,
-  MappingMetadata,
   TYPE_DART_SYMBOLS,
   TYPE_JVM_MAPPING,
   VALUE_NAME_DART_MAPPING,
@@ -57,7 +62,6 @@ import {
   renderUpload,
   renderVersionBuildNumberWarning,
   renderVersionNotSemver,
-  UploadInfo,
 } from './renderer'
 
 export class FlutterSymbolsUploadCommand extends BaseCommand {

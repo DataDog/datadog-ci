@@ -1,14 +1,14 @@
 import fs from 'fs'
-import {Writable} from 'stream'
 import {createGzip} from 'zlib'
 
+import type {Payload} from './interfaces'
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {Writable} from 'stream'
 
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 import {v4 as uuidv4} from 'uuid'
 
-import {Payload} from './interfaces'
 import {renderUpload} from './renderer'
 
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391

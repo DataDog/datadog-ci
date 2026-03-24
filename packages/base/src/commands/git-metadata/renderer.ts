@@ -1,8 +1,8 @@
+import type {CommitInfo} from './interfaces'
+
 import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
-
-import {CommitInfo} from './interfaces'
 
 export const renderConfigurationError = (error: Error) => `${ICONS.FAILED} Configuration error: ${error}.`
 

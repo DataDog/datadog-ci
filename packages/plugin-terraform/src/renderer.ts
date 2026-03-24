@@ -1,7 +1,7 @@
+import type {TerraformArtifactPayload} from './interfaces'
+
 import {dryRunTag, failCrossTag, successCheckmarkTag} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
-
-import {TerraformArtifactPayload} from './interfaces'
 
 export const renderCommandInfo = (artifactType: string, filePath: string, dryRun: boolean): string => {
   const prefix = dryRun ? `${dryRunTag} ` : ''

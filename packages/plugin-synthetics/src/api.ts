@@ -1,12 +1,6 @@
 import {stringify} from 'querystring'
 
-import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
-
-import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-import {isAxiosError} from 'axios'
-
-import {CriticalError} from './errors'
-import {
+import type {
   APIConfiguration,
   APIHelperConfig,
   Batch,
@@ -26,6 +20,12 @@ import {
   TestSearchResult,
   ServerTrigger,
 } from './interfaces'
+import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+import {isAxiosError} from 'axios'
+
+import {CriticalError} from './errors'
 import {MAX_TESTS_TO_TRIGGER} from './test'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 

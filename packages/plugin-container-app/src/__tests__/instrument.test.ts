@@ -34,7 +34,9 @@ jest.mock('@azure/arm-resources', () => ({
   })),
 }))
 
-import {ContainerApp, ContainerAppsAPIClient} from '@azure/arm-appcontainers'
+import type {ContainerApp} from '@azure/arm-appcontainers'
+
+import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
 import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 

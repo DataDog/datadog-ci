@@ -1,16 +1,17 @@
 import {createServer} from 'http'
-import {AddressInfo} from 'net'
 
+import type {PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
+import type {RecursivePartial} from '../utils/internal'
 import type {AxiosResponse} from 'axios'
+import type {AddressInfo} from 'net'
 
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import axios, {AxiosError} from 'axios'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
-import {ExecutionRule, PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
+import {ExecutionRule} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../test'
-import {RecursivePartial} from '../utils/internal'
 import * as internalUtils from '../utils/internal'
 
 import {
