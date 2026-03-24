@@ -144,6 +144,11 @@ Intentional behavior changes that were not flagged.
 ## Validation gaps
 What you could not validate.
 
+## Post results
+
+After writing validation_report.md, if the create_pr_comment tool is available, post
+the report as a PR comment. Use the full markdown report as the comment body.
+
 ## Important constraints
 - Prefer execution over speculation.
 - Only flag issues grounded in actual code execution.
@@ -292,9 +297,74 @@ export class AutotestCommand extends BaseCommand {
   }
 
   private async runReview(diff: string): Promise<number> {
-    const {query} = await import('@anthropic-ai/claude-agent-sdk')
+    const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
+    const {z} = await import('zod')
+    const execAsync = promisify(exec)
 
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
+
+    // GitHub PR tools — let the agent post/update comments on the PR.
+    const prUrl = this.pr
+    const githubTools = prUrl
+      ? (() => {
+          const match = prUrl.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
+          if (!match) {
+            return undefined
+          }
+          const [, repo, prNumber] = match
+
+          const createPrComment = tool(
+            'create_pr_comment',
+            'Post a new comment on the pull request. Use this to share your validation report.',
+            {body: z.string().describe('Markdown body of the comment')},
+            async (args: {body: string}) => {
+              try {
+                const {stdout} = await execAsync(
+                  `gh pr comment ${prNumber} --repo ${repo} --body ${JSON.stringify(args.body)}`,
+                  {maxBuffer: 10 * 1024 * 1024}
+                )
+
+                return {content: [{type: 'text' as const, text: stdout || 'Comment posted successfully.'}]}
+              } catch (error) {
+                return {
+                  content: [{type: 'text' as const, text: `Failed to post comment: ${error}`}],
+                  isError: true,
+                }
+              }
+            }
+          )
+
+          const editPrComment = tool(
+            'edit_pr_comment',
+            'Edit an existing comment on the pull request by comment ID.',
+            {
+              comment_id: z.string().describe('The comment ID to edit'),
+              body: z.string().describe('New markdown body for the comment'),
+            },
+            async (args: {comment_id: string; body: string}) => {
+              try {
+                const {stdout} = await execAsync(
+                  `gh api repos/${repo}/issues/comments/${args.comment_id} -X PATCH -f body=${JSON.stringify(args.body)}`,
+                  {maxBuffer: 10 * 1024 * 1024}
+                )
+
+                return {content: [{type: 'text' as const, text: stdout || 'Comment updated successfully.'}]}
+              } catch (error) {
+                return {
+                  content: [{type: 'text' as const, text: `Failed to edit comment: ${error}`}],
+                  isError: true,
+                }
+              }
+            }
+          )
+
+          return createSdkMcpServer({
+            name: 'github-pr',
+            version: '1.0.0',
+            tools: [createPrComment, editPrComment],
+          })
+        })()
+      : undefined
 
     // Raw log file for full agent trace.
     const logDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
@@ -306,19 +376,24 @@ export class AutotestCommand extends BaseCommand {
     const spinner = new Spinner(this.context.stderr)
     spinner.start('Connecting…')
 
+    const mcpServers: Record<string, unknown> = {
+      'datadog-mcp': {
+        type: 'http',
+        url: 'https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,live-debugger',
+        headers: {
+          'DD-API-KEY': process.env.DD_API_KEY ?? '',
+          'DD-APPLICATION-KEY': process.env.DD_APPLICATION_KEY ?? '',
+        },
+      },
+    }
+    if (githubTools) {
+      mcpServers['github-pr'] = githubTools
+    }
+
     for await (const message of query({
       prompt: userPrompt,
       options: {
-        mcpServers: {
-          'datadog-mcp': {
-            type: 'http',
-            url: 'https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,live-debugger',
-            headers: {
-              'DD-API-KEY': process.env.DD_API_KEY ?? '',
-              'DD-APPLICATION-KEY': process.env.DD_APPLICATION_KEY ?? '',
-            },
-          },
-        },
+        mcpServers,
         cwd: logDir,
         allowedTools: ['*'],
         permissionMode: 'bypassPermissions',
