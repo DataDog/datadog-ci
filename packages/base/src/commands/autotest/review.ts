@@ -287,20 +287,26 @@ export class AutotestCommand extends BaseCommand {
   }
 
   private async fetchPrDiff(prUrl: string): Promise<string> {
-    const execAsync = promisify(exec)
-    // Extract owner/repo and PR number from URL.
     const match = prUrl.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
     if (!match) {
       throw new Error(`Invalid GitHub PR URL: ${prUrl}`)
     }
     const [, repo, prNumber] = match
-    const cwd = process.env.AUTOTEST_REPO_DIR || process.cwd()
-    const {stdout} = await execAsync(`gh pr diff ${prNumber} --repo ${repo}`, {
-      maxBuffer: 50 * 1024 * 1024,
-      cwd,
+    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+
+    const response = await fetch(`https://api.github.com/repos/${repo}/pulls/${prNumber}`, {
+      headers: {
+        Accept: 'application/vnd.github.v3.diff',
+        'User-Agent': 'datadog-ci-autotest',
+        ...(token ? {Authorization: `token ${token}`} : {}),
+      },
     })
 
-    return stdout
+    if (!response.ok) {
+      throw new Error(`GitHub API error ${response.status}: ${await response.text()}`)
+    }
+
+    return response.text()
   }
 
   private async runReview(diff: string, prInfo?: {repo: string; number: number}): Promise<number> {
