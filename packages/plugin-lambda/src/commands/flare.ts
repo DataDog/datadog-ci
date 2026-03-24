@@ -1,15 +1,17 @@
 import * as fs from 'fs'
 import util from 'util'
 
+import type {OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
+import type {FunctionConfiguration, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import {
   CloudWatchLogsClient,
   DescribeLogStreamsCommand,
   GetLogEventsCommand,
   OrderBy,
-  OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {LambdaFlareCommand} from '@datadog/datadog-ci-base/commands/lambda/flare'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'

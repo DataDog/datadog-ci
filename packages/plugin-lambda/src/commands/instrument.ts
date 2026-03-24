@@ -1,6 +1,15 @@
+import type {
+  FunctionConfiguration,
+  InstrumentationSettings,
+  InstrumentedConfigurationGroup,
+  LambdaConfigOptions,
+  Version,
+} from '../interfaces'
+import type {LambdaClientConfig} from '@aws-sdk/client-lambda'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {LambdaClient} from '@aws-sdk/client-lambda'
 import {LambdaInstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/instrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -32,13 +41,6 @@ import {
   maskConfig,
 } from '../functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from '../functions/instrument'
-import {
-  FunctionConfiguration,
-  InstrumentationSettings,
-  InstrumentedConfigurationGroup,
-  LambdaConfigOptions,
-  Version,
-} from '../interfaces'
 import {
   requestAWSCredentials,
   requestAWSRegion,

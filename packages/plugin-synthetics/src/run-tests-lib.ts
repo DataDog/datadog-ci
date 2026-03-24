@@ -1,12 +1,5 @@
-import {getCIMetadata} from '@datadog/datadog-ci-base/helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
-import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
-import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
-import {
-  ExecutionRule,
+import type {APIHelper} from './api'
+import type {
   MainReporter,
   Reporter,
   Result,
@@ -21,6 +14,16 @@ import {
   TriggerInfo,
   WrapperConfig,
 } from './interfaces'
+import type {InitialSummary} from './utils/public'
+
+import {getCIMetadata} from '@datadog/datadog-ci-base/helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
+import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
+
+import {getApiHelper, isForbiddenError} from './api'
+import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
+import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
+import {ExecutionRule} from './interfaces'
 import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
@@ -36,7 +39,6 @@ import {
   getReporter,
   getOrgSettings,
   createInitialSummary,
-  InitialSummary,
   parsePublicIdWithVersion,
   renderResults,
   getExitReason,

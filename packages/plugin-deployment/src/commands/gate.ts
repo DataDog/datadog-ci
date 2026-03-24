@@ -1,3 +1,5 @@
+import type {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from '../interfaces'
+
 import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
@@ -11,7 +13,6 @@ import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 
 import {apiConstructor} from '../api'
-import {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from '../interfaces'
 
 type CommandResult = 'PASS' | 'FAIL'
 

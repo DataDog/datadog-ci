@@ -1,8 +1,9 @@
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type {Payload} from './interfaces'
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {Payload} from './interfaces'
 import {getTestCommitRedirectURL, getTestRunsUrl} from './utils'
 
 const ICONS = {

@@ -1,9 +1,10 @@
+import type {CommandContext} from '../../..'
+
 import {Cli} from 'clipanion'
 
 import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 import {listAllPlugins} from '../../../helpers/plugin'
 
-import {CommandContext} from '../../..'
 import {PluginListCommand} from '../list'
 
 describe('PluginListCommand', () => {

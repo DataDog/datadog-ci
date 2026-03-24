@@ -1,18 +1,20 @@
 import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
-import {Duplex, pipeline} from 'stream'
+import {pipeline} from 'stream'
 
 import type {ProxyAgent} from 'proxy-agent'
-
-import {
+import type {
   AuthContext,
   Connection as SSHConnection,
   ParsedKey,
-  Server as SSHServer,
   ServerChannel as SSHServerChannel,
   ServerConfig,
 } from 'ssh2'
-import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
+import type {Duplex} from 'stream'
+import type {Config as MultiplexerConfig} from 'yamux-js'
+
+import {Server as SSHServer} from 'ssh2'
+import {Server as Multiplexer} from 'yamux-js'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'

@@ -1,8 +1,8 @@
-import {Writable} from 'stream'
+import type {Sourcemap} from './interfaces'
+import type {Writable} from 'stream'
 
 import {checkFile} from '@datadog/datadog-ci-base/helpers/validation'
 
-import {Sourcemap} from './interfaces'
 import {renderMinifiedPathPrefixMisusage} from './renderer'
 import {extractRepeatedPath} from './utils'
 

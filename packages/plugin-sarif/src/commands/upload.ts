@@ -1,13 +1,15 @@
 import fs from 'fs'
 
+import type {APIHelper, Payload} from '../interfaces'
+import type {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import {SarifUploadCommand} from '@datadog/datadog-ci-base/commands/sarif/upload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
-import {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_SHA, getSpanTags, getMissingRequiredGitTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
@@ -15,7 +17,6 @@ import chalk from 'chalk'
 import upath from 'upath'
 
 import {apiConstructor} from '../api'
-import {APIHelper, Payload} from '../interfaces'
 import {
   renderCommandInfo,
   renderSuccessfulCommand,

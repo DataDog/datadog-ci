@@ -13,7 +13,7 @@ jest.mock('../prompt')
 jest.mock('@datadog/datadog-ci-base/helpers/prompt')
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
-import * as fs from 'fs'
+import type * as fs from 'fs'
 
 import {DeleteRolePolicyCommand, GetRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand, LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'

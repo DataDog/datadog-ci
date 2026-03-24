@@ -1,10 +1,10 @@
 import {inspect} from 'node:util'
 
+import type {Payload} from './interfaces'
+
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import chalk from 'chalk'
 import upath from 'upath'
-
-import {Payload} from './interfaces'
 
 const ICONS = {
   FAILED: '❌',

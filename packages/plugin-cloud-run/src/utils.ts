@@ -1,6 +1,6 @@
 import type {IService} from './types'
+import type {ServicesClient} from '@google-cloud/run'
 
-import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 import {GoogleAuth} from 'google-auth-library'
 

@@ -1,6 +1,8 @@
 import crypto from 'crypto'
 
-import {AxiosError} from 'axios'
+import type {APIHelper, Payload} from './interfaces'
+import type {AxiosError} from 'axios'
+
 import chalk from 'chalk'
 import {Option} from 'clipanion'
 
@@ -21,7 +23,7 @@ import {parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 
 import {apiConstructor} from './api'
-import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
+import {SUPPORTED_PROVIDERS} from './interfaces'
 
 export abstract class CustomSpanCommand extends BaseCommand {
   private measures = Option.Array('--measures')

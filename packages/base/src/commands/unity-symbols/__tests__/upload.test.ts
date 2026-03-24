@@ -1,12 +1,13 @@
-import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
-import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {
+import type {
   MultipartFileValue,
   MultipartPayload,
   MultipartStringValue,
   MultipartValue,
 } from '@datadog/datadog-ci-base/helpers/upload'
+
+import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 

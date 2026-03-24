@@ -21,7 +21,8 @@ jest.mock('@azure/arm-resources', () => ({
   })),
 }))
 
-import {ContainerApp, Container} from '@azure/arm-appcontainers'
+import type {ContainerApp, Container} from '@azure/arm-appcontainers'
+
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 

@@ -1,4 +1,5 @@
-import {LocalTriggerConfig, TestConfig} from './interfaces'
+import type {LocalTriggerConfig, TestConfig} from './interfaces'
+
 import {isLocalTriggerConfig} from './utils/internal'
 
 export const findUniqueLocalTestDefinition = (testConfig: TestConfig, publicId: string): LocalTriggerConfig => {

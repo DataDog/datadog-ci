@@ -1,4 +1,4 @@
-import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import type {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class CommitInfo {
   public hash: string

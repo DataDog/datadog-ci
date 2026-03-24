@@ -1,5 +1,6 @@
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import * as appHelpers from '@datadog/datadog-ci-base/helpers/app'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {
   CI_JOB_URL,
   CI_PIPELINE_URL,

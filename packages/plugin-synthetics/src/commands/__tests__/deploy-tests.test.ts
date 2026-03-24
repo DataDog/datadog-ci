@@ -2,7 +2,7 @@ import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import {PluginCommand as DeployTestsCommand} from '../../commands/deploy-tests'
-import {DeployTestsCommandConfig} from '../../interfaces'
+import type {DeployTestsCommandConfig} from '../../interfaces'
 
 describe('deploy-tests', () => {
   beforeEach(() => {

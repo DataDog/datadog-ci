@@ -3,13 +3,14 @@ import path from 'node:path'
 import url from 'node:url'
 import {inspect} from 'node:util'
 
+import type {CommandContext} from '..'
+import type {Command, CommandClass} from 'clipanion'
+
 import chalk from 'chalk'
-import {Command, CommandClass} from 'clipanion'
 import createDebug from 'debug'
 
 import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
 
-import {CommandContext} from '..'
 import {cliVersion} from '../version'
 
 import {isStandaloneBinary} from './is-standalone-binary'

@@ -1,6 +1,8 @@
-import {AxiosError, get as axiosGet} from 'axios'
+import type {AxiosError} from 'axios'
+import type {BufferedMetricsLogger} from 'datadog-metrics'
+
+import {get as axiosGet} from 'axios'
 import chalk from 'chalk'
-import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {InvalidConfigurationError} from './errors'
 

@@ -1,13 +1,9 @@
-import {toBoolean, toNumber, StringMap} from '@datadog/datadog-ci-base/helpers/env'
-import {pick} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {
+import type {
   BaseResult,
   BasicAuthCredentials,
   BrowserServerResult,
   CookiesObject,
   DatadogCIConfig,
-  ExecutionRule,
   LocalTriggerConfig,
   MobileTestWithOverride,
   Result,
@@ -25,6 +21,12 @@ import {
   UserConfigOverride,
   LocalTestPayload,
 } from '../interfaces'
+import type {StringMap} from '@datadog/datadog-ci-base/helpers/env'
+
+import {toBoolean, toNumber} from '@datadog/datadog-ci-base/helpers/env'
+import {pick} from '@datadog/datadog-ci-base/helpers/utils'
+
+import {ExecutionRule} from '../interfaces'
 
 import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './public'
 

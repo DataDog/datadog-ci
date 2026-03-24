@@ -1,6 +1,7 @@
 import fs from 'fs'
 import process from 'process'
-import {Writable} from 'stream'
+
+import type {Writable} from 'stream'
 
 import axios from 'axios'
 import FormData from 'form-data'

@@ -1,5 +1,7 @@
 import {exec} from 'child_process'
 
+import type {RNPlatform} from './interfaces'
+
 import {Cli, Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
@@ -8,7 +10,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
-import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
+import {RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {ReactNativeUploadCommand} from './upload'
 import {sanitizeReleaseVersion} from './utils'
 

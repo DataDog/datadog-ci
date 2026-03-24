@@ -2,6 +2,7 @@ import fs from 'fs'
 import process from 'process'
 import util from 'util'
 
+import type {CloudRunLog, LogConfig} from '../interfaces'
 import type {IService, IContainer} from '../types'
 import type {Logging} from '@google-cloud/logging'
 
@@ -38,7 +39,6 @@ import {RevisionsClient, ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {CloudRunLog, LogConfig} from '../interfaces'
 import {renderAuthenticationInstructions} from '../renderer'
 import {checkAuthentication} from '../utils'
 

@@ -1,5 +1,10 @@
 import fs from 'fs'
 
+import type {MappingMetadata} from './interfaces'
+import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
@@ -12,14 +17,10 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {
-  RepositoryData,
-  getRepositoryData,
-  newSimpleGit,
-} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
-import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {
   DEFAULT_CONFIG_PATHS,
   buildPath,
@@ -35,7 +36,6 @@ import * as elf from '../elf-symbols/elf'
 import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
   IL2CPP_MAPPING_FILE_NAME,
-  MappingMetadata,
   TYPE_IL2CPP_MAPPING,
   TYPE_NDK_SYMBOL_FILE,
   VALUE_NAME_IL2CPP_MAPPING,

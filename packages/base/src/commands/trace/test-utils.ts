@@ -2,7 +2,8 @@
 
 import fs from 'fs'
 
-import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import type {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+
 import * as ci from '@datadog/datadog-ci-base/helpers/ci'
 
 type RunCLIType = ReturnType<typeof makeRunCLI>

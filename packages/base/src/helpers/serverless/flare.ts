@@ -3,7 +3,8 @@
  */
 
 import fs from 'fs'
-import {Writable} from 'stream'
+
+import type {Writable} from 'stream'
 
 import {post as axiosPost, isAxiosError} from 'axios'
 import FormData from 'form-data'

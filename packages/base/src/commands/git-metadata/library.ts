@@ -1,15 +1,16 @@
-import {SimpleGit} from 'simple-git'
+import type {CommitInfo} from './interfaces'
+import type {SimpleGit} from 'simple-git'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
-import {RequestBuilder} from '../../helpers/interfaces'
+import type {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
+import type {UploadOptions} from '../../helpers/upload'
+import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
 import {cliVersion} from '../../version'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
-import {CommitInfo} from './interfaces'
 
 export const isGitRepo = async (): Promise<boolean> => {
   try {

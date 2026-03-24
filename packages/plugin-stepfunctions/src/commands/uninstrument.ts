@@ -1,4 +1,6 @@
-import {CloudWatchLogsClient, DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
+import type {DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
+
+import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {SFNClient} from '@aws-sdk/client-sfn'
 import {StepfunctionsUninstrumentCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'

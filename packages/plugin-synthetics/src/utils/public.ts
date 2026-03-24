@@ -3,18 +3,9 @@ import * as fs from 'fs'
 import process from 'process'
 import {promisify} from 'util'
 
-import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
-import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
-import chalk from 'chalk'
-import upath from 'upath'
-
-import {formatBackendErrors, getApiHelper} from '../api'
-import {CiError, CriticalError} from '../errors'
-import {
+import type {
   APIHelperConfig,
-  ExecutionRule,
   MainReporter,
-  Operator,
   Reporter,
   Result,
   ResultSkippedBySelectiveRerun,
@@ -30,6 +21,15 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
+
+import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
+import chalk from 'chalk'
+import upath from 'upath'
+
+import {formatBackendErrors, getApiHelper} from '../api'
+import {CiError, CriticalError} from '../errors'
+import {ExecutionRule, Operator} from '../interfaces'
 
 import {
   LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,

@@ -1,6 +1,9 @@
-import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
-import {CommandContext} from '@datadog/datadog-ci-base'
-import {MockCommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type {StepType, PayloadObject} from '../helpers'
+import type {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import type {CommandContext} from '@datadog/datadog-ci-base'
+import type {MockCommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
+
+import {LogLevel} from '@aws-sdk/client-sfn'
 
 import {
   buildArn,
@@ -11,9 +14,7 @@ import {
   parseArn,
   buildLogAccessPolicyName,
   injectContextForLambdaFunctions,
-  StepType,
   injectContextForStepFunctions,
-  PayloadObject,
 } from '../helpers'
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'

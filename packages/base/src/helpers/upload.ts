@@ -1,10 +1,11 @@
 import fs from 'fs'
 import {createGzip} from 'zlib'
 
+import type {ApiKeyValidator} from './apikey'
+import type {RequestBuilder} from './interfaces'
+
 import FormData from 'form-data'
 
-import {ApiKeyValidator} from './apikey'
-import {RequestBuilder} from './interfaces'
 import {retryRequest} from './retry'
 
 /** Multipart payload destined to be sent to Datadog's API

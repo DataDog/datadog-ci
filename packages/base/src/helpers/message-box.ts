@@ -1,4 +1,6 @@
-import chalk, {ForegroundColor} from 'chalk'
+import type {ForegroundColor} from 'chalk'
+
+import chalk from 'chalk'
 
 const messageBoxString = (title: string, color: typeof ForegroundColor, message: string | string[]): string => {
   let result = ''

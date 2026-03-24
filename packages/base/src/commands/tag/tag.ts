@@ -1,4 +1,5 @@
-import {AxiosError} from 'axios'
+import type {AxiosError} from 'axios'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 

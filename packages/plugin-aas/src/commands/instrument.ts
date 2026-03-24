@@ -1,14 +1,14 @@
-import {SiteContainer, StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
+import type {SiteContainer, StringDictionary} from '@azure/arm-appservice'
+import type {AasConfigOptions, WebApp, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
+
+import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {
-  AasConfigOptions,
   getExtensionId,
   renderWebApp,
   resourceIdSegment,
-  WebApp,
   WINDOWS_RUNTIME_EXTENSIONS,
-  WindowsRuntime,
 } from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasInstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'

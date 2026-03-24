@@ -1,6 +1,8 @@
 import fs from 'fs'
 
-import {BaseContext} from 'clipanion'
+import type {SpanTags} from '../interfaces'
+import type {BaseContext} from 'clipanion'
+
 import upath from 'upath'
 
 import {
@@ -14,7 +16,6 @@ import {
   isInteractive,
   shouldGetGithubJobDisplayName,
 } from '../ci'
-import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
   CI_NODE_LABELS,

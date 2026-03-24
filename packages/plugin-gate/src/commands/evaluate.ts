@@ -1,4 +1,5 @@
 import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from '../interfaces'
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {AxiosResponse} from 'axios'
 
 import {GateEvaluateCommand} from '@datadog/datadog-ci-base/commands/gate/evaluate'
@@ -8,7 +9,6 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'

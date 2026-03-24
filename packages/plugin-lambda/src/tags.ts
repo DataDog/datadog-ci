@@ -1,15 +1,13 @@
-import {
+import type {TagConfiguration} from './interfaces'
+import type {
   LambdaClient,
   ListTagsCommandInput,
   TagResourceCommandInput,
   UntagResourceCommandInput,
-  TagResourceCommand,
-  UntagResourceCommand,
-  ListTagsCommand,
 } from '@aws-sdk/client-lambda'
-import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
-import {TagConfiguration} from './interfaces'
+import {TagResourceCommand, UntagResourceCommand, ListTagsCommand} from '@aws-sdk/client-lambda'
+import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
 export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConfiguration): Promise<void> => {
   const {tagResourceCommandInput, untagResourceCommandInput} = config

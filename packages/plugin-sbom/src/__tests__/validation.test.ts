@@ -1,6 +1,7 @@
 import fs from 'fs'
 
-import {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
+import type {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
+
 import {getSpanTags} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {generatePayload} from '../payload'

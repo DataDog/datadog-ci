@@ -1,5 +1,5 @@
-import {Site} from '@azure/arm-appservice'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import type {Site} from '@azure/arm-appservice'
+import type {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {getWindowsRuntime, getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
 

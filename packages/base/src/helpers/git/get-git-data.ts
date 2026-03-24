@@ -1,9 +1,8 @@
 import {URL} from 'url'
 
-import * as simpleGit from 'simple-git'
-import {BranchSummary} from 'simple-git'
-
-import {GitAuthorAndCommitterMetadata} from '../interfaces'
+import type {GitAuthorAndCommitterMetadata} from '../interfaces'
+import type * as simpleGit from 'simple-git'
+import type {BranchSummary} from 'simple-git'
 
 // Returns the remote of the current repository.
 export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {

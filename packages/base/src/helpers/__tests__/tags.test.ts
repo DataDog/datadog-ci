@@ -1,8 +1,9 @@
-import {BaseContext} from 'clipanion'
+import type {DatadogCiConfig} from '../config'
+import type {SpanTags} from '../interfaces'
+import type {BaseContext} from 'clipanion'
+
 import simpleGit from 'simple-git'
 
-import {DatadogCiConfig} from '../config'
-import {SpanTags} from '../interfaces'
 import {
   parseTags,
   parseMetrics,

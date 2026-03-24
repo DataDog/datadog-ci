@@ -1,3 +1,5 @@
+import type {ContainerAppConfigOptions} from './common'
+
 import {Command, Option} from 'clipanion'
 import {isNumber} from 'typanion'
 
@@ -9,7 +11,7 @@ import {
   DEFAULT_SIDECAR_NAME,
 } from '../../helpers/serverless/constants'
 
-import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
+import {ContainerAppCommand} from './common'
 
 export const DEFAULT_SIDECAR_CPU = 0.5
 export const DEFAULT_SIDECAR_MEMORY = 1

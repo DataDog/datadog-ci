@@ -1,6 +1,5 @@
-import {AxiosError} from 'axios'
-
-import {DeploymentEvent, GitInfo} from './interfaces'
+import type {DeploymentEvent, GitInfo} from './interfaces'
+import type {AxiosError} from 'axios'
 
 const ICONS = {
   FAILED: '❌',

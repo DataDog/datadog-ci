@@ -1,3 +1,5 @@
+import type {PluginCommand as InstrumentCommand} from '../commands/instrument'
+
 import {
   dryRunTag,
   warningTag,
@@ -9,7 +11,6 @@ import {
 import chalk from 'chalk'
 import ora from 'ora'
 
-import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
 /**
