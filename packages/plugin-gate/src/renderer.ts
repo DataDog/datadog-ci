@@ -1,7 +1,8 @@
+import type {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
+
 import {GIT_BRANCH, GIT_REPOSITORY_URL} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
 import {getStatus, is5xxError, isBadRequestError, isTimeout, getBaseUrl} from './utils'
 
 const ICONS = {

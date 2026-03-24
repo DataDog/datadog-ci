@@ -1,18 +1,13 @@
 jest.mock('../loggroup')
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
-import {
-  LambdaClient,
-  ListTagsCommand,
-  TagResourceCommand,
-  TagResourceCommandInput,
-  UntagResourceCommand,
-  UntagResourceCommandInput,
-} from '@aws-sdk/client-lambda'
+import type {TagConfiguration} from '../interfaces'
+import type {TagResourceCommandInput, UntagResourceCommandInput} from '@aws-sdk/client-lambda'
+
+import {LambdaClient, ListTagsCommand, TagResourceCommand, UntagResourceCommand} from '@aws-sdk/client-lambda'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
-import {TagConfiguration} from '../interfaces'
 import {
   applyTagConfig,
   calculateTagRemoveRequest,

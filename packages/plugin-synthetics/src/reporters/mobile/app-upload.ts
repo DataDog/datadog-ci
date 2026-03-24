@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import ora from 'ora'
 
-import {AppUploadDetails, ReporterContext} from '../../interfaces'
+import type {AppUploadDetails, ReporterContext} from '../../interfaces'
 
 import {ICONS} from '../constants'
 

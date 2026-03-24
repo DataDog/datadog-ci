@@ -42,15 +42,16 @@ import child_process from 'child_process'
 import * as fs from 'fs'
 import process from 'process'
 
+import type {MockedReporter, RenderResultsTestCase} from '../fixtures'
 import type * as path from 'upath'
 
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as glob from '@datadog/datadog-ci-base/helpers/glob'
 
 import * as api from '../../api'
-import {CiError, CiErrorCode, CriticalError} from '../../errors'
-import {
-  ExecutionRule,
+import type {CiErrorCode} from '../../errors'
+import {CiError, CriticalError} from '../../errors'
+import type {
   RemoteTestPayload,
   Result,
   SelectiveRerunDecision,
@@ -58,20 +59,11 @@ import {
   Test,
   UserConfigOverride,
 } from '../../interfaces'
+import {ExecutionRule} from '../../interfaces'
 import {getDefaultConfig} from '../../run-tests-lib'
 import * as utils from '../../utils/public'
 
-import {
-  ciConfig,
-  getApiResult,
-  getApiTest,
-  getResults,
-  getSummary,
-  mockApi,
-  MockedReporter,
-  mockReporter,
-  RenderResultsTestCase,
-} from '../fixtures'
+import {ciConfig, getApiResult, getApiTest, getResults, getSummary, mockApi, mockReporter} from '../fixtures'
 
 const DEFAULT_COMMAND_CONFIG = getDefaultConfig()
 

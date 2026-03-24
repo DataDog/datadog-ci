@@ -1,6 +1,8 @@
+import type {LambdaConfigOptions} from '../interfaces'
+import type {AwsCredentialIdentity} from '@aws-sdk/types'
+
 import {IAMClient} from '@aws-sdk/client-iam'
 import {LambdaClient} from '@aws-sdk/client-lambda'
-import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {LambdaCloudwatchCommand} from '@datadog/datadog-ci-base/commands/lambda/cloudwatch'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -15,7 +17,6 @@ import {
   getAWSProfileCredentials,
   getLambdaFunctionConfigsFromRegex,
 } from '../functions/commons'
-import {LambdaConfigOptions} from '../interfaces'
 import * as cloudwatchRenderer from '../renderers/cloudwatch-renderer'
 import * as commonRenderer from '../renderers/common-renderer'
 

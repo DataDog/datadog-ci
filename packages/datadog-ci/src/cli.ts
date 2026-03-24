@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import {CommandContext} from '@datadog/datadog-ci-base'
+import type {CommandContext} from '@datadog/datadog-ci-base'
+
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'

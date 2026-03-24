@@ -1,7 +1,8 @@
 import fs from 'fs'
 import readline from 'readline'
 
-import {PEFileMetadata} from './pe'
+import type {PEFileMetadata} from './pe'
+
 import {MachineArchitecture} from './pe-constants'
 
 type ModuleHeader = {

@@ -1,8 +1,6 @@
-import {Writable} from 'stream'
-
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {AxiosPromise, AxiosResponse} from 'axios'
-
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type {Writable} from 'stream'
 
 export interface Payload {
   reportPath: string

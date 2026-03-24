@@ -4,15 +4,15 @@ import {mkdtemp} from 'fs/promises'
 import os from 'os'
 
 import type {AxiosResponse} from 'axios'
+import type * as simpleGit from 'simple-git'
 
 import FormData from 'form-data'
 import {lte} from 'semver'
-import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {Logger} from '../../helpers/logger'
+import type {RequestBuilder} from '../../helpers/interfaces'
+import type {Logger} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 
 const API_TIMEOUT = 15000

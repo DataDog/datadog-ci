@@ -1,12 +1,9 @@
 jest.mock('../../loggroup')
 
+import type {FunctionConfiguration as LFunctionConfiguration} from '@aws-sdk/client-lambda'
+
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {
-  LambdaClient,
-  FunctionConfiguration as LFunctionConfiguration,
-  ListFunctionsCommand,
-  Runtime,
-} from '@aws-sdk/client-lambda'
+import {LambdaClient, ListFunctionsCommand, Runtime} from '@aws-sdk/client-lambda'
 import {
   ENVIRONMENT_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,

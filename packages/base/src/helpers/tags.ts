@@ -1,16 +1,17 @@
 // Build
 import fs from 'fs'
 
+import type {DatadogCiConfig} from './config'
+import type {SpanTag, SpanTags} from './interfaces'
+import type {BaseContext} from 'clipanion'
+
 import chalk from 'chalk'
-import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
 import {cliVersion} from '../version'
 
 import {getCISpanTags} from './ci'
-import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
-import {SpanTag, SpanTags} from './interfaces'
 import {getUserGitSpanTags} from './user-provided-git'
 import {isFile} from './utils'
 

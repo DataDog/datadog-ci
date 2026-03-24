@@ -1,5 +1,6 @@
+import type {SpanTags} from './interfaces'
+
 import {getDatadogSite} from './api'
-import {SpanTags} from './interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL} from './tags'
 
 export const DEFAULT_DATADOG_SUBDOMAIN = 'app'

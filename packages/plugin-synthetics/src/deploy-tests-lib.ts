@@ -1,9 +1,11 @@
+import type {APIHelper} from './api'
+import type {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} from './interfaces'
+
 import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
 import get from 'get-value'
 import set from 'set-value'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
-import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} from './interfaces'
+import {EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {getTestConfigs} from './test'
 import {isLocalTriggerConfig} from './utils/internal'
 

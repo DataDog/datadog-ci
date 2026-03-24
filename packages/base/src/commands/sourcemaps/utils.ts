@@ -1,4 +1,6 @@
-import {open, FileHandle} from 'fs/promises'
+import {open} from 'fs/promises'
+
+import type {FileHandle} from 'fs/promises'
 
 import upath from 'upath'
 

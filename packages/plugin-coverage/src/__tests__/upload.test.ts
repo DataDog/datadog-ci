@@ -1,5 +1,6 @@
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
 import {PluginCommand as CoverageUploadCommand} from '../commands/upload'

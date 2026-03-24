@@ -1,16 +1,5 @@
-import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
-import chalk from 'chalk'
-import deepExtend from 'deep-extend'
-
-import {
-  APIHelper,
-  EndpointError,
-  extractUnauthorizedTestPublicIds,
-  formatBackendErrors,
-  getErrorHttpStatus,
-} from './api'
-import {BatchTimeoutRunawayError, CiError} from './errors'
-import {
+import type {APIHelper} from './api'
+import type {
   BaseResultInBatch,
   Batch,
   LocationsMapping,
@@ -25,7 +14,14 @@ import {
   TestPayload,
   TriggerInfo,
 } from './interfaces'
-import {Tunnel} from './tunnel'
+import type {Tunnel} from './tunnel'
+import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
+
+import chalk from 'chalk'
+import deepExtend from 'deep-extend'
+
+import {EndpointError, extractUnauthorizedTestPublicIds, formatBackendErrors, getErrorHttpStatus} from './api'
+import {BatchTimeoutRunawayError, CiError} from './errors'
 import {
   isResultInBatchSkippedBySelectiveRerun,
   getResultIdOrLinkedResultId,

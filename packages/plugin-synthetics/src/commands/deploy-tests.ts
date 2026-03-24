@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
+import type {DeployTestsCommandConfig, MainReporter} from '../interfaces'
+import type {RecursivePartial} from '../utils/internal'
+
 import {SyntheticsDeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
@@ -10,9 +13,8 @@ import deepExtend from 'deep-extend'
 
 import {deployTests} from '../deploy-tests-lib'
 import {CiError} from '../errors'
-import {DeployTestsCommandConfig, MainReporter} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
-import {RecursivePartial, getDefaultConfig} from '../utils/internal'
+import {getDefaultConfig} from '../utils/internal'
 import {getReporter} from '../utils/public'
 
 export class PluginCommand extends SyntheticsDeployTestsCommand {

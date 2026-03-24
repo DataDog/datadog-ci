@@ -1,6 +1,8 @@
 import {generateKeyPairSync} from 'crypto'
 
-import {ParsedKey, utils} from 'ssh2'
+import type {ParsedKey} from 'ssh2'
+
+import {utils} from 'ssh2'
 import {parseKey, parsePrivateKey} from 'sshpk'
 
 // Generate public/private key in OpenSSH format (used for encryption in tunnel over SSH)

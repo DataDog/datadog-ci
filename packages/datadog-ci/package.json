@@ -49,12 +49,12 @@
     "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
-    "chalk": "3.0.0",
     "clipanion": "^3.2.1",
     "typanion": "^3.14.0"
   },
   "devDependencies": {
     "@types/jest": "29.5.3",
+    "chalk": "3.0.0",
     "esbuild": "^0.25.9"
   }
 }

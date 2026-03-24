@@ -1,6 +1,5 @@
-import {Readable} from 'stream'
-
 import type {AxiosRequestConfig} from 'axios'
+import type {Readable} from 'stream'
 
 import {default as axios} from 'axios'
 

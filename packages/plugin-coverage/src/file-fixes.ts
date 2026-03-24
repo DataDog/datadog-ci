@@ -4,13 +4,13 @@
 
 import fsPromises from 'fs/promises'
 
+import type {FileFixes} from './interfaces'
+import type * as simpleGit from 'simple-git'
+
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {gitTrackedFiles} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
-import * as simpleGit from 'simple-git'
 import upath from 'upath'
-
-import {FileFixes} from './interfaces'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
 const MAX_FILES = 200_000

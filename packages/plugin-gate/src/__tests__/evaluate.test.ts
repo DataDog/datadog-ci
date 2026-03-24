@@ -1,12 +1,12 @@
 import fs from 'fs'
 
+import type {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
 import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {apiConstructor} from '../api'
 import {PluginCommand as GateEvaluateCommand} from '../commands/evaluate'
-import {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
 
 describe('evaluate', () => {
   describe('deprecation notice', () => {

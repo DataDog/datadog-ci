@@ -1,39 +1,40 @@
-import {
+import type {StateMachineDefinitionType} from './helpers'
+import type {
   CloudWatchLogsClient,
-  CreateLogGroupCommand,
   CreateLogGroupCommandOutput,
-  DeleteSubscriptionFilterCommand,
   DeleteSubscriptionFilterCommandOutput,
-  DescribeSubscriptionFiltersCommand,
   DescribeSubscriptionFiltersCommandOutput,
-  PutSubscriptionFilterCommand,
   PutSubscriptionFilterCommandOutput,
 } from '@aws-sdk/client-cloudwatch-logs'
-import {
-  AttachRolePolicyCommand,
-  AttachRolePolicyCommandOutput,
-  CreatePolicyCommand,
-  CreatePolicyCommandOutput,
-  IAMClient,
-} from '@aws-sdk/client-iam'
-import {
-  DescribeStateMachineCommand,
+import type {AttachRolePolicyCommandOutput, CreatePolicyCommandOutput, IAMClient} from '@aws-sdk/client-iam'
+import type {
   DescribeStateMachineCommandOutput,
-  ListTagsForResourceCommand,
   ListTagsForResourceCommandOutput,
-  LogLevel,
   Tag,
-  TagResourceCommand,
   TagResourceCommandOutput,
-  UntagResourceCommand,
   UntagResourceCommandOutput,
-  UpdateStateMachineCommand,
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
-import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {CommandContext} from '@datadog/datadog-ci-base'
+import type {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
+import type {CommandContext} from '@datadog/datadog-ci-base'
 
-import {buildLogAccessPolicyName, displayChanges, StateMachineDefinitionType} from './helpers'
+import {
+  CreateLogGroupCommand,
+  DeleteSubscriptionFilterCommand,
+  DescribeSubscriptionFiltersCommand,
+  PutSubscriptionFilterCommand,
+} from '@aws-sdk/client-cloudwatch-logs'
+import {AttachRolePolicyCommand, CreatePolicyCommand} from '@aws-sdk/client-iam'
+import {
+  DescribeStateMachineCommand,
+  ListTagsForResourceCommand,
+  LogLevel,
+  TagResourceCommand,
+  UntagResourceCommand,
+  UpdateStateMachineCommand,
+} from '@aws-sdk/client-sfn'
+
+import {buildLogAccessPolicyName, displayChanges} from './helpers'
 
 export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,

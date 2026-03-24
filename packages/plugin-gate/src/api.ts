@@ -1,10 +1,8 @@
-import {Writable} from 'stream'
-
+import type {EvaluationResponsePayload, Payload} from './interfaces'
 import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {Writable} from 'stream'
 
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {EvaluationResponsePayload, Payload} from './interfaces'
 
 export const evaluateGateRules =
   (request: (args: AxiosRequestConfig) => AxiosPromise<EvaluationResponsePayload>) =>

@@ -1,7 +1,6 @@
+import type {DiffData} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {AxiosPromise, AxiosResponse} from 'axios'
-
-import {DiffData} from '@datadog/datadog-ci-base/commands/git-metadata/git'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 export type FileFixes = Record<string, {lines: number; bitmap: string}>
 

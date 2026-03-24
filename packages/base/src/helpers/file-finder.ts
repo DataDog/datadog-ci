@@ -1,5 +1,7 @@
 import * as fs from 'fs'
-import {Stats, statSync} from 'fs'
+import {statSync} from 'fs'
+
+import type {Stats} from 'fs'
 
 import {globSync, hasMagic} from './glob'
 import {buildPath, isFile} from './utils'

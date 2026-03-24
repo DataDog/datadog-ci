@@ -1,7 +1,8 @@
+import type {Dependency, ScaRequest} from './types'
+
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import chalk from 'chalk'
 
-import {Dependency, ScaRequest} from './types'
 import {validateDependencyName} from './validation'
 
 const ICONS = {

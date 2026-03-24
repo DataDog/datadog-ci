@@ -1,10 +1,11 @@
 import fs from 'fs'
 
+import type {MobileTestWithOverride, TriggerConfig} from '../interfaces'
+
 import upath from 'upath'
 
 import {EndpointError} from '../api'
 import {CiError, CriticalError} from '../errors'
-import {MobileTestWithOverride, TriggerConfig} from '../interfaces'
 import * as mobile from '../mobile'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 

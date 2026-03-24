@@ -1,14 +1,5 @@
-import type {TunnelReporter} from '../tunnel/tunnel'
-import type {Writable} from 'stream'
-
-import {getTestRunsUrlPath} from '@datadog/datadog-ci-base/helpers/app'
-import {CI_JOB_URL, CI_PIPELINE_URL} from '@datadog/datadog-ci-base/helpers/tags'
-import chalk from 'chalk'
-import ora from 'ora'
-
-import {
+import type {
   Assertion,
-  ExecutionRule,
   MainReporter,
   Result,
   ServerResult,
@@ -23,6 +14,16 @@ import {
   RunTestsCommandConfig,
   TestPlan,
 } from '../interfaces'
+import type {TunnelReporter} from '../tunnel/tunnel'
+import type {InitialSummary} from '../utils/public'
+import type {Writable} from 'stream'
+
+import {getTestRunsUrlPath} from '@datadog/datadog-ci-base/helpers/app'
+import {CI_JOB_URL, CI_PIPELINE_URL} from '@datadog/datadog-ci-base/helpers/tags'
+import chalk from 'chalk'
+import ora from 'ora'
+
+import {ExecutionRule} from '../interfaces'
 import {isBaseResult, isTimedOutRetry, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
   getBatchUrl,
@@ -35,7 +36,6 @@ import {
   pluralize,
   readableOperation,
   ResultOutcome,
-  InitialSummary,
 } from '../utils/public'
 
 import {ICONS} from './constants'

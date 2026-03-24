@@ -1,9 +1,13 @@
 import os from 'os'
 import {gzipSync} from 'zlib'
 
+import type {APIHelper, FileFixes, Payload, RepoFile} from '../interfaces'
+import type {DiffData} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import type {RequestBuilder, SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+import type * as simpleGit from 'simple-git'
+
 import {CoverageUploadCommand} from '@datadog/datadog-ci-base/commands/coverage/upload'
 import {
-  DiffData,
   getGitDiff,
   getGitFileHash,
   getMergeBase,
@@ -19,7 +23,6 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
-import {RequestBuilder, SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {
@@ -33,12 +36,10 @@ import {
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
 import {generateFileFixes} from '../file-fixes'
-import {APIHelper, FileFixes, Payload, RepoFile} from '../interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,

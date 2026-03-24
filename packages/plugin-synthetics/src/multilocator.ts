@@ -1,9 +1,10 @@
 import {writeFile} from 'fs/promises'
 
+import type {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter, Step} from './interfaces'
+
 import {isInteractive} from '@datadog/datadog-ci-base/helpers/ci'
 import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 
-import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter, Step} from './interfaces'
 import {findUniqueLocalTestDefinition} from './local-test-definition'
 import {ICONS} from './reporters/constants'
 import {getTestConfigs} from './test'

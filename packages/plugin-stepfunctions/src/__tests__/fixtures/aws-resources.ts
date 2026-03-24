@@ -1,6 +1,8 @@
-import {SubscriptionFilter} from '@aws-sdk/client-cloudwatch-logs/dist-types/models/models_0'
-import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
-import {Tag} from '@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0'
+import type {SubscriptionFilter} from '@aws-sdk/client-cloudwatch-logs/dist-types/models/models_0'
+import type {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import type {Tag} from '@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0'
+
+import {LogLevel} from '@aws-sdk/client-sfn'
 
 export const describeStateMachineFixture = (
   props: Partial<DescribeStateMachineCommandOutput> = {}

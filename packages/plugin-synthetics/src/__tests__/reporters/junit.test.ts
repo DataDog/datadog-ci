@@ -1,13 +1,16 @@
 import fs from 'fs'
 import fsp from 'fs/promises'
-import {Writable} from 'stream'
 
-import {CommandContext} from '@datadog/datadog-ci-base'
+import type {CommandContext} from '@datadog/datadog-ci-base'
+import type {Writable} from 'stream'
+
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
-import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
-import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
+import type {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
+import type {Device, Result, ServerTest} from '../../interfaces'
+import {ExecutionRule} from '../../interfaces'
+import type {Args, XMLTestCase} from '../../reporters/junit'
+import {getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter} from '../../reporters/junit'
 
 import {
   BATCH_ID,

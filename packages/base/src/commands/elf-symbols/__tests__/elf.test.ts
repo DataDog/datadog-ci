@@ -1,4 +1,5 @@
-import {ExecException} from 'child_process'
+import type {ElfFileMetadata} from '../elf'
+import type {ExecException} from 'child_process'
 
 import upath from 'upath'
 
@@ -18,7 +19,6 @@ import {
   readElfProgramHeaderTable,
   getBuildIds,
   computeFileHash,
-  ElfFileMetadata,
 } from '../elf'
 import * as elfModule from '../elf'
 import {MachineType, ElfFileType, ElfClass, SectionHeaderType, ProgramHeaderType} from '../elf-constants'

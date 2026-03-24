@@ -4,9 +4,10 @@ import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
 import type {AxiosRequestConfig} from 'axios'
+import type {BaseContext, CommandClass} from 'clipanion'
 
 import {create as axiosCreate} from 'axios'
-import {BaseContext, CommandClass, Cli} from 'clipanion'
+import {Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
 import terminalLink from 'terminal-link'

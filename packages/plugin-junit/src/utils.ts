@@ -1,5 +1,6 @@
+import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+
 import {getBaseUrl, getTestRunsUrlPath} from '@datadog/datadog-ci-base/helpers/app'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
 
 export const getTestRunsUrl = (spanTags: SpanTags, queryPrefix = ''): string => {

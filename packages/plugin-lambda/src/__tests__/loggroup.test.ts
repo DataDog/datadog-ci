@@ -1,3 +1,5 @@
+import type {LogGroupConfiguration} from '../interfaces'
+
 import {
   CloudWatchLogsClient,
   CreateLogGroupCommand,
@@ -8,7 +10,6 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
 import {SUBSCRIPTION_FILTER_NAME} from '../constants'
-import {LogGroupConfiguration} from '../interfaces'
 import {applyLogGroupConfig, calculateLogGroupRemoveRequest, calculateLogGroupUpdateRequest} from '../loggroup'
 
 import {mockCloudWatchLogsClientCommands, mockLogGroups} from './fixtures'

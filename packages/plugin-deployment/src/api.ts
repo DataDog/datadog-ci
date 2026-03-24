@@ -1,13 +1,12 @@
-import type {AxiosPromise, AxiosRequestConfig} from 'axios'
-
-import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {
+import type {
   APIHelper,
   GateEvaluationRequest,
   GateEvaluationRequestResponse,
   GateEvaluationStatusResponse,
 } from './interfaces'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 const requestGateEvaluation =
   (request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationRequestResponse>) =>

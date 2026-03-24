@@ -1,4 +1,6 @@
-import {BaseContext, Command} from 'clipanion'
+import type {BaseContext} from 'clipanion'
+
+import {Command} from 'clipanion'
 
 export type CommandContext = BaseContext & {
   builtinPlugins: string[]

@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
+import type {UploadApplicationCommandConfig} from '../interfaces'
+import type {RecursivePartial} from '../utils/internal'
+
 import {SyntheticsUploadApplicationCommand} from '@datadog/datadog-ci-base/commands/synthetics/upload-application'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
@@ -11,10 +14,9 @@ import deepExtend from 'deep-extend'
 
 import {EndpointError} from '../api'
 import {CiError} from '../errors'
-import {UploadApplicationCommandConfig} from '../interfaces'
 import {uploadMobileApplicationVersion} from '../mobile'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
-import {RecursivePartial, getDefaultConfig} from '../utils/internal'
+import {getDefaultConfig} from '../utils/internal'
 
 export class PluginCommand extends SyntheticsUploadApplicationCommand {
   protected config: UploadApplicationCommandConfig = PluginCommand.getDefaultConfig()

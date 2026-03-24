@@ -1,10 +1,11 @@
+import type {CompressedDsym, Dsym, DWARF} from './interfaces'
+
 import chalk from 'chalk'
 import upath from 'upath'
 
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 
-import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {pluralize} from './utils'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)

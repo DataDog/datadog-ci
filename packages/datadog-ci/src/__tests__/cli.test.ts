@@ -1,7 +1,9 @@
+import type {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
+import type {CommandClass} from 'clipanion'
+
 import {commands as commandDeclarations, noPluginExceptions} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
-import {Builtins, Cli, CommandClass} from 'clipanion'
+import {Builtins, Cli} from 'clipanion'
 
 // Test all commands, including beta ones.
 process.env.DD_BETA_COMMANDS_ENABLED = '1'

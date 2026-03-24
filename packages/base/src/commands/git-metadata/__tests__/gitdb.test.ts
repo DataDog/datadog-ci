@@ -3,8 +3,9 @@ import fs from 'fs'
 import fspromises from 'fs/promises'
 import os from 'os'
 
+import type * as simpleGit from 'simple-git'
+
 import axios from 'axios'
-import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {Logger, LogLevel} from '../../../helpers/logger'

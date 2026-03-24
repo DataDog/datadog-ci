@@ -1,9 +1,8 @@
 import * as crypto from 'crypto'
 import fs from 'fs'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
-import {CiError, CriticalError} from './errors'
-import {
+import type {APIHelper} from './api'
+import type {
   MobileAppExtractedMetadata,
   MobileAppUploadResult,
   MobileApplicationUploadPart,
@@ -16,6 +15,9 @@ import {
   AppUploadDetails,
   MobileTestWithOverride,
 } from './interfaces'
+
+import {EndpointError, formatBackendErrors, getApiHelper} from './api'
+import {CiError, CriticalError} from './errors'
 import {AppUploadReporter} from './reporters/mobile/app-upload'
 import {wait} from './utils/internal'
 

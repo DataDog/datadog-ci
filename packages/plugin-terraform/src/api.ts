@@ -1,12 +1,11 @@
 import {createGzip} from 'zlib'
 
+import type {TerraformArtifactPayload} from './interfaces'
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
-
-import {TerraformArtifactPayload} from './interfaces'
 
 const maxBodyLength = Infinity
 

@@ -1,10 +1,10 @@
+import type {MappingMetadata} from './interfaces'
+
 import chalk from 'chalk'
 
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {pluralize} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {MappingMetadata} from './interfaces'
 
 export interface UploadInfo {
   fileType: string
