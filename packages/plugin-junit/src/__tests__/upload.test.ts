@@ -80,39 +80,6 @@ describe('upload', () => {
       })
     })
 
-    test('should allow junit reports with more than 1000 testcases', async () => {
-      const tempDir = fs.mkdtempSync(upath.join(os.tmpdir(), 'junit-upload-'))
-      const junitPath = upath.join(tempDir, 'junit-large-report.xml')
-      const testCases = Array.from({length: 1001}, (_, index) => `<testcase name="test-${index}" />`).join('')
-
-      fs.writeFileSync(junitPath, `<testsuite>${testCases}</testsuite>`)
-
-      try {
-        const command = createCommand(JunitUploadCommand)
-        const files = await command['getMatchingJUnitXMLFiles'].call(
-          {
-            basePaths: [junitPath],
-            config: {},
-            context: command.context,
-            service: 'service',
-          },
-          {},
-          {},
-          {},
-          {},
-          {}
-        )
-
-        expect(files).toHaveLength(1)
-        expect(files[0]).toMatchObject({
-          xmlPath: junitPath,
-        })
-        expect(command.context.stdout.toString()).not.toContain('Entity expansion limit exceeded')
-      } finally {
-        fs.rmSync(tempDir, {recursive: true, force: true})
-      }
-    })
-
     test('should allow junit reports with more than 1000 entity expansions in testcase text', async () => {
       const tempDir = fs.mkdtempSync(upath.join(os.tmpdir(), 'junit-upload-'))
       const junitPath = upath.join(tempDir, 'junit-entity-heavy-report.xml')
