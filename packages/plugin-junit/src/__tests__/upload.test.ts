@@ -1,3 +1,4 @@
+import fs from 'fs'
 import os from 'os'
 
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -78,6 +79,40 @@ describe('upload', () => {
       expect(files[0]).toMatchObject({
         xmlPath: 'src/__tests__/fixtures/go-report.xml',
       })
+    })
+
+    test('should allow junit reports with more than 1000 entity expansions in testcase text', async () => {
+      const tempDir = fs.mkdtempSync(upath.join(os.tmpdir(), 'junit-upload-'))
+      const junitPath = upath.join(tempDir, 'junit-entity-heavy-report.xml')
+      const entityRefs = Array.from({length: 1001}, () => '&x;').join('')
+      const junitXml = `<!DOCTYPE testsuite [<!ENTITY x "quoted">]><testsuite><testcase>${entityRefs}</testcase></testsuite>`
+
+      fs.writeFileSync(junitPath, junitXml)
+
+      try {
+        const command = createCommand(JunitUploadCommand)
+        const files = await command['getMatchingJUnitXMLFiles'].call(
+          {
+            basePaths: [junitPath],
+            config: {},
+            context: command.context,
+            service: 'service',
+          },
+          {},
+          {},
+          {},
+          {},
+          {}
+        )
+
+        expect(files).toHaveLength(1)
+        expect(files[0]).toMatchObject({
+          xmlPath: junitPath,
+        })
+        expect(command.context.stdout.toString()).not.toContain('Entity expansion limit exceeded')
+      } finally {
+        fs.rmSync(tempDir, {recursive: true, force: true})
+      }
     })
 
     test('should not fail for invalid single files', async () => {
