@@ -23,11 +23,11 @@ packages/plugin-sbom                     @DataDog/datadog-ci-admins @DataDog/k9-
 packages/base/src/commands/sbom          @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
 
 ## RUM (label: rum)
-packages/base/src/commands/dsyms            @DataDog/datadog-ci-admins @DataDog/rum-mobile
-packages/base/src/commands/flutter-symbols  @DataDog/datadog-ci-admins @DataDog/rum-mobile
-packages/base/src/commands/react-native     @DataDog/datadog-ci-admins @DataDog/rum-mobile
-packages/base/src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser
-packages/base/src/commands/unity-symbols    @DataDog/datadog-ci-admins @DataDog/rum-mobile
+packages/base/src/commands/dsyms            @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
+packages/base/src/commands/flutter-symbols  @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
+packages/base/src/commands/react-native     @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
+packages/base/src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser @DataDog/rum-backend
+packages/base/src/commands/unity-symbols    @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 
 ## Serverless (label: serverless)
 packages/plugin-aas                                  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
