@@ -638,6 +638,8 @@ if (fix) {
 }
 
 if (fix) {
+  // We aren't using `knip:strict --fix` on purpose because it ignores test files,
+  // so it could remove dependencies that are actually used in tests and should be in `devDependencies` instead.
   try {
     // This command exits with 1 when it makes changes
     exec('yarn knip --fix')
@@ -646,10 +648,17 @@ if (fix) {
   }
 } else {
   try {
-    exec('yarn knip')
+    exec('yarn knip:strict')
   } catch {
     console.log()
-    console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` to fix it.\n'))
+    console.log(chalk.bold.red('Knip detected unused dependencies in production code!'))
+    console.log(chalk.red('- Run `yarn lint:packages --fix` to fix it.'))
+    console.log(
+      chalk.red(
+        "- If issues are left, it's probably because some dependencies are type-only or only used in tests, and should be moved to `devDependencies`."
+      )
+    )
+    console.log()
     process.exit(1)
   }
 }

@@ -13,6 +13,7 @@
     "format": "yarn lint:all --fix",
     "generate-json-schemas:synthetics": "ts-json-schema-generator --markdown-description --no-type-check --no-top-ref --additional-properties --path packages/plugin-synthetics/src/interfaces.ts --type TestConfig > packages/plugin-synthetics/src/test-config.schema.json && prettier --write packages/plugin-synthetics/src/test-config.schema.json",
     "knip": "knip --include dependencies --no-config-hints",
+    "knip:strict": "knip --include dependencies --no-config-hints --strict",
     "launch": "tsx --conditions=development packages/datadog-ci/src/cli.ts",
     "launch:debug": "tsx --conditions=development --inspect-brk packages/datadog-ci/src/cli.ts",
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
@@ -66,6 +67,7 @@
   },
   "knip": {
     "ignoreDependencies": [
+      "@datadog/datadog-ci-plugin-*",
       "@microsoft/eslint-formatter-sarif",
       "dd-trace",
       "syncpack"
