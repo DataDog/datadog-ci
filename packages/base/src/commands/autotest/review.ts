@@ -1,7 +1,10 @@
 import {createWriteStream, mkdirSync} from 'fs'
 import {join} from 'path'
 
-import {Command} from 'clipanion'
+import {exec} from 'child_process'
+import {promisify} from 'util'
+
+import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
@@ -199,7 +202,7 @@ Start now by:
 4. using those captured inputs as test fixtures to build and run a temporary validation
 5. writing validation_report.md`
 
-const MODEL = 'claude-opus-4-6-20250603'
+const MODEL = 'claude-opus-4-6'
 
 const MAX_DIFF_LENGTH = 512 * 1024 // 512 KB — keep within reasonable prompt size
 
@@ -227,7 +230,15 @@ export class AutotestCommand extends BaseCommand {
         - GitHub Actions (pull_request / pull_request_target triggers)
         - GitLab CI (merge request pipelines)
     `,
-    examples: [['Validate the current PR', 'datadog-ci autotest']],
+    examples: [
+      ['Validate the current PR (CI)', 'datadog-ci autotest'],
+      ['Validate a specific PR (local)', 'datadog-ci autotest --pr https://github.com/DataDog/dd-go/pull/217807'],
+    ],
+  })
+
+  private pr = Option.String('--pr', {
+    description: 'GitHub PR URL to validate. Uses `gh pr diff` to fetch the diff.',
+    required: false,
   })
 
   public async execute(): Promise<number> {
@@ -248,32 +259,46 @@ export class AutotestCommand extends BaseCommand {
       return 1
     }
 
-    const diffContext = detectDiffContext()
-    if (!diffContext) {
-      this.context.stderr.write(
-        'Error: Could not detect a pull request or merge request context.\n' +
-          'Supported CI providers:\n' +
-          '  - GitHub Actions: requires a pull_request or pull_request_target trigger\n' +
-          '  - GitLab CI: requires a merge request pipeline (merge_request_event)\n'
-      )
-
-      return 1
-    }
-
-    this.context.stderr.write(`Detected ${diffContext.provider} — computing diff…\n`)
-
     let diff: string
-    try {
-      diff = await getDiff(diffContext)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      this.context.stderr.write(`Error: Failed to compute diff (${diffContext.provider}): ${message}\n`)
 
-      return 1
+    if (this.pr) {
+      // Fetch diff from GitHub via `gh pr diff`.
+      this.context.stderr.write(`Fetching diff from ${this.pr}…\n`)
+      try {
+        diff = await this.fetchPrDiff(this.pr)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.context.stderr.write(`Error: Failed to fetch PR diff: ${message}\n`)
+
+        return 1
+      }
+    } else {
+      const diffContext = detectDiffContext()
+      if (!diffContext) {
+        this.context.stderr.write(
+          'Error: Could not detect a pull request or merge request context.\n' +
+            'Supported CI providers:\n' +
+            '  - GitHub Actions: requires a pull_request or pull_request_target trigger\n' +
+            '  - GitLab CI: requires a merge request pipeline (merge_request_event)\n' +
+            '\nFor local testing, use --pr <github-pr-url>\n'
+        )
+
+        return 1
+      }
+
+      this.context.stderr.write(`Detected ${diffContext.provider} — computing diff…\n`)
+      try {
+        diff = await getDiff(diffContext)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.context.stderr.write(`Error: Failed to compute diff (${diffContext.provider}): ${message}\n`)
+
+        return 1
+      }
     }
 
     if (!diff) {
-      this.context.stderr.write(`No changes detected between base and head (${diffContext.provider}).\n`)
+      this.context.stderr.write('No changes detected.\n')
 
       return 0
     }
@@ -295,6 +320,23 @@ export class AutotestCommand extends BaseCommand {
 
       return 1
     }
+  }
+
+  private async fetchPrDiff(prUrl: string): Promise<string> {
+    const execAsync = promisify(exec)
+    // Extract owner/repo and PR number from URL.
+    const match = prUrl.match(/github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/)
+    if (!match) {
+      throw new Error(`Invalid GitHub PR URL: ${prUrl}`)
+    }
+    const [, repo, prNumber] = match
+    const cwd = process.env.AUTOTEST_REPO_DIR || process.cwd()
+    const {stdout} = await execAsync(`gh pr diff ${prNumber} --repo ${repo}`, {
+      maxBuffer: 50 * 1024 * 1024,
+      cwd,
+    })
+
+    return stdout
   }
 
   private async runReview(diff: string): Promise<number> {
