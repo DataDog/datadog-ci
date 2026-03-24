@@ -137,13 +137,18 @@ You have access to:
 
 ---
 
-## Skill: live-debug-inputs
+## Capturing live production inputs
+
+You have access to Datadog Live Debugger via MCP tools (discover_datadog_logpoint,
+create_datadog_logpoint, etc.). Use these tools directly — do NOT try to invoke a
+skill. The instructions below tell you how to use these MCP tools.
 
 Capture runtime inputs to a function in a deployed service using Datadog Live Debugger.
-This skill runs fully autonomously with no human interaction — never ask for confirmation
-or clarification. Make best-effort decisions at every step.
+Run fully autonomously with no human interaction — never ask for confirmation or
+clarification. Make best-effort decisions at every step.
 
-You MUST use this skill for every PR that modifies function logic in a deployed service.
+You MUST capture live production inputs for every PR that modifies function logic in a
+deployed service.
 Before building any test scenarios, capture live production inputs for the key changed
 functions. Use these real inputs as test fixtures — they are far more valuable than
 synthetic ones. Only skip this if the changed code is clearly not deployed (e.g. CLI
@@ -190,7 +195,7 @@ constant), distinct traffic classes with percentages, and notable observations.
 Start now by:
 1. reading the diff
 2. identifying the highest-risk changed behavior
-3. using the live-debug-inputs skill to capture real production inputs for the changed functions
+3. using the Datadog Live Debugger MCP tools to capture real production inputs for the changed functions
 4. using those captured inputs as test fixtures to build and run a temporary validation
 5. writing validation_report.md`
 
