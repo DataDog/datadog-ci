@@ -648,6 +648,9 @@ if (fix) {
   }
 } else {
   try {
+    // Using `--strict` implies `--production`. See https://knip.dev/features/production-mode#strict-mode
+    // Note that we ignore `@datadog/datadog-ci-plugin-*` dependencies (see `ignoreDependencies` in `package.json`)
+    // because they are not used in production code in the base package, but they are marked as **optional** `peerDependencies`.
     exec('yarn knip:strict')
   } catch {
     console.log()
