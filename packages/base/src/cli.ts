@@ -4,6 +4,7 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
 
 import {commands as aasCommands} from './commands/aas/cli'
+import {commands as autotestCommands} from './commands/autotest/cli'
 import {commands as ciEnvCommands} from './commands/ci-env/cli'
 import {commands as cloudRunCommands} from './commands/cloud-run/cli'
 import {commands as containerAppCommands} from './commands/container-app/cli'
@@ -38,6 +39,7 @@ import {commands as versionCommands} from './commands/version/cli'
 // prettier-ignore
 export const commands = {
   'aas': aasCommands,
+  'autotest': autotestCommands,
   'ci-env': ciEnvCommands,
   'cloud-run': cloudRunCommands,
   'container-app': containerAppCommands,
@@ -74,6 +76,7 @@ export const commands = {
  * Some command scopes do not have a plugin package, and their logic is entirely included in `@datadog/datadog-ci-base`.
  */
 export const noPluginExceptions: Set<string> = new Set([
+  'autotest',
   'ci-env',
   'dsyms',
   'elf-symbols',
