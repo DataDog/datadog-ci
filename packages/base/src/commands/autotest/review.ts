@@ -383,8 +383,8 @@ export class AutotestCommand extends BaseCommand {
     const log = (entry: string) => logStream.write(`[${new Date().toISOString()}] ${entry}\n`)
     log(`Starting autotest validation`)
 
-    const spinner = new Spinner(this.context.stderr)
-    spinner.start('Connecting…')
+    const ora = (await import('ora')).default
+    const spinner = ora({text: 'Connecting…', stream: this.context.stderr}).start()
 
     const mcpServers: Record<string, unknown> = {
       'datadog-mcp': {
@@ -440,7 +440,7 @@ export class AutotestCommand extends BaseCommand {
         for (const server of servers) {
           const status = server.status ?? 'unknown'
           const name = server.name ?? 'unnamed'
-          spinner.update(status === 'connected' ? `MCP "${name}" connected` : `MCP "${name}": ${status}`)
+          spinner.text = status === 'connected' ? `MCP "${name}" connected` : `MCP "${name}": ${status}`
         }
       }
 
@@ -450,11 +450,11 @@ export class AutotestCommand extends BaseCommand {
           if (block.type === 'text') {
             const firstLine = (block.text ?? '').split('\n')[0].slice(0, 80)
             if (firstLine) {
-              spinner.update(firstLine)
+              spinner.text = firstLine
             }
           }
           if (block.type === 'tool_use') {
-            spinner.update((block as any).name ?? '')
+            spinner.text = (block as any).name ?? ''
           }
         }
       }
@@ -493,50 +493,3 @@ const isAssistantMessage = (msg: unknown): msg is AssistantMessage =>
 
 const isResultMessage = (msg: unknown): msg is ResultMessage =>
   typeof msg === 'object' && msg !== null && (msg as any).type === 'result'
-
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-
-class Spinner {
-  private stream: NodeJS.WritableStream
-  private timer: ReturnType<typeof setInterval> | undefined
-  private frameIdx = 0
-  private label = ''
-  private running = false
-
-  constructor(stream: NodeJS.WritableStream) {
-    this.stream = stream
-  }
-
-  start(label: string) {
-    this.label = label
-    this.running = true
-    this.render()
-    this.timer = setInterval(() => this.render(), 80)
-  }
-
-  update(label: string) {
-    this.label = label
-    if (!this.running) {
-      this.start(label)
-    }
-  }
-
-  stop() {
-    if (!this.running) {
-      return
-    }
-    this.running = false
-    if (this.timer) {
-      clearInterval(this.timer)
-      this.timer = undefined
-    }
-    // Clear the spinner line.
-    this.stream.write('\r\x1b[K')
-  }
-
-  private render() {
-    const frame = SPINNER_FRAMES[this.frameIdx % SPINNER_FRAMES.length]
-    this.frameIdx++
-    this.stream.write(`\r\x1b[K${frame} ${this.label}`)
-  }
-}
