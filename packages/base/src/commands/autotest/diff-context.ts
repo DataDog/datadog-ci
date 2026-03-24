@@ -46,14 +46,16 @@ export const detectDiffContext = (): DiffContext | undefined => {
 
 export const getDiff = async (diffContext: DiffContext): Promise<string> => {
   const {baseSha, headSha} = diffContext
+  const cwd = process.env.AUTOTEST_REPO_DIR || undefined
 
   // Fetch the base commit in case of a shallow clone (common in CI).
-  await execAsync(`git fetch --depth=1 origin ${baseSha}`).catch(() => {
+  await execAsync(`git fetch --depth=1 origin ${baseSha}`, {cwd}).catch(() => {
     // Ignore fetch errors — the commit may already be available locally.
   })
 
   const {stdout: diff} = await execAsync(`git diff ${baseSha}...${headSha}`, {
     maxBuffer: 50 * 1024 * 1024, // 50 MB
+    cwd,
   })
 
   return diff
