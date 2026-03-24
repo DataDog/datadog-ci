@@ -2114,7 +2114,6 @@ __metadata:
     inquirer: "npm:^8.2.6"
     inquirer-checkbox-plus-prompt: "npm:^1.4.2"
     ora: "npm:5.4.1"
-    typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
