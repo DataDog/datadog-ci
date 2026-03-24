@@ -40,15 +40,15 @@
   "dependencies": {
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
-    "axios": "^1.13.5",
     "chalk": "3.0.0",
     "form-data": "^4.0.4",
-    "simple-git": "3.33.0",
     "upath": "^2.0.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/jest": "29.5.3",
-    "@types/uuid": "^9.0.2"
+    "@types/uuid": "^9.0.2",
+    "axios": "^1.13.5",
+    "simple-git": "3.33.0"
   }
 }
