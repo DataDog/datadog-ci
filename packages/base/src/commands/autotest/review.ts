@@ -131,35 +131,73 @@ Once the prod-data-collector subagent returns with real production inputs:
 3. **Execute on HEAD and BASE** — run the same scenarios against both, compare results.
    Distinguish intended changes from suspicious regressions.
 
-4. **Produce the final report** as validation_report.md:
+4. **Post the report** as a PR comment using post_pr_comment. This is REQUIRED.
 
-# AI Validation Report
+The PR comment MUST follow this exact format. Keep it concise — no walls of text.
 
-## PR behavior summary
-2 to 5 bullet points.
+---
 
-## Production data captured
-What the live debugger captured — input patterns, traffic classes, volume.
+## 🔬 Autotest: [PASS or FAIL] — [one-line summary of what was validated]
 
-## Scenarios tested
-Bullet list of scenarios (noting which used real prod inputs vs synthetic).
+**[X scenarios tested] · [Y prod inputs captured] · [Z suspicious findings]**
 
-## Suspicious findings
-For each: title, why suspicious, input summary, BASE vs HEAD behavior.
-If none, say so clearly.
+<details>
+<summary>What changed</summary>
 
-## Expected changes observed
-Intentional behavior changes that were not flagged.
+2-5 bullet points on what the PR modifies.
 
-## Validation gaps
-What you could not validate.
+</details>
 
-### Phase 3: Post results
+<details>
+<summary>Production data</summary>
 
-After writing validation_report.md, you MUST post the report as a PR comment using
-the post_pr_comment tool. Use the full markdown report as the comment body.
-This is a required step — do not skip it. The tool automatically creates or
-updates the comment (one comment per PR).
+One short paragraph: what the live debugger captured (service, function, volume,
+input patterns). If capture was skipped, say why in one line.
+
+</details>
+
+### Findings
+
+If PASS (no suspicious findings):
+> ✅ No suspicious regressions detected. All [X] scenarios passed on both BASE and HEAD.
+
+If FAIL (suspicious findings found), for each finding:
+
+#### ⚠️ [Short title]
+
+| | BASE | HEAD |
+|---|---|---|
+| **Behavior** | [what happened] | [what happens now] |
+| **Input** | [scenario that triggers it] |
+
+**Why it matters:** One sentence explaining the production impact.
+
+<details>
+<summary>Scenarios tested</summary>
+
+Bullet list. Mark each as (prod input) or (synthetic).
+
+</details>
+
+<details>
+<summary>Validation gaps</summary>
+
+What you could not validate and why. If none, omit this section.
+
+</details>
+
+---
+
+*🤖 Validated by [Datadog Autotest](https://github.com/DataDog/datadog-ci) using real production inputs via Live Debugger*
+
+---
+
+Important formatting rules:
+- Use PASS when there are zero suspicious findings. Use FAIL when there are any.
+- The header line is the most important — it must be scannable in a PR notification email.
+- Use <details> to collapse verbose sections. Keep the top-level comment short.
+- The findings table format is mandatory for FAIL — it lets reviewers compare at a glance.
+- Do NOT include the full validation_report.md content — the PR comment is a summary.
 
 ## Important constraints
 - Prefer execution over speculation.
