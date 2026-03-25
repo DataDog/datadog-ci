@@ -140,7 +140,7 @@ The PR comment MUST follow this exact format. Keep it concise — no walls of te
 
 ## 🔬 Autotest: [PASS or FAIL] — [one-line summary of what was validated]
 
-**[X scenarios tested] · [Y prod inputs captured] · [Z suspicious findings]**
+**[X scenarios executed] · [Y prod inputs captured] · [Z suspicious findings]**
 
 <details>
 <summary>What changed</summary>
@@ -174,9 +174,29 @@ If FAIL (suspicious findings found), for each finding:
 **Why it matters:** One sentence explaining the production impact.
 
 <details>
-<summary>Scenarios tested</summary>
+<summary>Scenarios executed</summary>
 
 Bullet list. Mark each as (prod input) or (synthetic).
+
+</details>
+
+<details>
+<summary>Execution log</summary>
+
+MANDATORY: Paste the raw terminal output from your test/validation commands here.
+This is the PROOF that code was actually executed — without this section, the report
+has no credibility. Include the full command and its output, for example:
+
+\`\`\`
+$ go test -run TestAutotest -v ./path/to/package/
+=== RUN   TestAutotest/scenario_name
+    Expected: 5, Got: 0
+--- FAIL: TestAutotest/scenario_name (0.00s)
+FAIL
+\`\`\`
+
+If you could NOT execute code (build failures, missing deps), say so explicitly and
+explain what you tried. Do NOT fabricate test output.
 
 </details>
 
@@ -613,7 +633,7 @@ export class AutotestCommand extends BaseCommand {
     return 0
   }
 
-  private async reportTelemetry(resultText: string, prInfo?: {repo: string; number: number}) {
+  private async reportTelemetry(resultText: string, prInfo?: PrInfo) {
     const apiKey = process.env.DD_API_KEY
     if (!apiKey) {
       return
@@ -621,13 +641,16 @@ export class AutotestCommand extends BaseCommand {
 
     try {
       const isFail = /Autotest:\s*FAIL/i.test(resultText)
-      const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*tested/i)
+      const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*executed/i)
       const prodInputsMatch = resultText.match(/(\d+)\s*prod\s*inputs?\s*captured/i)
       const findingsMatch = resultText.match(/(\d+)\s*suspicious\s*findings?/i)
+      const hasExecutionLog = /Execution log/.test(resultText) && /\$\s+\w/.test(resultText)
+      const method = hasExecutionLog ? 'execution' : 'static_analysis'
 
       const tags = [
         `result:${isFail ? 'fail' : 'pass'}`,
-        `provider:${process.env.GITLAB_CI ? 'gitlab' : 'github'}`,
+        `method:${method}`,
+        `provider:${prInfo?.provider ?? 'unknown'}`,
         ...(prInfo ? [`repo:${prInfo.repo}`] : []),
       ]
 
@@ -643,7 +666,7 @@ export class AutotestCommand extends BaseCommand {
         logger.increment('regression_found', 1)
       }
       if (scenariosMatch) {
-        logger.gauge('scenarios_tested', parseInt(scenariosMatch[1], 10))
+        logger.gauge('scenarios_executed', parseInt(scenariosMatch[1], 10))
       }
       if (prodInputsMatch) {
         logger.gauge('prod_inputs_captured', parseInt(prodInputsMatch[1], 10))
