@@ -157,8 +157,9 @@ What you could not validate.
 ### Phase 3: Post results
 
 After writing validation_report.md, you MUST post the report as a PR comment using
-the create_pr_comment tool. Use the full markdown report as the comment body.
-This is a required step — do not skip it.
+the post_pr_comment tool. Use the full markdown report as the comment body.
+This is a required step — do not skip it. The tool automatically creates or
+updates the comment (one comment per PR).
 
 ## Important constraints
 - Prefer execution over speculation.
@@ -345,33 +346,71 @@ export class AutotestCommand extends BaseCommand {
       return {content: [{type: 'text' as const, text: JSON.stringify(await response.json())}]}
     }
 
+    const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
+
     const githubTools = prInfo && githubToken
       ? (() => {
           const {repo, number: prNumber} = prInfo
 
-          const createPrComment = tool(
-            'create_pr_comment',
-            'Post a new comment on the pull request. Use this to share your validation report.',
-            {body: z.string().describe('Markdown body of the comment')},
-            async (args: {body: string}) =>
-              githubApiFetch(`/repos/${repo}/issues/${prNumber}/comments`, 'POST', {body: args.body})
-          )
+          // Find existing autotest comment on this PR.
+          const findExistingComment = async (): Promise<number | undefined> => {
+            let page = 1
+            while (page <= 10) {
+              const response = await fetch(
+                `${GITHUB_API_BASE}/repos/${repo}/issues/${prNumber}/comments?per_page=100&page=${page}`,
+                {
+                  headers: {
+                    Authorization: `token ${githubToken}`,
+                    Accept: 'application/vnd.github.v3+json',
+                    'User-Agent': GITHUB_USER_AGENT,
+                  },
+                }
+              )
+              if (!response.ok) {
+                return undefined
+              }
+              const comments = (await response.json()) as Array<{id: number; body: string}>
+              const existing = comments.find((c) => c.body.includes(COMMENT_MARKER))
+              if (existing) {
+                return existing.id
+              }
+              if (comments.length < 100) {
+                break
+              }
+              page++
+            }
 
-          const editPrComment = tool(
-            'edit_pr_comment',
-            'Edit an existing comment on the pull request by comment ID.',
-            {
-              comment_id: z.string().describe('The comment ID to edit'),
-              body: z.string().describe('New markdown body for the comment'),
-            },
-            async (args: {comment_id: string; body: string}) =>
-              githubApiFetch(`/repos/${repo}/issues/comments/${args.comment_id}`, 'PATCH', {body: args.body})
+            return undefined
+          }
+
+          const postPrComment = tool(
+            'post_pr_comment',
+            'Post the validation report as a PR comment. Creates a new comment or updates the existing one.',
+            {body: z.string().describe('Markdown body of the validation report')},
+            async (args: {body: string}) => {
+              const markedBody = `${COMMENT_MARKER}\n${args.body}`
+              const existingId = await findExistingComment()
+
+              if (existingId) {
+                return githubApiFetch(
+                  `/repos/${repo}/issues/comments/${existingId}`,
+                  'PATCH',
+                  {body: markedBody}
+                )
+              }
+
+              return githubApiFetch(
+                `/repos/${repo}/issues/${prNumber}/comments`,
+                'POST',
+                {body: markedBody}
+              )
+            }
           )
 
           return createSdkMcpServer({
             name: 'github-pr',
             version: '1.0.0',
-            tools: [createPrComment, editPrComment],
+            tools: [postPrComment],
           })
         })()
       : undefined
