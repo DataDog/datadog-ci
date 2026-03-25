@@ -512,10 +512,19 @@ export class AutotestCommand extends BaseCommand {
       },
     })) {
       const msg = message as any
+      const isSubagent = !!msg.parent_tool_use_id
+      const prefix = isSubagent ? '[subagent] ' : ''
+      const typeTag = `${msg.type}${msg.subtype ? ':' + msg.subtype : ''}`
 
-      // Log every message to the raw log file.
       // Log full message — no truncation.
-      log(`[${msg.type}${msg.subtype ? ':' + msg.subtype : ''}] ${JSON.stringify(msg)}`)
+      log(`${prefix}[${typeTag}] ${JSON.stringify(msg)}`)
+
+      // Log task_progress events (subagent tool activity).
+      if (msg.subtype === 'task_progress') {
+        const toolName = msg.last_tool_name ?? ''
+        const desc = msg.description ?? ''
+        spinner.text = `${desc}${toolName ? ` → ${toolName}` : ''}`
+      }
 
       if (isSystemInitMessage(message)) {
         const servers = msg.mcp_servers ?? []
@@ -532,11 +541,11 @@ export class AutotestCommand extends BaseCommand {
           if (block.type === 'text') {
             const firstLine = (block.text ?? '').split('\n')[0].slice(0, 80)
             if (firstLine) {
-              spinner.text = firstLine
+              spinner.text = `${prefix}${firstLine}`
             }
           }
           if (block.type === 'tool_use') {
-            spinner.text = (block as any).name ?? ''
+            spinner.text = `${prefix}${(block as any).name ?? ''}`
           }
         }
       }
