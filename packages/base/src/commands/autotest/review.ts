@@ -495,6 +495,7 @@ export class AutotestCommand extends BaseCommand {
             description:
               'Captures live production inputs for changed functions using Datadog Live Debugger. Takes ~5 minutes. Start immediately and in the background.',
             prompt: PROD_DATA_COLLECTOR_PROMPT,
+            model: 'opus',
             tools: [
               'Read',
               'Grep',
