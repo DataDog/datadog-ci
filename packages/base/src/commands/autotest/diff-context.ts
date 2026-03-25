@@ -63,15 +63,25 @@ export const getDiff = async (diffContext: DiffContext): Promise<string> => {
   const {baseSha, headSha} = diffContext
   const cwd = process.env.AUTOTEST_REPO_DIR || undefined
 
-  // Fetch the base commit in case of a shallow clone (common in CI).
-  await execAsync(`git fetch --depth=1 origin ${baseSha}`, {cwd}).catch(() => {
-    // Ignore fetch errors — the commit may already be available locally.
+  // Deepen history so merge-base works in shallow clones (common in CI).
+  await execAsync(`git fetch --deepen=100 origin ${baseSha} ${headSha}`, {cwd}).catch(() => {
+    // Ignore fetch errors — the commits may already be available locally.
   })
 
-  const {stdout: diff} = await execAsync(`git diff ${baseSha}...${headSha}`, {
-    maxBuffer: 50 * 1024 * 1024, // 50 MB
-    cwd,
-  })
+  // Try three-dot diff (merge-base) first, fall back to two-dot if no common ancestor.
+  try {
+    const {stdout} = await execAsync(`git diff ${baseSha}...${headSha}`, {
+      maxBuffer: 50 * 1024 * 1024,
+      cwd,
+    })
 
-  return diff
+    return stdout
+  } catch {
+    const {stdout} = await execAsync(`git diff ${baseSha} ${headSha}`, {
+      maxBuffer: 50 * 1024 * 1024,
+      cwd,
+    })
+
+    return stdout
+  }
 }
