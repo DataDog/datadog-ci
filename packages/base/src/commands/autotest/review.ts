@@ -6,7 +6,7 @@ import {Command, Option} from 'clipanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 
-import {detectDiffContext} from './diff-context'
+import {detectDiffContext, type PrInfo} from './diff-context'
 
 const GITHUB_API_BASE = 'https://api.github.com'
 const GITHUB_USER_AGENT = 'datadog-ci-autotest'
@@ -275,12 +275,13 @@ export class AutotestCommand extends BaseCommand {
     let prInfo: {repo: string; number: number} | undefined
 
     if (this.pr) {
-      prInfo = parseGitHubPrUrl(this.pr)
-      if (!prInfo) {
+      const parsed = parseGitHubPrUrl(this.pr)
+      if (!parsed) {
         this.context.stderr.write(`Error: Invalid GitHub PR URL: ${this.pr}\n`)
 
         return 1
       }
+      prInfo = {...parsed, provider: 'github'}
     } else {
       const diffContext = detectDiffContext()
       if (!diffContext?.pr) {
@@ -298,14 +299,14 @@ export class AutotestCommand extends BaseCommand {
       this.context.stderr.write(`Detected ${diffContext.provider} (PR #${prInfo.number})…\n`)
     }
 
-    // Always fetch diff via GitHub API — no git history needed.
+    // Fetch diff via API — no git history needed.
     this.context.stderr.write(`Fetching diff for ${prInfo.repo}#${prInfo.number}…\n`)
     let diff: string
     try {
-      diff = await this.fetchPrDiff(`https://github.com/${prInfo.repo}/pull/${prInfo.number}`)
+      diff = await this.fetchDiff(prInfo)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      this.context.stderr.write(`Error: Failed to fetch PR diff: ${message}\n`)
+      this.context.stderr.write(`Error: Failed to fetch diff: ${message}\n`)
 
       return 1
     }
@@ -335,11 +336,15 @@ export class AutotestCommand extends BaseCommand {
     }
   }
 
-  private async fetchPrDiff(prUrl: string): Promise<string> {
-    const pr = parseGitHubPrUrl(prUrl)
-    if (!pr) {
-      throw new Error(`Invalid GitHub PR URL: ${prUrl}`)
+  private async fetchDiff(pr: PrInfo): Promise<string> {
+    if (pr.provider === 'gitlab') {
+      return this.fetchGitLabDiff(pr)
     }
+
+    return this.fetchGitHubDiff(pr)
+  }
+
+  private async fetchGitHubDiff(pr: PrInfo): Promise<string> {
     const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
 
     const response = await fetch(`${GITHUB_API_BASE}/repos/${pr.repo}/pulls/${pr.number}`, {
@@ -357,7 +362,44 @@ export class AutotestCommand extends BaseCommand {
     return response.text()
   }
 
-  private async runReview(diff: string, prInfo?: {repo: string; number: number}): Promise<number> {
+  private async fetchGitLabDiff(pr: PrInfo): Promise<string> {
+    const gitlabUrl = process.env.CI_SERVER_URL || 'https://gitlab.com'
+    const token = process.env.GITLAB_TOKEN || process.env.CI_JOB_TOKEN
+    const projectId = encodeURIComponent(pr.repo)
+
+    const response = await fetch(
+      `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${pr.number}/diffs`,
+      {
+        headers: {
+          ...(token ? {Authorization: `Bearer ${token}`} : {}),
+        },
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`GitLab API error ${response.status}: ${await response.text()}`)
+    }
+
+    // GitLab returns an array of diff objects — convert to unified diff format.
+    const diffs = (await response.json()) as Array<{
+      old_path: string
+      new_path: string
+      diff: string
+    }>
+
+    return diffs
+      .map((d) => {
+        const header =
+          d.old_path === d.new_path
+            ? `diff --git a/${d.old_path} b/${d.new_path}`
+            : `diff --git a/${d.old_path} b/${d.new_path}\nrename from ${d.old_path}\nrename to ${d.new_path}`
+
+        return `${header}\n${d.diff}`
+      })
+      .join('\n')
+  }
+
+  private async runReview(diff: string, prInfo?: PrInfo): Promise<number> {
     const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
     const {z} = await import('zod')
 
@@ -390,7 +432,7 @@ export class AutotestCommand extends BaseCommand {
 
     const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
 
-    const githubTools = prInfo && githubToken
+    const githubTools = prInfo && prInfo.provider === 'github' && githubToken
       ? (() => {
           const {repo, number: prNumber} = prInfo
 
