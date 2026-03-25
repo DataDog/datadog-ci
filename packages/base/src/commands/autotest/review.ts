@@ -6,7 +6,7 @@ import {Command, Option} from 'clipanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 
-import {detectDiffContext, getDiff} from './diff-context'
+import {detectDiffContext} from './diff-context'
 
 const GITHUB_API_BASE = 'https://api.github.com'
 const GITHUB_USER_AGENT = 'datadog-ci-autotest'
@@ -271,24 +271,19 @@ export class AutotestCommand extends BaseCommand {
       return 1
     }
 
-    let diff: string
+    // Resolve PR info from --pr flag or CI environment.
     let prInfo: {repo: string; number: number} | undefined
 
     if (this.pr) {
-      // Fetch diff from GitHub via `gh pr diff`.
-      this.context.stderr.write(`Fetching diff from ${this.pr}…\n`)
       prInfo = parseGitHubPrUrl(this.pr)
-      try {
-        diff = await this.fetchPrDiff(this.pr)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        this.context.stderr.write(`Error: Failed to fetch PR diff: ${message}\n`)
+      if (!prInfo) {
+        this.context.stderr.write(`Error: Invalid GitHub PR URL: ${this.pr}\n`)
 
         return 1
       }
     } else {
       const diffContext = detectDiffContext()
-      if (!diffContext) {
+      if (!diffContext?.pr) {
         this.context.stderr.write(
           'Error: Could not detect a pull request or merge request context.\n' +
             'Supported CI providers:\n' +
@@ -299,17 +294,20 @@ export class AutotestCommand extends BaseCommand {
 
         return 1
       }
-
       prInfo = diffContext.pr
-      this.context.stderr.write(`Detected ${diffContext.provider} — computing diff…\n`)
-      try {
-        diff = await getDiff(diffContext)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        this.context.stderr.write(`Error: Failed to compute diff (${diffContext.provider}): ${message}\n`)
+      this.context.stderr.write(`Detected ${diffContext.provider} (PR #${prInfo.number})…\n`)
+    }
 
-        return 1
-      }
+    // Always fetch diff via GitHub API — no git history needed.
+    this.context.stderr.write(`Fetching diff for ${prInfo.repo}#${prInfo.number}…\n`)
+    let diff: string
+    try {
+      diff = await this.fetchPrDiff(`https://github.com/${prInfo.repo}/pull/${prInfo.number}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.context.stderr.write(`Error: Failed to fetch PR diff: ${message}\n`)
+
+      return 1
     }
 
     if (!diff) {

@@ -1,9 +1,4 @@
-import {exec} from 'child_process'
-import {promisify} from 'util'
-
 import {getGitHubEventPayload} from '../../helpers/utils'
-
-const execAsync = promisify(exec)
 
 export interface PrInfo {
   repo: string // e.g. "DataDog/dd-go"
@@ -11,8 +6,6 @@ export interface PrInfo {
 }
 
 export interface DiffContext {
-  baseSha: string
-  headSha: string
   provider: string
   pr?: PrInfo
 }
@@ -23,18 +16,12 @@ const getGitHubDiffContext = (): DiffContext | undefined => {
     return undefined
   }
 
-  const baseSha = eventPayload.pull_request.base?.sha
-  const headSha = eventPayload.pull_request.head?.sha
-  if (!baseSha || !headSha) {
-    return undefined
-  }
-
   const pr =
     process.env.GITHUB_REPOSITORY && eventPayload.pull_request.number
       ? {repo: process.env.GITHUB_REPOSITORY, number: eventPayload.pull_request.number}
       : undefined
 
-  return {baseSha, headSha, provider: 'GitHub Actions', pr}
+  return {provider: 'GitHub Actions', pr}
 }
 
 const getGitLabDiffContext = (): DiffContext | undefined => {
@@ -42,46 +29,17 @@ const getGitLabDiffContext = (): DiffContext | undefined => {
     return undefined
   }
 
-  const baseSha = process.env.CI_MERGE_REQUEST_DIFF_BASE_SHA
-  const headSha = process.env.CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-  if (!baseSha || !headSha) {
-    return undefined
-  }
-
   const prNumber = process.env.CI_MERGE_REQUEST_IID ? parseInt(process.env.CI_MERGE_REQUEST_IID, 10) : undefined
   const pr =
     process.env.CI_PROJECT_PATH && prNumber ? {repo: process.env.CI_PROJECT_PATH, number: prNumber} : undefined
 
-  return {baseSha, headSha, provider: 'GitLab CI', pr}
+  if (!pr) {
+    return undefined
+  }
+
+  return {provider: 'GitLab CI', pr}
 }
 
 export const detectDiffContext = (): DiffContext | undefined => {
   return getGitHubDiffContext() ?? getGitLabDiffContext()
-}
-
-export const getDiff = async (diffContext: DiffContext): Promise<string> => {
-  const {baseSha, headSha} = diffContext
-  const cwd = process.env.AUTOTEST_REPO_DIR || undefined
-
-  // Deepen history so merge-base works in shallow clones (common in CI).
-  await execAsync(`git fetch --deepen=100 origin ${baseSha} ${headSha}`, {cwd}).catch(() => {
-    // Ignore fetch errors — the commits may already be available locally.
-  })
-
-  // Try three-dot diff (merge-base) first, fall back to two-dot if no common ancestor.
-  try {
-    const {stdout} = await execAsync(`git diff ${baseSha}...${headSha}`, {
-      maxBuffer: 50 * 1024 * 1024,
-      cwd,
-    })
-
-    return stdout
-  } catch {
-    const {stdout} = await execAsync(`git diff ${baseSha} ${headSha}`, {
-      maxBuffer: 50 * 1024 * 1024,
-      cwd,
-    })
-
-    return stdout
-  }
 }
