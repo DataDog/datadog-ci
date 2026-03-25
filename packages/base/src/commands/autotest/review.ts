@@ -249,6 +249,10 @@ export class AutotestCommand extends BaseCommand {
     required: false,
   })
 
+  private dryRun = Option.Boolean('--dry-run', false, {
+    description: 'Skip posting the PR comment. The report is still written to stdout and validation_report.md.',
+  })
+
   public async execute(): Promise<number> {
     if (!process.env.ANTHROPIC_API_KEY) {
       this.context.stderr.write(
@@ -324,7 +328,7 @@ export class AutotestCommand extends BaseCommand {
     this.context.stderr.write('Starting AI validation…\n')
 
     try {
-      return await this.runReview(diff, prInfo)
+      return await this.runReview(diff, this.dryRun ? undefined : prInfo)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.context.stderr.write(`Error: AI review failed: ${message}\n`)
