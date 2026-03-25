@@ -1,3 +1,5 @@
+import {PluginCommand as SyntheticsRunTestsPluginCommand} from '@datadog/datadog-ci-plugin-synthetics/commands/run-tests'
+
 import {SyntheticsRunTestsCommand} from '../../commands/synthetics/run-tests'
 
 import {isStandaloneBinary} from '../is-standalone-binary'
@@ -63,6 +65,8 @@ describe('checkPlugin', () => {
 
 describe('executePluginCommand', () => {
   test('executes plugin command successfully', async () => {
+    // Mock the plugin command's `execute` method, but not the `@datadog/datadog-ci-base/commands/synthetics/run-tests` one.
+    jest.spyOn(SyntheticsRunTestsPluginCommand.prototype, 'execute').mockResolvedValue(0)
     const command = createCommand(SyntheticsRunTestsCommand)
     const result = await executePluginCommand(command)
     expect(result).toBe(0)

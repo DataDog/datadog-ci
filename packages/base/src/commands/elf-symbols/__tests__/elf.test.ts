@@ -1,3 +1,5 @@
+import {execSync} from 'child_process'
+
 import type {ElfFileMetadata} from '../elf'
 import type {ExecException} from 'child_process'
 
@@ -24,6 +26,16 @@ import * as elfModule from '../elf'
 import {MachineType, ElfFileType, ElfClass, SectionHeaderType, ProgramHeaderType} from '../elf-constants'
 
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
+
+const requireObjcopy = () => {
+  try {
+    execSync('objcopy --version', {stdio: 'ignore'})
+  } catch {
+    throw new Error(
+      'objcopy is not installed — these tests require binutils.\nTo install on macOS: brew install binutils'
+    )
+  }
+}
 
 describe('elf', () => {
   describe('readElfHeader', () => {
@@ -859,6 +871,7 @@ describe('elf', () => {
     }
 
     test('copy debug info from elf files', async () => {
+      requireObjcopy()
       const testFiles = [
         'dyn_aarch64',
         'exec_aarch64',
