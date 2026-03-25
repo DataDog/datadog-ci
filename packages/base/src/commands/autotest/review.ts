@@ -514,7 +514,8 @@ export class AutotestCommand extends BaseCommand {
       const msg = message as any
 
       // Log every message to the raw log file.
-      log(`[${msg.type}${msg.subtype ? ':' + msg.subtype : ''}] ${JSON.stringify(msg).slice(0, 2000)}`)
+      // Log full message — no truncation.
+      log(`[${msg.type}${msg.subtype ? ':' + msg.subtype : ''}] ${JSON.stringify(msg)}`)
 
       if (isSystemInitMessage(message)) {
         const servers = msg.mcp_servers ?? []
