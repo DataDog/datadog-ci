@@ -1,4 +1,8 @@
-import {getRepositoryData, TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {
+  getRepositoryData,
+  normalizeSources,
+  TrackedFilesMatcher,
+} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 
 describe('git', () => {
   describe('TrackedFilesMatcher', () => {
@@ -104,6 +108,66 @@ describe('git', () => {
       expect(data.remote).toBe('git@github.com:user/other.git')
       expect(data.hash).toBe('25da22df90210a40b919debe3f7ebfb0c1811898')
       expect(files).toStrictEqual(['src/commands/sourcemaps/__tests__/git.test.ts'])
+    })
+
+    test('integration: commit hash override', async () => {
+      const data = await getRepositoryData(
+        createMockSimpleGit() as any,
+        undefined,
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      )
+      expect(data.remote).toBe('git@github.com:user/repository.git')
+      expect(data.hash).toBe('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+    })
+
+    test('integration: both remote and commit hash override', async () => {
+      const data = await getRepositoryData(
+        createMockSimpleGit() as any,
+        'git@github.com:user/other.git',
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      )
+      expect(data.remote).toBe('git@github.com:user/other.git')
+      expect(data.hash).toBe('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+    })
+  })
+
+  describe('normalizeSources', () => {
+    test('webpack:/// with leading ./', () => {
+      expect(normalizeSources(['webpack:///./src/foo/bar.ts'], '/repo', '/repo')).toStrictEqual(['src/foo/bar.ts'])
+    })
+
+    test('webpack:/// without leading ./', () => {
+      expect(normalizeSources(['webpack:///src/foo/bar.ts'], '/repo', '/repo')).toStrictEqual(['src/foo/bar.ts'])
+    })
+
+    test('webpack://host/ keeps host as path prefix', () => {
+      expect(normalizeSources(['webpack://MyProject/src/foo/bar.ts'], '/repo', '/repo')).toStrictEqual([
+        'MyProject/src/foo/bar.ts',
+      ])
+    })
+
+    test('relative path without scheme', () => {
+      expect(normalizeSources(['./src/foo/bar.ts'], '/repo', '/repo')).toStrictEqual(['src/foo/bar.ts'])
+    })
+
+    test('normalizes ../ paths relative to baseDir', () => {
+      expect(normalizeSources(['../src/foo/bar.ts'], '/repo/dist', '/repo')).toStrictEqual(['src/foo/bar.ts'])
+    })
+
+    test('skips absolute paths and calls onAbsolutePath', () => {
+      const onAbsolutePath = jest.fn()
+      expect(normalizeSources(['/repo/src/foo/bar.ts'], '/repo/dist', '/repo', onAbsolutePath)).toStrictEqual([])
+      expect(onAbsolutePath).toHaveBeenCalledWith('/repo/src/foo/bar.ts')
+    })
+
+    test('deduplicates sources', () => {
+      expect(
+        normalizeSources(['webpack:///./src/foo/bar.ts', 'webpack:///./src/foo/bar.ts'], '/repo', '/repo')
+      ).toStrictEqual(['src/foo/bar.ts'])
+    })
+
+    test('handles empty sources list', () => {
+      expect(normalizeSources([], '/repo', '/repo')).toStrictEqual([])
     })
   })
 })

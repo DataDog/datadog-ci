@@ -1,3 +1,4 @@
+import fs from 'fs'
 import {URL} from 'url'
 
 import type {ApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -18,7 +19,11 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {
+  getRepositoryData,
+  newSimpleGit,
+  normalizeSources,
+} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
@@ -29,6 +34,7 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
+  renderAbsolutePathWarning,
   renderConfigurationError,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
@@ -73,6 +79,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private projectPath = Option.String('--project-path')
   private releaseVersion = Option.String('--release-version')
   private repositoryURL = Option.String('--repository-url')
+  private commitSha = Option.String('--commit-sha')
   private service = Option.String('--service')
 
   private cliVersion = cliVersion
@@ -82,9 +89,11 @@ export class SourcemapsUploadCommand extends BaseCommand {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    commitSha: process.env.DD_GIT_COMMIT_SHA,
     datadogSite: getDatadogSite(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+    repositoryURL: process.env.DD_GIT_REPOSITORY_URL,
   }
 
   public async execute() {
@@ -166,10 +175,31 @@ export class SourcemapsUploadCommand extends BaseCommand {
     }
   }
 
-  // Fills the 'repository' field of each payload with data gathered using git.
+  // Fills the 'repository' field of each payload with data gathered using git or provided overrides.
   private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
+    const userProvidedRepoUrl = this.repositoryURL ?? this.config.repositoryURL
+    const userProvidedCommitSha = this.commitSha ?? this.config.commitSha
+
+    // If both user-provided repository URL and commit SHA are provided, use alternative approach without git.
+    if (userProvidedRepoUrl && userProvidedCommitSha) {
+      payloads.forEach((payload) => {
+        const repoPayload = this.getRepositoryPayloadWithoutGit(
+          userProvidedCommitSha,
+          userProvidedRepoUrl,
+          payload.sourcemapPath
+        )
+        payload.addRepositoryData({
+          gitCommitSha: userProvidedCommitSha,
+          gitRepositoryPayload: repoPayload,
+          gitRepositoryURL: userProvidedRepoUrl,
+        })
+      })
+
+      return
+    }
+
     try {
-      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
+      const repositoryData = await getRepositoryData(await newSimpleGit(), userProvidedRepoUrl, userProvidedCommitSha)
       await Promise.all(
         payloads.map(async (payload) => {
           const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
@@ -288,6 +318,42 @@ export class SourcemapsUploadCommand extends BaseCommand {
       }
 
       return repositoryPayload
+    } catch (error) {
+      this.context.stdout.write(renderGitDataNotAttachedWarning(sourcemapPath, error.message))
+
+      return undefined
+    }
+  }
+
+  // Builds the repository payload for a sourcemap using its 'sources' field directly,
+  // without relying on git. Used when both --repository-url and --commit-sha are provided.
+  private getRepositoryPayloadWithoutGit = (
+    commitSha: string,
+    repositoryURL: string,
+    sourcemapPath: string
+  ): string | undefined => {
+    try {
+      const buff = fs.readFileSync(sourcemapPath, 'utf8')
+      const srcmapObj = JSON.parse(buff)
+      if (!srcmapObj.sources || srcmapObj.sources.length === 0) {
+        return undefined
+      }
+      const files = normalizeSources(
+        srcmapObj.sources as string[],
+        upath.dirname(sourcemapPath),
+        process.cwd(),
+        (source) => this.context.stdout.write(renderAbsolutePathWarning(source))
+      )
+      if (files.length === 0) {
+        this.context.stdout.write(renderSourcesNotFoundWarning(sourcemapPath))
+
+        return undefined
+      }
+
+      return JSON.stringify({
+        data: [{files, hash: commitSha, repository_url: repositoryURL}],
+        version: 1,
+      })
     } catch (error) {
       this.context.stdout.write(renderGitDataNotAttachedWarning(sourcemapPath, error.message))
 
