@@ -4,6 +4,7 @@ import {join} from 'path'
 import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
+import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 
 import {detectDiffContext, getDiff} from './diff-context'
 
@@ -358,6 +359,7 @@ export class AutotestCommand extends BaseCommand {
     const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
     const {z} = await import('zod')
 
+    let resultText = ''
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // GitHub PR tools — uses the REST API directly (no gh CLI dependency).
@@ -539,7 +541,8 @@ export class AutotestCommand extends BaseCommand {
 
       if (isResultMessage(message)) {
         spinner.stop()
-        this.context.stdout.write(msg.result + '\n')
+        resultText = msg.result ?? ''
+        this.context.stdout.write(resultText + '\n')
       }
     }
 
@@ -549,7 +552,55 @@ export class AutotestCommand extends BaseCommand {
     }
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
+    // Report telemetry to Datadog.
+    await this.reportTelemetry(resultText, prInfo)
+
     return 0
+  }
+
+  private async reportTelemetry(resultText: string, prInfo?: {repo: string; number: number}) {
+    const apiKey = process.env.DD_API_KEY
+    if (!apiKey) {
+      return
+    }
+
+    try {
+      const isFail = /Autotest:\s*FAIL/i.test(resultText)
+      const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*tested/i)
+      const prodInputsMatch = resultText.match(/(\d+)\s*prod\s*inputs?\s*captured/i)
+      const findingsMatch = resultText.match(/(\d+)\s*suspicious\s*findings?/i)
+
+      const tags = [
+        `result:${isFail ? 'fail' : 'pass'}`,
+        `provider:${process.env.GITLAB_CI ? 'gitlab' : 'github'}`,
+        ...(prInfo ? [`repo:${prInfo.repo}`] : []),
+      ]
+
+      const {logger, flush} = getMetricsLogger({
+        apiKey,
+        datadogSite: process.env.DD_SITE,
+        prefix: 'datadog.ci.autotest.',
+        defaultTags: tags,
+      })
+
+      logger.increment('run', 1)
+      if (isFail) {
+        logger.increment('regression_found', 1)
+      }
+      if (scenariosMatch) {
+        logger.gauge('scenarios_tested', parseInt(scenariosMatch[1], 10))
+      }
+      if (prodInputsMatch) {
+        logger.gauge('prod_inputs_captured', parseInt(prodInputsMatch[1], 10))
+      }
+      if (findingsMatch) {
+        logger.gauge('suspicious_findings', parseInt(findingsMatch[1], 10))
+      }
+
+      await flush()
+    } catch {
+      // Telemetry is best-effort — don't fail the command.
+    }
   }
 }
 
