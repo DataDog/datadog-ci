@@ -27,7 +27,7 @@ production inputs using Datadog Live Debugger logpoints.
 CRITICAL: You MUST use these specific MCP tools in this exact order:
   1. mcp__datadog-mcp__discover_datadog_logpoint
   2. mcp__datadog-mcp__create_datadog_logpoint
-  3. sleep 60 (via Bash)
+  3. sleep 300 (via Bash)
   4. mcp__datadog-mcp__search_datadog_logs
   5. mcp__datadog-mcp__delete_datadog_session
 
@@ -66,9 +66,9 @@ Arguments from the discover response, plus:
 - Go/Ruby: conditions are NOT supported — never set one.
 - environment: prefer staging when available.
 
-### Step 4 — Wait 60 seconds
+### Step 4 — Wait 5 minutes
 
-Run: Bash sleep 60
+Run: Bash sleep 300
 
 ### Step 5 — Collect captured data
 
@@ -107,7 +107,7 @@ You MUST follow this two-phase workflow:
 As your VERY FIRST action, do these two things in parallel:
 
 A) **Spawn the "prod-data-collector" subagent** with the PR diff. This agent captures live
-   production inputs from deployed services via Datadog Live Debugger. It takes 1-2 minutes,
+   production inputs from deployed services via Datadog Live Debugger. It takes ~5 minutes,
    so you MUST start it immediately. Pass the full diff as the prompt.
 
 B) **Analyze the PR** while the subagent collects data:
@@ -493,7 +493,7 @@ export class AutotestCommand extends BaseCommand {
         agents: {
           'prod-data-collector': {
             description:
-              'Captures live production inputs for changed functions using Datadog Live Debugger. Takes 1-2 minutes. Start immediately and in the background.',
+              'Captures live production inputs for changed functions using Datadog Live Debugger. Takes ~5 minutes. Start immediately and in the background.',
             prompt: PROD_DATA_COLLECTOR_PROMPT,
             tools: [
               'Read',
