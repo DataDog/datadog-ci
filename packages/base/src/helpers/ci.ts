@@ -67,6 +67,8 @@ const envJenkinsCustomStageID = 'DD_CUSTOM_STAGE_ID'
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
 // to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
+// DD_CUSTOM_STAGE_ID is only present in recent Jenkins plugin versions.
+// Also, pipelines without stages lack this env variable
 const envAllowedToBeMissing = [envDDGithubJobName, envJenkinsCustomStageID]
 
 export const githubWellKnownDiagnosticDirsUnix = [
