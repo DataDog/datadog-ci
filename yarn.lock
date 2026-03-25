@@ -1968,6 +1968,7 @@ __metadata:
     jest-diff: "npm:^30.2.0"
     js-yaml: "npm:4.1.1"
     jszip: "npm:^3.10.1"
+    ora: "npm:5.4.1"
     proxy: "npm:^2.1.1"
     proxy-agent: "npm:^6.4.0"
     semver: "npm:^7.5.3"
