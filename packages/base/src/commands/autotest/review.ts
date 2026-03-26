@@ -674,7 +674,7 @@ export class AutotestCommand extends BaseCommand {
     // Report telemetry to Datadog.
     await this.reportTelemetry(resultText, prInfo)
 
-    const isFail = /Autotest:\s*FAIL/i.test(resultText) || /suspicious\s*finding/i.test(resultText)
+    const isFail = /FAIL/i.test(resultText)
 
     return {exitCode: isFail ? 1 : 0, resultText}
   }
@@ -686,7 +686,7 @@ export class AutotestCommand extends BaseCommand {
     }
 
     try {
-      const isFail = /Autotest:\s*FAIL/i.test(resultText)
+      const isFail = /FAIL/i.test(resultText)
       const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*executed/i)
       const prodInputsMatch = resultText.match(/(\d+)\s*prod\s*inputs?\s*captured/i)
       const findingsMatch = resultText.match(/(\d+)\s*suspicious\s*findings?/i)
