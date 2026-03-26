@@ -5,6 +5,7 @@ import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {getGitHubEventPayload} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {detectDiffContext, type PrInfo} from './diff-context'
 
