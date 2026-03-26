@@ -40,12 +40,16 @@ in the diff — not on unrelated functions in the same service. The goal is to c
 the actual production inputs flowing into the changed code paths so we can verify the
 change handles real-world data correctly.
 
+You MUST place logpoints on ALL relevant changed functions, not just one. Create
+multiple logpoints in the same session if the diff touches multiple functions.
+
 TARGETING RULES:
-- If the diff modifies function Foo() in file bar.go, place the logpoint on Foo()
+- If the diff modifies functions Foo() and Bar(), place logpoints on BOTH
 - If the diff adds a new case to a switch statement, place the logpoint on the function
   containing that switch to see ALL values flowing through it (including ones NOT handled)
 - If the diff changes serialization/deserialization, place the logpoint where the data
   enters the function to capture the raw input shape
+- If the diff changes a caller AND a callee, instrument both to see data flow
 - Do NOT instrument unrelated functions, feature flag checks, or config loading
 
 ## Detailed steps
