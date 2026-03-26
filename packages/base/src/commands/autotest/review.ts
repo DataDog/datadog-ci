@@ -5,14 +5,11 @@ import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import {getGitHubEventPayload} from '@datadog/datadog-ci-base/helpers/utils'
-
 import {detectDiffContext, type PrInfo} from './diff-context'
 
 const GITHUB_API_BASE = 'https://api.github.com'
 const GITHUB_USER_AGENT = 'datadog-ci-autotest'
 const GITHUB_PR_URL_RE = /github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/
-const CHECK_RUN_NAME = 'Datadog Autotest'
 
 const parseGitHubPrUrl = (url: string): {repo: string; number: number} | undefined => {
   const match = url.match(GITHUB_PR_URL_RE)
@@ -388,34 +385,13 @@ export class AutotestCommand extends BaseCommand {
 
     this.context.stderr.write('Starting AI validation…\n')
 
-    // Create a GitHub check run if we have a token and a GitHub PR.
-    const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
-    let checkRunId: number | undefined
-    // For pull_request events, GITHUB_SHA is the merge commit — use the event payload's head SHA instead.
-    const eventPayload = getGitHubEventPayload()
-    const headSha = eventPayload?.pull_request?.head?.sha || process.env.GITHUB_SHA || process.env.CI_COMMIT_SHA
-    if (prInfo?.provider === 'github' && githubToken && headSha && !this.dryRun) {
-      checkRunId = await this.createCheckRun(prInfo.repo, headSha, githubToken)
-      if (checkRunId) {
-        this.context.stderr.write(`Created check run (id=${checkRunId})…\n`)
-      }
-    }
-
     try {
-      const {exitCode, resultText} = await this.runReview(diff, this.dryRun ? undefined : prInfo, this.dryRun)
-
-      if (checkRunId && prInfo && githubToken) {
-        await this.completeCheckRun(prInfo.repo, checkRunId, githubToken, resultText)
-      }
+      const {exitCode} = await this.runReview(diff, this.dryRun ? undefined : prInfo, this.dryRun)
 
       return exitCode
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.context.stderr.write(`Error: AI review failed: ${message}\n`)
-
-      if (checkRunId && prInfo && githubToken) {
-        await this.completeCheckRun(prInfo.repo, checkRunId, githubToken, `Autotest: FAIL — ${message}`)
-      }
 
       return 1
     }
@@ -489,6 +465,7 @@ export class AutotestCommand extends BaseCommand {
     const {z} = await import('zod')
 
     let resultText = ''
+    let prCommentBody = ''
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // GitHub PR tools — uses the REST API directly (no gh CLI dependency).
@@ -697,7 +674,9 @@ export class AutotestCommand extends BaseCommand {
     // Report telemetry to Datadog.
     await this.reportTelemetry(resultText, prInfo)
 
-    return {exitCode: 0, resultText}
+    const isFail = /Autotest:\s*FAIL/i.test(resultText) || /suspicious\s*finding/i.test(resultText)
+
+    return {exitCode: isFail ? 1 : 0, resultText}
   }
 
   private async reportTelemetry(resultText: string, prInfo?: PrInfo) {
@@ -748,68 +727,6 @@ export class AutotestCommand extends BaseCommand {
     }
   }
 
-  private async createCheckRun(repo: string, sha: string, token: string): Promise<number | undefined> {
-    try {
-      const response = await fetch(`${GITHUB_API_BASE}/repos/${repo}/check-runs`, {
-        method: 'POST',
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-          'User-Agent': GITHUB_USER_AGENT,
-        },
-        body: JSON.stringify({
-          name: CHECK_RUN_NAME,
-          head_sha: sha,
-          status: 'in_progress',
-          started_at: new Date().toISOString(),
-        }),
-      })
-      if (!response.ok) {
-        this.context.stderr.write(`Warning: Failed to create check run: ${response.status}\n`)
-
-        return undefined
-      }
-      const data = (await response.json()) as {id: number}
-
-      return data.id
-    } catch {
-      return undefined
-    }
-  }
-
-  private async completeCheckRun(
-    repo: string,
-    checkRunId: number,
-    token: string,
-    resultText: string
-  ): Promise<void> {
-    const isFail = /Autotest:\s*FAIL/i.test(resultText)
-    const summary = resultText.slice(0, 65535) // GitHub limit
-
-    try {
-      await fetch(`${GITHUB_API_BASE}/repos/${repo}/check-runs/${checkRunId}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-          'User-Agent': GITHUB_USER_AGENT,
-        },
-        body: JSON.stringify({
-          status: 'completed',
-          conclusion: isFail ? 'failure' : 'success',
-          completed_at: new Date().toISOString(),
-          output: {
-            title: isFail ? 'Suspicious regressions found' : 'No regressions detected',
-            summary,
-          },
-        }),
-      })
-    } catch {
-      // Best-effort — don't fail the command.
-    }
-  }
 }
 
 interface AssistantMessage {
