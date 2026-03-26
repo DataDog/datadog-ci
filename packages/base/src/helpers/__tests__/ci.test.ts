@@ -1211,7 +1211,7 @@ describe('getGithubStepInfoFromLogs', () => {
     expect(result).toEqual({jobDisplayName: 'my-job', stepIndex: 0})
   })
 
-  test('returns undefined when GITHUB_ACTION does not match any step', () => {
+  test('throws when GITHUB_ACTION does not match any step', () => {
     process.env = {
       GITHUB_ACTIONS: 'true',
       GITHUB_ACTION: '__run_99',
@@ -1222,10 +1222,12 @@ describe('getGithubStepInfoFromLogs', () => {
     })
     mockDiagDir(logContent)
 
-    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+    expect(() => getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toThrow(
+      'Could not find step info in GitHub diagnostic logs'
+    )
   })
 
-  test('returns undefined when steps array is missing', () => {
+  test('throws when steps array is missing', () => {
     process.env = {
       GITHUB_ACTIONS: 'true',
       GITHUB_ACTION: '__run',
@@ -1235,16 +1237,20 @@ describe('getGithubStepInfoFromLogs', () => {
     })
     mockDiagDir(logContent)
 
-    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+    expect(() => getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toThrow(
+      'Could not find step info in GitHub diagnostic logs'
+    )
   })
 
-  test('returns undefined when not GitHub provider', () => {
+  test('throws when not GitHub provider', () => {
     process.env = {
       CIRCLECI: 'true',
       GITHUB_ACTION: '__run',
     }
 
-    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+    expect(() => getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toThrow(
+      'Step level is only supported for GitHub Actions'
+    )
   })
 
   test('throws when GITHUB_ACTION is not set', () => {
@@ -1257,14 +1263,16 @@ describe('getGithubStepInfoFromLogs', () => {
     )
   })
 
-  test('returns undefined for malformed JSON in log', () => {
+  test('throws for malformed JSON in log', () => {
     process.env = {
       GITHUB_ACTIONS: 'true',
       GITHUB_ACTION: '__run',
     }
     mockDiagDir('[2025-09-15 10:14:00Z INFO Worker] Job message:\n{not valid json')
 
-    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+    expect(() => getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toThrow(
+      'Could not find step info in GitHub diagnostic logs'
+    )
   })
 
   test('correctly parses pretty-printed Job message with nested objects in steps', () => {
@@ -1334,8 +1342,10 @@ describe('getGithubStepInfoFromLogs', () => {
     ].join('\n')
     mockDiagDir(logContent)
 
-    // Should NOT match __actions_checkout from the telemetry line
-    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+    // Should NOT match __actions_checkout from the telemetry line — should throw instead
+    expect(() => getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toThrow(
+      'Could not find step info in GitHub diagnostic logs'
+    )
   })
 })
 

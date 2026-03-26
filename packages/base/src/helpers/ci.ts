@@ -1331,12 +1331,10 @@ export const enrichCIEnvFromGithubLogs = (
   switch (level) {
     case CI_LEVELS.STEP: {
       const stepInfo = getGithubStepInfoFromLogs(context)
-      if (stepInfo) {
-        if (!ciEnv[envDDGithubJobName]) {
-          ciEnv[envDDGithubJobName] = stepInfo.jobDisplayName
-        }
-        ciEnv[envDDGithubStepIndex] = String(stepInfo.stepIndex)
+      if (!ciEnv[envDDGithubJobName]) {
+        ciEnv[envDDGithubJobName] = stepInfo.jobDisplayName
       }
+      ciEnv[envDDGithubStepIndex] = String(stepInfo.stepIndex)
       break
     }
     case CI_LEVELS.JOB: {
@@ -1361,9 +1359,9 @@ export const enrichCIEnvFromGithubLogs = (
  */
 export const getGithubStepInfoFromLogs = (
   context: BaseContext
-): {jobDisplayName: string; stepIndex: number} | undefined => {
+): {jobDisplayName: string; stepIndex: number} => {
   if (getCIProvider() !== CI_ENGINES.GITHUB) {
-    return
+    throw new Error('Step level is only supported for GitHub Actions')
   }
 
   const githubAction = process.env.GITHUB_ACTION
@@ -1375,7 +1373,7 @@ export const getGithubStepInfoFromLogs = (
 
   const result = getGithubWorkerLogFiles(context)
   if (!result) {
-    return
+    throw new Error('Could not find GitHub diagnostic log files, cannot determine step index')
   }
   const [foundDiagDir, workerLogFiles] = result
   const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles)
@@ -1404,11 +1402,7 @@ export const getGithubStepInfoFromLogs = (
     return {jobDisplayName, stepIndex}
   }
 
-  context.stderr.write(
-    `${chalk.yellow.bold('[WARNING]')} could not find step info in GitHub diagnostic logs\n`
-  )
-
-  return
+  throw new Error('Could not find step info in GitHub diagnostic logs, cannot determine step index')
 }
 
 /**
