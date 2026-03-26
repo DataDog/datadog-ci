@@ -658,7 +658,7 @@ export class AutotestCommand extends BaseCommand {
         }
       }
 
-      if (isResultMessage(message)) {
+      if (isResultMessage(message) && !isSubagent) {
         spinner.stop()
         resultText = msg.result ?? ''
         this.context.stdout.write(resultText + '\n')
@@ -675,8 +675,6 @@ export class AutotestCommand extends BaseCommand {
     await this.reportTelemetry(resultText, prInfo)
 
     const isFail = /FAIL|bug found|broken|regression/i.test(resultText)
-    this.context.stderr.write(`Result text (${resultText.length} chars): ${resultText.slice(0, 200)}\n`)
-    this.context.stderr.write(`isFail=${isFail}, exitCode=${isFail ? 1 : 0}\n`)
 
     return {exitCode: isFail ? 1 : 0, resultText}
   }
