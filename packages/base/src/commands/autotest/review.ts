@@ -35,12 +35,22 @@ Do NOT use search_datadog_metrics, get_datadog_metric, or any other Datadog tool
 Do NOT skip the logpoint flow. Do NOT substitute with metrics or traces.
 The ONLY way to get production inputs is via Live Debugger logpoints.
 
-You will receive a PR diff. For each function that has meaningful logic changes in a
-deployed service, place a logpoint to capture its live inputs.
+You will receive a PR diff. Place logpoints on the SPECIFIC FUNCTIONS that are CHANGED
+in the diff — not on unrelated functions in the same service. The goal is to capture
+the actual production inputs flowing into the changed code paths so we can verify the
+change handles real-world data correctly.
+
+TARGETING RULES:
+- If the diff modifies function Foo() in file bar.go, place the logpoint on Foo()
+- If the diff adds a new case to a switch statement, place the logpoint on the function
+  containing that switch to see ALL values flowing through it (including ones NOT handled)
+- If the diff changes serialization/deserialization, place the logpoint where the data
+  enters the function to capture the raw input shape
+- Do NOT instrument unrelated functions, feature flag checks, or config loading
 
 ## Detailed steps
 
-### Step 1 — Find the function and resolve the APM service name
+### Step 1 — Find the changed function and resolve the APM service name
 
 Search the codebase for the changed function. Then trace from the function's package to
 the main.go that imports it and extract the service name from ddapp.NewApp(...), appName
@@ -117,28 +127,45 @@ B) **Analyze the PR** while the subagent collects data:
      state transitions, classification/transformation changes, edge-case parsing
    - Inspect nearby existing tests
    - Pick 1-2 target entrypoints to validate
+   - CRITICAL: Identify inputs the code does NOT handle — switch/case statements without
+     default, type assertions that could fail, field lookups that assume a specific shape,
+     hardcoded allowlists/enums that may not cover all production values
 
 ### Phase 2: Build and run validation (after subagent returns)
 
 Once the prod-data-collector subagent returns with real production inputs:
 
-1. **Build test scenarios** using the captured production inputs as fixtures. Supplement with
-   edge cases (missing fields, malformed payloads, boundary values, duplicates, empty
-   collections, whitespace).
+1. **Build ADVERSARIAL test scenarios.** Do NOT just run existing tests. The goal is to find
+   bugs that existing tests miss. Specifically:
+   - Use prod inputs to discover the REAL diversity of values (field types, enum values,
+     data shapes) that the code receives in production
+   - Compare that diversity against what the code handles — look for gaps
+   - Generate test cases for values that EXIST in production but are NOT handled by the code
+   - Example: if the code has a switch on field type and handles "A" and "B", but prod data
+     shows "C" also appears — test with "C"
+   - Example: if the code assumes a field is an object, but prod data shows it's sometimes
+     an array — test with an array
+   - Example: if the code serializes a struct, verify the JSON output matches what the
+     downstream consumer expects (nil vs [], 0 vs omitted, etc.)
 
 2. **Create temporary validation code** — prefer one table-driven test file.
-   CRITICAL: Test BOTH input validation AND output correctness:
-   - Does the function accept valid inputs without crashing?
+   CRITICAL: Test BOTH input handling AND output correctness:
+   - Does the function handle ALL input values that appear in production?
    - Does the function PRODUCE correct output? (serialize correctly, return expected fields,
      format data properly for downstream consumers)
    - Does the output work when consumed by the next system in the pipeline?
-   - For serialization changes: verify the JSON/protobuf/wire format is correct
-   - For data processing: verify the output data shape matches what downstream expects
-   Do not just test that the code "doesn't crash" — test that it produces the RIGHT output.
+   - For serialization: verify JSON/protobuf wire format (nil vs empty array, int vs float,
+     missing vs zero-value fields)
+   - For routing/filtering: verify ALL production input values are routed correctly, not
+     just the ones in the test fixtures
+   - For switch/case/if-else chains: test with values NOT in the explicit cases
+   Do not just test that the code "doesn't crash" — test that it handles the FULL diversity
+   of production inputs correctly.
 
 3. **Execute the validation scenarios** against the current code. Flag crashes, errors,
    and unexpected outputs (including silently wrong outputs like nil where [] is expected,
-   0 where a value should be present, or missing fields in serialized output).
+   0 where a value should be present, missing fields in serialized output, or silently
+   dropped/ignored inputs).
 
 4. **Post the report** as a PR comment using post_pr_comment. This is REQUIRED.
 
