@@ -129,8 +129,8 @@ Once the prod-data-collector subagent returns with real production inputs:
 2. **Create temporary validation code** — prefer one table-driven test file. Keep assertions
    focused on return values, errors, and key output fields. Do not overfit to formatting.
 
-3. **Execute on HEAD and BASE** — run the same scenarios against both, compare results.
-   Distinguish intended changes from suspicious regressions.
+3. **Execute the validation scenarios** against the current code. Flag crashes, errors,
+   and unexpected outputs.
 
 4. **Post the report** as a PR comment using post_pr_comment. This is REQUIRED.
 
@@ -160,16 +160,17 @@ input patterns). If capture was skipped, say why in one line.
 ### Findings
 
 If PASS (no suspicious findings):
-> ✅ No suspicious regressions detected. All [X] scenarios passed on both BASE and HEAD.
+> ✅ No suspicious regressions detected. All [X] scenarios passed.
 
 If FAIL (suspicious findings found), for each finding:
 
 #### ⚠️ [Short title]
 
-| | BASE | HEAD |
-|---|---|---|
-| **Behavior** | [what happened] | [what happens now] |
+| Field | Value |
+|---|---|
 | **Input** | [scenario that triggers it] |
+| **Expected** | [what should happen] |
+| **Actual** | [what happened — crash, wrong output, error] |
 
 **Why it matters:** One sentence explaining the production impact.
 
