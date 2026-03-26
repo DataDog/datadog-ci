@@ -658,10 +658,14 @@ export class AutotestCommand extends BaseCommand {
         }
       }
 
-      if (isResultMessage(message) && !isSubagent) {
-        spinner.stop()
-        resultText = msg.result ?? ''
-        this.context.stdout.write(resultText + '\n')
+      if (isResultMessage(message)) {
+        const text = msg.result ?? ''
+        if (!isSubagent) {
+          spinner.stop()
+          this.context.stdout.write(text + '\n')
+        }
+        // Accumulate all result text — the main agent's result may arrive before or after the subagent's.
+        resultText += text + '\n'
       }
     }
 
