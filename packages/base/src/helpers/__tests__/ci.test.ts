@@ -8,6 +8,7 @@ import {
   getCIMetadata,
   getCISpanTags,
   getGithubJobNameFromLogs,
+  getGithubStepInfoFromLogs,
   githubWellKnownDiagnosticDirsUnix,
   githubWellKnownDiagnosticDirsWin,
   isGithubWindowsRunner,
@@ -385,7 +386,6 @@ describe('getCIEnv', () => {
       GITHUB_RUN_ID: '123',
       GITHUB_RUN_ATTEMPT: '1',
       GITHUB_JOB: 'build',
-      GITHUB_ACTION: 'run1',
     }
     expect(getCIEnv()).toEqual({
       ciEnv: {
@@ -394,7 +394,6 @@ describe('getCIEnv', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'build',
-        GITHUB_ACTION: 'run1',
       },
       provider: 'github',
     })
@@ -407,7 +406,6 @@ describe('getCIEnv', () => {
       GITHUB_RUN_ID: '123',
       GITHUB_RUN_ATTEMPT: '1',
       GITHUB_JOB: 'build',
-      GITHUB_ACTION: 'run1',
       DD_GITHUB_JOB_NAME: 'my-job',
     }
     expect(getCIEnv()).toEqual({
@@ -417,7 +415,6 @@ describe('getCIEnv', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'build',
-        GITHUB_ACTION: 'run1',
         DD_GITHUB_JOB_NAME: 'my-job',
       },
       provider: 'github',
@@ -1150,6 +1147,195 @@ describe('shouldGetGitHubJobDisplayName', () => {
       CIRCLECI: 'true',
     }
     expect(shouldGetGithubJobDisplayName()).toBe(false)
+  })
+})
+
+describe('getGithubStepInfoFromLogs', () => {
+  const makeLogContent = (jobMessage: object) =>
+    `[2025-09-15 10:14:00Z INFO Worker] Job message:\n${JSON.stringify(jobMessage)}`
+
+  const mockDiagDir = (logContent: string) => {
+    jest.spyOn(fs, 'readdirSync').mockReturnValue([
+      {
+        name: 'Worker_1.log' as any,
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        parentPath: '',
+        path: '',
+      },
+    ])
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('returns step info when GITHUB_ACTION matches a contextName', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__run_2',
+    }
+    const logContent = makeLogContent({
+      jobDisplayName: 'build-and-test',
+      steps: [
+        {contextName: '__checkout'},
+        {contextName: '__run'},
+        {contextName: '__run_2'},
+        {contextName: '__run_3'},
+      ],
+    })
+    mockDiagDir(logContent)
+
+    const result = getGithubStepInfoFromLogs(createMockContext() as BaseContext)
+    expect(result).toEqual({jobDisplayName: 'build-and-test', stepIndex: 2})
+  })
+
+  test('returns stepIndex 0 when matching first step', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__run',
+    }
+    const logContent = makeLogContent({
+      jobDisplayName: 'my-job',
+      steps: [{contextName: '__run'}, {contextName: '__run_2'}],
+    })
+    mockDiagDir(logContent)
+
+    const result = getGithubStepInfoFromLogs(createMockContext() as BaseContext)
+    expect(result).toEqual({jobDisplayName: 'my-job', stepIndex: 0})
+  })
+
+  test('returns undefined when GITHUB_ACTION does not match any step', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__run_99',
+    }
+    const logContent = makeLogContent({
+      jobDisplayName: 'my-job',
+      steps: [{contextName: '__run'}, {contextName: '__run_2'}],
+    })
+    mockDiagDir(logContent)
+
+    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+  })
+
+  test('returns undefined when steps array is missing', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__run',
+    }
+    const logContent = makeLogContent({
+      jobDisplayName: 'my-job',
+    })
+    mockDiagDir(logContent)
+
+    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+  })
+
+  test('returns undefined when not GitHub provider', () => {
+    process.env = {
+      CIRCLECI: 'true',
+      GITHUB_ACTION: '__run',
+    }
+
+    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+  })
+
+  test('throws when GITHUB_ACTION is not set', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+    }
+
+    expect(() => getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toThrow(
+      'GITHUB_ACTION environment variable is not set'
+    )
+  })
+
+  test('returns undefined for malformed JSON in log', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__run',
+    }
+    mockDiagDir('[2025-09-15 10:14:00Z INFO Worker] Job message:\n{not valid json')
+
+    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
+  })
+
+  test('correctly parses pretty-printed Job message with nested objects in steps', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__run_2',
+    }
+    // Realistic log with pretty-printed JSON, nested objects in steps, and
+    // surrounding log lines that could contain misleading matches
+    const logContent = [
+      '[2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.',
+      '[2025-09-15 10:14:00Z INFO Worker] Message received.',
+      '[2025-09-15 10:14:00Z INFO Worker] Job message:',
+      ' {',
+      '  "jobDisplayName": "build-and-test",',
+      '  "steps": [',
+      '    {',
+      '      "type": "action",',
+      '      "reference": { "type": "repository", "name": "actions/checkout" },',
+      '      "contextName": "__actions_checkout",',
+      '      "id": "step-1"',
+      '    },',
+      '    {',
+      '      "type": "action",',
+      '      "reference": { "type": "script" },',
+      '      "displayNameToken": { "lit": "Run step 1" },',
+      '      "contextName": "__run",',
+      '      "inputs": { "type": 2, "map": [{ "key": "script", "value": { "lit": "echo hello" } }] },',
+      '      "id": "step-2"',
+      '    },',
+      '    {',
+      '      "type": "action",',
+      '      "reference": { "type": "script" },',
+      '      "contextName": "__run_2",',
+      '      "id": "step-3"',
+      '    }',
+      '  ],',
+      '  "variables": { "system.github.job": { "value": "build" } },',
+      '  "contextData": { "github": { "t": 2 } }',
+      ' }',
+      '[2025-09-15 10:14:00Z INFO ExecutionContext] Publish step telemetry for current step {',
+      '  "stepContextName": "__actions_checkout"',
+      '}.',
+    ].join('\n')
+    mockDiagDir(logContent)
+
+    const result = getGithubStepInfoFromLogs(createMockContext() as BaseContext)
+    expect(result).toEqual({jobDisplayName: 'build-and-test', stepIndex: 2})
+  })
+
+  test('ignores contextName outside of Job message steps array', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_ACTION: '__actions_checkout',
+    }
+    // The telemetry after the Job message also contains stepContextName,
+    // but the steps array does NOT contain __actions_checkout
+    const logContent = [
+      '[2025-09-15 10:14:00Z INFO Worker] Job message:',
+      ' {',
+      '  "jobDisplayName": "my-job",',
+      '  "steps": [',
+      '    { "contextName": "__run", "id": "step-1" }',
+      '  ]',
+      ' }',
+      '[2025-09-15 10:14:00Z INFO ExecutionContext] stepContextName: "__actions_checkout"',
+    ].join('\n')
+    mockDiagDir(logContent)
+
+    // Should NOT match __actions_checkout from the telemetry line
+    expect(getGithubStepInfoFromLogs(createMockContext() as BaseContext)).toBeUndefined()
   })
 })
 

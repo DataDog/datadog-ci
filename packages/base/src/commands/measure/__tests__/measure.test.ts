@@ -136,6 +136,26 @@ describe('execute', () => {
   })
 
   test('step level works for github actions', async () => {
+    jest.spyOn(fs, 'readdirSync').mockReturnValue([
+      {
+        name: 'Worker_1.log' as any,
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        parentPath: '',
+        path: '',
+      },
+    ])
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(
+      `[2025-09-15 10:14:00Z INFO Worker] Job message:\n${JSON.stringify({
+        jobDisplayName: 'real job name',
+        steps: [{contextName: '__checkout'}, {contextName: '__run'}],
+      })}`
+    )
     const result = await runCLI(
       'step',
       ['key:12345'],
@@ -146,13 +166,16 @@ describe('execute', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'build',
-        GITHUB_ACTION: 'run1',
+        GITHUB_ACTION: '__run',
       },
       ['--dry-run']
     )
     expect(result.code).toBe(0)
     const out = result.context.stdout.toString()
     expect(out).toContain('"ci_level": 3')
+    expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
+    expect(out).toContain('"DD_GITHUB_STEP_INDEX": "1"')
+    jest.restoreAllMocks()
   })
 
   test('should fail if no measures provided', async () => {
@@ -227,7 +250,6 @@ describe('execute', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'fake job name',
-        GITHUB_ACTION: 'run1',
       },
       ['--dry-run']
     )
@@ -248,7 +270,6 @@ describe('execute', () => {
         GITHUB_RUN_ID: '123',
         GITHUB_RUN_ATTEMPT: '1',
         GITHUB_JOB: 'fake job name',
-        GITHUB_ACTION: 'run1',
       },
       ['--dry-run']
     )

@@ -63,6 +63,7 @@ export const CI_ENGINES = {
 }
 
 export const envDDGithubJobName = 'DD_GITHUB_JOB_NAME'
+export const envDDGithubStepIndex = 'DD_GITHUB_STEP_INDEX'
 const envJenkinsCustomStageID = 'DD_CUSTOM_STAGE_ID'
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
@@ -70,6 +71,50 @@ const envJenkinsCustomStageID = 'DD_CUSTOM_STAGE_ID'
 // DD_CUSTOM_STAGE_ID is only present in recent Jenkins plugin versions.
 // Also, pipelines without stages lack this env variable
 const envAllowedToBeMissing = [envDDGithubJobName, envJenkinsCustomStageID]
+
+export const CI_LEVELS = {
+  PIPELINE: 'pipeline',
+  JOB: 'job',
+  STAGE: 'stage',
+  STEP: 'step',
+} as const
+
+export const VALID_LEVELS = Object.values(CI_LEVELS)
+export type CILevel = (typeof VALID_LEVELS)[number]
+
+export const LEVEL_TO_NUMBER: Record<CILevel, number> = {
+  [CI_LEVELS.PIPELINE]: 0,
+  [CI_LEVELS.JOB]: 1,
+  [CI_LEVELS.STAGE]: 2,
+  [CI_LEVELS.STEP]: 3,
+}
+
+/**
+ * Validates that the level is a known value and is supported for the current CI provider.
+ * Returns an error message string if invalid, or undefined if valid.
+ */
+export const validateLevel = (level: string | undefined): string | undefined => {
+  if (!level || !(VALID_LEVELS as readonly string[]).includes(level)) {
+    return `Level must be one of [${VALID_LEVELS.join(', ')}]`
+  }
+
+  const provider = getCIProvider()
+  const stageProviders = [CI_ENGINES.AZURE, CI_ENGINES.GITLAB, CI_ENGINES.JENKINS]
+
+  if (level === CI_LEVELS.STAGE && !stageProviders.includes(provider)) {
+    return `Level '${CI_LEVELS.STAGE}' is only supported for providers [${stageProviders.join(', ')}]`
+  }
+
+  if (level === CI_LEVELS.STAGE && provider === CI_ENGINES.JENKINS && !process.env.DD_CUSTOM_STAGE_ID) {
+    return `Level '${CI_LEVELS.STAGE}' for Jenkins requires the Datadog plugin version to be >= 9.2`
+  }
+
+  if (level === CI_LEVELS.STEP && provider !== CI_ENGINES.GITHUB) {
+    return `Level '${CI_LEVELS.STEP}' is only supported for provider [${CI_ENGINES.GITHUB}]`
+  }
+
+  return undefined
+}
 
 export const githubWellKnownDiagnosticDirsUnix = [
   '/home/runner/actions-runner/cached/_diag', // for SaaS
@@ -968,7 +1013,6 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
         'GITHUB_RUN_ATTEMPT',
         'GITHUB_JOB',
         envDDGithubJobName,
-        'GITHUB_ACTION',
       ]),
       provider: 'github',
     }
@@ -1167,44 +1211,49 @@ const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | und
   return [foundDiagDir, workerLogFiles]
 }
 
+/**
+ * Narrows the list of Worker log files to check by using ACTIONS_ORCHESTRATION_ID
+ * to identify the correct log for the current job on non-ephemeral runners.
+ */
+const getTargetWorkerLogFiles = (
+  context: BaseContext,
+  foundDiagDir: string,
+  workerLogFiles: string[]
+): string[] => {
+  const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
+  if (!orchestrationId) {
+    return workerLogFiles
+  }
+
+  // Extract planId GUID (everything before first dot)
+  const planId = orchestrationId.split('.')[0]
+
+  // Find the Worker log containing this planId
+  for (const logFile of workerLogFiles) {
+    const filePath = upath.join(foundDiagDir, logFile)
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    if (content.includes(`"planId": "${planId}"`)) {
+      context.stdout.write(`Found Worker log for planId ${planId}: ${logFile}\n`)
+
+      return [logFile]
+    }
+  }
+
+  context.stderr.write(
+    `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
+  )
+
+  return workerLogFiles
+}
+
 const getGithubJobAttributeFromLogFiles = (
   context: BaseContext,
   foundDiagDir: string,
   workerLogFiles: string[],
   jobAttributeRegex: RegExp
 ): string | undefined => {
-  // Get the job attribute via regex
-  // For non-ephemeral runners, multiple Worker logs may exist from different jobs
-  // Use ACTIONS_ORCHESTRATION_ID to identify the correct log if available
-  const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
-  let targetLogFile: string | undefined
-
-  if (orchestrationId) {
-    // Extract planId GUID (everything before first dot)
-    const planId = orchestrationId.split('.')[0]
-
-    // Find the Worker log containing this planId
-    for (const logFile of workerLogFiles) {
-      const filePath = upath.join(foundDiagDir, logFile)
-      const content = fs.readFileSync(filePath, 'utf-8')
-
-      // Check if this log matches the current job's planId
-      if (content.includes(`"planId": "${planId}"`)) {
-        targetLogFile = logFile
-        context.stdout.write(`Found Worker log for planId ${planId}: ${logFile}\n`)
-        break
-      }
-    }
-
-    if (!targetLogFile) {
-      context.stderr.write(
-        `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
-      )
-    }
-  }
-
-  // If we found a specific log file, check only that one; otherwise check all
-  const logsToCheck = targetLogFile ? [targetLogFile] : workerLogFiles
+  const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles)
 
   for (const logFile of logsToCheck) {
     const filePath = upath.join(foundDiagDir, logFile)
@@ -1213,7 +1262,6 @@ const getGithubJobAttributeFromLogFiles = (
     const match = content.match(jobAttributeRegex)
 
     if (match && match[1]) {
-      // match[1] is the captured group with the JSON-escaped attribute
       const unescapedAttribute = unescapeJsonString(match[1])
 
       return unescapedAttribute
@@ -1267,6 +1315,166 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
 
     return jobDisplayName
   }
+}
+
+/**
+ * Enriches `ciEnv` with GitHub-specific info from diagnostic logs based on the CI level.
+ * - step: extracts job display name + step index
+ * - job: extracts job display name
+ * - pipeline/stage: no-op
+ */
+export const enrichCIEnvFromGithubLogs = (
+  context: BaseContext,
+  level: CILevel,
+  ciEnv: Record<string, string>
+): void => {
+  switch (level) {
+    case CI_LEVELS.STEP: {
+      const stepInfo = getGithubStepInfoFromLogs(context)
+      if (stepInfo) {
+        if (!ciEnv[envDDGithubJobName]) {
+          ciEnv[envDDGithubJobName] = stepInfo.jobDisplayName
+        }
+        ciEnv[envDDGithubStepIndex] = String(stepInfo.stepIndex)
+      }
+      break
+    }
+    case CI_LEVELS.JOB: {
+      const jobName = getGithubJobNameFromLogs(context)
+      if (jobName) {
+        ciEnv[envDDGithubJobName] = jobName
+      }
+      break
+    }
+    default:
+      break
+  }
+}
+
+/**
+ * Extracts the job display name and step index from GitHub Actions diagnostic logs.
+ *
+ * To avoid parsing the full Job message JSON (~26KB), we:
+ * 1. Use the existing regex for `jobDisplayName`
+ * 2. Extract only the `"steps": [...]` array from the Job message via bracket-depth tracking
+ * 3. Parse just that array and match `contextName` against `GITHUB_ACTION`
+ */
+export const getGithubStepInfoFromLogs = (
+  context: BaseContext
+): {jobDisplayName: string; stepIndex: number} | undefined => {
+  if (getCIProvider() !== CI_ENGINES.GITHUB) {
+    return
+  }
+
+  const githubAction = process.env.GITHUB_ACTION
+  if (!githubAction) {
+    throw new Error('GITHUB_ACTION environment variable is not set, cannot determine step index')
+  }
+
+  context.stdout.write('Determining GitHub step info from diagnostic logs\n')
+
+  const result = getGithubWorkerLogFiles(context)
+  if (!result) {
+    return
+  }
+  const [foundDiagDir, workerLogFiles] = result
+  const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles)
+
+  for (const logFile of logsToCheck) {
+    const filePath = upath.join(foundDiagDir, logFile)
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    // Extract jobDisplayName using the existing regex
+    const displayNameMatch = content.match(githubJobDisplayNameRegex)
+    if (!displayNameMatch || !displayNameMatch[1]) {
+      continue
+    }
+    const jobDisplayName = unescapeJsonString(displayNameMatch[1])
+
+    // Extract just the "steps" array from the Job message and find the matching step
+    const stepIndex = getStepIndexFromLog(content, githubAction)
+    if (stepIndex === -1) {
+      continue
+    }
+
+    context.stdout.write(
+      `Successfully extracted step info: jobDisplayName=${jobDisplayName}, stepIndex=${stepIndex}\n`
+    )
+
+    return {jobDisplayName, stepIndex}
+  }
+
+  context.stderr.write(
+    `${chalk.yellow.bold('[WARNING]')} could not find step info in GitHub diagnostic logs\n`
+  )
+
+  return
+}
+
+/**
+ * Finds the "steps" array inside the Job message section of the log,
+ * parses only that array, and returns the 0-based index of the step
+ * whose `contextName` matches `githubAction`. Returns -1 if not found.
+ */
+const getStepIndexFromLog = (content: string, githubAction: string): number => {
+  // Scope to the Job message section
+  const jobMessageIdx = content.indexOf('Job message:')
+  if (jobMessageIdx === -1) {
+    return -1
+  }
+
+  // Find "steps" key followed by an array within the Job message
+  const stepsKeyIdx = content.indexOf('"steps"', jobMessageIdx)
+  if (stepsKeyIdx === -1) {
+    return -1
+  }
+
+  const bracketStart = content.indexOf('[', stepsKeyIdx)
+  if (bracketStart === -1) {
+    return -1
+  }
+
+  const steps = extractJsonArray(content, bracketStart)
+  if (!steps) {
+    return -1
+  }
+
+  return steps.findIndex((step) => {
+    if (typeof step !== 'object' || !step) {
+      return false
+    }
+
+    const contextName = (step as {contextName?: unknown}).contextName
+
+    return typeof contextName === 'string' && contextName === githubAction
+  })
+}
+
+/**
+ * Extracts a JSON array from `content` starting at `bracketStart`
+ * by tracking bracket depth to find the matching `]`, then parsing
+ * only that substring. Returns undefined if parsing fails.
+ */
+const extractJsonArray = (content: string, bracketStart: number): unknown[] | undefined => {
+  let depth = 0
+  for (let i = bracketStart; i < content.length; i++) {
+    if (content[i] === '[') {
+      depth++
+    } else if (content[i] === ']') {
+      depth--
+    }
+    if (depth === 0) {
+      try {
+        const parsed: unknown = JSON.parse(content.substring(bracketStart, i + 1))
+
+        return Array.isArray(parsed) ? parsed : undefined
+      } catch {
+        return undefined
+      }
+    }
+  }
+
+  return undefined
 }
 
 export const getGithubJobIDFromLogs = (context: BaseContext): string | undefined => {

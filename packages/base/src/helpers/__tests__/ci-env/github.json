@@ -1,7 +1,7 @@
 [
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -31,7 +31,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -61,7 +61,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -91,7 +91,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -121,7 +121,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -151,7 +151,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -183,7 +183,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -215,7 +215,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -247,7 +247,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "origin/master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -277,7 +277,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "refs/heads/master",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -307,7 +307,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "refs/heads/feature/one",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -337,7 +337,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "origin/tags/0.1.0",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -367,7 +367,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "refs/heads/tags/0.1.0",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -397,7 +397,6 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
       "GITHUB_HEAD_REF": "origin/other",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "origin/master",
@@ -408,7 +407,8 @@
       "GITHUB_SERVER_URL": "https://github.com",
       "GITHUB_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "GITHUB_WORKFLOW": "ghactions-pipeline-name",
-      "GITHUB_WORKSPACE": "/foo/bar"
+      "GITHUB_WORKSPACE": "/foo/bar",
+      "GITHUB_ACTIONS": "true"
     },
     {
       "_dd.ci.env_vars": "{\"GITHUB_SERVER_URL\":\"https://github.com\",\"GITHUB_REPOSITORY\":\"ghactions-repo\",\"GITHUB_RUN_ID\":\"ghactions-pipeline-id\",\"GITHUB_RUN_ATTEMPT\":\"ghactions-run-attempt\"}",
@@ -428,7 +428,6 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
       "GITHUB_HEAD_REF": "refs/heads/other",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "refs/heads/master",
@@ -439,7 +438,8 @@
       "GITHUB_SERVER_URL": "https://github.com",
       "GITHUB_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "GITHUB_WORKFLOW": "ghactions-pipeline-name",
-      "GITHUB_WORKSPACE": "/foo/bar"
+      "GITHUB_WORKSPACE": "/foo/bar",
+      "GITHUB_ACTIONS": "true"
     },
     {
       "_dd.ci.env_vars": "{\"GITHUB_SERVER_URL\":\"https://github.com\",\"GITHUB_REPOSITORY\":\"ghactions-repo\",\"GITHUB_RUN_ID\":\"ghactions-pipeline-id\",\"GITHUB_RUN_ATTEMPT\":\"ghactions-run-attempt\"}",
@@ -459,7 +459,6 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
       "GITHUB_HEAD_REF": "refs/heads/feature/other",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REF": "refs/heads/feature/one",
@@ -470,7 +469,8 @@
       "GITHUB_SERVER_URL": "https://github.com",
       "GITHUB_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "GITHUB_WORKFLOW": "ghactions-pipeline-name",
-      "GITHUB_WORKSPACE": "/foo/bar"
+      "GITHUB_WORKSPACE": "/foo/bar",
+      "GITHUB_ACTIONS": "true"
     },
     {
       "_dd.ci.env_vars": "{\"GITHUB_SERVER_URL\":\"https://github.com\",\"GITHUB_REPOSITORY\":\"ghactions-repo\",\"GITHUB_RUN_ID\":\"ghactions-pipeline-id\",\"GITHUB_RUN_ATTEMPT\":\"ghactions-run-attempt\"}",
@@ -500,7 +500,6 @@
       "DD_GIT_COMMIT_MESSAGE": "usersupplied-message",
       "DD_GIT_COMMIT_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "DD_GIT_REPOSITORY_URL": "git@github.com:DataDog/userrepo.git",
-      "GITHUB_ACTION": "run",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -509,7 +508,8 @@
       "GITHUB_SERVER_URL": "https://github.com",
       "GITHUB_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "GITHUB_WORKFLOW": "ghactions-pipeline-name",
-      "GITHUB_WORKSPACE": "foo/bar"
+      "GITHUB_WORKSPACE": "foo/bar",
+      "GITHUB_ACTIONS": "true"
     },
     {
       "_dd.ci.env_vars": "{\"GITHUB_SERVER_URL\":\"https://github.com\",\"GITHUB_REPOSITORY\":\"ghactions-repo\",\"GITHUB_RUN_ID\":\"ghactions-pipeline-id\",\"GITHUB_RUN_ATTEMPT\":\"ghactions-run-attempt\"}",
@@ -546,7 +546,6 @@
       "DD_GIT_COMMIT_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "DD_GIT_REPOSITORY_URL": "git@github.com:DataDog/userrepo.git",
       "DD_GIT_TAG": "0.0.2",
-      "GITHUB_ACTION": "run",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -555,7 +554,8 @@
       "GITHUB_SERVER_URL": "https://github.com",
       "GITHUB_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
       "GITHUB_WORKFLOW": "ghactions-pipeline-name",
-      "GITHUB_WORKSPACE": "foo/bar"
+      "GITHUB_WORKSPACE": "foo/bar",
+      "GITHUB_ACTIONS": "true"
     },
     {
       "_dd.ci.env_vars": "{\"GITHUB_SERVER_URL\":\"https://github.com\",\"GITHUB_REPOSITORY\":\"ghactions-repo\",\"GITHUB_RUN_ID\":\"ghactions-pipeline-id\",\"GITHUB_RUN_ATTEMPT\":\"ghactions-run-attempt\"}",
@@ -582,7 +582,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ID": "ghactions-pipeline-id",
@@ -607,7 +607,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -633,7 +633,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -659,7 +659,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -685,7 +685,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -711,7 +711,7 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
+      "GITHUB_ACTIONS": "true",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
       "GITHUB_RUN_ATTEMPT": "ghactions-run-attempt",
@@ -737,7 +737,6 @@
   ],
   [
     {
-      "GITHUB_ACTION": "run",
       "GITHUB_BASE_REF": "target-branch",
       "GITHUB_JOB": "github-job-name",
       "GITHUB_REPOSITORY": "ghactions-repo",
@@ -746,7 +745,8 @@
       "GITHUB_RUN_NUMBER": "ghactions-pipeline-number",
       "GITHUB_SERVER_URL": "https://github.com",
       "GITHUB_SHA": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",
-      "GITHUB_WORKFLOW": "ghactions-pipeline-name"
+      "GITHUB_WORKFLOW": "ghactions-pipeline-name",
+      "GITHUB_ACTIONS": "true"
     },
     {
       "_dd.ci.env_vars": "{\"GITHUB_SERVER_URL\":\"https://github.com\",\"GITHUB_REPOSITORY\":\"ghactions-repo\",\"GITHUB_RUN_ID\":\"ghactions-pipeline-id\",\"GITHUB_RUN_ATTEMPT\":\"ghactions-run-attempt\"}",

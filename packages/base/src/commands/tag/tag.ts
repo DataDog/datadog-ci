@@ -4,8 +4,7 @@ import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
-import {getCIEnv, getGithubJobNameFromLogs, envDDGithubJobName} from '../../helpers/ci'
-import {CILevel, LEVEL_TO_NUMBER, validateLevel} from '../../helpers/ci-levels'
+import {CILevel, LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
@@ -117,12 +116,7 @@ export class TagCommand extends BaseCommand {
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      if (level !== 'pipeline') {
-        const jobName = getGithubJobNameFromLogs(this.context)
-        if (jobName) {
-          ciEnv[envDDGithubJobName] = jobName
-        }
-      }
+      enrichCIEnvFromGithubLogs(this.context, level, ciEnv)
 
       const exitStatus = await this.sendTags(ciEnv, LEVEL_TO_NUMBER[level], provider, tags)
       if (exitStatus !== 0 && this.noFail) {

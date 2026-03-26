@@ -6,8 +6,7 @@ import {Command, Option} from 'clipanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import {envDDGithubJobName, getCIEnv, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
-import {CILevel, LEVEL_TO_NUMBER, validateLevel} from '@datadog/datadog-ci-base/helpers/ci-levels'
+import {CILevel, LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -106,12 +105,7 @@ export class MeasureCommand extends BaseCommand {
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      if (level !== 'pipeline') {
-        const jobName = getGithubJobNameFromLogs(this.context)
-        if (jobName) {
-          ciEnv[envDDGithubJobName] = jobName
-        }
-      }
+      enrichCIEnvFromGithubLogs(this.context, level, ciEnv)
 
       const exitStatus = await this.sendMeasures(ciEnv, LEVEL_TO_NUMBER[level], provider, measures)
       if (exitStatus !== 0 && this.noFail) {
