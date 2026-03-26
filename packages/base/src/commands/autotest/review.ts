@@ -292,7 +292,7 @@ export class AutotestCommand extends BaseCommand {
     }
 
     // Resolve PR info from --pr flag or CI environment.
-    let prInfo: {repo: string; number: number} | undefined
+    let prInfo: PrInfo | undefined
 
     if (this.pr) {
       const parsed = parseGitHubPrUrl(this.pr)
@@ -316,7 +316,7 @@ export class AutotestCommand extends BaseCommand {
         return 1
       }
       prInfo = diffContext.pr
-      this.context.stderr.write(`Detected ${diffContext.provider} (PR #${prInfo.number})…\n`)
+      this.context.stderr.write(`Detected ${diffContext.providerName} (PR #${prInfo.number})…\n`)
     }
 
     // Fetch diff via API — no git history needed.
