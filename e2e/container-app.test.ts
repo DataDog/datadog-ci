@@ -1,3 +1,5 @@
+import crypto from 'node:crypto'
+
 import {verifyInstrumented, verifyUninstrumented} from './helpers/container-app-verifier'
 import {DATADOG_CI_COMMAND, execPromise} from './helpers/exec'
 
@@ -6,7 +8,7 @@ const describeOrSkip = process.env.SKIP_CONTAINER_APP_TESTS === 'true' ? describ
 describeOrSkip('container-app', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
-  const appName = process.env.AZURE_CONTAINER_APP_NAME!
+  const appName = `dd-ci-capp-${crypto.randomBytes(4).toString('hex')}`
 
   beforeAll(async () => {
     const result = await execPromise(

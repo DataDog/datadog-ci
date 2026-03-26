@@ -41,6 +41,13 @@ packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins 
 packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/commands/stepfunctions             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/helpers/serverless                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/aas-linux.test.ts                                @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/aas-windows.test.ts                              @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/helpers/aas-verifier.ts                          @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/container-app.test.ts                            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/helpers/container-app-verifier.ts                @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/fixtures/aas                                     @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/fixtures/container-app                           @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 
 ## Source Code Integration (label: source-code-integration)
 packages/base/src/commands/git-metadata         @DataDog/datadog-ci-admins @DataDog/source-code-integration
