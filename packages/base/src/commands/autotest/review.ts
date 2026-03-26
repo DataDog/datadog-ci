@@ -390,9 +390,14 @@ export class AutotestCommand extends BaseCommand {
     // Create a GitHub check run if we have a token and a GitHub PR.
     const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
     let checkRunId: number | undefined
-    const headSha = process.env.GITHUB_SHA || process.env.CI_COMMIT_SHA
+    // For pull_request events, GITHUB_SHA is the merge commit — use the event payload's head SHA instead.
+    const eventPayload = getGitHubEventPayload()
+    const headSha = eventPayload?.pull_request?.head?.sha || process.env.GITHUB_SHA || process.env.CI_COMMIT_SHA
     if (prInfo?.provider === 'github' && githubToken && headSha && !this.dryRun) {
       checkRunId = await this.createCheckRun(prInfo.repo, headSha, githubToken)
+      if (checkRunId) {
+        this.context.stderr.write(`Created check run (id=${checkRunId})…\n`)
+      }
     }
 
     try {
