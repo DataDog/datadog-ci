@@ -126,11 +126,19 @@ Once the prod-data-collector subagent returns with real production inputs:
    edge cases (missing fields, malformed payloads, boundary values, duplicates, empty
    collections, whitespace).
 
-2. **Create temporary validation code** — prefer one table-driven test file. Keep assertions
-   focused on return values, errors, and key output fields. Do not overfit to formatting.
+2. **Create temporary validation code** — prefer one table-driven test file.
+   CRITICAL: Test BOTH input validation AND output correctness:
+   - Does the function accept valid inputs without crashing?
+   - Does the function PRODUCE correct output? (serialize correctly, return expected fields,
+     format data properly for downstream consumers)
+   - Does the output work when consumed by the next system in the pipeline?
+   - For serialization changes: verify the JSON/protobuf/wire format is correct
+   - For data processing: verify the output data shape matches what downstream expects
+   Do not just test that the code "doesn't crash" — test that it produces the RIGHT output.
 
 3. **Execute the validation scenarios** against the current code. Flag crashes, errors,
-   and unexpected outputs.
+   and unexpected outputs (including silently wrong outputs like nil where [] is expected,
+   0 where a value should be present, or missing fields in serialized output).
 
 4. **Post the report** as a PR comment using post_pr_comment. This is REQUIRED.
 
@@ -348,7 +356,7 @@ export class AutotestCommand extends BaseCommand {
     this.context.stderr.write('Starting AI validation…\n')
 
     try {
-      return await this.runReview(diff, this.dryRun ? undefined : prInfo)
+      return await this.runReview(diff, this.dryRun ? undefined : prInfo, this.dryRun)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.context.stderr.write(`Error: AI review failed: ${message}\n`)
@@ -420,7 +428,7 @@ export class AutotestCommand extends BaseCommand {
       .join('\n')
   }
 
-  private async runReview(diff: string, prInfo?: PrInfo): Promise<number> {
+  private async runReview(diff: string, prInfo?: PrInfo, dryRun = false): Promise<number> {
     const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
     const {z} = await import('zod')
 
@@ -553,7 +561,9 @@ export class AutotestCommand extends BaseCommand {
         settingSources: ['project'],
         allowedTools: ['*'],
         permissionMode: 'bypassPermissions',
-        systemPrompt: SYSTEM_PROMPT,
+        systemPrompt: SYSTEM_PROMPT + (dryRun
+          ? '\n\n## DRY RUN MODE\nDo NOT post any PR comments. Do NOT use gh, curl, or any other method to post comments. Only write the report to stdout and validation_report.md.'
+          : ''),
         model: MODEL,
         agents: {
           'prod-data-collector': {
