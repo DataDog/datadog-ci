@@ -385,16 +385,18 @@ export class AutotestCommand extends BaseCommand {
 
     this.context.stderr.write('Starting AI validation…\n')
 
+    let exitCode: number
     try {
-      const {exitCode} = await this.runReview(diff, this.dryRun ? undefined : prInfo, this.dryRun)
-
-      return exitCode
+      const result = await this.runReview(diff, this.dryRun ? undefined : prInfo, this.dryRun)
+      exitCode = result.exitCode
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.context.stderr.write(`Error: AI review failed: ${message}\n`)
-
-      return 1
+      exitCode = 1
     }
+
+    // Force exit — the SDK may leave open connections (MCP, HTTP) that keep the event loop alive.
+    process.exit(exitCode)
   }
 
   private async fetchDiff(pr: PrInfo): Promise<string> {
