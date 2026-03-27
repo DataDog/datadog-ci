@@ -5,7 +5,7 @@ Add numeric tags to CI Visibility pipeline and job spans.
 ## Usage
 
 ```bash
-datadog-ci measure [--no-fail] [--level <pipeline|job>] [--measures]
+datadog-ci measure [--no-fail] [--level <pipeline|job|stage|step>] [--measures]
 ```
 
 For example:
@@ -14,9 +14,10 @@ For example:
 datadog-ci measure --level job --measures binary.size:1024
 ```
 
-- `--level` Has to be one of `[pipeline, job]`. It will determine in what span the measures will be added. If pipeline
-  is selected then the measures will be added to the pipeline trace span. If job is selected it will be added to the
-  span for the currently running job.
+- `--level` Has to be one of `[pipeline, job, stage, step]`. It will determine in what span the measures will be added.
+  If pipeline is selected then the measures will be added to the pipeline trace span. If job is selected it will be added
+  to the span for the currently running job. If stage is selected it will be added to the span for the currently
+  running stage. If step is selected it will be added to the span for the currently running step.
 - `--no-fail` (default: `false`) will prevent the measure command from failing if there are issues submitting the data.
 - `--measures` is an array of key value pairs of the shape `key:value`. This will be the measures added to the pipeline or job span.
   The `value` must be a number
