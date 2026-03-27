@@ -79,9 +79,9 @@ Arguments from the discover response, plus:
 - Go/Ruby: conditions are NOT supported — never set one.
 - environment: prefer staging when available.
 
-### Step 4 — Wait 5 minutes
+### Step 4 — Wait 2 minutes
 
-Run: Bash sleep 300
+Run: Bash sleep 120
 
 ### Step 5 — Collect captured data
 
@@ -120,7 +120,7 @@ You MUST follow this two-phase workflow:
 As your VERY FIRST action, do these two things in parallel:
 
 A) **Spawn the "prod-data-collector" subagent** with the PR diff. This agent captures live
-   production inputs from deployed services via Datadog Live Debugger. It takes ~5 minutes,
+   production inputs from deployed services via Datadog Live Debugger. It takes ~2 minutes,
    so you MUST start it immediately. Pass the full diff as the prompt.
 
 B) **Analyze the PR** while the subagent collects data:
@@ -603,7 +603,7 @@ export class AutotestCommand extends BaseCommand {
         agents: {
           'prod-data-collector': {
             description:
-              'Captures live production inputs for changed functions using Datadog Live Debugger. Takes ~5 minutes. Start immediately and in the background.',
+              'Captures live production inputs for changed functions using Datadog Live Debugger. Takes ~2 minutes. Start immediately and in the background.',
             prompt: PROD_DATA_COLLECTOR_PROMPT,
             model: 'opus',
             tools: [
