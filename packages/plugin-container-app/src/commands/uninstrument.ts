@@ -134,7 +134,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     )
 
     if (!this.dryRun) {
-      await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)
+      await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name, updatedAppConfig)
     }
   }
 

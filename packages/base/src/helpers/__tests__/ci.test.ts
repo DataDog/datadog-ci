@@ -1183,12 +1183,7 @@ describe('getGithubStepInfoFromLogs', () => {
     }
     const logContent = makeLogContent({
       jobDisplayName: 'build-and-test',
-      steps: [
-        {contextName: '__checkout'},
-        {contextName: '__run'},
-        {contextName: '__run_2'},
-        {contextName: '__run_3'},
-      ],
+      steps: [{contextName: '__checkout'}, {contextName: '__run'}, {contextName: '__run_2'}, {contextName: '__run_3'}],
     })
     mockDiagDir(logContent)
 

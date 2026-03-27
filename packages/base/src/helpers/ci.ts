@@ -1215,11 +1215,7 @@ const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | und
  * Narrows the list of Worker log files to check by using ACTIONS_ORCHESTRATION_ID
  * to identify the correct log for the current job on non-ephemeral runners.
  */
-const getTargetWorkerLogFiles = (
-  context: BaseContext,
-  foundDiagDir: string,
-  workerLogFiles: string[]
-): string[] => {
+const getTargetWorkerLogFiles = (context: BaseContext, foundDiagDir: string, workerLogFiles: string[]): string[] => {
   const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
   if (!orchestrationId) {
     return workerLogFiles
@@ -1357,9 +1353,7 @@ export const enrichCIEnvFromGithubLogs = (
  * 2. Extract only the `"steps": [...]` array from the Job message via bracket-depth tracking
  * 3. Parse just that array and match `contextName` against `GITHUB_ACTION`
  */
-export const getGithubStepInfoFromLogs = (
-  context: BaseContext
-): {jobDisplayName: string; stepIndex: number} => {
+export const getGithubStepInfoFromLogs = (context: BaseContext): {jobDisplayName: string; stepIndex: number} => {
   if (getCIProvider() !== CI_ENGINES.GITHUB) {
     throw new Error('Step level is only supported for GitHub Actions')
   }
@@ -1395,9 +1389,7 @@ export const getGithubStepInfoFromLogs = (
       continue
     }
 
-    context.stdout.write(
-      `Successfully extracted step info: jobDisplayName=${jobDisplayName}, stepIndex=${stepIndex}\n`
-    )
+    context.stdout.write(`Successfully extracted step info: jobDisplayName=${jobDisplayName}, stepIndex=${stepIndex}\n`)
 
     return {jobDisplayName, stepIndex}
   }
