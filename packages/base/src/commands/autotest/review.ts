@@ -620,7 +620,6 @@ export class AutotestCommand extends BaseCommand {
               'Grep',
               'Glob',
               'Bash',
-              'mcp__datadog-mcp__discover_datadog_logpoint',
               'mcp__datadog-mcp__create_datadog_logpoint',
               'mcp__datadog-mcp__search_datadog_logs',
               'mcp__datadog-mcp__analyze_datadog_logs',
