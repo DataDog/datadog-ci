@@ -267,7 +267,8 @@ Important formatting rules:
 - Reuse existing test helpers and fixtures.
 - Keep scope tight: 1-2 high-risk areas, 5-10 scenarios.
 - Prefer package/unit-level execution over fragile E2E.
-- If you cannot execute a scenario, say so — do not bluff.`
+- If you cannot execute a scenario, say so — do not bluff.
+- For Go projects, always use \`go test -tags dynamic\` — never use Bazel, it is too slow for CI validation.`
 
 const MODEL = 'claude-opus-4-6'
 
