@@ -23,16 +23,18 @@ const parseGitHubPrUrl = (url: string): {repo: string; number: number} | undefin
 const PROD_DATA_COLLECTOR_PROMPT = `You are a production data collector. Your ONLY job is to capture live
 production inputs using Datadog Live Debugger logpoints.
 
-CRITICAL: You MUST use these specific MCP tools in this exact order:
-  1. mcp__datadog-mcp__discover_datadog_logpoint
-  2. mcp__datadog-mcp__create_datadog_logpoint
-  3. sleep 300 (via Bash)
+CRITICAL: You MUST use these steps in order:
+  1. Bash: git rev-parse HEAD  (get SHA from the checked-out worktree)
+  2. mcp__datadog-mcp__create_datadog_logpoint  (NO discover step — go straight to create)
+  3. Bash: sleep 120
   4. mcp__datadog-mcp__search_datadog_logs
   5. mcp__datadog-mcp__delete_datadog_session
 
-Do NOT use search_datadog_metrics, get_datadog_metric, or any other Datadog tools.
-Do NOT skip the logpoint flow. Do NOT substitute with metrics or traces.
-The ONLY way to get production inputs is via Live Debugger logpoints.
+Do NOT call discover_datadog_logpoint — skip it entirely.
+Do NOT fall back to search_datadog_spans, search_datadog_logs, search_datadog_metrics,
+or any other Datadog tool to substitute for real logpoint captures.
+If DI is not available, return SKIP immediately — do NOT produce a result from other sources.
+The ONLY valid production data comes from Live Debugger logpoints.
 
 You will receive a PR diff. Place logpoints on the SPECIFIC FUNCTIONS that are CHANGED
 in the diff — not on unrelated functions in the same service. The goal is to capture
@@ -53,48 +55,54 @@ TARGETING RULES:
 
 ## Detailed steps
 
-### Step 1 — Find the changed function and resolve the APM service name
+### Step 1 — Get SHA and resolve the APM service name
+
+Run: Bash git rev-parse HEAD
+This gives the git SHA of the deployed code to instrument.
 
 Search the codebase for the changed function. Then trace from the function's package to
 the main.go that imports it and extract the service name from ddapp.NewApp(...), appName
 constants, or DD_SERVICE env vars. The APM service name is often NOT the directory name.
 
-### Step 2 — Call discover_datadog_logpoint
+Also determine the repository URL from the git remote:
+  Bash: git remote get-url origin
+
+### Step 2 — Call create_datadog_logpoint directly (NO discover)
 
 Arguments:
-- datadog_apm_service_name: the resolved service name
-- repository_url: MUST include .git suffix (e.g. https://github.com/DataDog/dd-go.git)
-
-If discovery fails with the resolved name, try the directory name as fallback.
-
-### Step 3 — Call create_datadog_logpoint
-
-Arguments from the discover response, plus:
+- service_name: the resolved APM service name
+- repository_url: from git remote (strip .git suffix if present)
+- git_sha: from step 1
+- environment: "prod"
+- language: infer from file extension (go, python, java, etc.)
 - file_path: Start with shortest package-relative path (e.g. processor/processor.go).
-  If "no runtime_path found", try progressively longer prefixes automatically.
+  If "no runtime_path found" error, try progressively longer prefixes automatically.
 - method_name: the function name (for method probes) OR line_number for line probes.
 - message_template: Use {param} syntax. Dot notation accesses FIELDS not methods.
   For interfaces/abstract types, capture the whole object {obj}.
   Skip context.Context, callbacks, and channels.
 - Go/Ruby: conditions are NOT supported — never set one.
-- environment: prefer staging when available.
 
-### Step 4 — Wait 2 minutes
+If create fails with ANY error (no active instances, SHA mismatch, not found):
+Return "SKIP: DI not available for <service> in prod (<error>)" immediately.
+Do NOT attempt any fallback. Do NOT search spans or logs as a substitute.
+
+### Step 3 — Wait 2 minutes
 
 Run: Bash sleep 120
 
-### Step 5 — Collect captured data
+### Step 4 — Collect captured data
 
 Call mcp__datadog-mcp__search_datadog_logs to fetch the captured logpoint data.
 Use use_log_patterns: true for clustering.
 
 Do NOT request extra_fields: ['debugger*'] — snapshots are enormous.
 
-### Step 6 — Clean up
+### Step 5 — Clean up
 
-Call mcp__datadog-mcp__delete_datadog_session with the session_id from step 3.
+Call mcp__datadog-mcp__delete_datadog_session with the session_id from step 2.
 
-### Step 7 — Return results
+### Step 6 — Return results
 
 Return a structured summary:
 - total captures
