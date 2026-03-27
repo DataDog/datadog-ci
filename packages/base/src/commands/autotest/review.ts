@@ -278,7 +278,7 @@ Important formatting rules:
 - If you cannot execute a scenario, say so — do not bluff.
 - For Go projects, always use \`go test -tags dynamic\` — never use Bazel, it is too slow for CI validation.`
 
-const MODEL = 'claude-opus-4-6'
+const MODEL = 'claude-sonnet-4-6'
 
 const MAX_DIFF_LENGTH = 512 * 1024 // 512 KB — keep within reasonable prompt size
 
@@ -614,7 +614,7 @@ export class AutotestCommand extends BaseCommand {
             description:
               'Captures live production inputs for changed functions using Datadog Live Debugger. Takes ~2 minutes. Start immediately and in the background.',
             prompt: PROD_DATA_COLLECTOR_PROMPT,
-            model: 'opus',
+            model: 'sonnet',
             tools: [
               'Read',
               'Grep',
