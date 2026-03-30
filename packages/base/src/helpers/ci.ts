@@ -1379,7 +1379,7 @@ export const getGithubStepInfoFromLogs = (context: BaseContext): {jobDisplayName
     const jobDisplayName = unescapeJsonString(displayNameMatch[1])
 
     // Extract just the "steps" array from the Job message and find the matching step
-    const stepIndex = getStepIndexFromLog(content, githubAction)
+    const stepIndex = getStepIndexFromLog(content)
     if (stepIndex === -1) {
       continue
     }
@@ -1397,7 +1397,7 @@ export const getGithubStepInfoFromLogs = (context: BaseContext): {jobDisplayName
  * parses only that array, and returns the 0-based index of the step
  * whose `contextName` matches `githubAction`. Returns -1 if not found.
  */
-const getStepIndexFromLog = (content: string, githubAction: string): number => {
+const getStepIndexFromLog = (content: string): number => {
   // Scope to the Job message section
   const jobMessageIdx = content.indexOf('Job message:')
   if (jobMessageIdx === -1) {
@@ -1427,7 +1427,7 @@ const getStepIndexFromLog = (content: string, githubAction: string): number => {
 
     const contextName = (step as {contextName?: unknown}).contextName
 
-    return typeof contextName === 'string' && contextName === githubAction
+    return typeof contextName === 'string'
   })
 }
 
