@@ -197,7 +197,10 @@ jobs:
             container-app:
               - 'packages/plugin-container-app/**'
               - 'packages/base/package.json'
-              - 'packages/base/src/helpers/serverless/**'
+              - 'packages/base/src/helpers/serverless/azure.ts'
+              - 'packages/base/src/helpers/serverless/common.ts'
+              - 'packages/base/src/helpers/serverless/constants.ts'
+              - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'e2e/fixtures/container-app/**'
               - 'e2e/container-app.test.ts'
               - 'e2e/helpers/container-app-verifier.ts'
@@ -217,7 +220,10 @@ jobs:
             aas:
               - 'packages/plugin-aas/**'
               - 'packages/base/package.json'
-              - 'packages/base/src/helpers/serverless/**'
+              - 'packages/base/src/helpers/serverless/azure.ts'
+              - 'packages/base/src/helpers/serverless/common.ts'
+              - 'packages/base/src/helpers/serverless/constants.ts'
+              - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'packages/base/src/commands/aas/**'
               - 'e2e/aas-linux.test.ts'
               - 'e2e/aas-windows.test.ts'
