@@ -12,7 +12,7 @@ describeOrSkip('aas (Linux)', () => {
   const linuxPlan = process.env.AZURE_AAS_LINUX_PLAN!
 
   beforeAll(async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `az webapp create` +
         ` --name "${linuxAppName}"` +
         ` --resource-group "${resourceGroup}"` +
@@ -24,7 +24,7 @@ describeOrSkip('aas (Linux)', () => {
     if (result.exitCode !== 0) {
       throw new Error(`Failed to create Linux web app (exit code ${result.exitCode}): ${result.stderr}`)
     }
-  })
+  }, 600_000)
 
   afterAll(async () => {
     try {

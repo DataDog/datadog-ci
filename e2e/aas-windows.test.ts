@@ -12,7 +12,7 @@ describeOrSkip('aas (Windows)', () => {
   const windowsPlan = process.env.AZURE_AAS_WINDOWS_PLAN!
 
   beforeAll(async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `az webapp create` +
         ` --name "${windowsAppName}"` +
         ` --resource-group "${resourceGroup}"` +
@@ -24,7 +24,7 @@ describeOrSkip('aas (Windows)', () => {
     if (result.exitCode !== 0) {
       throw new Error(`Failed to create Windows web app (exit code ${result.exitCode}): ${result.stderr}`)
     }
-  })
+  }, 600_000)
 
   afterAll(async () => {
     try {

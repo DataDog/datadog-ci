@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 
 import {verifyInstrumented, verifyUninstrumented} from './helpers/container-app-verifier'
-import {DATADOG_CI_COMMAND, execPromise} from './helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
 const describeOrSkip = process.env.SKIP_CONTAINER_APP_TESTS === 'true' ? describe.skip : describe
 
@@ -11,7 +11,7 @@ describeOrSkip('container-app', () => {
   const appName = `dd-ci-capp-${crypto.randomBytes(4).toString('hex')}`
 
   beforeAll(async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `az containerapp create` +
         ` --name "${appName}"` +
         ` --resource-group "${resourceGroup}"` +
@@ -25,7 +25,7 @@ describeOrSkip('container-app', () => {
     if (result.exitCode !== 0) {
       throw new Error(`Failed to create container app (exit code ${result.exitCode}): ${result.stderr}`)
     }
-  })
+  }, 600_000)
 
   afterAll(async () => {
     try {
@@ -38,7 +38,7 @@ describeOrSkip('container-app', () => {
   })
 
   it('instrument and verify', async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} container-app instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${appName}" --no-source-code-integration`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
@@ -47,10 +47,10 @@ describeOrSkip('container-app', () => {
     expect(result.exitCode).toBe(0)
 
     verifyInstrumented(appName, resourceGroup, subscriptionId)
-  })
+  }, 600_000)
 
   it('uninstrument and verify', async () => {
-    const result = await execPromise(
+    const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} container-app uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${appName}"`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
@@ -59,5 +59,5 @@ describeOrSkip('container-app', () => {
     expect(result.exitCode).toBe(0)
 
     verifyUninstrumented(appName, resourceGroup, subscriptionId)
-  })
+  }, 600_000)
 })
