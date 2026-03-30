@@ -1358,6 +1358,11 @@ export const getGithubStepInfoFromLogs = (context: BaseContext): {jobDisplayName
     throw new Error('Step level is only supported for GitHub Actions')
   }
 
+  const githubAction = process.env.GITHUB_ACTION
+  if (!githubAction) {
+    throw new Error('GITHUB_ACTION environment variable is not set, cannot determine step index')
+  }
+
   context.stdout.write('Determining GitHub step info from diagnostic logs\n')
 
   const result = getGithubWorkerLogFiles(context)
