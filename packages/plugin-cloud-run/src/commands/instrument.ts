@@ -1,5 +1,6 @@
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume, IVolumeMount} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import type {SSILanguage} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -27,7 +28,6 @@ import {
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import type {SSILanguage} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 import {
   SSI_LANGUAGE_CONFIGS,
   TRACER_INIT_CONTAINER_NAME,
