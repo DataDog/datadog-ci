@@ -17,7 +17,7 @@ describeOrSkip('aas (Linux)', () => {
         ` --name "${linuxAppName}"` +
         ` --resource-group "${resourceGroup}"` +
         ` --plan "${linuxPlan}"` +
-        ` --runtime "NODE:20-lts"` +
+        ` --runtime "NODE:22-lts"` +
         ` --https-only true` +
         ` --output none`
     )

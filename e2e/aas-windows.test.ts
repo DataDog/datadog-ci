@@ -17,7 +17,7 @@ describeOrSkip('aas (Windows)', () => {
         ` --name "${windowsAppName}"` +
         ` --resource-group "${resourceGroup}"` +
         ` --plan "${windowsPlan}"` +
-        ` --runtime "NODE:20LTS"` +
+        ` --runtime "NODE:22LTS"` +
         ` --https-only true` +
         ` --output none`
     )
