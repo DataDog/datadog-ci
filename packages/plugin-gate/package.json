@@ -43,6 +43,6 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "axios": "^1.13.5"
+    "axios": "1.13.5"
   }
 }

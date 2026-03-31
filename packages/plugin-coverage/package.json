@@ -44,7 +44,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "axios": "^1.13.5",
+    "axios": "1.13.5",
     "simple-git": "3.33.0"
   }
 }
