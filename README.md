@@ -24,7 +24,7 @@ yarn add --dev @datadog/datadog-ci
 ```
 
 > [!WARNING]
-> Datadog recommends to avoid using `npx @datadog/datadog-ci <scope> <command>` as your CI may be impacted by breaking changes released in major versions of datadog-ci,
+> Datadog recommends avoiding `npx @datadog/datadog-ci <scope> <command>`, because your CI may be impacted by breaking changes released in major versions of datadog-ci,
 > and this installation method is vulnerable to supply chain attacks.
 
 ## Installing a plugin
@@ -43,7 +43,7 @@ Use `datadog-ci plugin install` to install a plugin:
 datadog-ci plugin install <scope>
 ```
 
-For backwards compatibility, running a command that requires a plugin will automatically install the plugin if it is not already installed by default.
+For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed by default.
 
 **Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>` and disabling auto-installation with `DISABLE_PLUGIN_AUTO_INSTALL=1`.**
 
