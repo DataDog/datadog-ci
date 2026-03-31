@@ -16,7 +16,7 @@ import {cliVersion} from '../version'
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
 
-export type PluginPackageJson = {name: string; version: string}
+export type PackageInfo = {name: string; version: string; descriptor: string}
 export type PluginSubModule = {PluginCommand: CommandClass<CommandContext>}
 
 // Use `DEBUG=plugins` to enable debug logs
@@ -92,7 +92,7 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
   }
 
   try {
-    const module = await importPlugin(scope, command)
+    const module = command ? await importPluginSubmodule(scope, command) : await importPlugin(scope)
 
     console.log(
       [
@@ -148,19 +148,19 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
   const pluginPackage = getPackageToInstall(packageOrScope)
 
   const {installPackage} = await importInstallPkg()
-  const output = await installPackage([pluginPackage], {
+  const output = await installPackage([pluginPackage.descriptor], {
     silent: !debug.enabled,
     dev: true,
   })
 
   if (output.exitCode === 0) {
     console.log()
-    messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginPackage)}`])
+    messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginPackage.descriptor)}`])
     console.log()
 
     return true
   } else {
-    console.log(chalk.bold.red(`Failed to install ${pluginPackage}! 🔌`))
+    console.log(chalk.bold.red(`Failed to install ${pluginPackage.descriptor}! 🔌`))
     console.log('Stdout:', output.stdout)
     console.log('Stderr:', output.stderr)
 
@@ -191,7 +191,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const pluginPackage = getPackageToInstall(scope)
 
   const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
-  const cmd = `npx --ignore-scripts -y -p ${pluginPackage} ${emitPath}`
+  const cmd = `npx --ignore-scripts -y -p ${pluginPackage.descriptor} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
@@ -217,14 +217,16 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
 
   console.log()
   messageBox('Installed plugin 🔌', 'green', [
-    `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
+    `Successfully installed ${chalk.bold(pluginPackage.descriptor)} into ${chalk.dim(nodeModulesPath)}`,
     '',
-    `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)} in your project.`,
+    `Consider installing the plugin explicitly with ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}.`,
   ])
   console.log()
 
   // Make the plugin resolvable.
   patchModulePaths(nodeModulesPath)
+
+  printPluginVersion(pluginPackage)
 }
 
 const handlePluginAutoInstall = async (scope: string) => {
@@ -235,7 +237,8 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 
   try {
-    await importPlugin(scope)
+    const plugin = await importPlugin(scope)
+    printPluginVersion(plugin)
 
     debug('Auto-install check: plugin is installed, skipping installation')
   } catch (error) {
@@ -258,12 +261,23 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 }
 
+const printPluginVersion = (plugin: PackageInfo) => {
+  console.log(chalk.dim(`${plugin.name} v${plugin.version}`))
+  if (plugin.version !== cliVersion) {
+    console.log(
+      chalk.yellow(
+        `The plugin is not the same version as datadog-ci, which could lead to unexpected behavior. Consider syncing the plugin version with datadog-ci.`
+      )
+    )
+  }
+}
+
 // Injected by esbuild in bundled builds (SEA and NPM bundle).
 // eslint-disable-next-line @typescript-eslint/naming-convention
 declare const __getInjectedPlugins:
   | (() => {
       injectedPluginSubmodules?: Record<string, Record<string, PluginSubModule>>
-      injectedPluginPackageJsons?: Record<string, PluginPackageJson>
+      injectedPluginPackageJsons?: Record<string, PackageInfo>
     })
   | undefined
 
@@ -275,7 +289,7 @@ const getInjectedPluginSubmodules = () => {
   return __getInjectedPlugins().injectedPluginSubmodules
 }
 
-const getInjectedPluginPackageJson = (scope: string): PluginPackageJson | undefined => {
+const getInjectedPluginPackageJson = (scope: string): PackageInfo | undefined => {
   if (typeof __getInjectedPlugins === 'undefined') {
     return undefined
   }
@@ -364,7 +378,7 @@ const isValidScope = (scope: string): boolean => {
  */
 export const VERSION_OVERRIDE_REGEX = /^(\d+\.\d+\.\d+|file:\.\/[a-zA-Z0-9.\-/@]+)$/
 
-const getPackageToInstall = (scope: string) => {
+const getPackageToInstall = (scope: string): PackageInfo => {
   const pluginName = scopeToPackageName(scope)
 
   const pluginVersionOverride = process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
@@ -373,39 +387,36 @@ const getPackageToInstall = (scope: string) => {
     throw new Error(`Invalid PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE value: ${pluginVersionOverride}`)
   }
 
-  return `${pluginName}@${pluginVersionOverride ?? cliVersion}`
+  const pluginVersion = pluginVersionOverride ?? cliVersion
+
+  return {
+    name: pluginName,
+    version: pluginVersion,
+    descriptor: `${pluginName}@${pluginVersion}`,
+  }
 }
 
-const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
+const importPlugin = async (scope: string): Promise<PackageInfo> => {
   const packageNameMatch = scope.match(/^@datadog\/datadog-ci-plugin-([a-z-]+)$/)
   const normalizedScope = packageNameMatch?.[1] ?? scope
 
-  if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
-    const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
-    if (injectedPackageJson) {
-      return injectedPackageJson
-    }
+  const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
+  if (injectedPackageJson) {
+    return injectedPackageJson
+  }
 
+  if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
     // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
     // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
     return extractPackageJson(require(`${scope}/package.json`))
   }
 
-  if (!command) {
-    const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
-    if (injectedPackageJson) {
-      return injectedPackageJson
-    }
-
-    // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
-    // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
-    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
-  }
-
-  return importPluginSubmodule(normalizedScope, command)
+  // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
+  // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
+  return extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
 }
 
-const extractPackageJson = (content: unknown): PluginPackageJson => {
+const extractPackageJson = (content: unknown): PackageInfo => {
   if (typeof content !== 'object' || !content) {
     throw new Error('Invalid package.json: not an object')
   }
@@ -420,7 +431,7 @@ const extractPackageJson = (content: unknown): PluginPackageJson => {
 
   const {name, version} = content
 
-  return {name, version}
+  return {name, version, descriptor: `${name}@${version}`}
 }
 
 const showPluginNotInstalledMessageBox = (scope: string, command?: string) => {
