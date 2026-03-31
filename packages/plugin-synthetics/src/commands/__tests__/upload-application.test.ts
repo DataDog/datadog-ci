@@ -176,7 +176,7 @@ describe('upload-application', () => {
       [
         'Axios error',
         getAxiosError(400, {message: 'Bad Request'}),
-        'An unexpected error occurred: AxiosError: Bad Request\n    at getAxiosError',
+        'An unexpected error occurred: RequestError: Bad Request\n    at getRequestError',
       ],
       ['Unknown error', new Error('Unknown error'), 'An unexpected error occurred: Error: Unknown error\n    at '],
     ])('%s', async (_, error, expectedMessage) => {

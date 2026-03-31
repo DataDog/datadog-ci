@@ -1,3 +1,8 @@
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
+
 import {createServer} from 'http'
 
 import type {PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
@@ -6,7 +11,8 @@ import type {AxiosResponse} from 'axios'
 import type {AddressInfo} from 'net'
 
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import axios, {AxiosError} from 'axios'
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
+import {AxiosError} from 'axios'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
@@ -27,6 +33,8 @@ import {
 } from './fixtures'
 
 describe('dd-api', () => {
+  afterEach(() => jest.clearAllMocks())
+
   const apiConfiguration = getMockApiConfiguration()
   const LOCATION = {
     display_name: 'fake location',
@@ -109,21 +117,27 @@ describe('dd-api', () => {
   }
 
   test('should get results from api', async () => {
-    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: RAW_POLL_RESULTS})) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: RAW_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)
   })
 
   test('should get mobile results from api', async () => {
-    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: MOBILE_RAW_POLL_RESULTS})) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: MOBILE_RAW_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)
   })
 
   test('should trigger tests using api', async () => {
-    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: TRIGGER_RESULTS})) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: TRIGGER_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const {triggerTests} = api
     const tests: TestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
@@ -135,6 +149,7 @@ describe('dd-api', () => {
     beforeEach(() => {
       jest.useFakeTimers({doNotFake: ['nextTick']})
       jest.restoreAllMocks()
+      jest.clearAllMocks()
     })
 
     afterEach(() => {
@@ -223,10 +238,10 @@ describe('dd-api', () => {
       async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
         const serverError = new AxiosError('Server Error')
 
-        const requestMock = jest.fn().mockImplementation(() => {
+        const requestMock = jest.mocked(requestModule.httpRequest)
+        requestMock.mockImplementation(() => {
           throw serverError
         })
-        jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
         {
           serverError.response = {status: 404} as AxiosResponse
@@ -265,6 +280,9 @@ describe('dd-api', () => {
     )
 
     test('should retry when socket hangs up', async () => {
+      jest
+        .mocked(requestModule.httpRequest)
+        .mockImplementation(jest.requireActual('@datadog/datadog-ci-base/helpers/request').httpRequest)
       jest.spyOn(internalUtils, 'wait').mockImplementation()
 
       const requestSpy = jest.fn()
@@ -294,29 +312,38 @@ describe('dd-api', () => {
   })
 
   test('should get a mobile application presigned URL from api', async () => {
-    const spy = jest
-      .spyOn(axios, 'create')
-      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URLS_PAYLOAD})) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: MOBILE_PRESIGNED_URLS_PAYLOAD,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
     const api = apiConstructor(apiConfiguration)
     const {getMobileApplicationPresignedURLs} = api
     const result = await getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS)
     expect(result).toEqual(MOBILE_PRESIGNED_URLS_PAYLOAD)
-    spy.mockRestore()
   })
 
   test('should get a tunnel presigned URL from api', async () => {
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: PRESIGNED_URL_PAYLOAD})) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: PRESIGNED_URL_PAYLOAD, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const {getTunnelPresignedURL} = api
     const {url} = await getTunnelPresignedURL([TRIGGERED_TEST_ID])
     expect(url).toEqual(PRESIGNED_URL_PAYLOAD.url)
-    spy.mockRestore()
   })
 
   test('should upload a mobile application with a presigned URL', async () => {
-    const mockRequest = jest.fn()
-    mockRequest.mockReturnValue({status: 200, headers: {etag: '"123"'}})
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const httpRequestMock = jest.mocked(requestModule.httpRequest)
+    httpRequestMock.mockResolvedValue({
+      data: {},
+      status: 200,
+      headers: {etag: '"123"'},
+      statusText: 'OK',
+      config: {},
+    } as any)
     const api = apiConstructor(apiConfiguration)
     const {uploadMobileApplicationPart} = api
     const result = await uploadMobileApplicationPart(
@@ -329,16 +356,14 @@ describe('dd-api', () => {
       {ETag: '123', PartNumber: 2},
     ])
 
-    const callArg = mockRequest.mock.calls[0][0]
+    const callArg = httpRequestMock.mock.calls[0][0]
     expect(callArg.url).toBe(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls[1])
-    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
-    spy.mockRestore()
+    expect(httpRequestMock).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
   })
 
   test('should return empty ETag when doing azure part upload', async () => {
-    const mockRequest = jest.fn()
-    mockRequest.mockReturnValue({status: 200, headers: {}})
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const httpRequestMock = jest.mocked(requestModule.httpRequest)
+    httpRequestMock.mockResolvedValue({data: {}, status: 200, headers: {}, statusText: 'OK', config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const {uploadMobileApplicationPart} = api
 
@@ -358,15 +383,16 @@ describe('dd-api', () => {
       {ETag: '', PartNumber: 2},
     ])
 
-    const callArg = mockRequest.mock.calls[0][0]
+    const callArg = httpRequestMock.mock.calls[0][0]
     expect(callArg.url).toBe(urls[1])
-    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
-    spy.mockRestore()
+    expect(httpRequestMock).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
   })
 
   test('should complete presigned mobile application upload', async () => {
     const jobId = 'fake_job_id'
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: {job_id: jobId}})) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: {job_id: jobId}, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const {completeMultipartMobileApplicationUpload} = api
 
@@ -386,11 +412,12 @@ describe('dd-api', () => {
     )
 
     expect(result).toBe(jobId)
-    spy.mockRestore()
   })
 
   test('should poll for app upload validation', async () => {
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: APP_UPLOAD_POLL_RESULTS})) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: APP_UPLOAD_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
     const api = apiConstructor(apiConfiguration)
     const {pollMobileApplicationUploadResponse} = api
 
@@ -399,17 +426,22 @@ describe('dd-api', () => {
     const appUploadResult = await pollMobileApplicationUploadResponse(jobId)
 
     expect(appUploadResult).toEqual(APP_UPLOAD_POLL_RESULTS)
-    spy.mockRestore()
   })
 
   test('should perform search with expected parameters', async () => {
-    const requestMock = jest.fn(() => ({status: 200, data: {tests: []}}))
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+    const httpRequestMock = jest.mocked(requestModule.httpRequest)
+    httpRequestMock.mockResolvedValue({
+      data: {tests: []},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const {searchTests} = apiConstructor(apiConfiguration)
 
     await expect(searchTests('tag:("test") creator:("Me") ???')).resolves.toEqual({tests: []})
-    expect(requestMock).toHaveBeenCalledWith(
+    expect(httpRequestMock).toHaveBeenCalledWith(
       expect.objectContaining({
         params: {
           count: MAX_TESTS_TO_TRIGGER + 1,
@@ -417,18 +449,17 @@ describe('dd-api', () => {
         },
       })
     )
-    spy.mockRestore()
   })
 
   test('should receive settings', async () => {
     const settings = {onDemandConcurrencyCap: 10}
-    const requestMock = jest.fn(() => ({status: 200, data: settings}))
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
+    jest
+      .mocked(requestModule.httpRequest)
+      .mockResolvedValue({data: settings, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
 
     const {getSyntheticsOrgSettings: getSettings} = apiConstructor(apiConfiguration)
 
     await expect(getSettings()).resolves.toEqual(settings)
-    spy.mockRestore()
   })
 
   describe('proxy configuration', () => {
@@ -449,6 +480,8 @@ describe('dd-api', () => {
 
     beforeEach(() => {
       delete process.env.HTTP_PROXY
+      const actual = jest.requireActual('@datadog/datadog-ci-base/helpers/request')
+      jest.mocked(requestModule.httpRequest).mockImplementation(actual.httpRequest)
     })
 
     test('use proxy defined in configuration', async () => {

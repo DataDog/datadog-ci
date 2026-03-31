@@ -29,6 +29,7 @@ export interface RequestResponse<T = any> {
 
 export class RequestError extends Error {
   public config: RequestConfig
+  public isAxiosError = true as const // compat: passes axios isAxiosError() check (removed in Stage 2)
   public isRequestError = true as const
   public response?: {data: any; status: number; statusText: string}
 
