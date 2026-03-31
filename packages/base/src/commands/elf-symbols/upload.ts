@@ -38,6 +38,7 @@ import {
   getOutputFilenameFromBuildId,
   copyElfDebugInfo,
   isSupportedArch,
+  resolveDebugInfoFromDebugLink,
 } from './elf'
 import {getElfRequestBuilder, uploadMultipartHelper} from './helpers'
 import {ELF_DEBUG_INFOS_FILENAME, TYPE_ELF_DEBUG_INFOS, VALUE_NAME_ELF_DEBUG_INFOS} from './interfaces'
@@ -281,6 +282,12 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
           !metadata.hasSymbolTable &&
           (!metadata.hasDynamicSymbolTable || !this.acceptDynamicSymbolTableAsSymbolSource)
         ) {
+          // Try to resolve debug info from a .gnu_debuglink section
+          const resolved = await resolveDebugInfoFromDebugLink(metadata)
+          if (resolved) {
+            filesMetadata.push(resolved)
+            continue
+          }
           reportFailure(`Skipped ${p} because it has no debug info, nor symbols`)
           continue
         }
@@ -345,7 +352,8 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
         const metadata = this.getMappingMetadata(fileMetadata)
         const outputFilename = getOutputFilenameFromBuildId(getBuildIdWithArch(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
-        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, true)
+        const debugInfoSource = fileMetadata.debugInfoFile || fileMetadata.filename
+        await copyElfDebugInfo(debugInfoSource, outputFilePath, fileMetadata, true)
 
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
