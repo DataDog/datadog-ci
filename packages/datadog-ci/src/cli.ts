@@ -3,14 +3,14 @@
 import type {CommandContext} from '@datadog/datadog-ci-base'
 
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
 
 import packageJson from '@datadog/datadog-ci/package.json'
 
 export * as gitMetadata from '@datadog/datadog-ci-base/commands/git-metadata/library'
 export * as utils from '@datadog/datadog-ci-base/helpers/utils'
-export {cliVersion as version} from '@datadog/datadog-ci-base/version'
+export {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 
 export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols'])
 
@@ -58,6 +58,8 @@ declare const __IS_MAIN_MODULE__: boolean | undefined
 const isMainModule = typeof __IS_MAIN_MODULE__ !== 'undefined' ? __IS_MAIN_MODULE__ : require.main === module
 
 if (isMainModule) {
+  printVersion()
+
   void cli.runExit(process.argv.slice(2), {
     stderr: process.stderr,
     stdin: process.stdin,
