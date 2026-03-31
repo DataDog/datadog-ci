@@ -41,12 +41,12 @@
   },
   "dependencies": {
     "chalk": "3.0.0",
-    "form-data": "^4.0.4"
+    "form-data": "4.0.4"
   },
   "devDependencies": {
     "@types/jest": "29.5.3",
     "axios": "1.13.5",
     "simple-git": "3.33.0",
-    "upath": "^2.0.1"
+    "upath": "2.0.1"
   }
 }

@@ -38,12 +38,12 @@
     "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.981.0",
-    "@aws-sdk/client-iam": "^3.981.0",
-    "@aws-sdk/client-sfn": "^3.981.0",
-    "deep-object-diff": "^1.1.9"
+    "@aws-sdk/client-cloudwatch-logs": "3.981.0",
+    "@aws-sdk/client-iam": "3.981.0",
+    "@aws-sdk/client-sfn": "3.981.0",
+    "deep-object-diff": "1.1.9"
   },
   "devDependencies": {
-    "aws-sdk-client-mock": "^4.1.0"
+    "aws-sdk-client-mock": "4.1.0"
   }
 }
