@@ -1,3 +1,5 @@
+import {PassThrough} from 'stream'
+
 import type {Readable} from 'stream'
 
 import {EnvHttpProxyAgent, ProxyAgent, fetch} from 'undici'
@@ -91,7 +93,16 @@ const serializeBody = (data: unknown, headers: any): {body: any; headers: any} =
     return {body: undefined, headers}
   }
 
-  // Streams (FormData pipes, gzip streams) — pass through
+  // form-data (npm package) and similar objects that have .pipe but lack Symbol.asyncIterator.
+  // undici requires async-iterable bodies; pipe through a PassThrough to make them compatible.
+  if (typeof (data as any).pipe === 'function' && !(data as any)[Symbol.asyncIterator]) {
+    const passThrough = new PassThrough()
+    ;(data as any).pipe(passThrough)
+
+    return {body: passThrough, headers}
+  }
+
+  // Proper Node.js Readables / Web ReadableStreams — pass through
   if (isStream(data)) {
     return {body: data, headers}
   }
