@@ -55,7 +55,6 @@ knip,dev,ISC,Copyright 2022-2025 Lars Kappert
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 packageurl-js,import,MIT,Copyright (c) the purl authors
 prettier,dev,MIT,Copyright © James Long and contributors
-proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 rimraf,dev,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
@@ -69,6 +68,7 @@ ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-json-schema-generator,dev,MIT,"Copyright (c) 2019, TypeScript JSON Schema Generator"
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 typanion,import,MIT,Copyright (c) Mael Nison
+undici,import,MIT,Copyright (c) Matteo Collina and Undici contributors
 upath,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 uuid,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 xml2js,import,MIT,Copyright (c) Marek Kubica <marek@xivilization.net> (https://xivilization.net)
