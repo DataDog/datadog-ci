@@ -4,14 +4,14 @@ import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
 
 import packageJson from '@datadog/datadog-ci/package.json'
 
 export * as gitMetadata from '@datadog/datadog-ci-base/commands/git-metadata/library'
 export * as utils from '@datadog/datadog-ci-base/helpers/utils'
-export {cliVersion as version} from '@datadog/datadog-ci-base/version'
+export {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 
 export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols'])
 
@@ -62,6 +62,8 @@ const builtinPlugins =
     : Object.keys(packageJson.devDependencies).filter((plugin) => plugin.startsWith('@datadog/datadog-ci-plugin-'))
 
 if (require.main === module) {
+  printVersion()
+
   void cli.runExit(process.argv.slice(2), {
     stderr: process.stderr,
     stdin: process.stdin,
