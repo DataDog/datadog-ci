@@ -49,7 +49,9 @@ Use `datadog-ci plugin install` to install a plugin:
 datadog-ci plugin install <scope>
 ```
 
-By default, running a command that requires a plugin will automatically install the plugin if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+For backwards compatibility, running a command that requires a plugin will automatically install the plugin if it is not already installed by default.
+
+**Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>` and disabling auto-installation with `DISABLE_PLUGIN_AUTO_INSTALL=1`.**
 
 ## Usage
 
