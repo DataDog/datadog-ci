@@ -4,6 +4,7 @@ import type {CommandContext} from '@datadog/datadog-ci-base'
 
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
+import chalk from 'chalk'
 import {Builtins, Cli} from 'clipanion'
 
 import {dependencies} from '@datadog/datadog-ci/package.json'
@@ -41,6 +42,12 @@ Object.entries(commandDeclarations).forEach(([scope, commands]) => {
 const builtinPlugins = Object.keys(dependencies).filter((plugin) => plugin.startsWith('@datadog/datadog-ci-plugin-'))
 
 if (require.main === module) {
+  // Print version in all commands, except version commands.
+  const isVersionCommand = process.argv.at(-1) === '--version' || process.argv.at(-1) === 'version'
+  if (!isVersionCommand) {
+    process.stdout.write(chalk.dim(`datadog-ci v${cliVersion}\n`))
+  }
+
   void cli.runExit(process.argv.slice(2), {
     stderr: process.stderr,
     stdin: process.stdin,
