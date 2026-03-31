@@ -439,6 +439,12 @@ const isPnpModuleNotFoundError = (error: unknown): error is PnpModuleNotFoundErr
 const NPX_PATH_REGEX = /\.npm\/_npx\//
 const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/
 
+export const isRunViaNpx = (): boolean => {
+  const script = process.argv[1] ?? ''
+
+  return NPX_PATH_REGEX.test(script) || NPX_PATH_WIN_REGEX.test(script)
+}
+
 /**
  * Find where NPX just installed the package.
  *

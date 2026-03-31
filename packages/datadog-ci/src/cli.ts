@@ -3,6 +3,7 @@
 import type {CommandContext} from '@datadog/datadog-ci-base'
 
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
+import {isRunViaNpx} from '@datadog/datadog-ci-base/helpers/plugin'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import chalk from 'chalk'
 import {Builtins, Cli} from 'clipanion'
@@ -46,6 +47,15 @@ if (require.main === module) {
   const isVersionCommand = process.argv.at(-1) === '--version' || process.argv.at(-1) === 'version'
   if (!isVersionCommand) {
     process.stdout.write(chalk.dim(`datadog-ci v${cliVersion}\n`))
+  }
+
+  if (isRunViaNpx()) {
+    process.stderr.write(
+      chalk.yellow(
+        `⚠ Warning: Running datadog-ci via npx is vulnerable to supply chain attacks due to transitive dependencies.\n` +
+          `  Consider installing datadog-ci in your repository or CI with explicit versions and lock files.\n`
+      )
+    )
   }
 
   void cli.runExit(process.argv.slice(2), {
