@@ -9,6 +9,7 @@ import {
   checkPlugin,
   getTempPath,
   installPlugin,
+  isRunViaNpx,
   listAllPlugins,
   executePluginCommand,
   VERSION_OVERRIDE_REGEX,
@@ -67,6 +68,16 @@ describe('checkPlugin', () => {
   test('returns true for valid plugin', async () => {
     const result = await checkPlugin('synthetics')
     expect(result).toBe(true)
+  })
+
+  test('prints plugin version when plugin is found without command', async () => {
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
+
+    const result = await checkPlugin('synthetics')
+    expect(result).toBe(true)
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('@datadog/datadog-ci-plugin-synthetics'))
+
+    consoleLogSpy.mockRestore()
   })
 })
 
@@ -190,6 +201,39 @@ describe('VERSION_OVERRIDE_REGEX', () => {
     'file:./path_with_underscores.tgz',
   ])('rejects invalid value: %s', (value) => {
     expect(VERSION_OVERRIDE_REGEX.test(value)).toBe(false)
+  })
+})
+
+describe('isRunViaNpx', () => {
+  const originalArgv = process.argv
+
+  afterEach(() => {
+    process.argv = originalArgv
+  })
+
+  test('returns true for Unix npx path', () => {
+    process.argv = ['node', '/Users/john/.npm/_npx/abc123/node_modules/.bin/datadog-ci']
+    expect(isRunViaNpx()).toBe(true)
+  })
+
+  test('returns true for Windows npx path', () => {
+    process.argv = ['node', 'C:\\Users\\john\\npm-cache\\_npx\\abc123\\node_modules\\.bin\\datadog-ci']
+    expect(isRunViaNpx()).toBe(true)
+  })
+
+  test('returns false for global install', () => {
+    process.argv = ['node', '/usr/local/bin/datadog-ci']
+    expect(isRunViaNpx()).toBe(false)
+  })
+
+  test('returns false for local node_modules', () => {
+    process.argv = ['node', '/project/node_modules/.bin/datadog-ci']
+    expect(isRunViaNpx()).toBe(false)
+  })
+
+  test('returns false when argv[1] is undefined', () => {
+    process.argv = ['node']
+    expect(isRunViaNpx()).toBe(false)
   })
 })
 
