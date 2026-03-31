@@ -42,6 +42,6 @@
     "simple-git": "3.33.0"
   },
   "devDependencies": {
-    "axios": "^1.13.5"
+    "axios": "1.13.5"
   }
 }

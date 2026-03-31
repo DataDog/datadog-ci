@@ -191,7 +191,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const {basePackage, pluginPackage} = getPackagesToInstall(scope)
 
   const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
-  const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+  const cmd = `npx --ignore-scripts -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
@@ -314,6 +314,12 @@ const isValidScope = (scope: string): boolean => {
   return scopeToPackageName(scope) in peerDependencies
 }
 
+/**
+ * @example "1.2.3"
+ * @example "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
+ */
+export const VERSION_OVERRIDE_REGEX = /^(\d+\.\d+\.\d+|file:\.\/[a-zA-Z0-9.\-/@]+)$/
+
 const getPackagesToInstall = (scope: string) => {
   const pluginName = scopeToPackageName(scope)
 
@@ -321,6 +327,14 @@ const getPackagesToInstall = (scope: string) => {
   // This supports any format that the current package manager supports.
   const baseVersionOverride = process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE']
   const pluginVersionOverride = process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
+
+  if (baseVersionOverride && !VERSION_OVERRIDE_REGEX.test(baseVersionOverride)) {
+    throw new Error(`Invalid PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE value: ${baseVersionOverride}`)
+  }
+
+  if (pluginVersionOverride && !VERSION_OVERRIDE_REGEX.test(pluginVersionOverride)) {
+    throw new Error(`Invalid PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE value: ${pluginVersionOverride}`)
+  }
 
   const basePackage = `@datadog/datadog-ci-base@${baseVersionOverride ?? cliVersion}`
   const pluginPackage = `${pluginName}@${pluginVersionOverride ?? cliVersion}`

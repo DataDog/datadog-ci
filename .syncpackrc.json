@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/syncpack/dist/schema.json",
+  "$schema": "./node_modules/syncpack/schema.json",
   "sortFirst": [
     "name",
     "version",
@@ -24,7 +24,18 @@
   "versionGroups": [
     {
       "label": "Always use workspace:* for local packages",
-      "dependencyTypes": ["local"]
+      "dependencyTypes": [
+        "local"
+      ]
+    }
+  ],
+  "semverGroups": [
+    {
+      "label": "Always pin exact versions",
+      "packages": [
+        "**"
+      ],
+      "range": ""
     }
   ]
 }

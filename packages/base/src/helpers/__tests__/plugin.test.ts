@@ -5,7 +5,14 @@ import {SyntheticsRunTestsCommand} from '../../commands/synthetics/run-tests'
 import {isStandaloneBinary} from '../is-standalone-binary'
 import {messageBox} from '../message-box'
 import * as pluginModule from '../plugin'
-import {checkPlugin, getTempPath, installPlugin, listAllPlugins, executePluginCommand} from '../plugin'
+import {
+  checkPlugin,
+  getTempPath,
+  installPlugin,
+  listAllPlugins,
+  executePluginCommand,
+  VERSION_OVERRIDE_REGEX,
+} from '../plugin'
 
 import {createCommand} from './testing-tools'
 
@@ -111,8 +118,8 @@ describe('installPlugin', () => {
   })
 
   test('uses version overrides when provided', async () => {
-    process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE'] = 'foo'
-    process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE'] = 'bar'
+    process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE'] = '1.0.1'
+    process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE'] = '1.0.2'
 
     const mockInstallPackage = jest.fn().mockResolvedValue({
       exitCode: 0,
@@ -124,7 +131,7 @@ describe('installPlugin', () => {
 
     await installPlugin('test')
     expect(mockInstallPackage).toHaveBeenCalledWith(
-      ['@datadog/datadog-ci-base@foo', '@datadog/datadog-ci-plugin-test@bar'],
+      ['@datadog/datadog-ci-base@1.0.1', '@datadog/datadog-ci-plugin-test@1.0.2'],
       {silent: true, dev: true}
     )
 
@@ -152,6 +159,37 @@ describe('installPlugin', () => {
     mockImportInstallPkg.mockRejectedValue(new Error('Import failed'))
 
     await expect(installPlugin('test')).rejects.toThrow('Import failed')
+  })
+})
+
+describe('VERSION_OVERRIDE_REGEX', () => {
+  test.each(['1.0.0', '0.0.1', '10.20.30', 'file:./artifacts/@datadog-datadog-ci-base-20.tgz'])(
+    'accepts valid value: %s',
+    (value) => {
+      expect(VERSION_OVERRIDE_REGEX.test(value)).toBe(true)
+    }
+  )
+
+  test.each([
+    'latest',
+    '^1.0.0',
+    '~1.0.0',
+    '>=1.0.0',
+    '1.0',
+    '1',
+    'file:path; rm -rf /',
+    'file:path | cat /etc/passwd',
+    'file:path & evil',
+    '1.0.0; evil',
+    '$(evil)',
+    '`evil`',
+    'file:path with spaces',
+    'file:/absolute/path/to/package.tgz',
+    'file:../relative/path.tgz',
+    'file:..\\relative\\path.tgz',
+    'file:./path_with_underscores.tgz',
+  ])('rejects invalid value: %s', (value) => {
+    expect(VERSION_OVERRIDE_REGEX.test(value)).toBe(false)
   })
 })
 
