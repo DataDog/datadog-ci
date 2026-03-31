@@ -6,7 +6,6 @@ import fs from 'fs'
 
 import type {Writable} from 'stream'
 
-import {post as axiosPost, isAxiosError} from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
 
@@ -15,6 +14,7 @@ import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} fro
 import {deleteFolder} from '../fs'
 import {getLatestVersion} from '../get-latest-version'
 import * as helpersRenderer from '../renderer'
+import {httpRequest, isRequestError} from '../request'
 import {isValidDatadogSite} from '../validation'
 
 import {CI_SITE_ENV_VAR, FLARE_ENDPOINT_PATH, SITE_ENV_VAR} from './constants'
@@ -42,20 +42,18 @@ export const sendToDatadog = async (
   form.append('flare_file', fs.createReadStream(zipPath))
   form.append('datadog_ci_version', cliVersion)
   form.append('email', email)
-  const headerConfig = {
-    headers: {
-      ...form.getHeaders(),
-      'DD-API-KEY': apiKey,
-    },
+  const headers = {
+    ...form.getHeaders(),
+    'DD-API-KEY': apiKey,
   }
 
   try {
-    await axiosPost(endpointUrl, form, headerConfig)
+    await httpRequest({url: endpointUrl, method: 'POST', data: form, headers})
   } catch (err) {
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)
 
-    if (isAxiosError(err)) {
+    if (isRequestError(err)) {
       const errResponse: string = (err.response?.data.error as string) ?? ''
       const errorMessage = err.message ?? ''
 

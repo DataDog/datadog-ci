@@ -1,19 +1,19 @@
-import type {AxiosPromise, AxiosResponseHeaders, InternalAxiosRequestConfig} from 'axios'
+import type {RequestResponse} from '../request'
 
 import {retryRequest} from '../retry'
 
 describe('retry', () => {
   const retryCallback = jest.fn()
-  const createResultWithErrors = (errors: any[]): (() => AxiosPromise) => {
+  const createResultWithErrors = (errors: any[]): (() => Promise<RequestResponse>) => {
     let i = -1
 
     return () => {
       i = i + 1
       if (errors[i] === undefined) {
         return Promise.resolve({
-          config: {} as InternalAxiosRequestConfig,
+          config: {},
           data: {},
-          headers: {} as AxiosResponseHeaders,
+          headers: {},
           status: 200,
           statusText: '',
         })

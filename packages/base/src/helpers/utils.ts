@@ -2,15 +2,16 @@ import {exec} from 'child_process'
 import {readFile, existsSync, statSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
-import type {SpanTag, SpanTags} from './interfaces'
-import type {AxiosRequestConfig} from 'axios'
+import type {RequestBuilder, SpanTag, SpanTags} from './interfaces'
+import type {RequestConfig} from './request'
 import type {BaseContext, CommandClass} from 'clipanion'
 
-import {create as axiosCreate} from 'axios'
 import {Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
 import terminalLink from 'terminal-link'
+
+import {getProxyDispatcher, httpRequest} from './request'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -156,45 +157,37 @@ export interface RequestOptions {
   proxyOpts?: ProxyConfiguration
 }
 
-export const getRequestBuilder = (options: RequestOptions) => {
+export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
   const {apiKey, appKey, baseUrl, overrideUrl, proxyOpts} = options
-  const overrideArgs = (args: AxiosRequestConfig) => {
-    const newArguments = {
+  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
+  const dispatcher = getProxyDispatcher(proxyUrlFromConfiguration)
+
+  const overrideArgs = (args: RequestConfig): RequestConfig => {
+    const newArguments: RequestConfig = {
       ...args,
+      baseURL: baseUrl,
+      dispatcher,
       headers: {
         'DD-API-KEY': apiKey,
         ...(appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
         ...args.headers,
-      } as NonNullable<typeof args.headers>,
+      },
     }
 
     if (overrideUrl !== undefined) {
       newArguments.url = overrideUrl
     }
 
-    const proxyAgent = getProxyAgent(proxyOpts)
-    if (proxyAgent) {
-      newArguments.httpAgent = proxyAgent
-      newArguments.httpsAgent = proxyAgent
-    }
-
     if (options.headers !== undefined) {
       options.headers.forEach((value, key) => {
-        newArguments.headers[key] = value
+        newArguments.headers![key] = value
       })
     }
 
     return newArguments
   }
 
-  const baseConfiguration: AxiosRequestConfig = {
-    baseURL: baseUrl,
-    // Disabling proxy in Axios config as it's not working properly
-    // the passed httpAgent/httpsAgent are handling the proxy instead.
-    proxy: false,
-  }
-
-  return (args: AxiosRequestConfig) => axiosCreate(baseConfiguration)(overrideArgs(args))
+  return (args: RequestConfig) => httpRequest(overrideArgs(args))
 }
 
 const proxyAgentCache = new Map<string, ProxyAgent>()

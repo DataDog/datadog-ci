@@ -1,16 +1,15 @@
-import type {AxiosError} from 'axios'
 import type {BufferedMetricsLogger} from 'datadog-metrics'
 
-import {get as axiosGet} from 'axios'
 import chalk from 'chalk'
 
 import {InvalidConfigurationError} from './errors'
+import {httpRequest, isRequestError} from './request'
 
 /** ApiKeyValidator is an helper interface to interpret Datadog error responses and possibly check the
  * validity of the api key.
  */
 export interface ApiKeyValidator {
-  verifyApiKey(error: AxiosError): Promise<void>
+  verifyApiKey(error: unknown): Promise<void>
   validateApiKey(): Promise<boolean>
 }
 
@@ -39,13 +38,13 @@ class ApiKeyValidatorImplem {
     this.metricsLogger = metricsLogger
   }
 
-  /** Check if an API key is valid, based on the Axios error and defaulting to verify the API key
+  /** Check if an API key is valid, based on the HTTP error and defaulting to verify the API key
    * through Datadog's API for ambiguous cases.
    * An exception is raised when the API key is invalid.
    * Callers should catch the exception to display it nicely.
    */
-  public async verifyApiKey(error: AxiosError): Promise<void> {
-    if (error.response === undefined) {
+  public async verifyApiKey(error: unknown): Promise<void> {
+    if (!isRequestError(error) || error.response === undefined) {
       return
     }
     if (error.response.status === 403 || (error.response.status === 400 && !(await this.isApiKeyValid()))) {
@@ -70,15 +69,17 @@ class ApiKeyValidatorImplem {
     }
 
     try {
-      const response = await axiosGet(this.getApiKeyValidationURL(), {
+      const response = await httpRequest({
         headers: {
           'DD-API-KEY': this.apiKey,
         },
+        method: 'GET',
+        url: this.getApiKeyValidationURL(),
       })
 
       return response.data.valid
     } catch (error) {
-      if (error.response && error.response.status === 403) {
+      if (isRequestError(error) && error.response && error.response.status === 403) {
         return false
       }
       throw error

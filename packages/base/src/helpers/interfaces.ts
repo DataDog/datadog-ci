@@ -1,3 +1,4 @@
+import type {RequestConfig, RequestResponse} from './request'
 import type {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -32,7 +33,6 @@ import type {
   PR_NUMBER,
   CI_JOB_ID,
 } from './tags'
-import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 import type {BaseContext} from 'clipanion'
 
 export interface Metadata {
@@ -122,7 +122,12 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
+// Stage 1 compat: permissive enough for both RequestConfig and AxiosRequestConfig callers
+export type RequestBuilder = (args: any) => Promise<any>
+
+// Backward-compat aliases for downstream plugins (removed in Stage 2)
+export type {RequestConfig as AxiosRequestConfig}
+export type AxiosPromise<T = any> = Promise<RequestResponse<T>>
 
 /**
  * A subset of Clipanion's {@link BaseContext}.

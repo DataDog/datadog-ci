@@ -1,5 +1,5 @@
 import type {CILevel} from '@datadog/datadog-ci-base/helpers/ci'
-import type {AxiosError} from 'axios'
+import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -169,7 +169,7 @@ export class MeasureCommand extends BaseCommand {
         retries: 5,
       })
     } catch (error) {
-      this.handleError(error as AxiosError)
+      this.handleError(error as RequestError)
 
       return 1
     }
@@ -177,7 +177,7 @@ export class MeasureCommand extends BaseCommand {
     return 0
   }
 
-  private handleError(error: AxiosError) {
+  private handleError(error: RequestError) {
     this.context.stderr.write(
       `${chalk.red.bold('[ERROR]')} Could not send measures: ` +
         `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
