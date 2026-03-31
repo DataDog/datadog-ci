@@ -66,6 +66,16 @@ describe('checkPlugin', () => {
     const result = await checkPlugin('synthetics')
     expect(result).toBe(true)
   })
+
+  test('prints plugin version when plugin is found without command', async () => {
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
+
+    const result = await checkPlugin('synthetics')
+    expect(result).toBe(true)
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('@datadog/datadog-ci-plugin-synthetics'))
+
+    consoleLogSpy.mockRestore()
+  })
 })
 
 describe('executePluginCommand', () => {
