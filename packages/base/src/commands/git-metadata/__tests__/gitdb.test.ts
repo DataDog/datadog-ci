@@ -5,10 +5,15 @@ import os from 'os'
 
 import type * as simpleGit from 'simple-git'
 
-import axios from 'axios'
 import upath from 'upath'
 
+jest.mock('../../../helpers/request', () => ({
+  ...jest.requireActual('../../../helpers/request'),
+  httpRequest: jest.fn(),
+}))
+
 import {Logger, LogLevel} from '../../../helpers/logger'
+import * as requestModule from '../../../helpers/request'
 import {getRequestBuilder} from '../../../helpers/utils'
 
 import {uploadToGitDB} from '../gitdb'
@@ -130,7 +135,7 @@ describe('gitdb', () => {
       version: jest.Mock
     }
     public execSync: jest.Mock
-    public axios: jest.Mock
+    public httpRequest: jest.Mock
 
     private getConfigMetExpectations: () => void
     private fetchMetExpectations: () => void
@@ -140,7 +145,7 @@ describe('gitdb', () => {
     private revparseMetExpectations: () => void
     private versionMetExpectations: () => void
     private execSyncMetExpectations: () => void
-    private axiosMetExpectations: () => void
+    private httpRequestMetExpectations: () => void
 
     private axiosCalls: {
       url: string
@@ -160,7 +165,14 @@ describe('gitdb', () => {
       // call spyOn on these two mocks to make sure the underlying implementation is never called
       // as the default behavior of spyOn is to actually call the initial implem if not overridden
       this.execSync = jest.spyOn(child_process, 'execSync').mockImplementation(() => '') as jest.Mock
-      this.axios = jest.spyOn(axios, 'create').mockImplementation(() => ((_: any) => {}) as any) as jest.Mock
+      this.httpRequest = jest.mocked(requestModule.httpRequest)
+      this.httpRequest.mockResolvedValue({
+        data: {},
+        status: 200,
+        statusText: '',
+        headers: {},
+        config: {},
+      })
 
       const initMockWithParams = <I, O>(mock: jest.Mock, params: MockParam<I, O>[], promise: boolean, name = '') => {
         params.forEach((param) => {
@@ -216,10 +228,10 @@ describe('gitdb', () => {
 
       this.axiosCalls = []
 
-      // custom way of handling axios
+      // custom way of handling httpRequest
       mockParams.axios.forEach((param) => {
-        this.axios = this.axios.mockImplementationOnce(() => (req: any) => {
-          this.axiosCalls.push({url: req.url, data: req.data})
+        this.httpRequest = this.httpRequest.mockImplementationOnce(async (config: any) => {
+          this.axiosCalls.push({url: config.url, data: config.data})
           if (param.output instanceof Error) {
             throw param.output
           }
@@ -227,8 +239,8 @@ describe('gitdb', () => {
           return param.output
         })
       })
-      this.axiosMetExpectations = () => {
-        expect(this.axios.mock.calls).toHaveLength(mockParams.axios.length)
+      this.httpRequestMetExpectations = () => {
+        expect(this.httpRequest.mock.calls).toHaveLength(mockParams.axios.length)
         mockParams.axios.forEach((param, i) => {
           if (param.input !== undefined) {
             expect(this.axiosCalls[i].url).toBe(param.input.url)
@@ -250,7 +262,7 @@ describe('gitdb', () => {
       this.revparseMetExpectations()
       this.versionMetExpectations()
       this.execSyncMetExpectations()
-      this.axiosMetExpectations()
+      this.httpRequestMetExpectations()
     }
   }
 
