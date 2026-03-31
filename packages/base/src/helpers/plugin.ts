@@ -191,7 +191,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const {basePackage, pluginPackage} = getPackagesToInstall(scope)
 
   const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
-  const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+  const cmd = `npx --ignore-scripts -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
