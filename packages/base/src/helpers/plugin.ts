@@ -218,7 +218,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
 
   console.log()
   messageBox('Installed plugin 🔌', 'green', [
-    `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
+    `Successfully installed ${chalk.bold(pluginPackage.name)} into ${chalk.dim(nodeModulesPath)}`,
     '',
     `To avoid supply chain attacks, consider installing the plugin explicitly with ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}.`,
   ])

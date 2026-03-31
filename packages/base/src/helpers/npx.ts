@@ -12,8 +12,8 @@ export const isRunViaNpx = (): boolean => {
 export const printNpxWarning = () => {
   process.stderr.write(
     chalk.yellow(
-      `⚠ Warning: Running datadog-ci via npx is vulnerable to supply chain attacks due to transitive dependencies.\n` +
-        `  Consider installing datadog-ci in your repository or CI with explicit versions and lock files.\n`
+      `⚠ Warning: Running datadog-ci via npx may expose you to supply chain attacks through unvetted transitive dependencies.\n` +
+        `  We recommend installing datadog-ci as a pinned dependency with a lock file instead.\n`
     )
   )
 }
