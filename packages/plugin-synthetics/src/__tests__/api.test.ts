@@ -280,6 +280,8 @@ describe('dd-api', () => {
     )
 
     test('should retry when socket hangs up', async () => {
+      // undici's fetch needs real I/O, fake timers cause it to hang
+      jest.useRealTimers()
       jest
         .mocked(requestModule.httpRequest)
         .mockImplementation(jest.requireActual('@datadog/datadog-ci-base/helpers/request').httpRequest)
@@ -303,7 +305,7 @@ describe('dd-api', () => {
         baseV2Url: `http://127.0.0.1:${port}`,
       })
 
-      await expect(localApi.getSyntheticsOrgSettings).rejects.toThrow('socket hang up')
+      await expect(localApi.getSyntheticsOrgSettings).rejects.toThrow('other side closed')
 
       expect(requestSpy).toHaveBeenCalledTimes(MAX_ATTEMPTS)
 

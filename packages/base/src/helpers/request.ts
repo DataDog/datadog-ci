@@ -44,24 +44,20 @@ export class RequestError extends Error {
 export const isRequestError = (error: unknown): error is RequestError =>
   error instanceof RequestError || (typeof error === 'object' && !!error && (error as any).isRequestError === true)
 
-const dispatcherCache = new Map<string, EnvHttpProxyAgent | ProxyAgent>()
+const dispatcherCache = new Map<string, ProxyAgent>()
 
 export const getProxyDispatcher = (proxyUrl: string): EnvHttpProxyAgent | ProxyAgent => {
+  // EnvHttpProxyAgent reads env vars at construction, so never cache it
+  if (!proxyUrl) {
+    return new EnvHttpProxyAgent()
+  }
   let dispatcher = dispatcherCache.get(proxyUrl)
   if (!dispatcher) {
-    dispatcher = createDispatcherForUrl(proxyUrl)
+    dispatcher = new ProxyAgent({uri: proxyUrl})
     dispatcherCache.set(proxyUrl, dispatcher)
   }
 
   return dispatcher
-}
-
-const createDispatcherForUrl = (proxyUrl: string): EnvHttpProxyAgent | ProxyAgent => {
-  if (!proxyUrl) {
-    return new EnvHttpProxyAgent()
-  }
-
-  return new ProxyAgent({uri: proxyUrl})
 }
 
 const isStream = (body: unknown): body is Readable =>
@@ -142,7 +138,13 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   try {
     response = await fetch(resolvedUrl, fetchOptions)
   } catch (error: any) {
-    throw new RequestError(error.message ?? 'Request failed', config)
+    const message = error.cause?.message ?? error.message ?? 'Request failed'
+    const requestError = new RequestError(message, config)
+    const code = error.code ?? error.cause?.code
+    if (code) {
+      ;(requestError as any).code = code
+    }
+    throw requestError
   }
 
   const responseHeaders = parseResponseHeaders(response.headers)
