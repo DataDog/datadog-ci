@@ -5,7 +5,7 @@ import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
-import {getCIEnv, getGithubJobNameFromLogs, envDDGithubJobName} from '../../helpers/ci'
+import {CILevel, LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
@@ -75,11 +75,13 @@ export class TagCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    if (this.level !== 'pipeline' && this.level !== 'job') {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
+    const levelError = validateLevel(this.level)
+    if (levelError) {
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${levelError}\n`)
 
       return 1
     }
+    const level = this.level as CILevel
 
     if (this.silent) {
       this.context.stdout.write = () => {
@@ -115,14 +117,9 @@ export class TagCommand extends BaseCommand {
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      if (this.level !== 'pipeline') {
-        const jobName = getGithubJobNameFromLogs(this.context)
-        if (jobName) {
-          ciEnv[envDDGithubJobName] = jobName
-        }
-      }
+      enrichCIEnvFromGithubLogs(this.context, level, ciEnv)
 
-      const exitStatus = await this.sendTags(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, tags)
+      const exitStatus = await this.sendTags(ciEnv, LEVEL_TO_NUMBER[level], provider, tags)
       if (exitStatus !== 0 && this.noFail) {
         this.context.stderr.write(
           `${chalk.yellow.bold('[WARNING]')} sending tags failed but continuing due to --no-fail\n`
