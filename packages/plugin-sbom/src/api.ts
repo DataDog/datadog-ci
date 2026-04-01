@@ -15,7 +15,8 @@ const maxBodyLength = Infinity
  */
 export const getApiHelper = (
   apiKey: string,
-  appKey: string
+  appKey: string,
+  source?: string
 ): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
   /**
    * function used to marshall and send the data
@@ -37,6 +38,7 @@ export const getApiHelper = (
           [CONTENT_TYPE_HEADER]: CONTENT_TYPE_VALUE_JSON,
           'DD-EVP-ORIGIN': 'datadog-ci',
           'DD-EVP-ORIGIN-VERSION': '0.0.1',
+          'DD-SOURCE': source || 'CI',
         },
         maxBodyLength,
         method: METHOD_POST,
