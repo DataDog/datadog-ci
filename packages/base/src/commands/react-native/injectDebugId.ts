@@ -20,8 +20,8 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
     category: 'RUM',
     description: 'Inject Debug ID into JavaScript bundles and sourcemaps.',
     details: `
-        This command scans the specified directory for minified JavaScript bundles (.bundle) and their associated source maps (.map),
-        injecting a unique Debug ID into each file. These Debug IDs enable precise source map resolution in Datadog, ensuring accurate 
+        This command scans the specified directory for minified JavaScript bundles (.bundle or .jsbundle) and their associated source maps (.map),
+        injecting a unique Debug ID into each file. These Debug IDs enable precise source map resolution in Datadog, ensuring accurate
         stack traces and error symbolication.
     `,
     examples: [
@@ -67,11 +67,11 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
     this.context.stdout.write(`Scanning directory: ${directory}\n`)
 
     const files = await promises.readdir(directory)
-    const bundles = files.filter((file) => file.endsWith('.bundle'))
+    const bundles = files.filter((file) => file.endsWith('.bundle') || file.endsWith('.jsbundle'))
 
     if (bundles.length === 0) {
       this.context.stderr.write(
-        `[ERROR] JS bundle not found in "${directory}". Ensure your files follow the "*.bundle" and "*.bundle.map" naming convention.\n`
+        `[ERROR] JS bundle not found in "${directory}". Ensure your files follow the "*.bundle"/"*.bundle.map" (Android) or "*.jsbundle"/"*.jsbundle.map" (iOS) naming convention.\n`
       )
 
       return 1
