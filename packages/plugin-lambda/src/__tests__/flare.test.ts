@@ -97,7 +97,10 @@ jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
 jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 
 // Misc
-jest.mock('axios')
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
 jest.mock('jszip')
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '1.0-mock-version'}))
 

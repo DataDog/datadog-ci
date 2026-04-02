@@ -1,5 +1,3 @@
-import type {AxiosError} from 'axios'
-
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -9,6 +7,7 @@ import type {CILevel} from '../../helpers/ci'
 import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import type {RequestError} from '../../helpers/request'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
@@ -183,7 +182,7 @@ export class TagCommand extends BaseCommand {
         retries: 5,
       })
     } catch (error) {
-      this.handleError(error as AxiosError)
+      this.handleError(error as RequestError)
 
       return 1
     }
@@ -191,7 +190,7 @@ export class TagCommand extends BaseCommand {
     return 0
   }
 
-  private handleError(error: AxiosError) {
+  private handleError(error: RequestError) {
     this.context.stderr.write(
       `${chalk.red.bold('[ERROR]')} Could not send tags: ` +
         `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`

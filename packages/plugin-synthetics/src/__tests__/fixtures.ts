@@ -1,4 +1,5 @@
 import * as http from 'http'
+import * as net from 'net'
 import {URL} from 'url'
 
 import type {APIHelper} from '../api'
@@ -36,7 +37,6 @@ import type {
 } from '../interfaces'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
-import type * as net from 'net'
 import type WebSocket from 'ws'
 
 import {Server as WebSocketServer} from 'ws'
@@ -453,6 +453,8 @@ export const getSyntheticsProxy = () => {
         }
       })
 
+      response.setHeader('Content-Type', 'application/json')
+
       return response.end(JSON.stringify(responseData))
     }
 
@@ -477,6 +479,18 @@ export const getSyntheticsProxy = () => {
     }
 
     response.end()
+  })
+
+  proxyServer.on('connect', (_request, socket) => {
+    // undici's ProxyAgent uses HTTP CONNECT tunneling even for HTTP URLs.
+    // Tunnel the connection back to this same server so the request handler can process it.
+    const targetSocket = net.connect(port, '127.0.0.1', () => {
+      socket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
+      targetSocket.pipe(socket)
+      socket.pipe(targetSocket)
+    })
+    targetSocket.on('error', () => socket.destroy())
+    socket.on('error', () => targetSocket.destroy())
   })
 
   proxyServer.on('upgrade', (request, socket, head) => {

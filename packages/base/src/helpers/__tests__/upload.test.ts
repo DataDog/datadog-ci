@@ -1,10 +1,7 @@
-import type {AxiosRequestConfig} from 'axios'
+import type {RequestResponse} from '../request'
 import type {Readable} from 'stream'
 
-import {default as axios} from 'axios'
-
 import {upload, UploadStatus} from '../upload'
-import * as ciUtils from '../utils'
 
 describe('upload', () => {
   describe('upload', () => {
@@ -12,26 +9,28 @@ describe('upload', () => {
     const retryCallback = jest.fn()
     const uploadCallback = jest.fn()
     const verifyKey = jest.fn()
-    const mockAxiosResponse = (responses: ((request: AxiosRequestConfig) => Promise<any>)[]) => {
-      let mock = jest.spyOn(axios, 'create')
-      responses.forEach((response) => {
-        mock = mock.mockImplementationOnce((() => response) as any)
-      })
-      mock.mockImplementation((() => () => undefined) as any)
 
-      return mock
+    const makeRequestBuilder = (responses: (() => Promise<RequestResponse>)[]) => {
+      let i = 0
+
+      return jest.fn().mockImplementation(() => {
+        const response = responses[i]
+        i++
+
+        return response ? response() : Promise.resolve({data: {}, status: 200, statusText: '', headers: {}, config: {}})
+      })
     }
 
     beforeEach(() => {
-      jest.restoreAllMocks()
+      jest.clearAllMocks()
     })
 
     test('should upload successfully a multipart payload', async () => {
-      const mockCreate = mockAxiosResponse([() => Promise.resolve({})])
+      const mockRequest = makeRequestBuilder([
+        () => Promise.resolve({data: {}, status: 200, statusText: '', headers: {}, config: {}}),
+      ])
 
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
-
-      const result = await upload(request)(
+      const result = await upload(mockRequest)(
         {content: new Map()},
         {
           onError: errorCallback,
@@ -40,7 +39,7 @@ describe('upload', () => {
           retries: 5,
         }
       )
-      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(mockRequest).toHaveBeenCalledTimes(1)
       expect(uploadCallback).toHaveBeenCalledTimes(1)
       expect(errorCallback).toHaveBeenCalledTimes(0)
       expect(retryCallback).toHaveBeenCalledTimes(0)
@@ -48,19 +47,17 @@ describe('upload', () => {
     })
 
     test('should retry retriable failed requests', async () => {
-      const mockCreate = mockAxiosResponse([
+      const mockRequest = makeRequestBuilder([
         () =>
           Promise.reject({
             response: {
               status: 500,
             },
           }),
-        () => Promise.resolve({}),
+        () => Promise.resolve({data: {}, status: 200, statusText: '', headers: {}, config: {}}),
       ])
 
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
-
-      const result = await upload(request)(
+      const result = await upload(mockRequest)(
         {content: new Map()},
         {
           onError: errorCallback,
@@ -69,7 +66,7 @@ describe('upload', () => {
           retries: 5,
         }
       )
-      expect(mockCreate).toHaveBeenCalledTimes(2)
+      expect(mockRequest).toHaveBeenCalledTimes(2)
       expect(uploadCallback).toHaveBeenCalledTimes(1)
       expect(errorCallback).toHaveBeenCalledTimes(0)
       expect(retryCallback).toHaveBeenCalledTimes(1)
@@ -80,26 +77,20 @@ describe('upload', () => {
       let firstRequestBody = ''
       let secondRequestBody = ''
 
-      mockAxiosResponse([
-        async (options) => {
-          firstRequestBody = await readStream(options.data)
+      const mockRequest = jest
+        .fn()
+        .mockImplementationOnce(async (config: any) => {
+          firstRequestBody = await readStream(config.data)
 
-          return Promise.reject({
-            response: {
-              status: 500,
-            },
-          })
-        },
-        async (options) => {
-          secondRequestBody = await readStream(options.data)
+          return Promise.reject({response: {status: 500}})
+        })
+        .mockImplementationOnce(async (config: any) => {
+          secondRequestBody = await readStream(config.data)
 
-          return {}
-        },
-      ])
+          return {data: {}, status: 200, statusText: '', headers: {}, config: {}}
+        })
 
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
-
-      await upload(request)(
+      await upload(mockRequest)(
         {
           content: new Map([['file', {type: 'file', path: `${__dirname}/upload-fixtures/file.txt`, options: {}}]]),
         },
@@ -116,7 +107,7 @@ describe('upload', () => {
     })
 
     test('should not retry some clients failures', async () => {
-      const mockCreate = mockAxiosResponse([
+      const mockRequest = makeRequestBuilder([
         () =>
           Promise.reject({
             response: {
@@ -125,9 +116,7 @@ describe('upload', () => {
           }),
       ])
 
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
-
-      const result = await upload(request)(
+      const result = await upload(mockRequest)(
         {content: new Map()},
         {
           onError: errorCallback,
@@ -136,7 +125,7 @@ describe('upload', () => {
           retries: 5,
         }
       )
-      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(mockRequest).toHaveBeenCalledTimes(1)
       expect(uploadCallback).toHaveBeenCalledTimes(1)
       expect(errorCallback).toHaveBeenCalledTimes(1)
       expect(retryCallback).toHaveBeenCalledTimes(0)
@@ -144,7 +133,7 @@ describe('upload', () => {
     })
 
     test('should retry only a given amount of times', async () => {
-      const mockCreate = mockAxiosResponse([
+      const mockRequest = makeRequestBuilder([
         () =>
           Promise.reject({
             response: {
@@ -159,9 +148,7 @@ describe('upload', () => {
           }),
       ])
 
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
-
-      const result = await upload(request)(
+      const result = await upload(mockRequest)(
         {content: new Map()},
         {
           onError: errorCallback,
@@ -170,7 +157,7 @@ describe('upload', () => {
           retries: 1,
         }
       )
-      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(mockRequest).toHaveBeenCalledTimes(1)
       expect(uploadCallback).toHaveBeenCalledTimes(1)
       expect(errorCallback).toHaveBeenCalledTimes(1)
       expect(retryCallback).toHaveBeenCalledTimes(0)
@@ -178,10 +165,11 @@ describe('upload', () => {
     })
 
     test('apiKeyValidator should not be called in case of success', async () => {
-      const mockCreate = mockAxiosResponse([() => Promise.resolve({})])
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
+      const mockRequest = makeRequestBuilder([
+        () => Promise.resolve({data: {}, status: 200, statusText: '', headers: {}, config: {}}),
+      ])
       verifyKey.mockImplementation(() => Promise.resolve())
-      const result = await upload(request)(
+      const result = await upload(mockRequest)(
         {content: new Map()},
         {
           apiKeyValidator: {
@@ -194,7 +182,7 @@ describe('upload', () => {
           retries: 1,
         }
       )
-      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(mockRequest).toHaveBeenCalledTimes(1)
       expect(verifyKey).toHaveBeenCalledTimes(0)
       expect(uploadCallback).toHaveBeenCalledTimes(1)
       expect(errorCallback).toHaveBeenCalledTimes(0)
@@ -203,7 +191,7 @@ describe('upload', () => {
     })
 
     test('apiKeyValidator should be called in case of ambiguous response', async () => {
-      const mockCreate = mockAxiosResponse([
+      const mockRequest = makeRequestBuilder([
         () =>
           Promise.reject({
             response: {
@@ -211,9 +199,8 @@ describe('upload', () => {
             },
           }),
       ])
-      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
       verifyKey.mockImplementation(() => Promise.reject('errorApiKey'))
-      const result = upload(request)(
+      const result = upload(mockRequest)(
         {content: new Map()},
         {
           apiKeyValidator: {
@@ -227,7 +214,7 @@ describe('upload', () => {
         }
       )
       await expect(result).rejects.toMatch('errorApiKey')
-      expect(mockCreate).toHaveBeenCalledTimes(1)
+      expect(mockRequest).toHaveBeenCalledTimes(1)
       expect(uploadCallback).toHaveBeenCalledTimes(1)
       expect(errorCallback).toHaveBeenCalledTimes(0)
       expect(retryCallback).toHaveBeenCalledTimes(0)

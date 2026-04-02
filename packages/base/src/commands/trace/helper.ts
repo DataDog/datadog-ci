@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 
 import type {APIHelper, Payload} from './interfaces'
-import type {AxiosError} from 'axios'
+import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import chalk from 'chalk'
 import {Option} from 'clipanion'
@@ -129,11 +129,11 @@ export abstract class CustomSpanCommand extends BaseCommand {
         retries: 5,
       })
     } catch (error) {
-      this.handleError(error as AxiosError)
+      this.handleError(error as RequestError)
     }
   }
 
-  private handleError(error: AxiosError) {
+  private handleError(error: RequestError) {
     this.context.stderr.write(
       `${chalk.red.bold('[ERROR]')} Failed to report custom span: ` +
         `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`

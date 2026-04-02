@@ -1,4 +1,4 @@
-import type {AxiosPromise, AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {CI_ENGINES} from '@datadog/datadog-ci-base/helpers/ci'
 
@@ -27,5 +27,5 @@ export interface Payload {
 }
 
 export interface APIHelper {
-  reportCustomSpan(customSpan: Payload): AxiosPromise<AxiosResponse>
+  reportCustomSpan(customSpan: Payload): Promise<RequestResponse>
 }
