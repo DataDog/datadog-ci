@@ -1,5 +1,3 @@
-import {PluginCommand as SyntheticsRunTestsPluginCommand} from '@datadog/datadog-ci-plugin-synthetics/commands/run-tests'
-
 import {SyntheticsRunTestsCommand} from '../../commands/synthetics/run-tests'
 
 import {isStandaloneBinary} from '../is-standalone-binary'
@@ -73,7 +71,9 @@ describe('checkPlugin', () => {
 describe('executePluginCommand', () => {
   test('executes plugin command successfully', async () => {
     // Mock the plugin command's `execute` method, but not the `@datadog/datadog-ci-base/commands/synthetics/run-tests` one.
-    jest.spyOn(SyntheticsRunTestsPluginCommand.prototype, 'execute').mockResolvedValue(0)
+    const module = require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests')
+    const SyntheticsRunTestsPluginCommand = module.PluginCommand.prototype
+    jest.spyOn(SyntheticsRunTestsPluginCommand, 'execute').mockResolvedValue(0)
     const command = createCommand(SyntheticsRunTestsCommand)
     const result = await executePluginCommand(command)
     expect(result).toBe(0)
@@ -92,10 +92,10 @@ describe('installPlugin', () => {
 
     const result = await installPlugin('test')
     expect(result).toBe(true)
-    expect(mockInstallPackage).toHaveBeenCalledWith(
-      ['@datadog/datadog-ci-base@1.0.0', '@datadog/datadog-ci-plugin-test@1.0.0'],
-      {silent: true, dev: true}
-    )
+    expect(mockInstallPackage).toHaveBeenCalledWith(['@datadog/datadog-ci-plugin-test@1.0.0'], {
+      silent: true,
+      dev: true,
+    })
     expect(mockMessageBox).toHaveBeenCalled()
   })
 
@@ -118,7 +118,6 @@ describe('installPlugin', () => {
   })
 
   test('uses version overrides when provided', async () => {
-    process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE'] = '1.0.1'
     process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE'] = '1.0.2'
 
     const mockInstallPackage = jest.fn().mockResolvedValue({
@@ -130,12 +129,11 @@ describe('installPlugin', () => {
     mockImportInstallPkg.mockResolvedValue({installPackage: mockInstallPackage})
 
     await installPlugin('test')
-    expect(mockInstallPackage).toHaveBeenCalledWith(
-      ['@datadog/datadog-ci-base@1.0.1', '@datadog/datadog-ci-plugin-test@1.0.2'],
-      {silent: true, dev: true}
-    )
+    expect(mockInstallPackage).toHaveBeenCalledWith(['@datadog/datadog-ci-plugin-test@1.0.2'], {
+      silent: true,
+      dev: true,
+    })
 
-    delete process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE']
     delete process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
   })
 
@@ -149,10 +147,10 @@ describe('installPlugin', () => {
     mockImportInstallPkg.mockResolvedValue({installPackage: mockInstallPackage})
 
     await installPlugin('@datadog/datadog-ci-plugin-test')
-    expect(mockInstallPackage).toHaveBeenCalledWith(
-      ['@datadog/datadog-ci-base@1.0.0', '@datadog/datadog-ci-plugin-test@1.0.0'],
-      {silent: true, dev: true}
-    )
+    expect(mockInstallPackage).toHaveBeenCalledWith(['@datadog/datadog-ci-plugin-test@1.0.0'], {
+      silent: true,
+      dev: true,
+    })
   })
 
   test('handles import failure', async () => {

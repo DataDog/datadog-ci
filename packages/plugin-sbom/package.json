@@ -14,15 +14,20 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-sbom"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
+    ".": "./dist/bundle.js",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
     }
   },
   "files": [
-    "dist/**/*",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.js.LEGAL.txt",
+    "dist/**/*.d.ts",
     "README",
     "LICENSE"
   ],
@@ -32,20 +37,16 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
+  "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
+    "@types/jest": "29.5.3",
     "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
     "axios": "1.13.5",
     "chalk": "3.0.0",
-    "packageurl-js": "2.0.1"
-  },
-  "devDependencies": {
-    "@types/jest": "29.5.3",
+    "packageurl-js": "2.0.1",
     "simple-git": "3.33.0",
     "upath": "2.0.1"
   }

@@ -71,6 +71,8 @@ dist
 
 # Claude local settings
 .claude
+.agents
+skills-lock.json
 
 # Test generated files
 packages/datadog-ci/src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map.no-sources-content

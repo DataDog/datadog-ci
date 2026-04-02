@@ -8,7 +8,12 @@ See the [Usage section](#usage) for a list of available commands.
 
 ## How to install the CLI
 
-The package is under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) and can be installed through NPM or Yarn:
+The `datadog-ci` CLI can be installed in three ways:
+- [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) NPM package
+- [Standalone binary](#standalone-binary)
+- [Docker image](#container-image)
+
+To install the NPM package:
 
 ```sh
 # NPM
@@ -18,20 +23,25 @@ npm install --save-dev @datadog/datadog-ci
 yarn add --dev @datadog/datadog-ci
 ```
 
-If you need `datadog-ci` as a CLI tool instead of a package, you can run it with [`npx`](https://www.npmjs.com/package/npx) or install it globally:
+If you need `datadog-ci` as a CLI tool instead of a package, you can install it globally or run it with `npx` or `yarn dlx`:
 
 ```sh
-# npx
-npx @datadog/datadog-ci@v4 [scope]
-
-# NPM install globally
+# Install globally with NPM
 npm install -g @datadog/datadog-ci
 
-# Yarn v1 add globally
+# Install globally with Yarn 1 (Classic)
 yarn global add @datadog/datadog-ci
+
+# npx
+npx @datadog/datadog-ci@v5 [scope]
+
+# yarn dlx
+yarn dlx @datadog/datadog-ci@v5 [scope]
 ```
 
-For more ways to install the CLI, see [this section](#more-ways-to-install-the-cli).
+> [!WARNING]
+> Datadog recommends pinning an exact version of `datadog-ci` to avoid being impacted by breaking changes introduced in major versions of datadog-ci,
+> or being vulnerable to supply chain attacks.
 
 ## Installing a plugin
 
@@ -49,7 +59,9 @@ Use `datadog-ci plugin install` to install a plugin:
 datadog-ci plugin install <scope>
 ```
 
-By default, running a command that requires a plugin will automatically install the plugin if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed by default.
+
+**Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>`. To disable auto-installation, set `DISABLE_PLUGIN_AUTO_INSTALL=1`.**
 
 ## Usage
 
