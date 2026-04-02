@@ -4688,12 +4688,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:20.19.18":
-  version: 20.19.18
-  resolution: "@types/node@npm:20.19.18"
+"@types/node@npm:20.19.37":
+  version: 20.19.37
+  resolution: "@types/node@npm:20.19.37"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10/83aabe25445a16e24d8effe24464f6f9dcba74209509e36b04f81183b50fe972398cc74445d90ba549c4bfcb13225c0733d453d9560bb6a3e24105575b364354
+  checksum: 10/7e0d561d0d980109a0b64c6f797584a69d706421f18c0b24850206a15a4286443e676032abfa438590f25e4dfc3561ffc8d7f5c0c90edf08b705f6f9c35febba
   languageName: node
   linkType: hard
 
@@ -6247,7 +6247,7 @@ __metadata:
     "@datadog/datadog-api-client": "npm:1.53.0"
     "@microsoft/eslint-formatter-sarif": "npm:3.1.0"
     "@stylistic/eslint-plugin": "npm:5.3.1"
-    "@types/node": "npm:20.19.18"
+    "@types/node": "npm:20.19.37"
     "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch"
     chalk: "npm:3.0.0"
     dd-trace: "npm:5.72.0"
