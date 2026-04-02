@@ -65,6 +65,12 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
 
       const sourcemapPath = this.sourcemapPath ?? `${this.bundlePath}.map`
 
+      if (!existsSync(sourcemapPath)) {
+        this.context.stderr.write(`[ERROR] Sourcemap file not found: ${sourcemapPath}\n`)
+
+        return 1
+      }
+
       return this.injectDebugIdIntoFiles(this.bundlePath, sourcemapPath, this.dryRun)
     }
 

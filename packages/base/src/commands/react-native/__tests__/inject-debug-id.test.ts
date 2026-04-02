@@ -236,6 +236,37 @@ describe('inject-debug-id', () => {
     expect(context.stderr.toString()).toContain('Bundle file not found: /nonexistent/main.jsbundle')
   })
 
+  test('throws error when --sourcemap points to a non-existent file', async () => {
+    // GIVEN
+    const fixturePath = './src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files'
+    const tmpBundlePath = upath.join(tmpDir, 'main.jsbundle')
+
+    await promises.copyFile(upath.join(fixturePath, 'empty.min.js'), tmpBundlePath)
+
+    // WHEN
+    const {context, code} = await runCLI(['--bundle', tmpBundlePath, '--sourcemap', '/nonexistent/main.jsbundle.map'])
+
+    // THEN
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('Sourcemap file not found: /nonexistent/main.jsbundle.map')
+  })
+
+  test('throws error when --bundle is used and the derived sourcemap does not exist', async () => {
+    // GIVEN
+    const fixturePath = './src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files'
+    const tmpBundlePath = upath.join(tmpDir, 'main.jsbundle')
+
+    // Copy only the bundle, no sourcemap
+    await promises.copyFile(upath.join(fixturePath, 'empty.min.js'), tmpBundlePath)
+
+    // WHEN
+    const {context, code} = await runCLI(['--bundle', tmpBundlePath])
+
+    // THEN
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain(`Sourcemap file not found: ${tmpBundlePath}.map`)
+  })
+
   test('throws error if the files do not match the correct naming convention', async () => {
     // GIVEN
     const fixturePath = './src/commands/react-native/__tests__/fixtures/sourcemap-with-no-files'
