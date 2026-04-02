@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "chalk": "3.0.0",
-    "fast-xml-parser": "5.3.7",
+    "fast-xml-parser": "5.5.9",
     "form-data": "4.0.4",
     "upath": "2.0.1",
     "uuid": "9.0.1"
