@@ -1,4 +1,3 @@
-import type {CILevel} from '@datadog/datadog-ci-base/helpers/ci'
 import type {AxiosError} from 'axios'
 
 import chalk from 'chalk'
@@ -7,7 +6,13 @@ import {Command, Option} from 'clipanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '@datadog/datadog-ci-base/helpers/ci'
+import {
+  CILevel,
+  LEVEL_TO_NUMBER,
+  enrichCIEnvFromGithubLogs,
+  getCIEnv,
+  validateLevel,
+} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
