@@ -20,17 +20,25 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
     category: 'RUM',
     description: 'Inject Debug ID into JavaScript bundles and sourcemaps.',
     details: `
-        This command scans the specified directory for minified JavaScript bundles (.bundle) and their associated source maps (.map),
-        injecting a unique Debug ID into each file. These Debug IDs enable precise source map resolution in Datadog, ensuring accurate 
+        This command scans the specified directory for minified JavaScript bundles (.bundle or .jsbundle) and their associated source maps (.map),
+        injecting a unique Debug ID into each file. These Debug IDs enable precise source map resolution in Datadog, ensuring accurate
         stack traces and error symbolication.
+
+        Alternatively, use --bundle and --sourcemap to target specific files directly instead of scanning a directory.
     `,
     examples: [
-      ['Inject Debug ID', 'datadog-ci react-native inject-debug-id ./dist'],
+      ['Inject Debug ID (scan directory)', 'datadog-ci react-native inject-debug-id ./dist'],
       ['Inject Debug ID (dry run)', 'datadog-ci react-native inject-debug-id ./dist --dry-run'],
+      [
+        'Inject Debug ID (explicit files)',
+        'datadog-ci react-native inject-debug-id --bundle ./ios/main.jsbundle --sourcemap ./ios/main.jsbundle.map',
+      ],
     ],
   })
 
   private assetsPath = Option.String({required: false})
+  private bundlePath = Option.String('--bundle', {required: false})
+  private sourcemapPath = Option.String('--sourcemap', {required: false})
   private dryRun = Option.Boolean('--dry-run', false)
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -42,8 +50,32 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
+    if (this.bundlePath) {
+      if (this.assetsPath) {
+        this.context.stderr.write('[ERROR] Cannot use both a directory path and --bundle. Use one or the other.\n')
+
+        return 1
+      }
+
+      if (!existsSync(this.bundlePath)) {
+        this.context.stderr.write(`[ERROR] Bundle file not found: ${this.bundlePath}\n`)
+
+        return 1
+      }
+
+      const sourcemapPath = this.sourcemapPath ?? `${this.bundlePath}.map`
+
+      if (!existsSync(sourcemapPath)) {
+        this.context.stderr.write(`[ERROR] Sourcemap file not found: ${sourcemapPath}\n`)
+
+        return 1
+      }
+
+      return this.injectDebugIdIntoFiles(this.bundlePath, sourcemapPath, this.dryRun)
+    }
+
     if (!this.assetsPath) {
-      this.context.stderr.write('[ERROR] No path specified for JS bundle and sourcemap.\n')
+      this.context.stderr.write('[ERROR] No path specified. Provide a directory or use --bundle and --sourcemap.\n')
 
       return 1
     }
@@ -67,11 +99,11 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
     this.context.stdout.write(`Scanning directory: ${directory}\n`)
 
     const files = await promises.readdir(directory)
-    const bundles = files.filter((file) => file.endsWith('.bundle'))
+    const bundles = files.filter((file) => file.endsWith('.bundle') || file.endsWith('.jsbundle'))
 
     if (bundles.length === 0) {
       this.context.stderr.write(
-        `[ERROR] JS bundle not found in "${directory}". Ensure your files follow the "*.bundle" and "*.bundle.map" naming convention.\n`
+        `[ERROR] JS bundle not found in "${directory}". Ensure your files follow the "*.bundle"/"*.bundle.map" (Android) or "*.jsbundle"/"*.jsbundle.map" (iOS) naming convention.\n`
       )
 
       return 1
@@ -81,32 +113,50 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
       const bundlePath = upath.join(directory, bundle)
       const sourcemapPath = upath.join(directory, `${bundle}.map`)
 
-      let debugId =
-        (await this.extractDebugIdFromBundle(bundlePath)) || (await this.extractDebugIdFromSourceMap(sourcemapPath))
+      const result = await this.injectDebugIdIntoFiles(bundlePath, sourcemapPath, dryRun)
+      if (result !== 0) {
+        return result
+      }
+    }
 
-      if (!debugId) {
-        const bundleData = await promises.readFile(bundlePath, 'utf-8')
-        debugId = generateDebugId(bundleData)
-        this.context.stdout.write(`Generated Debug ID for ${bundle}: ${debugId}\n`)
-      } else {
-        this.context.stdout.write(`Found existing Debug ID for ${bundle}: ${debugId}\n`)
+    return 0
+  }
+
+  /**
+   * Injects a Debug ID into a single bundle and its associated sourcemap.
+   *
+   * @param bundlePath - The path to the JavaScript bundle file.
+   * @param sourcemapPath - The path to the sourcemap file.
+   * @param dryRun - If true, does not modify files.
+   */
+  private async injectDebugIdIntoFiles(bundlePath: string, sourcemapPath: string, dryRun: boolean): Promise<number> {
+    const bundle = upath.basename(bundlePath)
+
+    let debugId =
+      (await this.extractDebugIdFromBundle(bundlePath)) || (await this.extractDebugIdFromSourceMap(sourcemapPath))
+
+    if (!debugId) {
+      const bundleData = await promises.readFile(bundlePath, 'utf-8')
+      debugId = generateDebugId(bundleData)
+      this.context.stdout.write(`Generated Debug ID for ${bundle}: ${debugId}\n`)
+    } else {
+      this.context.stdout.write(`Found existing Debug ID for ${bundle}: ${debugId}\n`)
+    }
+
+    if (!dryRun) {
+      if (!(await this.injectDebugIdIntoBundle(bundlePath, debugId))) {
+        return 1
       }
 
-      if (!dryRun) {
-        if (!(await this.injectDebugIdIntoBundle(bundlePath, debugId))) {
+      if (existsSync(sourcemapPath)) {
+        if (!(await this.injectDebugIdIntoSourceMap(sourcemapPath, debugId))) {
           return 1
         }
 
-        if (existsSync(sourcemapPath)) {
-          if (!(await this.injectDebugIdIntoSourceMap(sourcemapPath, debugId))) {
-            return 1
-          }
-
-          this.context.stdout.write(`Updated Debug ID in ${bundle} and its sourcemap.\n`)
-        }
-      } else {
-        this.context.stdout.write(`Dry run: No files modified.\n`)
+        this.context.stdout.write(`Updated Debug ID in ${bundle} and its sourcemap.\n`)
       }
+    } else {
+      this.context.stdout.write(`Dry run: No files modified.\n`)
     }
 
     return 0

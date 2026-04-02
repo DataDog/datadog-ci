@@ -210,15 +210,37 @@ The inject-debug-id command adds a debug ID to your JavaScript bundle and its so
 
 A debug ID allows Datadog to reliably match error stack traces from your application to the correct uploaded debug symbols (sourcemaps), ensuring accurate error resolution.
 
-To inject the debug ID, run the following command:
+#### Scan a directory
+
+To scan a directory and inject debug IDs into all bundles found:
 
 ```bash
 datadog-ci react-native inject-debug-id ./dist
 ```
 
-The expected path is a folder containing both the JS bundle and the sourcemap for your build (for example, index.android.bundle and index.android.bundle.map).
+The command looks for all files ending in `.bundle` (Android) or `.jsbundle` (iOS) in the given directory, and processes each one alongside its corresponding `.map` file (e.g. `index.android.bundle` + `index.android.bundle.map`, or `main.jsbundle` + `main.jsbundle.map`).
 
-The `--dry-run` optional parameter is also available, to run the command without actually injecting the debug ID in your files.
+#### Specify files directly
+
+To target a specific bundle and sourcemap instead of scanning a directory, use the `--bundle` and `--sourcemap` flags:
+
+```bash
+# iOS
+datadog-ci react-native inject-debug-id --bundle ./ios/main.jsbundle --sourcemap ./ios/main.jsbundle.map
+
+# Android
+datadog-ci react-native inject-debug-id --bundle ./android/index.android.bundle --sourcemap ./android/index.android.bundle.map
+```
+
+If `--sourcemap` is omitted, the command looks for a sourcemap at `<bundle path>.map` automatically.
+
+#### Options
+
+| Flag          | Description |
+|---------------|-------------|
+| `--bundle`    | Path to the JS bundle file. When provided, processes only this file instead of scanning a directory. Cannot be combined with a directory argument. |
+| `--sourcemap` | Path to the sourcemap file. Only used together with `--bundle`. Defaults to `<bundle>.map` if not specified. |
+| `--dry-run`   | Run the command without modifying any files. |
 
 ## End-to-end testing process
 
