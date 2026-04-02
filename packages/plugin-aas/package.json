@@ -14,15 +14,16 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-aas"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
-    "./commands/*": {
-      "development": "./src/commands/*.ts",
-      "default": "./dist/commands/*.js"
-    }
+    ".": "./dist/bundle.js"
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/**/*.d.ts",
     "README",
     "LICENSE"
   ],
@@ -32,15 +33,13 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist && yarn package:bundle:npm"
   },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
+  "devDependencies": {
     "@azure/arm-appservice": "16.0.0",
     "@azure/arm-resources": "6.1.0",
     "@azure/identity": "4.10.1",
+    "@datadog/datadog-ci-base": "workspace:*",
     "chalk": "3.0.0"
   }
 }

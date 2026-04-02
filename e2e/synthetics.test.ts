@@ -12,4 +12,9 @@ describe('synthetics', () => {
 
     expect(result.exitCode).toBe(0)
   })
+
+  it('importing exposed plugin API works', async () => {
+    const {executeTests} = require('@datadog/datadog-ci-plugin-synthetics')
+    expect(executeTests).toBeDefined()
+  })
 })

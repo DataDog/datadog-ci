@@ -129,7 +129,8 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
 }
 
 /**
- * Installs a plugin and the base package as `devDependencies` in the current project with the right package manager.
+ * Installs a plugin as a `devDependencies` in the current project with the right package manager.
+ * Plugin bundles are self-contained (all deps vendored), so only the plugin itself is needed.
  */
 export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
   if (!isValidScope(packageOrScope)) {
@@ -144,11 +145,10 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
     return false
   }
 
-  const {basePackage, pluginPackage} = getPackagesToInstall(packageOrScope)
+  const pluginPackage = getPackageToInstall(packageOrScope)
 
-  // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
   const {installPackage} = await importInstallPkg()
-  const output = await installPackage([basePackage, pluginPackage], {
+  const output = await installPackage([pluginPackage], {
     silent: !debug.enabled,
     dev: true,
   })
@@ -188,10 +188,10 @@ export const importInstallPkg = async () => {
 
 const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const isWindows = process.platform === 'win32'
-  const {basePackage, pluginPackage} = getPackagesToInstall(scope)
+  const pluginPackage = getPackageToInstall(scope)
 
   const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
-  const cmd = `npx --ignore-scripts -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+  const cmd = `npx --ignore-scripts -y -p ${pluginPackage} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
@@ -242,12 +242,10 @@ const handlePluginAutoInstall = async (scope: string) => {
     debug('Error in handlePluginAutoInstall:', error)
 
     if (!isModuleNotFoundError(error)) {
-      // Re-throw unexpected errors.
       throw error
     }
 
     if (isPnpModuleNotFoundError(error) && error.pnpCode === 'MISSING_PEER_DEPENDENCY') {
-      // Re-throw PnP errors.
       console.log(chalk.red(`The plugin auto-install feature is not supported with Yarn Plug'n'Play (PnP).`))
       throw error
     }
@@ -258,33 +256,55 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 }
 
+// Injected by esbuild in bundled builds (SEA and npm bundle).
+// eslint-disable-next-line @typescript-eslint/naming-convention
+declare const __INJECTED_PLUGIN_SUBMODULES__: Record<string, Record<string, PluginSubModule>> | undefined
+
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (!isValidScope(scope)) {
     throw new Error(`Invalid scope: ${scope}`)
   }
 
-  if (await isStandaloneBinary()) {
-    debug(`Loading plugin injected in the standalone binary`)
+  // 1. Bundled: injected at build time (SEA has all plugins, npm bundle has only the builtin ones)
+  if (typeof __INJECTED_PLUGIN_SUBMODULES__ !== 'undefined') {
+    const injected = __INJECTED_PLUGIN_SUBMODULES__[scope]?.[command]
+    if (injected) {
+      debug('Loading pre-bundled plugin')
 
-    // @ts-expect-error - All plugins are injected in the standalone binary with esbuild.
-    return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
+      return injected
+    }
   }
 
   // Add current working directory's `node_modules` to the module resolution paths
   // in case the command is running in NPX.
   patchModulePaths()
-
   await handlePluginAutoInstall(scope)
 
-  const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
-  debug('Resolving submodule:', submoduleName)
-  let submodulePath = submoduleName
+  const pluginPackage = `@datadog/datadog-ci-plugin-${scope}`
+
+  // 2. Self-contained plugin bundle (published vendored bundles)
   try {
-    const resolvedPath = require.resolve(submoduleName)
-    const absolutePath = url.pathToFileURL(resolvedPath).href
-    submodulePath = absolutePath
+    const bundle = require(pluginPackage)
+    const submodule = bundle[command]
+    if (submodule) {
+      debug('Loading self-contained plugin bundle')
+
+      return submodule as PluginSubModule
+    }
   } catch (error) {
-    debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
+    debug('Plugin bundle load failed, trying submodule path:', error)
+  }
+
+  // 3. Development mode: load individual command submodule.
+  let submodulePath: string
+  try {
+    const pkgJsonPath = require.resolve(`${pluginPackage}/package.json`)
+    const pkgDir = path.dirname(pkgJsonPath)
+    const resolvedPath = path.join(pkgDir, 'src', 'commands', `${command}.ts`)
+    submodulePath = url.pathToFileURL(resolvedPath).href
+  } catch (error) {
+    debug(`Could not resolve ${pluginPackage} package directory: ${error}`)
+    submodulePath = url.pathToFileURL(require.resolve(`${pluginPackage}/commands/${command}`)).href
   }
   debug('Importing submodule:', submodulePath)
 
@@ -320,26 +340,16 @@ const isValidScope = (scope: string): boolean => {
  */
 export const VERSION_OVERRIDE_REGEX = /^(\d+\.\d+\.\d+|file:\.\/[a-zA-Z0-9.\-/@]+)$/
 
-const getPackagesToInstall = (scope: string) => {
+const getPackageToInstall = (scope: string) => {
   const pluginName = scopeToPackageName(scope)
 
-  // Useful for testing with different versions than the current CLI version.
-  // This supports any format that the current package manager supports.
-  const baseVersionOverride = process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE']
   const pluginVersionOverride = process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
-
-  if (baseVersionOverride && !VERSION_OVERRIDE_REGEX.test(baseVersionOverride)) {
-    throw new Error(`Invalid PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE value: ${baseVersionOverride}`)
-  }
 
   if (pluginVersionOverride && !VERSION_OVERRIDE_REGEX.test(pluginVersionOverride)) {
     throw new Error(`Invalid PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE value: ${pluginVersionOverride}`)
   }
 
-  const basePackage = `@datadog/datadog-ci-base@${baseVersionOverride ?? cliVersion}`
-  const pluginPackage = `${pluginName}@${pluginVersionOverride ?? cliVersion}`
-
-  return {basePackage, pluginPackage}
+  return `${pluginName}@${pluginVersionOverride ?? cliVersion}`
 }
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {

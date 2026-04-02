@@ -63,6 +63,7 @@ type Package = {
     name: string
     version: string
     dependencies: Record<string, string>
+    devDependencies: Record<string, string>
     peerDependencies: Record<string, string>
   }
 }
@@ -98,8 +99,9 @@ const loadPackage = (folderName: string): Package => {
     packageJson: {
       name: packageJson.name as string,
       version: packageJson.version as string,
-      dependencies: packageJson.dependencies as Record<string, string>,
-      peerDependencies: packageJson.peerDependencies as Record<string, string>,
+      dependencies: (packageJson.dependencies ?? {}) as Record<string, string>,
+      devDependencies: (packageJson.devDependencies ?? {}) as Record<string, string>,
+      peerDependencies: (packageJson.peerDependencies ?? {}) as Record<string, string>,
     },
   }
 }
@@ -282,9 +284,9 @@ const pluginPackages = fs
   })
   .filter((p): p is PluginPackage => p !== undefined)
 
-const builtinPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.dependencies)
+const builtinPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.devDependencies)
 const installablePlugins = pluginPackages.filter(
-  (p) => !(p.packageJson.name in datadogCiPackage.packageJson.dependencies)
+  (p) => !(p.packageJson.name in datadogCiPackage.packageJson.devDependencies)
 )
 
 const exceptionScopes: CommandScope[] = [...noPluginExceptions].map((scope) => ({
@@ -399,15 +401,12 @@ const matchAndReplace = (file: string): Replacer => {
 const TO_APPLY: ApplyChanges[] = []
 
 // #region - Format file: .github/workflows/ci.yml
-const resolutions = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.packageJson.name)]
+const resolutions = builtinPlugins
+  .map((p) => p.packageJson.name)
   .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join(',\n')
 
-const dependencies = [
-  '@datadog/datadog-ci',
-  '@datadog/datadog-ci-base',
-  ...installablePlugins.map((p) => p.packageJson.name),
-]
+const dependencies = ['@datadog/datadog-ci', ...installablePlugins.map((p) => p.packageJson.name)]
   .map((name) => `    "${name}": "./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join(',\n')
 
@@ -432,11 +431,7 @@ ${e2eTestDependencies}
   }
 }`
 
-const npxArguments = [
-  '@datadog/datadog-ci',
-  '@datadog/datadog-ci-base',
-  ...builtinPlugins.map((p) => p.packageJson.name),
-]
+const npxArguments = ['@datadog/datadog-ci', ...builtinPlugins.map((p) => p.packageJson.name)]
   .map((name) => `-p ./artifacts/${name.replace('/', '-')}-20.tgz \\`)
   .join('\n')
 
@@ -447,22 +442,19 @@ const overridesNode20 = builtinPlugins
   .join(',\n')
 
 // No plugins installed. Only the built-in plugins are overridden.
-// In NPM, to avoid a "Override for @datadog/datadog-ci-base@x.x.x conflicts with direct dependency" error
-// during `datadog-ci plugin install`, we need to use the `$` syntax to refer to the dependency listed in `dependencies`.
 const npmTestProjectPackageJson = `{
   "name": "datadog-ci-plugin-auto-install-npm",
   "overrides": {
-    "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
 ${overridesNode20}
   },
   "dependencies": {
-    "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
-    "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
+    "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz"
   }
 }`
 
 // No matrix version for auto-install e2e tests.
-const resolutionsNode20 = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.packageJson.name)]
+const resolutionsNode20 = builtinPlugins
+  .map((p) => p.packageJson.name)
   .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-20.tgz"`)
   .join(',\n')
 
@@ -558,6 +550,12 @@ const formatBlock = (plugin: PluginPackage) => {
 TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-plugin-submodules.js')`
 const injectedPluginSubmodules = {
   ${pluginPackages.map(formatBlock).join('\n')}
+}
+`)
+
+TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-builtin-plugins.js')`
+const injectedPluginSubmodules = {
+  ${builtinPlugins.map(formatBlock).join('\n')}
 }
 `)
 // #endregion
