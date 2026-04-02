@@ -202,7 +202,7 @@ describe('inject-debug-id', () => {
     await promises.copyFile(upath.join(fixturePath, 'empty.min.js.map'), tmpSourcemapPath)
 
     // WHEN
-    const {context, code} = await runCLI(['--bundle', tmpBundlePath])
+    const {code} = await runCLI(['--bundle', tmpBundlePath])
 
     // THEN
     expect(code).toBe(0)
