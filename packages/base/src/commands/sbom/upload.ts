@@ -28,6 +28,7 @@ export class SbomUploadCommand extends BaseCommand {
   protected gitPath = Option.String('--git-repository')
   protected debug = Option.Boolean('--debug')
   protected noCiTags = Option.Boolean('--no-ci-tags', false)
+  protected source = Option.String('--source')
 
   public async execute(): Promise<number | void> {
     return executePluginCommand(this)

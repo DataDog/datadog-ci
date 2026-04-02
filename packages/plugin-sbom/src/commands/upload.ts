@@ -117,7 +117,8 @@ export class PluginCommand extends SbomUploadCommand {
     // Get the API helper to send the payload
     const api: (sbomPayload: ScaRequest) => AxiosPromise<AxiosResponse> = getApiHelper(
       this.config.apiKey,
-      this.config.appKey
+      this.config.appKey,
+      this.source
     )
 
     const tags = await getSpanTags(this.config, this.tags, !this.noCiTags, this.gitPath)
