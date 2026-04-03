@@ -16,8 +16,8 @@ describe('version', () => {
         GIT_DIR: tmpDir,
       })
 
-      expect(result.exitCode).toBe(0)
       expect(result.stdout).toMatch(/^v?\d+\.\d+\.\d+/)
+      expect(result.exitCode).toBe(0)
     } finally {
       fs.rmSync(tmpDir, {recursive: true, force: true})
     }
