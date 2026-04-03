@@ -38,7 +38,7 @@
     "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "@google-cloud/logging": "11.2.0",
+    "@google-cloud/logging": "11.2.1",
     "@google-cloud/run": "3.0.0",
     "chalk": "3.0.0",
     "google-auth-library": "10.2.1",
