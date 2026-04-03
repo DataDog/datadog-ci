@@ -187,6 +187,8 @@ describe('elf-symbols upload', () => {
         goBuildId: 'fake-go-build-id',
         fileHash: 'fake-file-hash',
         elfType: 'EXEC',
+        gnuDebugLink: '',
+        gnuDebugLinkCrc32: 0,
       }
       const metadata = command['getMappingMetadata'](elfFileMatadata)
 

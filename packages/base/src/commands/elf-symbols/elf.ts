@@ -1,7 +1,10 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
+import zlib from 'zlib'
 
 import type {ExecException} from 'child_process'
+
+import upath from 'upath'
 
 import {createReadFunctions, FileReader} from '@datadog/datadog-ci-base/helpers/filereader'
 import {execute} from '@datadog/datadog-ci-base/helpers/utils'
@@ -30,6 +33,9 @@ export type ElfFileMetadata = {
   hasDynamicSymbolTable: boolean
   hasSymbolTable: boolean
   hasCode: boolean
+  gnuDebugLink: string
+  gnuDebugLinkCrc32: number
+  debugInfoFile?: string
   error?: Error
 }
 
@@ -354,6 +360,44 @@ const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHead
   return {type, name, desc}
 }
 
+export type GnuDebugLink = {
+  filename: string
+  crc32: number
+}
+
+export const readGnuDebugLink = async (
+  reader: Reader,
+  sectionHeaders: SectionHeader[]
+): Promise<GnuDebugLink | undefined> => {
+  const section = sectionHeaders.find((s) => s.name === '.gnu_debuglink')
+  if (!section || section.sh_size === BigInt(0)) {
+    return undefined
+  }
+
+  const buf = await reader.read(Number(section.sh_size), Number(section.sh_offset))
+  // The section contains a null-terminated filename, 0-3 bytes of padding to align to 4 bytes, then a CRC32
+  const nullByteOffset = buf.indexOf(0)
+  if (nullByteOffset <= 0) {
+    return undefined
+  }
+
+  const filename = buf.toString('ascii', 0, nullByteOffset)
+  // CRC32 is at the next 4-byte aligned offset after the null-terminated string
+  const crcOffset = (nullByteOffset + 4) & ~3
+  if (crcOffset + 4 > buf.length) {
+    return undefined
+  }
+  const crc32 = buf.readUInt32LE(crcOffset)
+
+  return {filename, crc32}
+}
+
+export const verifyDebugLinkCrc32 = async (debugFilePath: string, expectedCrc32: number): Promise<boolean> => {
+  const fileData = await fs.promises.readFile(debugFilePath)
+
+  return zlib.crc32(fileData) === expectedCrc32
+}
+
 export const getBuildIds = async (
   reader: Reader,
   sectionHeaders: SectionHeader[],
@@ -423,6 +467,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     hasSymbolTable: false,
     hasDynamicSymbolTable: false,
     hasCode: false,
+    gnuDebugLink: '',
+    gnuDebugLinkCrc32: 0,
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
@@ -447,6 +493,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
     const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
     const {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode} = getSectionInfo(sectionHeaders)
+    const debugLink = await readGnuDebugLink(reader, sectionHeaders)
+    const gnuDebugLink = debugLink?.filename ?? ''
     let fileHash = ''
     if (hasCode) {
       // Only compute file hash if the file has code:
@@ -461,6 +509,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
       hasSymbolTable,
       hasDynamicSymbolTable,
       hasCode,
+      gnuDebugLink,
+      gnuDebugLinkCrc32: debugLink?.crc32 ?? 0,
     })
   } catch (error) {
     metadata.error = error
@@ -594,14 +644,73 @@ export const copyElfDebugInfo = async (
   }
 
   if (bfdTargetOption) {
-    // Replace the ELF header in the extracted debug info file with the one from the initial file to keep the original architecture
-    await replaceElfHeader(outputFile, filename)
+    // Replace the ELF header in the extracted debug info file with the one from the original file to keep the original architecture
+    // Use elfFileMetadata.filename (the main file) for the header source, which may differ from the objcopy input
+    // when debug info comes from a separate file via .gnu_debuglink
+    await replaceElfHeader(outputFile, elfFileMetadata.filename)
   }
 }
 
 export const getOutputFilenameFromBuildId = (buildId: string): string => {
   // Go build id may contain slashes, replace them with dashes so it can be used as a filename
   return buildId.replace(/\//g, '-')
+}
+
+/**
+ * When a main ELF file has no debug info but contains a .gnu_debuglink section,
+ * try to resolve the linked debug info file and merge metadata.
+ * The file hash comes from the main file, but debug info flags come from the debug file.
+ * Returns the updated metadata if a valid debug file is found, or undefined otherwise.
+ */
+export const resolveDebugInfoFromDebugLink = async (
+  metadata: ElfFileMetadata
+): Promise<ElfFileMetadata | undefined> => {
+  if (!metadata.gnuDebugLink) {
+    return undefined
+  }
+
+  const dir = upath.dirname(metadata.filename)
+
+  // Search paths per GDB convention: same dir, .debug/ subdir
+  const candidates = [
+    upath.join(dir, metadata.gnuDebugLink),
+    upath.join(dir, '.debug', metadata.gnuDebugLink),
+  ]
+
+  for (const candidate of candidates) {
+    try {
+      await fs.promises.access(candidate, fs.constants.R_OK)
+    } catch {
+      continue
+    }
+
+    // Verify CRC32 if present in the debuglink section
+    if (metadata.gnuDebugLinkCrc32 !== 0) {
+      const crcValid = await verifyDebugLinkCrc32(candidate, metadata.gnuDebugLinkCrc32)
+      if (!crcValid) {
+        continue
+      }
+    }
+
+    const debugMetadata = await getElfFileMetadata(candidate)
+    if (!debugMetadata.isElf || debugMetadata.error) {
+      continue
+    }
+    if (!debugMetadata.hasDebugInfo && !debugMetadata.hasSymbolTable) {
+      continue
+    }
+
+    // Merge: use the main file's identity (filename, fileHash) with the debug file's symbols
+    return {
+      ...metadata,
+      hasDebugInfo: debugMetadata.hasDebugInfo,
+      hasSymbolTable: debugMetadata.hasSymbolTable,
+      hasDynamicSymbolTable: metadata.hasDynamicSymbolTable || debugMetadata.hasDynamicSymbolTable,
+      debugInfoFile: candidate,
+    }
+  }
+
+  return undefined
 }
 
 export const getBuildIdWithArch = (fileMetadata: ElfFileMetadata): string => {
