@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@aws-sdk/credential-provider-ini": "3.972.9",
-    "@aws-sdk/types": "3.973.1",
+    "@aws-sdk/types": "3.973.6",
     "aws-sdk-client-mock": "4.1.0",
     "aws-sdk-client-mock-jest": "4.1.0",
     "clipanion": "3.2.1"
