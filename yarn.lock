@@ -1991,9 +1991,8 @@ __metadata:
     "@azure/arm-appservice": "npm:16.0.0"
     "@azure/arm-resources": "npm:6.1.0"
     "@azure/identity": "npm:4.10.1"
-    chalk: "npm:3.0.0"
-  peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    chalk: "npm:3.0.0"
   languageName: unknown
   linkType: soft
 
@@ -2001,6 +2000,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     "@google-cloud/logging": "npm:11.2.0"
     "@google-cloud/run": "npm:3.0.0"
     chalk: "npm:3.0.0"
@@ -2009,8 +2009,6 @@ __metadata:
     inquirer-checkbox-plus-prompt: "npm:1.4.2"
     ora: "npm:5.4.1"
     upath: "npm:2.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2021,9 +2019,8 @@ __metadata:
     "@azure/arm-appcontainers": "npm:3.0.0"
     "@azure/arm-resources": "npm:6.1.0"
     "@azure/identity": "npm:4.10.1"
-    chalk: "npm:3.0.0"
-  peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    chalk: "npm:3.0.0"
   languageName: unknown
   linkType: soft
 
@@ -2031,14 +2028,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-coverage@workspace:packages/plugin-coverage"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
     upath: "npm:2.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2046,11 +2042,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2058,11 +2053,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2070,12 +2064,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     "@types/uuid": "npm:9.0.8"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     uuid: "npm:9.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2083,14 +2076,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
     upath: "npm:2.0.1"
     uuid: "npm:9.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2104,6 +2096,7 @@ __metadata:
     "@aws-sdk/credential-provider-ini": "npm:3.972.9"
     "@aws-sdk/credential-providers": "npm:3.981.0"
     "@aws-sdk/types": "npm:3.973.1"
+    "@datadog/datadog-ci-base": "workspace:*"
     "@smithy/property-provider": "npm:2.2.0"
     "@smithy/util-retry": "npm:2.2.0"
     aws-sdk-client-mock: "npm:4.1.0"
@@ -2115,8 +2108,6 @@ __metadata:
     inquirer-checkbox-plus-prompt: "npm:1.4.2"
     ora: "npm:5.4.1"
     upath: "npm:2.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2124,6 +2115,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-sarif@workspace:packages/plugin-sarif"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/uuid": "npm:9.0.8"
     ajv: "npm:8.18.0"
@@ -2134,8 +2126,6 @@ __metadata:
     simple-git: "npm:3.33.0"
     upath: "npm:2.0.1"
     uuid: "npm:9.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2143,6 +2133,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
@@ -2151,8 +2142,6 @@ __metadata:
     packageurl-js: "npm:2.0.1"
     simple-git: "npm:3.33.0"
     upath: "npm:2.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2163,10 +2152,9 @@ __metadata:
     "@aws-sdk/client-cloudwatch-logs": "npm:3.981.0"
     "@aws-sdk/client-iam": "npm:3.981.0"
     "@aws-sdk/client-sfn": "npm:3.981.0"
+    "@datadog/datadog-ci-base": "workspace:*"
     aws-sdk-client-mock: "npm:4.1.0"
     deep-object-diff: "npm:1.1.9"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2174,6 +2162,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     "@types/deep-extend": "npm:0.4.31"
     "@types/set-value": "npm:4.0.3"
     "@types/ssh2": "npm:1.15.5"
@@ -2194,8 +2183,6 @@ __metadata:
     ws: "npm:7.5.10"
     xml2js: "npm:0.5.0"
     yamux-js: "npm:0.1.2"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2203,14 +2190,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-terraform@workspace:packages/plugin-terraform"
   dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
     upath: "npm:2.0.1"
-  peerDependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2227,12 +2213,10 @@ __metadata:
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@types/jest": "npm:29.5.3"
-    chalk: "npm:3.0.0"
     clipanion: "npm:3.2.1"
-    esbuild: "npm:0.25.9"
     typanion: "npm:3.14.0"
   bin:
-    datadog-ci: dist/cli.js
+    datadog-ci: dist/bundle.mjs
   languageName: unknown
   linkType: soft
 
@@ -2365,9 +2349,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/aix-ppc64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/aix-ppc64@npm:0.28.0"
+  conditions: os=aix & cpu=ppc64
+  languageName: node
+  linkType: hard
+
 "@esbuild/android-arm64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/android-arm64@npm:0.25.9"
+  conditions: os=android & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@esbuild/android-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/android-arm64@npm:0.28.0"
   conditions: os=android & cpu=arm64
   languageName: node
   linkType: hard
@@ -2379,9 +2377,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/android-arm@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/android-arm@npm:0.28.0"
+  conditions: os=android & cpu=arm
+  languageName: node
+  linkType: hard
+
 "@esbuild/android-x64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/android-x64@npm:0.25.9"
+  conditions: os=android & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@esbuild/android-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/android-x64@npm:0.28.0"
   conditions: os=android & cpu=x64
   languageName: node
   linkType: hard
@@ -2393,9 +2405,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/darwin-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/darwin-arm64@npm:0.28.0"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
 "@esbuild/darwin-x64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/darwin-x64@npm:0.25.9"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@esbuild/darwin-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/darwin-x64@npm:0.28.0"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
@@ -2407,9 +2433,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/freebsd-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/freebsd-arm64@npm:0.28.0"
+  conditions: os=freebsd & cpu=arm64
+  languageName: node
+  linkType: hard
+
 "@esbuild/freebsd-x64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/freebsd-x64@npm:0.25.9"
+  conditions: os=freebsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@esbuild/freebsd-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/freebsd-x64@npm:0.28.0"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
@@ -2421,9 +2461,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/linux-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-arm64@npm:0.28.0"
+  conditions: os=linux & cpu=arm64
+  languageName: node
+  linkType: hard
+
 "@esbuild/linux-arm@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/linux-arm@npm:0.25.9"
+  conditions: os=linux & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@esbuild/linux-arm@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-arm@npm:0.28.0"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
@@ -2435,9 +2489,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/linux-ia32@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-ia32@npm:0.28.0"
+  conditions: os=linux & cpu=ia32
+  languageName: node
+  linkType: hard
+
 "@esbuild/linux-loong64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/linux-loong64@npm:0.25.9"
+  conditions: os=linux & cpu=loong64
+  languageName: node
+  linkType: hard
+
+"@esbuild/linux-loong64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-loong64@npm:0.28.0"
   conditions: os=linux & cpu=loong64
   languageName: node
   linkType: hard
@@ -2449,9 +2517,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/linux-mips64el@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-mips64el@npm:0.28.0"
+  conditions: os=linux & cpu=mips64el
+  languageName: node
+  linkType: hard
+
 "@esbuild/linux-ppc64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/linux-ppc64@npm:0.25.9"
+  conditions: os=linux & cpu=ppc64
+  languageName: node
+  linkType: hard
+
+"@esbuild/linux-ppc64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-ppc64@npm:0.28.0"
   conditions: os=linux & cpu=ppc64
   languageName: node
   linkType: hard
@@ -2463,9 +2545,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/linux-riscv64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-riscv64@npm:0.28.0"
+  conditions: os=linux & cpu=riscv64
+  languageName: node
+  linkType: hard
+
 "@esbuild/linux-s390x@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/linux-s390x@npm:0.25.9"
+  conditions: os=linux & cpu=s390x
+  languageName: node
+  linkType: hard
+
+"@esbuild/linux-s390x@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-s390x@npm:0.28.0"
   conditions: os=linux & cpu=s390x
   languageName: node
   linkType: hard
@@ -2477,9 +2573,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/linux-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/linux-x64@npm:0.28.0"
+  conditions: os=linux & cpu=x64
+  languageName: node
+  linkType: hard
+
 "@esbuild/netbsd-arm64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/netbsd-arm64@npm:0.25.9"
+  conditions: os=netbsd & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@esbuild/netbsd-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/netbsd-arm64@npm:0.28.0"
   conditions: os=netbsd & cpu=arm64
   languageName: node
   linkType: hard
@@ -2491,9 +2601,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/netbsd-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/netbsd-x64@npm:0.28.0"
+  conditions: os=netbsd & cpu=x64
+  languageName: node
+  linkType: hard
+
 "@esbuild/openbsd-arm64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/openbsd-arm64@npm:0.25.9"
+  conditions: os=openbsd & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@esbuild/openbsd-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/openbsd-arm64@npm:0.28.0"
   conditions: os=openbsd & cpu=arm64
   languageName: node
   linkType: hard
@@ -2505,9 +2629,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/openbsd-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/openbsd-x64@npm:0.28.0"
+  conditions: os=openbsd & cpu=x64
+  languageName: node
+  linkType: hard
+
 "@esbuild/openharmony-arm64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/openharmony-arm64@npm:0.25.9"
+  conditions: os=openharmony & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@esbuild/openharmony-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/openharmony-arm64@npm:0.28.0"
   conditions: os=openharmony & cpu=arm64
   languageName: node
   linkType: hard
@@ -2519,9 +2657,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/sunos-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/sunos-x64@npm:0.28.0"
+  conditions: os=sunos & cpu=x64
+  languageName: node
+  linkType: hard
+
 "@esbuild/win32-arm64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/win32-arm64@npm:0.25.9"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@esbuild/win32-arm64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/win32-arm64@npm:0.28.0"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
@@ -2533,9 +2685,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@esbuild/win32-ia32@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/win32-ia32@npm:0.28.0"
+  conditions: os=win32 & cpu=ia32
+  languageName: node
+  linkType: hard
+
 "@esbuild/win32-x64@npm:0.25.9":
   version: 0.25.9
   resolution: "@esbuild/win32-x64@npm:0.25.9"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@esbuild/win32-x64@npm:0.28.0":
+  version: 0.28.0
+  resolution: "@esbuild/win32-x64@npm:0.28.0"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -5705,9 +5871,9 @@ __metadata:
   linkType: hard
 
 "basic-ftp@npm:^5.0.2":
-  version: 5.0.5
-  resolution: "basic-ftp@npm:5.0.5"
-  checksum: 10/3dc56b2092b10d67e84621f5b9bbb0430469499178e857869194184d46fbdd367a9aa9fad660084388744b074b5f540e6ac8c22c0826ebba4fcc86a9d1c324e2
+  version: 5.2.0
+  resolution: "basic-ftp@npm:5.2.0"
+  checksum: 10/f5a15d789aa98859af4da9e976154b2aeae19052e1762dc68d259d2bce631dafa40c667aa06d7346cd630aa6f9cc9a26f515b468e0bd24243fbae2149c7d01ad
   languageName: node
   linkType: hard
 
@@ -6251,6 +6417,7 @@ __metadata:
     "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch"
     chalk: "npm:3.0.0"
     dd-trace: "npm:5.72.0"
+    esbuild: "npm:0.28.0"
     eslint: "npm:9.34.0"
     eslint-config-prettier: "npm:10.1.8"
     eslint-import-resolver-typescript: "npm:4.4.4"
@@ -6740,7 +6907,96 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esbuild@npm:0.25.9, esbuild@npm:~0.25.0":
+"esbuild@npm:0.28.0":
+  version: 0.28.0
+  resolution: "esbuild@npm:0.28.0"
+  dependencies:
+    "@esbuild/aix-ppc64": "npm:0.28.0"
+    "@esbuild/android-arm": "npm:0.28.0"
+    "@esbuild/android-arm64": "npm:0.28.0"
+    "@esbuild/android-x64": "npm:0.28.0"
+    "@esbuild/darwin-arm64": "npm:0.28.0"
+    "@esbuild/darwin-x64": "npm:0.28.0"
+    "@esbuild/freebsd-arm64": "npm:0.28.0"
+    "@esbuild/freebsd-x64": "npm:0.28.0"
+    "@esbuild/linux-arm": "npm:0.28.0"
+    "@esbuild/linux-arm64": "npm:0.28.0"
+    "@esbuild/linux-ia32": "npm:0.28.0"
+    "@esbuild/linux-loong64": "npm:0.28.0"
+    "@esbuild/linux-mips64el": "npm:0.28.0"
+    "@esbuild/linux-ppc64": "npm:0.28.0"
+    "@esbuild/linux-riscv64": "npm:0.28.0"
+    "@esbuild/linux-s390x": "npm:0.28.0"
+    "@esbuild/linux-x64": "npm:0.28.0"
+    "@esbuild/netbsd-arm64": "npm:0.28.0"
+    "@esbuild/netbsd-x64": "npm:0.28.0"
+    "@esbuild/openbsd-arm64": "npm:0.28.0"
+    "@esbuild/openbsd-x64": "npm:0.28.0"
+    "@esbuild/openharmony-arm64": "npm:0.28.0"
+    "@esbuild/sunos-x64": "npm:0.28.0"
+    "@esbuild/win32-arm64": "npm:0.28.0"
+    "@esbuild/win32-ia32": "npm:0.28.0"
+    "@esbuild/win32-x64": "npm:0.28.0"
+  dependenciesMeta:
+    "@esbuild/aix-ppc64":
+      optional: true
+    "@esbuild/android-arm":
+      optional: true
+    "@esbuild/android-arm64":
+      optional: true
+    "@esbuild/android-x64":
+      optional: true
+    "@esbuild/darwin-arm64":
+      optional: true
+    "@esbuild/darwin-x64":
+      optional: true
+    "@esbuild/freebsd-arm64":
+      optional: true
+    "@esbuild/freebsd-x64":
+      optional: true
+    "@esbuild/linux-arm":
+      optional: true
+    "@esbuild/linux-arm64":
+      optional: true
+    "@esbuild/linux-ia32":
+      optional: true
+    "@esbuild/linux-loong64":
+      optional: true
+    "@esbuild/linux-mips64el":
+      optional: true
+    "@esbuild/linux-ppc64":
+      optional: true
+    "@esbuild/linux-riscv64":
+      optional: true
+    "@esbuild/linux-s390x":
+      optional: true
+    "@esbuild/linux-x64":
+      optional: true
+    "@esbuild/netbsd-arm64":
+      optional: true
+    "@esbuild/netbsd-x64":
+      optional: true
+    "@esbuild/openbsd-arm64":
+      optional: true
+    "@esbuild/openbsd-x64":
+      optional: true
+    "@esbuild/openharmony-arm64":
+      optional: true
+    "@esbuild/sunos-x64":
+      optional: true
+    "@esbuild/win32-arm64":
+      optional: true
+    "@esbuild/win32-ia32":
+      optional: true
+    "@esbuild/win32-x64":
+      optional: true
+  bin:
+    esbuild: bin/esbuild
+  checksum: 10/49eafc8906cc4a760a1704556bd3b301f808fcdcf2725190383f151741226bf2a2898a03da75a06a896d6217dadc4f3f3168983557ee31bae602e2e37779a83a
+  languageName: node
+  linkType: hard
+
+"esbuild@npm:~0.25.0":
   version: 0.25.9
   resolution: "esbuild@npm:0.25.9"
   dependencies:

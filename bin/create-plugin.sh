@@ -40,7 +40,7 @@ echo -e "This script will initialize an empty package for ${BLUE}${BOLD}$PLUGIN_
 echo
 
 echo -e "${BOLD}1. Creating plugin directory structure${NC}"
-mkdir -p "$PLUGIN_DIR"
+mkdir -p "$PLUGIN_DIR/src/commands"
 env cp LICENSE "$PLUGIN_DIR"
 echo "Empty package" > "$PLUGIN_DIR/README.md"
 cat > "$PLUGIN_DIR/package.json" <<EOF
@@ -60,15 +60,16 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "$PLUGIN_DIR"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
-    "./commands/*": {
-      "development": "./src/commands/*.ts",
-      "default": "./dist/commands/*.js"
-    }
+    ".": "./dist/bundle.js"
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/**/*.d.ts",
     "README",
     "LICENSE"
   ],
@@ -78,11 +79,23 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist && yarn package:bundle:npm"
   },
-  "peerDependencies": {
+  "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*"
   }
+}
+EOF
+
+cat > "$PLUGIN_DIR/tsconfig.json" <<EOF
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src"]
 }
 EOF
 

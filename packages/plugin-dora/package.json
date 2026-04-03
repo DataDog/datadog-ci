@@ -14,15 +14,16 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-dora"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
-    "./commands/*": {
-      "development": "./src/commands/*.ts",
-      "default": "./dist/commands/*.js"
-    }
+    ".": "./dist/bundle.js"
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/**/*.d.ts",
     "README",
     "LICENSE"
   ],
@@ -32,16 +33,12 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
-  },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
-    "chalk": "3.0.0",
-    "simple-git": "3.33.0"
+    "prepack": "yarn package:clean-dist && yarn package:bundle:npm"
   },
   "devDependencies": {
-    "axios": "1.13.5"
+    "@datadog/datadog-ci-base": "workspace:*",
+    "axios": "1.13.5",
+    "chalk": "3.0.0",
+    "simple-git": "3.33.0"
   }
 }

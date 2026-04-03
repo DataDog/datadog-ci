@@ -16,18 +16,18 @@
   "engines": {
     "node": ">=20"
   },
-  "bin": "dist/cli.js",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "bin": "dist/bundle.mjs",
+  "main": "dist/bundle.mjs",
+  "types": "dist/cli.d.ts",
   "exports": {
     "./package.json": "./package.json",
-    ".": {
-      "development": "./src/index.ts",
-      "default": "./dist/index.js"
-    }
+    ".": "./dist/bundle.mjs"
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.mjs",
+    "dist/bundle.mjs.map",
+    "dist/bundle.mjs.LEGAL.txt",
+    "dist/cli.d.ts",
     "README",
     "LICENSE"
   ],
@@ -36,11 +36,10 @@
   },
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
-    "bundle": "node scripts/esbuild.mjs",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist && yarn bundle:npm"
   },
-  "dependencies": {
+  "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "@datadog/datadog-ci-plugin-coverage": "workspace:*",
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
@@ -49,12 +48,8 @@
     "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
+    "@types/jest": "29.5.3",
     "clipanion": "3.2.1",
     "typanion": "3.14.0"
-  },
-  "devDependencies": {
-    "@types/jest": "29.5.3",
-    "chalk": "3.0.0",
-    "esbuild": "0.25.9"
   }
 }
