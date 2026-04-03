@@ -2179,7 +2179,7 @@ __metadata:
     "@types/ssh2": "npm:1.15.5"
     "@types/sshpk": "npm:1.10.5"
     "@types/ws": "npm:7.2.9"
-    "@types/xml2js": "npm:0.4.9"
+    "@types/xml2js": "npm:0.4.14"
     axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     debug: "npm:4.4.1"
@@ -4826,12 +4826,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/xml2js@npm:0.4.9":
-  version: 0.4.9
-  resolution: "@types/xml2js@npm:0.4.9"
+"@types/xml2js@npm:0.4.14":
+  version: 0.4.14
+  resolution: "@types/xml2js@npm:0.4.14"
   dependencies:
     "@types/node": "npm:*"
-  checksum: 10/8803fc10c11382b00b4791b237d79bb128726de35b5d5194ab27e106f558d22e8a66d893b64c73de3184b4ca7e02be24b9f56f4c976de7e5be247e7b497a4a25
+  checksum: 10/d76338b8d6ce8540c7af6a32aacf96c38f6de48254568f58f6e5ac2af3f88e6bd1490e5346d3bb336990f91267d23c5cc09e8bf7e80840a63c7855dbf174ecbb
   languageName: node
   linkType: hard
 
