@@ -55,7 +55,7 @@
     "eslint-plugin-prettier": "5.5.4",
     "jest": "29.6.4",
     "jest-diff": "30.2.0",
-    "knip": "5.64.1",
+    "knip": "5.64.3",
     "prettier": "3.6.2",
     "rimraf": "5.0.10",
     "syncpack": "14.3.0",
