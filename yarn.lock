@@ -2177,7 +2177,7 @@ __metadata:
     "@types/deep-extend": "npm:0.4.31"
     "@types/set-value": "npm:4.0.3"
     "@types/ssh2": "npm:1.15.5"
-    "@types/sshpk": "npm:1.10.5"
+    "@types/sshpk": "npm:1.10.7"
     "@types/ws": "npm:7.2.9"
     "@types/xml2js": "npm:0.4.14"
     axios: "npm:1.13.5"
@@ -4771,12 +4771,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/sshpk@npm:1.10.5":
-  version: 1.10.5
-  resolution: "@types/sshpk@npm:1.10.5"
+"@types/sshpk@npm:1.10.7":
+  version: 1.10.7
+  resolution: "@types/sshpk@npm:1.10.7"
   dependencies:
     "@types/node": "npm:*"
-  checksum: 10/5e39d8a37d76c21ac3fcd611f610a664aa6d55babebec1f2415f0b0dd94263d6c50d1ee1c3232d345fc71fe50bc1f78c78ceebf8b20f99366e4e4e6b36f6f7cf
+  checksum: 10/55c8557af9bfd5a2d7ca657116a6589c3b57fcb38a2cb9b37643af991c7133291998ae4eec30caf9c035f82d888c24d44c1b852a466de52426c86e2d9dd814b5
   languageName: node
   linkType: hard
 
