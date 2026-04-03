@@ -56,7 +56,7 @@
     "upath": "2.0.1"
   },
   "devDependencies": {
-    "@aws-sdk/credential-provider-ini": "3.972.9",
+    "@aws-sdk/credential-provider-ini": "3.972.28",
     "@aws-sdk/types": "3.973.1",
     "aws-sdk-client-mock": "4.1.0",
     "aws-sdk-client-mock-jest": "4.1.0",
