@@ -688,7 +688,7 @@ export class AutotestCommand extends BaseCommand {
     // Report telemetry to Datadog.
     await this.reportTelemetry(resultText, prInfo)
 
-    const isFail = /FAIL|bug found|broken|regression/i.test(resultText)
+    const isFail = /\bFAIL\b|bug found|broken|regression/i.test(resultText)
 
     return {exitCode: isFail ? 1 : 0, resultText}
   }
