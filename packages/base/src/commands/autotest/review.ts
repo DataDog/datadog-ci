@@ -572,6 +572,77 @@ export class AutotestCommand extends BaseCommand {
         })()
       : undefined
 
+    // GitLab MR tools — uses CI_JOB_TOKEN or GITLAB_TOKEN with the GitLab notes API.
+    const gitlabToken = process.env.CI_JOB_TOKEN || process.env.GITLAB_TOKEN
+    const gitlabTools = prInfo && prInfo.provider === 'gitlab' && gitlabToken && !dryRun
+      ? (() => {
+          const gitlabUrl = process.env.CI_SERVER_URL || 'https://gitlab.com'
+          const projectId = encodeURIComponent(prInfo.repo)
+          const {number: mrIid} = prInfo
+
+          const gitlabApiFetch = async (path: string, method: string, body?: object) => {
+            const response = await fetch(`${gitlabUrl}/api/v4${path}`, {
+              method,
+              headers: {
+                Authorization: `Bearer ${gitlabToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: body ? JSON.stringify(body) : undefined,
+            })
+            if (!response.ok) {
+              return {
+                content: [{type: 'text' as const, text: `GitLab API error ${response.status}: ${await response.text()}`}],
+                isError: true,
+              }
+            }
+
+            return {content: [{type: 'text' as const, text: JSON.stringify(await response.json())}]}
+          }
+
+          const findExistingNote = async (): Promise<number | undefined> => {
+            const response = await fetch(
+              `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes?per_page=100`,
+              {headers: {Authorization: `Bearer ${gitlabToken}`}}
+            )
+            if (!response.ok) {
+              return undefined
+            }
+            const notes = (await response.json()) as Array<{id: number; body: string}>
+            return notes.find((n) => n.body.includes(COMMENT_MARKER))?.id
+          }
+
+          const postPrComment = tool(
+            'post_pr_comment',
+            'Post the validation report as an MR comment. Creates a new note or updates the existing one.',
+            {body: z.string().describe('Markdown body of the validation report')},
+            async (args: {body: string}) => {
+              const markedBody = `${COMMENT_MARKER}\n${args.body}`
+              const existingId = await findExistingNote()
+
+              if (existingId) {
+                return gitlabApiFetch(
+                  `/projects/${projectId}/merge_requests/${mrIid}/notes/${existingId}`,
+                  'PUT',
+                  {body: markedBody}
+                )
+              }
+
+              return gitlabApiFetch(
+                `/projects/${projectId}/merge_requests/${mrIid}/notes`,
+                'POST',
+                {body: markedBody}
+              )
+            }
+          )
+
+          return createSdkMcpServer({
+            name: 'gitlab-mr',
+            version: '1.0.0',
+            tools: [postPrComment],
+          })
+        })()
+      : undefined
+
     // Raw log file for full agent trace.
     const logDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
     const logPath = join(logDir, '.autotest-agent.log')
@@ -594,6 +665,9 @@ export class AutotestCommand extends BaseCommand {
     }
     if (githubTools) {
       mcpServers['github-pr'] = githubTools
+    }
+    if (gitlabTools) {
+      mcpServers['gitlab-mr'] = gitlabTools
     }
 
     try {
