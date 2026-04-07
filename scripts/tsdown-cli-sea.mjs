@@ -49,7 +49,6 @@ try {
     },
     plugins: createCliRuntimePlugins({
       pluginCommandsByScope: allPluginCommands,
-      includeMainModuleCheck: false,
     }),
   })
 

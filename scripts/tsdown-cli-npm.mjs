@@ -40,7 +40,6 @@ try {
     },
     plugins: createCliRuntimePlugins({
       pluginCommandsByScope: builtinPluginCommands,
-      includeMainModuleCheck: true,
     }),
   })
 

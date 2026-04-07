@@ -109,7 +109,7 @@ const buildInjectedPluginSubmodulesSource = (pluginCommandsByScope) => {
   return lines.join('\n')
 }
 
-export const createCliRuntimePlugins = ({pluginCommandsByScope, includeMainModuleCheck}) => {
+export const createCliRuntimePlugins = ({pluginCommandsByScope}) => {
   const virtualModuleId = 'virtual:datadog-ci-plugin-submodules'
   const cliEntryPath = normalizePath(path.join(REPO_ROOT, 'packages', 'datadog-ci', 'dist', 'cli.js'))
   const basePluginHelperPath = normalizePath(path.join(REPO_ROOT, 'packages', 'base', 'dist', 'helpers', 'plugin.js'))
@@ -140,12 +140,6 @@ export const createCliRuntimePlugins = ({pluginCommandsByScope, includeMainModul
           `const __getInjectedPlugins = () => require(${JSON.stringify(virtualModuleId)});`,
         ]
 
-        if (includeMainModuleCheck) {
-          injectedLines.push(
-            `const __IS_MAIN_MODULE__ = typeof __DATADOG_IS_MAIN_MODULE__ !== 'undefined' ? __DATADOG_IS_MAIN_MODULE__ : undefined;`
-          )
-        }
-
         return {
           code: `${injectedLines.join('\n')}\n${strippedCode}`,
           map: undefined,
@@ -160,7 +154,7 @@ export const createMainModuleBanner = () =>
   [
     `import {fileURLToPath} from 'node:url';`,
     `import {realpathSync} from 'node:fs';`,
-    `const __DATADOG_IS_MAIN_MODULE__ = !!process.argv[1] && (() => {`,
+    `const __IS_MAIN_MODULE__ = !!process.argv[1] && (() => {`,
     `  try {`,
     `    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);`,
     `  } catch {`,
