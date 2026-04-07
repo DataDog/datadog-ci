@@ -334,6 +334,8 @@ jobs:
         with:
           node-version: 22.19.0
       - run: yarn install --immutable --mode=skip-build
+      - name: Lint packages
+        run: yarn lint:packages
       - name: Check NPM packages
         run: yarn check-npm-packages
         env:
