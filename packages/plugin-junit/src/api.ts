@@ -2,7 +2,7 @@ import fs from 'fs'
 import {createGzip} from 'zlib'
 
 import type {Payload} from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -18,7 +18,7 @@ export const intakeUrl = getIntakeUrl('cireport-intake')
 export const apiUrl = getApiUrl()
 
 export const uploadJUnitXML =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (jUnitXML: Payload) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse>) => async (jUnitXML: Payload) => {
     const form = new FormData()
 
     let fileName

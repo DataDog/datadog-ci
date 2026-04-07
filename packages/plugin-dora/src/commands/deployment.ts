@@ -1,5 +1,5 @@
 import type {APIHelper, DeploymentEvent, GitInfo} from '../interfaces'
-import type {AxiosError} from 'axios'
+import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import {DoraDeploymentCommand} from '@datadog/datadog-ci-base/commands/dora/deployment'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -136,9 +136,8 @@ export class PluginCommand extends DoraDeploymentCommand {
         retries: 5,
       })
     } catch (error) {
-      this.logger.error(renderFailedRequest(this.service, error as AxiosError))
+      this.logger.error(renderFailedRequest(this.service, error as RequestError))
       if (error.response) {
-        // If it's an axios error
         if (!nonRetriableErrorCodes.includes(error.response.status)) {
           return
         }

@@ -1,5 +1,5 @@
 import type {ScaRequest} from './types'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '@datadog/datadog-ci-base/constants'
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
@@ -17,13 +17,13 @@ export const getApiHelper = (
   apiKey: string,
   appKey: string,
   source?: string
-): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
+): ((scaRequest: ScaRequest) => Promise<RequestResponse>) => {
   /**
    * function used to marshall and send the data
    * @param request - the AXIOS element used to send the request
    */
   const uploadSBomPayload =
-    (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (scaPayload: ScaRequest) => {
+    (request: (args: RequestConfig) => Promise<RequestResponse>) => async (scaPayload: ScaRequest) => {
       // Make sure we follow the API signature
       const payload = {
         data: {

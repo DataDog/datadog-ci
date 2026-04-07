@@ -6,10 +6,10 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import simpleGit from 'simple-git'
 
@@ -158,7 +158,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
   private handleError(error: Error) {
     this.context.stderr.write(
       `${chalk.red.bold('[ERROR]')} Could not send deployment correlation data: ${
-        isAxiosError(error)
+        isRequestError(error)
           ? JSON.stringify(
               {
                 status: error.response?.status,

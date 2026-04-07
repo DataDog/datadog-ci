@@ -168,7 +168,7 @@ describe('gate', () => {
 
       test('should succeed when requests fail but succeed on retry', async () => {
         const mockError = Object.assign(new Error('Request failed with status code 500'), {
-          isAxiosError: true,
+          isRequestError: true,
           response: {
             status: 500,
             statusText: 'Internal Server Error',
@@ -210,7 +210,7 @@ describe('gate', () => {
       describe('on gate evaluation request', () => {
         test('should fail when gate evaluation request fails with 400', async () => {
           const mockError = Object.assign(new Error('Request failed with status code 400'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 400,
               statusText: 'Bad Request',
@@ -234,7 +234,7 @@ describe('gate', () => {
 
         test('should pass when gate evaluation request fails with 500', async () => {
           const mockError = Object.assign(new Error('Request failed with status code 500'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 500,
               statusText: 'Internal Server Error',
@@ -262,7 +262,7 @@ describe('gate', () => {
 
         test('should fail when gate evaluation request fails with 500 and fail-on-error is true', async () => {
           const mockError = Object.assign(new Error('Request failed with status code 500'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 500,
               statusText: 'Internal Server Error',
@@ -293,7 +293,7 @@ describe('gate', () => {
       describe('on gate evaluation result', () => {
         test('pass with a 500 error', async () => {
           const mockError = Object.assign(new Error('Request failed with status code 500'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 500,
               statusText: 'Internal Server Error',
@@ -321,7 +321,7 @@ describe('gate', () => {
 
         test('pass with a 404 error', async () => {
           const mockError = Object.assign(new Error('Gate evaluation not found'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 404,
               statusText: 'Not Found',
@@ -349,7 +349,7 @@ describe('gate', () => {
 
         test('should fail with 500 error when fail-on-error is true', async () => {
           const mockError = Object.assign(new Error('Request failed with status code 500'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 500,
               statusText: 'Internal Server Error',
@@ -385,7 +385,7 @@ describe('gate', () => {
 
         test('should fail with 404 error when fail-on-error is true', async () => {
           const mockError = Object.assign(new Error('Gate evaluation not found'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 404,
               statusText: 'Not Found',
@@ -446,7 +446,7 @@ describe('gate', () => {
 
         test('should retry when gate evaluation result returns 404', async () => {
           const mock404Error = Object.assign(new Error('Gate evaluation not found'), {
-            isAxiosError: true,
+            isRequestError: true,
             response: {
               status: 404,
               statusText: 'Not Found',
