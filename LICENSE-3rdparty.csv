@@ -32,7 +32,6 @@ Component,Origin,Licence,Copyright
 async-retry,import,MIT,"Copyright (c) 2017 ZEIT, Inc."
 aws-sdk-client-mock,dev,MIT,Copyright (c) 2021 Maciej Radzikowski
 aws-sdk-client-mock-jest,dev,MIT,Copyright (c) 2021 Maciej Radzikowski
-axios,import,MIT,Copyright (c) 2014-present Matt Zabriskie
 chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
