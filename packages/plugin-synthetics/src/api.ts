@@ -20,10 +20,10 @@ import type {
   TestSearchResult,
   ServerTrigger,
 } from './interfaces'
-import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {RequestConfig, RequestResponse, RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-import {isAxiosError} from 'axios'
 
 import {CriticalError} from './errors'
 import {MAX_TESTS_TO_TRIGGER} from './test'
@@ -34,10 +34,6 @@ const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
 // TODO SYNTH-13709: Use the `Retry-After` header.
 const DELAY_BETWEEN_429_RETRIES = 5000 // In ms
-
-interface BackendError {
-  errors: string[]
-}
 
 export class EndpointError extends Error {
   constructor(
@@ -55,8 +51,8 @@ const PUBLIC_ID_REGEX = `[${LOWER_UNAMBIGUOUS_CHARS}]{3}-[${LOWER_UNAMBIGUOUS_CH
 /**
  * Extracts the public IDs from an error message like `Cannot write tests or results (test ids: ['aaa-aaa-aaa', 'bbb-bbb-bbb'])`.
  */
-export const extractUnauthorizedTestPublicIds = (requestError: AxiosError<BackendError>): Set<string> | undefined => {
-  const unauthorizedMessage = requestError.response?.data?.errors?.find((error) =>
+export const extractUnauthorizedTestPublicIds = (requestError: RequestError): Set<string> | undefined => {
+  const unauthorizedMessage = requestError.response?.data?.errors?.find((error: string) =>
     error.includes('Cannot write tests or results (test ids:')
   )
   if (!unauthorizedMessage) {
@@ -71,7 +67,7 @@ export const extractUnauthorizedTestPublicIds = (requestError: AxiosError<Backen
   return new Set(matchResult)
 }
 
-export const formatBackendErrors = (requestError: AxiosError<BackendError>, scopeName?: string) => {
+export const formatBackendErrors = (requestError: RequestError, scopeName?: string) => {
   if (requestError.response?.data?.errors) {
     const serverHead = `query on ${requestError.config?.baseURL}${requestError.config?.url} returned:`
     const errors = requestError.response.data.errors
@@ -95,23 +91,25 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>, scop
   return `could not query ${requestError.config?.baseURL}${requestError.config?.url}\n${requestError.message}`
 }
 
-const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTrigger>) => async (data: Payload) => {
-  const resp = await retryRequest(
-    {
-      data,
-      headers: {'X-Trigger-App': ciTriggerApp},
-      method: 'POST',
-      url: '/synthetics/tests/trigger/ci',
-    },
-    request,
-    {retryOn429: true}
-  )
+const triggerTests =
+  (request: (args: RequestConfig) => Promise<RequestResponse<ServerTrigger>>) => async (data: Payload) => {
+    const resp = await retryRequest(
+      {
+        data,
+        headers: {'X-Trigger-App': ciTriggerApp},
+        method: 'POST',
+        url: '/synthetics/tests/trigger/ci',
+      },
+      request,
+      {retryOn429: true}
+    )
 
-  return resp.data
-}
+    return resp.data
+  }
 
 const getTest =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (testId: string, testType?: string) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<ServerTest>>) =>
+  async (testId: string, testType?: string) => {
     const resp = await retryRequest(
       {
         url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
@@ -124,7 +122,7 @@ const getTest =
   }
 
 const getTestVersion =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (testId: string, version: number) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<void>>) => async (testId: string, version: number) => {
     await retryRequest(
       {
         url: `/synthetics/tests/${testId}/version_history/${version}?only_check_existence=true`,
@@ -135,7 +133,7 @@ const getTestVersion =
   }
 
 const getLocalTestDefinition =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<LocalTestDefinition>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<LocalTestDefinition>>) =>
   async (testId: string, testType?: string) => {
     const resp = await retryRequest(
       {
@@ -152,7 +150,7 @@ const getLocalTestDefinition =
   }
 
 const editTest =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (testId: string, data: ServerTest) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<void>>) => async (testId: string, data: ServerTest) => {
     await retryRequest(
       {
         data,
@@ -165,7 +163,7 @@ const editTest =
   }
 
 const searchTests =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) => async (query: string) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<TestSearchResult>>) => async (query: string) => {
     const resp = await retryRequest(
       {
         params: {
@@ -182,7 +180,7 @@ const searchTests =
   }
 
 const getSyntheticsOrgSettings =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<SyntheticsOrgSettings>) => async () => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<SyntheticsOrgSettings>>) => async () => {
     const resp = await retryRequest(
       {
         url: '/synthetics/settings',
@@ -194,7 +192,7 @@ const getSyntheticsOrgSettings =
   }
 
 const getBatch =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<{data: ServerBatch}>>) =>
   async (batchId: string): Promise<Batch> => {
     const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {
       retryOn404: true,
@@ -210,7 +208,7 @@ const getBatch =
   }
 
 const pollResults =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<RawPollResult>) => async (resultIds: string[]) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<RawPollResult>>) => async (resultIds: string[]) => {
     const resp = await retryRequest(
       {
         params: {
@@ -268,13 +266,13 @@ const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
 }
 
 const getTunnelPresignedURL =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (testIds: string[]) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse<{url: string}>>) => async (testIds: string[]) => {
     const resp = await retryRequest(
       {
         params: {
           test_id: testIds,
         },
-        paramsSerializer: (params) => stringify(params),
+        paramsSerializer: (params: any) => stringify(params),
         url: '/synthetics/ci/tunnel',
       },
       request
@@ -284,7 +282,7 @@ const getTunnelPresignedURL =
   }
 
 const getMobileApplicationPresignedURLs =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<MultipartPresignedUrlsResponse>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<MultipartPresignedUrlsResponse>>) =>
   async (
     applicationId: string,
     appSize: number,
@@ -311,7 +309,7 @@ const getMobileApplicationPresignedURLs =
   }
 
 const uploadMobileApplicationPart =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<void>>) =>
   async (
     parts: MobileApplicationUploadPart[],
     multipartPresignedUrlsParams: MultipartPresignedUrlsResponse['multipart_presigned_urls_params']
@@ -337,7 +335,7 @@ const uploadMobileApplicationPart =
       )
 
       // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
-      const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
+      const quotedEtag = isAzureUrl(presignedUrl) ? '' : resp.headers.etag
 
       return {
         ETag: quotedEtag.replace(/"/g, ''),
@@ -349,7 +347,7 @@ const uploadMobileApplicationPart =
   }
 
 export const completeMultipartMobileApplicationUpload =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<{job_id: string}>>) =>
   async (
     applicationId: string,
     uploadId: string,
@@ -376,7 +374,7 @@ export const completeMultipartMobileApplicationUpload =
   }
 
 export const pollMobileApplicationUploadResponse =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<MobileAppUploadResult>>) =>
   async (jobId: string): Promise<MobileAppUploadResult> => {
     const response = await retryRequest(
       {
@@ -425,7 +423,7 @@ export const determineRetryDelay = (
 const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
 
 export const getErrorHttpStatus = (error: Error): number | undefined =>
-  isEndpointError(error) ? error.status : isAxiosError(error) ? error.response?.status : undefined
+  isEndpointError(error) ? error.status : isRequestError(error) ? error.response?.status : undefined
 
 export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
 
@@ -442,8 +440,8 @@ export const is5xxError = (error: Error): boolean => {
 }
 
 const retryRequest = <T>(
-  args: AxiosRequestConfig,
-  request: (args: AxiosRequestConfig) => AxiosPromise<T>,
+  args: RequestConfig,
+  request: (args: RequestConfig) => Promise<RequestResponse<T>>,
   statusCodesToRetryOn?: RetryPolicy
 ) =>
   retry(

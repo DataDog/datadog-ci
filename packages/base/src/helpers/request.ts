@@ -10,6 +10,7 @@ export interface RequestConfig {
   dispatcher?: any // undici Dispatcher — typed as any to avoid @types/node version conflict
   headers?: any // permissive to allow AxiosHeaders during Stage 1 migration
   maxBodyLength?: number // accepted for compat, ignored (no limit with fetch)
+  maxContentLength?: number // accepted for compat, ignored (no limit with fetch)
   method?: string
   params?: any
   paramsSerializer?: any // Stage 1 compat: axios uses CustomParamsSerializer | ParamsSerializerOptions
@@ -133,9 +134,18 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   const method = (config.method ?? 'GET').toUpperCase()
   const {body, headers} = serializeBody(config.data, config.headers ?? {})
 
+  // Strip null/undefined header values (compat with axios `Content-Type: null` pattern)
+  const cleanHeaders: Record<string, string> = {}
+  for (const [k, v] of Object.entries(headers)) {
+    // eslint-disable-next-line no-null/no-null
+    if (v !== undefined && v !== null) {
+      cleanHeaders[k] = String(v)
+    }
+  }
+
   const fetchOptions: Record<string, any> = {
     method,
-    headers,
+    headers: cleanHeaders,
     body,
     dispatcher: config.dispatcher,
     duplex: body !== undefined && isStream(config.data) ? 'half' : undefined,

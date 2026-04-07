@@ -7,7 +7,7 @@ import type {APIHelper} from '../api'
 import type {InitialSummary} from '../utils/public'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
 import {apiConstructor} from '../api'
@@ -91,7 +91,7 @@ describe('getTestsToTrigger', () => {
         return Promise.resolve({data: fakeTests[publicId], status: 200, statusText: 'OK', headers: {}, config: e})
       }
 
-      throw getAxiosError(404, {errors: ['Not found']})
+      throw getRequestError(404, {errors: ['Not found']})
     }) as any)
   })
 
@@ -196,7 +196,7 @@ describe('getTestAndOverrideConfig', () => {
 
   test('Forbidden error when getting a test', async () => {
     jest.mocked(requestModule.httpRequest).mockImplementation(((_e: any) => {
-      throw getAxiosError(403, {message: 'Forbidden'})
+      throw getRequestError(403, {message: 'Forbidden'})
     }) as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
@@ -233,7 +233,7 @@ describe('getTestAndOverrideConfig', () => {
   test('Version not found error when version is provided', async () => {
     jest.mocked(requestModule.httpRequest).mockImplementation(((e: any) => {
       if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
-        throw getAxiosError(404, {errors: ['Version not found']})
+        throw getRequestError(404, {errors: ['Version not found']})
       }
 
       return Promise.resolve({

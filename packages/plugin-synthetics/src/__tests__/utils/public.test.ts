@@ -45,7 +45,7 @@ import process from 'process'
 import type {MockedReporter, RenderResultsTestCase} from '../fixtures'
 import type * as path from 'upath'
 
-import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as glob from '@datadog/datadog-ci-base/helpers/glob'
 
 import * as api from '../../api'
@@ -885,7 +885,7 @@ describe('utils', () => {
       jest.spyOn(api, 'getApiHelper').mockReturnValue(
         mockApi({
           getSyntheticsOrgSettings: jest.fn().mockImplementation(() => {
-            throw getAxiosError(502, {message: 'Server Error'})
+            throw getRequestError(502, {message: 'Server Error'})
           }),
         })
       )

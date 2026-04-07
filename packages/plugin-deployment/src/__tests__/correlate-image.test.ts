@@ -1,4 +1,4 @@
-import {createCommand, getAxiosError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, getRequestError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as DeploymentCorrelateImageCommand} from '../commands/correlate-image'
 
@@ -68,7 +68,7 @@ describe('execute', () => {
   test('handleError', async () => {
     const command = createCommand(DeploymentCorrelateImageCommand)
 
-    const axiosError = getAxiosError(400, {
+    const axiosError = getRequestError(400, {
       message: 'Request failed with status code 400',
       errors: ['Some validation error'],
     })
