@@ -8,17 +8,14 @@ export interface RequestConfig {
   baseURL?: string
   data?: any
   dispatcher?: any // undici Dispatcher — typed as any to avoid @types/node version conflict
-  headers?: any // permissive to allow AxiosHeaders during Stage 1 migration
+  headers?: any
+  maxBodyLength?: number // accepted for compat, ignored (no limit with fetch)
+  maxContentLength?: number // accepted for compat, ignored (no limit with fetch)
   method?: string
   params?: any
-  paramsSerializer?: any // Stage 1 compat: axios uses CustomParamsSerializer | ParamsSerializerOptions
+  paramsSerializer?: any
   timeout?: number
   url?: string
-  // Compat fields accepted but not used by httpRequest — allows callers
-  // to pass them without type errors during the migration.
-  httpAgent?: any
-  httpsAgent?: any
-  maxBodyLength?: number
 }
 
 export interface RequestResponse<T = any> {

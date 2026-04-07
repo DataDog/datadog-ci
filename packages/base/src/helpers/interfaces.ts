@@ -1,3 +1,4 @@
+import type {RequestConfig, RequestResponse} from './request'
 import type {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -121,8 +122,7 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-// Permissive until plugin-synthetics is migrated (Stage 3)
-export type RequestBuilder = (args: any) => Promise<any>
+export type RequestBuilder = (args: RequestConfig) => Promise<RequestResponse>
 
 /**
  * A subset of Clipanion's {@link BaseContext}.
