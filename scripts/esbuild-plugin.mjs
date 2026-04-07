@@ -1,5 +1,7 @@
 import {readFile, readdir, access} from 'fs/promises'
 // eslint-disable-next-line no-restricted-imports
+import {createRequire} from 'module'
+// eslint-disable-next-line no-restricted-imports
 import path from 'path'
 
 import chalk from 'chalk'
@@ -8,6 +10,7 @@ import {build} from 'esbuild'
 import {appendMissingLicensesPlugin} from './esbuild-shared.mjs'
 
 const packageDir = process.cwd()
+const require = createRequire(import.meta.url)
 const packageJson = JSON.parse(await readFile(path.join(packageDir, 'package.json'), 'utf8'))
 const pluginName = packageJson.name
 
@@ -25,12 +28,29 @@ try {
   hasIndex = false
 }
 
+const assertNoExportCollisions = async () => {
+  if (!hasIndex) {
+    return
+  }
+
+  const builtIndexPath = path.join(packageDir, 'dist', 'index.js')
+  const indexExports = Object.keys(require(builtIndexPath))
+  const collisions = commands.filter((command) => indexExports.includes(command))
+  if (collisions.length > 0) {
+    throw new Error(
+      `Index exports conflict with command names in ${pluginName}: ${collisions.join(', ')}. Rename one of the exports or commands before bundling.`
+    )
+  }
+}
+
 const virtualEntryLines = [
   ...(hasIndex ? [`Object.assign(exports, require('./index'));`] : []),
   ...commands.map((cmd) => `exports['${cmd}'] = require('./commands/${cmd}');`),
 ]
 
 try {
+  await assertNoExportCollisions()
+
   const result = await build({
     stdin: {
       contents: virtualEntryLines.join('\n'),
