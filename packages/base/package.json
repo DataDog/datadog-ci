@@ -143,7 +143,7 @@
   },
   "devDependencies": {
     "@types/async-retry": "1.4.8",
-    "@types/debug": "4.1.12",
+    "@types/debug": "4.1.13",
     "@types/deep-extend": "0.4.31",
     "@types/inquirer": "8.2.6",
     "@types/js-yaml": "4.0.9",
