@@ -15,7 +15,7 @@ const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
 
 // Prevent real network calls and expensive I/O in fips tests
-jest.mock('axios')
+jest.mock('@datadog/datadog-ci-base/helpers/request')
 jest.mock('simple-git')
 jest.mock('@datadog/datadog-ci-base/helpers/metrics')
 
