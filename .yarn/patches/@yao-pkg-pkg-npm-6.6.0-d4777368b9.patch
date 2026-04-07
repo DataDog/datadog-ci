@@ -31,10 +31,39 @@ index 17ad9d3ff875433ff3b813c82106349bbd1fb7cc..ecc0815f56fa1710c1078418b8a8378d
      let marker;
      if (configJson) {
 diff --git a/lib-es5/sea.js b/lib-es5/sea.js
-index 181835978c61f4ece50cacd50aec0ce2ae544a48..fd02b9440ab3946bcdf02fdb3867c585762bda03 100644
+index 181835978c61f4ece50cacd50aec0ce2ae544a48..640ca3ef59cf7c7c864cf15df130f66b0db7d0f0 100644
 --- a/lib-es5/sea.js
 +++ b/lib-es5/sea.js
-@@ -176,6 +176,9 @@ async function getNodejsExecutable(target, opts) {
+@@ -123,6 +123,28 @@ function getNodeArch(arch) {
+     }
+     return arch;
+ }
++/** Get the pkg platform based on the current host platform */
++function getHostPlatform() {
++    switch (process.platform) {
++        case 'darwin':
++            return 'macos';
++        case 'win32':
++            return 'win';
++        case 'linux':
++            return 'linux';
++        default:
++            throw new Error(`Unsupported host platform: ${process.platform}`);
++    }
++}
++/** Extract the exact Node.js version from a fetched pkg runtime path */
++function getExactNodeVersionFromPath(nodePath, nodeRange) {
++    const match = nodePath.match(/v(\d+\.\d+\.\d+)/);
++    if (match) {
++        return match[1];
++    }
++    const majorVersion = nodeRange.replace('node', '');
++    throw new Error(`Unable to determine exact Node.js version for ${nodePath} (from ${majorVersion})`);
++}
+ /** Get latest node version based on the provided partial version */
+ async function getNodeVersion(os, arch, nodeVersion) {
+     // validate nodeVersion using regex. Allowed formats: 16, 16.0, 16.0.0
+@@ -176,6 +198,9 @@ async function getNodejsExecutable(target, opts) {
      }
      const os = getNodeOs(target.platform);
      const arch = getNodeArch(target.arch);
@@ -44,3 +73,36 @@ index 181835978c61f4ece50cacd50aec0ce2ae544a48..fd02b9440ab3946bcdf02fdb3867c585
      const nodeVersion = await getNodeVersion(os, arch, target.nodeRange.replace('node', ''));
      const fileName = `node-${nodeVersion}-${os}-${arch}.${os === 'win' ? 'zip' : 'tar.gz'}`;
      let url;
+@@ -243,6 +268,23 @@ async function sea(entryPoint, opts) {
+         throw new Error(`SEA support requires as least node v20.0.0, actual node version is ${process.version}`);
+     }
+     const nodePaths = await Promise.all(opts.targets.map((target) => getNodejsExecutable(target, opts)));
++    const hostPlatform = getHostPlatform();
++    const hostArch = getNodeArch(process.arch);
++    const generatorTargetIndex = opts.targets.findIndex((target) => target.platform === hostPlatform && target.arch === hostArch);
++    const generatorNodeRange = opts.targets[0]?.nodeRange;
++    if (!generatorNodeRange) {
++        throw new Error('At least one SEA target is required');
++    }
++    if (opts.targets.some((target) => target.nodeRange !== generatorNodeRange)) {
++        throw new Error('SEA builds require all targets to use the same Node.js major version');
++    }
++    const generatorNodePath = generatorTargetIndex >= 0
++        ? nodePaths[generatorTargetIndex]
++        : await getNodejsExecutable({
++            nodeRange: `node${getExactNodeVersionFromPath(nodePaths[0], generatorNodeRange)}`,
++            platform: hostPlatform,
++            arch: hostArch,
++        }, opts);
+     // create a temporary directory for the processing work
+     const tmpDir = (0, path_1.join)((0, os_1.tmpdir)(), 'pkg-sea', `${Date.now()}`);
+     await (0, promises_1.mkdir)(tmpDir, { recursive: true });
+@@ -257,7 +299,7 @@ async function sea(entryPoint, opts) {
+         log_1.log.info('Creating sea-config.json file...');
+         await (0, promises_1.writeFile)(seaConfigFilePath, JSON.stringify(seaConfig));
+         log_1.log.info('Generating the blob...');
+-        await exec(`node --experimental-sea-config "${seaConfigFilePath}"`);
++        await exec(`"${generatorNodePath}" --experimental-sea-config "${seaConfigFilePath}"`);
+         await Promise.allSettled(nodePaths.map(async (nodePath, i) => {
+             const target = opts.targets[i];
+             await bake(nodePath, target, blobPath);

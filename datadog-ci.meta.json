@@ -1,0 +1,11 @@
+{
+  "plugins": {
+    "@datadog/datadog-ci-plugin-lambda": {
+      "bundle": {
+        "standaloneEntryDirs": [
+          "functions"
+        ]
+      }
+    }
+  }
+}

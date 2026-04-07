@@ -24,9 +24,9 @@
     ".": "./dist/bundle.mjs"
   },
   "files": [
-    "dist/bundle.mjs",
-    "dist/bundle.mjs.map",
-    "dist/bundle.mjs.LEGAL.txt",
+    "dist/*.mjs",
+    "dist/*.mjs.map",
+    "dist/*.mjs.LEGAL.txt",
     "dist/cli.d.ts",
     "README",
     "LICENSE"
@@ -37,7 +37,7 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist && yarn bundle:npm && yarn package:bundle:npm-dts"
+    "prepack": "yarn package:clean && yarn package:build && yarn package:clean-dist && yarn bundle:npm && yarn package:bundle:npm-dts"
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",

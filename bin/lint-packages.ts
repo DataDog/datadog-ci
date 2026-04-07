@@ -395,6 +395,32 @@ const matchAndReplace = (file: string): Replacer => {
   }
 }
 
+const replaceWholeFile = (file: string, newContent: string): ApplyChanges => {
+  return () => {
+    const originalContent = fs.readFileSync(file, 'utf8')
+
+    if (originalContent === newContent) {
+      return success(`${chalk.bold(file)} is up to date\n`)
+    }
+
+    const delta = diff(originalContent, newContent, {expand: false, aAnnotation: 'current', bAnnotation: 'expected'})
+
+    if (!delta || delta.includes('no visual difference')) {
+      return success(`${chalk.bold(file)} is up to date\n`)
+    }
+
+    console.log(`${chalk.bold(file)} should be updated:\n${delta}\n`)
+
+    if (fix) {
+      fs.writeFileSync(file, newContent)
+
+      return success(`Updated ${chalk.bold(file)}\n`)
+    } else {
+      return error(`Run with ${chalk.bold('--fix')} to apply changes to ${chalk.bold(file)}\n`)
+    }
+  }
+}
+
 // Use "Fold All Regions" command in VSCode to collapse all regions
 
 // #region ================================ REPLACERS ================================
@@ -542,22 +568,24 @@ TO_APPLY.push(matchAndReplace('packages/datadog-ci/tsconfig.json')`
 `)
 // #endregion
 
-// #region - Format file: packages/datadog-ci/shims/injected-plugin-submodules.js
-const formatBlock = (plugin: PluginPackage) => {
-  return `'${plugin.scope}': {\n${plugin.commands.map((command) => `  '${command}': require('@datadog/datadog-ci-plugin-${plugin.scope}/commands/${command}'),`).join('\n')}\n},`
+// #region - Format file: packages/datadog-ci/shims/plugin-commands.mjs
+const formatCommandList = (plugin: PluginPackage) => {
+  return `  ${JSON.stringify(plugin.scope)}: [${plugin.commands.map((command) => JSON.stringify(command)).join(', ')}],`
 }
 
-TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-plugin-submodules.js')`
-const injectedPluginSubmodules = {
-  ${pluginPackages.map(formatBlock).join('\n')}
+TO_APPLY.push(
+  replaceWholeFile(
+    'packages/datadog-ci/shims/plugin-commands.mjs',
+    `export const builtinPluginCommands = {
+${builtinPlugins.map(formatCommandList).join('\n')}
 }
-`)
 
-TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-builtin-plugins.js')`
-const injectedPluginSubmodules = {
-  ${builtinPlugins.map(formatBlock).join('\n')}
+export const allPluginCommands = {
+${pluginPackages.map(formatCommandList).join('\n')}
 }
-`)
+`
+  )
+)
 // #endregion
 
 // #region - Format file: container/Dockerfile

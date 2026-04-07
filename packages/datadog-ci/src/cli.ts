@@ -46,11 +46,15 @@ Object.entries(commandDeclarations).forEach(([scope, commands]) => {
 // SEA has all plugins; npm bundle has only the builtin ones.
 // In development mode, read from package.json devDependencies.
 // eslint-disable-next-line @typescript-eslint/naming-convention
-declare const __INJECTED_PLUGIN_SUBMODULES__: Record<string, Record<string, unknown>> | undefined
+declare const __getInjectedPlugins:
+  | (() => {
+      injectedPluginSubmodules?: Record<string, Record<string, unknown>>
+    })
+  | undefined
 
 const builtinPlugins =
-  typeof __INJECTED_PLUGIN_SUBMODULES__ !== 'undefined'
-    ? Object.keys(__INJECTED_PLUGIN_SUBMODULES__).map((s) => `@datadog/datadog-ci-plugin-${s}`)
+  typeof __getInjectedPlugins !== 'undefined'
+    ? Object.keys(__getInjectedPlugins().injectedPluginSubmodules ?? {}).map((s) => `@datadog/datadog-ci-plugin-${s}`)
     : Object.keys(packageJson.devDependencies).filter((plugin) => plugin.startsWith('@datadog/datadog-ci-plugin-'))
 
 // eslint-disable-next-line @typescript-eslint/naming-convention

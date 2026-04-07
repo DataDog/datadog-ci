@@ -258,7 +258,28 @@ const handlePluginAutoInstall = async (scope: string) => {
 
 // Injected by esbuild in bundled builds (SEA and npm bundle).
 // eslint-disable-next-line @typescript-eslint/naming-convention
-declare const __INJECTED_PLUGIN_SUBMODULES__: Record<string, Record<string, PluginSubModule>> | undefined
+declare const __getInjectedPlugins:
+  | (() => {
+      injectedPluginSubmodules?: Record<string, Record<string, PluginSubModule>>
+      injectedPluginPackageJsons?: Record<string, PluginPackageJson>
+    })
+  | undefined
+
+const getInjectedPluginSubmodules = (): Record<string, Record<string, PluginSubModule>> | undefined => {
+  if (typeof __getInjectedPlugins === 'undefined') {
+    return undefined
+  }
+
+  return __getInjectedPlugins().injectedPluginSubmodules
+}
+
+const getInjectedPluginPackageJson = (scope: string): PluginPackageJson | undefined => {
+  if (typeof __getInjectedPlugins === 'undefined') {
+    return undefined
+  }
+
+  return __getInjectedPlugins().injectedPluginPackageJsons?.[scope]
+}
 
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (!isValidScope(scope)) {
@@ -266,8 +287,9 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   }
 
   // 1. Bundled: injected at build time (SEA has all plugins, npm bundle has only the builtin ones)
-  if (typeof __INJECTED_PLUGIN_SUBMODULES__ !== 'undefined') {
-    const injected = __INJECTED_PLUGIN_SUBMODULES__[scope]?.[command]
+  const injectedPluginSubmodules = getInjectedPluginSubmodules()
+  if (injectedPluginSubmodules) {
+    const injected = injectedPluginSubmodules[scope]?.[command]
     if (injected) {
       debug('Loading pre-bundled plugin')
 
@@ -353,19 +375,32 @@ const getPackageToInstall = (scope: string) => {
 }
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
+  const packageNameMatch = scope.match(/^@datadog\/datadog-ci-plugin-([a-z-]+)$/)
+  const normalizedScope = packageNameMatch?.[1] ?? scope
+
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
+    const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
+    if (injectedPackageJson) {
+      return injectedPackageJson
+    }
+
     // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
     // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
     return extractPackageJson(require(`${scope}/package.json`))
   }
 
   if (!command) {
+    const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
+    if (injectedPackageJson) {
+      return injectedPackageJson
+    }
+
     // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
     // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
-    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
+    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
   }
 
-  return importPluginSubmodule(scope, command)
+  return importPluginSubmodule(normalizedScope, command)
 }
 
 const extractPackageJson = (content: unknown): PluginPackageJson => {
