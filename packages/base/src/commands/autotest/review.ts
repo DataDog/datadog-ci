@@ -317,6 +317,11 @@ export class AutotestCommand extends BaseCommand {
     required: false,
   })
 
+  private baseRef = Option.String('--base-ref', {
+    description: 'Compute diff from git using this base ref (e.g. origin/main). Skips PR comment posting.',
+    required: false,
+  })
+
   private dryRun = Option.Boolean('--dry-run', false, {
     description: 'Skip posting the PR comment. The report is still written to stdout and validation_report.md.',
   })
@@ -339,44 +344,59 @@ export class AutotestCommand extends BaseCommand {
       return 1
     }
 
-    // Resolve PR info from --pr flag or CI environment.
+    // Resolve diff — either from git (--base-ref), GitHub API (--pr), or CI auto-detection.
     let prInfo: PrInfo | undefined
-
-    if (this.pr) {
-      const parsed = parseGitHubPrUrl(this.pr)
-      if (!parsed) {
-        this.context.stderr.write(`Error: Invalid GitHub PR URL: ${this.pr}\n`)
-
-        return 1
-      }
-      prInfo = {...parsed, provider: 'github'}
-    } else {
-      const diffContext = detectDiffContext()
-      if (!diffContext?.pr) {
-        this.context.stderr.write(
-          'Error: Could not detect a pull request or merge request context.\n' +
-            'Supported CI providers:\n' +
-            '  - GitHub Actions: requires a pull_request or pull_request_target trigger\n' +
-            '  - GitLab CI: requires a merge request pipeline (merge_request_event)\n' +
-            '\nFor local testing, use --pr <github-pr-url>\n'
-        )
-
-        return 1
-      }
-      prInfo = diffContext.pr
-      this.context.stderr.write(`Detected ${diffContext.providerName} (PR #${prInfo.number})…\n`)
-    }
-
-    // Fetch diff via API — no git history needed.
-    this.context.stderr.write(`Fetching diff for ${prInfo.repo}#${prInfo.number}…\n`)
     let diff: string
-    try {
-      diff = await this.fetchDiff(prInfo)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      this.context.stderr.write(`Error: Failed to fetch diff: ${message}\n`)
 
-      return 1
+    if (this.baseRef) {
+      this.context.stderr.write(`Computing diff from git: HEAD vs ${this.baseRef}…\n`)
+      const {execSync} = await import('child_process')
+      try {
+        diff = execSync(`git diff ${this.baseRef}...HEAD`, {
+          cwd: process.env.AUTOTEST_REPO_DIR || process.cwd(),
+          maxBuffer: MAX_DIFF_LENGTH * 2,
+        }).toString()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.context.stderr.write(`Error: Failed to compute git diff: ${message}\n`)
+
+        return 1
+      }
+    } else {
+      if (this.pr) {
+        const parsed = parseGitHubPrUrl(this.pr)
+        if (!parsed) {
+          this.context.stderr.write(`Error: Invalid GitHub PR URL: ${this.pr}\n`)
+
+          return 1
+        }
+        prInfo = {...parsed, provider: 'github'}
+      } else {
+        const diffContext = detectDiffContext()
+        if (!diffContext?.pr) {
+          this.context.stderr.write(
+            'Error: Could not detect a pull request or merge request context.\n' +
+              'Supported CI providers:\n' +
+              '  - GitHub Actions: requires a pull_request or pull_request_target trigger\n' +
+              '  - GitLab CI: requires a merge request pipeline (merge_request_event)\n' +
+              '\nFor local testing, use --pr <github-pr-url>\n'
+          )
+
+          return 1
+        }
+        prInfo = diffContext.pr
+        this.context.stderr.write(`Detected ${diffContext.providerName} (PR #${prInfo.number})…\n`)
+      }
+
+      this.context.stderr.write(`Fetching diff for ${prInfo.repo}#${prInfo.number}…\n`)
+      try {
+        diff = await this.fetchDiff(prInfo)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.context.stderr.write(`Error: Failed to fetch diff: ${message}\n`)
+
+        return 1
+      }
     }
 
     if (!diff) {
