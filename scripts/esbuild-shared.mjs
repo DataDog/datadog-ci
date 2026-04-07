@@ -5,13 +5,6 @@ import path from 'path'
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')
 
 /**
- * esbuild plugin that appends license attributions for bundled packages that have a LICENSE
- * file but no inline license comment (which esbuild's `legalComments: 'linked'` picks up
- * automatically). Runs in the `onEnd` hook so the base .LEGAL.txt already exists.
- *
- * @returns {import('esbuild').Plugin}
- */
-/**
  * esbuild plugin that resolves `@datadog/datadog-ci-plugin-<scope>/commands/<cmd>` imports
  * to their TypeScript source files (`packages/plugin-<scope>/src/commands/<cmd>.ts`).
  *
@@ -36,6 +29,13 @@ export const resolvePluginCommandsPlugin = () => ({
   },
 })
 
+/**
+ * esbuild plugin that appends license attributions for bundled packages that have a LICENSE
+ * file but no inline license comment (which esbuild's `legalComments: 'linked'` picks up
+ * automatically). Runs in the `onEnd` hook so the base .LEGAL.txt already exists.
+ *
+ * @returns {import('esbuild').Plugin}
+ */
 export const appendMissingLicensesPlugin = () => ({
   name: 'append-missing-licenses',
   setup: (build) => {
