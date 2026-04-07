@@ -20,7 +20,7 @@ export const getApiHelper = (
 ): ((scaRequest: ScaRequest) => Promise<RequestResponse>) => {
   /**
    * function used to marshall and send the data
-   * @param request - the AXIOS element used to send the request
+   * @param request - the request function used to send the request
    */
   const uploadSBomPayload =
     (request: (args: RequestConfig) => Promise<RequestResponse>) => async (scaPayload: ScaRequest) => {
