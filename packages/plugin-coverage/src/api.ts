@@ -2,7 +2,7 @@ import fs from 'fs'
 import {createGzip, gzipSync} from 'zlib'
 
 import type {Payload} from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -17,7 +17,7 @@ export const intakeUrl = getIntakeUrl('ci-intake')
 export const apiUrl = getApiUrl()
 
 export const uploadCodeCoverageReport =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (payload: Payload) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse>) => async (payload: Payload) => {
     const form = new FormData()
 
     const event: Record<string, any> = {

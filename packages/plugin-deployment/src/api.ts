@@ -4,12 +4,12 @@ import type {
   GateEvaluationRequestResponse,
   GateEvaluationStatusResponse,
 } from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 const requestGateEvaluation =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationRequestResponse>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<GateEvaluationRequestResponse>>) =>
   async (evaluationRequest: GateEvaluationRequest) => {
     const payload = {
       data: {
@@ -38,7 +38,7 @@ const requestGateEvaluation =
   }
 
 const getGateEvaluationResult =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationStatusResponse>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse<GateEvaluationStatusResponse>>) =>
   async (evaluationId: string) => {
     return request({
       method: 'GET',

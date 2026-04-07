@@ -1,4 +1,4 @@
-import type {AxiosPromise} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 export interface GateEvaluationRequest {
   service: string
@@ -42,6 +42,6 @@ export interface GateEvaluationStatusResponse {
 }
 
 export interface APIHelper {
-  requestGateEvaluation(request: GateEvaluationRequest): AxiosPromise<GateEvaluationRequestResponse>
-  getGateEvaluationResult(evaluationId: string): AxiosPromise<GateEvaluationStatusResponse>
+  requestGateEvaluation(request: GateEvaluationRequest): Promise<RequestResponse<GateEvaluationRequestResponse>>
+  getGateEvaluationResult(evaluationId: string): Promise<RequestResponse<GateEvaluationStatusResponse>>
 }

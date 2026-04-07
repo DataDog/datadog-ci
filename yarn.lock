@@ -2030,7 +2030,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-coverage@workspace:packages/plugin-coverage"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
@@ -2045,7 +2044,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
   peerDependencies:
@@ -2057,7 +2055,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
   peerDependencies:
@@ -2070,7 +2067,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
   dependencies:
     "@types/uuid": "npm:9.0.8"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     uuid: "npm:9.0.1"
   peerDependencies:
@@ -2082,7 +2078,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
@@ -2127,7 +2122,6 @@ __metadata:
     "@types/uuid": "npm:9.0.8"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
@@ -2145,7 +2139,6 @@ __metadata:
     "@types/jest": "npm:29.5.3"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     packageurl-js: "npm:2.0.1"
     simple-git: "npm:3.33.0"
@@ -2203,7 +2196,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-terraform@workspace:packages/plugin-terraform"
   dependencies:
     "@types/jest": "npm:29.5.3"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"

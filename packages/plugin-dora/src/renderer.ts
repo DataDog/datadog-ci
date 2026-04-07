@@ -1,5 +1,5 @@
 import type {DeploymentEvent, GitInfo} from './interfaces'
-import type {AxiosError} from 'axios'
+import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 const ICONS = {
   FAILED: '❌',
@@ -7,7 +7,7 @@ const ICONS = {
   WARNING: '⚠️',
 }
 
-export const renderFailedRequest = (service: string, error: AxiosError) =>
+export const renderFailedRequest = (service: string, error: RequestError) =>
   `${ICONS.FAILED} Failed to send DORA deployment event for service: ${service}: ` +
   (error.response ? JSON.stringify(error.response.data, undefined, 2) : '')
 

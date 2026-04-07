@@ -1,6 +1,6 @@
 import type {DiffData} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {AxiosPromise, AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 export type FileFixes = Record<string, {lines: number; bitmap: string}>
 
@@ -24,5 +24,5 @@ export interface RepoFile {
 }
 
 export interface APIHelper {
-  uploadCodeCoverageReport(codeCoverageReport: Payload): AxiosPromise<AxiosResponse>
+  uploadCodeCoverageReport(codeCoverageReport: Payload): Promise<RequestResponse>
 }

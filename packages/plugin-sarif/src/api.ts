@@ -2,7 +2,7 @@ import fs from 'fs'
 import {createGzip} from 'zlib'
 
 import type {Payload} from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 import type {Writable} from 'stream'
 
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -16,7 +16,7 @@ import {renderUpload} from './renderer'
 const maxBodyLength = Infinity
 
 export const uploadSarifReport =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse>) =>
   async (sarifReport: Payload, write: Writable['write']) => {
     const form = new FormData()
     write(renderUpload(sarifReport))

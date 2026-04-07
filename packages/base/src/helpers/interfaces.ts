@@ -1,4 +1,3 @@
-import type {RequestConfig, RequestResponse} from './request'
 import type {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -122,12 +121,8 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-// Stage 1 compat: permissive enough for both RequestConfig and AxiosRequestConfig callers
+// Permissive until plugin-synthetics is migrated (Stage 3)
 export type RequestBuilder = (args: any) => Promise<any>
-
-// Backward-compat aliases for downstream plugins (removed in Stage 2)
-export type {RequestConfig as AxiosRequestConfig}
-export type AxiosPromise<T = any> = Promise<RequestResponse<T>>
 
 /**
  * A subset of Clipanion's {@link BaseContext}.

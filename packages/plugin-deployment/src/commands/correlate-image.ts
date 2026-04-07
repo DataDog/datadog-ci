@@ -4,9 +4,9 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 
 export class PluginCommand extends DeploymentCorrelateImageCommand {
@@ -98,7 +98,7 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
   private handleError(error: Error) {
     this.context.stderr.write(
       `${chalk.red.bold('[ERROR]')} Could not send deployment correlation data: ${
-        isAxiosError(error)
+        isRequestError(error)
           ? JSON.stringify(
               {
                 status: error.response?.status,

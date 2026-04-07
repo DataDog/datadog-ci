@@ -40,8 +40,5 @@
   "dependencies": {
     "chalk": "3.0.0",
     "simple-git": "3.33.0"
-  },
-  "devDependencies": {
-    "axios": "1.13.5"
   }
 }

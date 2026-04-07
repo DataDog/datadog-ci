@@ -1,5 +1,5 @@
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {AxiosPromise} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 import type {Writable} from 'stream'
 
 export interface Payload {
@@ -41,5 +41,8 @@ export interface RuleEvaluation {
 }
 
 export interface APIHelper {
-  evaluateGateRules(evaluateRequest: Payload, write: Writable['write']): AxiosPromise<EvaluationResponsePayload>
+  evaluateGateRules(
+    evaluateRequest: Payload,
+    write: Writable['write']
+  ): Promise<RequestResponse<EvaluationResponsePayload>>
 }
