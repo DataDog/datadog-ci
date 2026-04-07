@@ -40,7 +40,7 @@ yarn dlx @datadog/datadog-ci@v5 [scope]
 ```
 
 > [!WARNING]
-> Datadog recommends pinning an exact version of `datadog-ci` to avoid being impacted by breaking changes released in major versions of datadog-ci,
+> Datadog recommends pinning an exact version of `datadog-ci` to avoid being impacted by breaking changes introduced in major versions of datadog-ci,
 > or being vulnerable to supply chain attacks.
 
 ## Installing a plugin
@@ -61,7 +61,7 @@ datadog-ci plugin install <scope>
 
 For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed by default.
 
-**Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>` and disabling auto-installation with `DISABLE_PLUGIN_AUTO_INSTALL=1`.**
+**Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>`. To disable auto-installation, set `DISABLE_PLUGIN_AUTO_INSTALL=1`.**
 
 ## Usage
 
