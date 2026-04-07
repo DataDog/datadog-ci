@@ -696,7 +696,9 @@ export class AutotestCommand extends BaseCommand {
       options: {
         mcpServers,
         cwd: logDir,
-        settingSources: ['project'],
+        settingSources: process.env.AUTOTEST_SETTING_SOURCES
+          ? process.env.AUTOTEST_SETTING_SOURCES.split(',')
+          : ['project'],
         allowedTools: ['*'],
         permissionMode: 'bypassPermissions',
         systemPrompt: SYSTEM_PROMPT + (dryRun
