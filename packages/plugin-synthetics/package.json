@@ -24,7 +24,7 @@
     "dist/bundle.js",
     "dist/bundle.js.map",
     "dist/bundle.js.LEGAL.txt",
-    "dist/**/*.d.ts",
+    "dist/index.d.ts",
     "README",
     "LICENSE"
   ],
@@ -34,7 +34,7 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist && yarn package:bundle:npm"
+    "prepack": "yarn package:clean-dist && yarn package:bundle:npm && yarn package:bundle:npm-dts"
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",

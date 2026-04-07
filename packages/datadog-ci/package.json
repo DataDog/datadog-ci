@@ -37,7 +37,7 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist && yarn bundle:npm"
+    "prepack": "yarn package:clean-dist && yarn bundle:npm && yarn package:bundle:npm-dts"
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",

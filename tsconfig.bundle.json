@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  // Used only for declaration bundling during prepack.
+  // This clears the repo's development-only conditions so workspace package imports
+  // resolve through their published declaration entrypoints instead of back to `src/`.
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2020",
+    "skipLibCheck": true,
+    "customConditions": [],
+    "baseUrl": ".",
+    "paths": {
+      "axios": ["./node_modules/axios/index.d.ts"]
+    }
+  }
+}

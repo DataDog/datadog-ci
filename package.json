@@ -26,6 +26,7 @@
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "package:build": "yarn tsc:build $INIT_CWD",
     "package:bundle:npm": "cd $INIT_CWD && node ../../scripts/esbuild-plugin.mjs",
+    "package:bundle:npm-dts": "cd $INIT_CWD && node ../../scripts/bundle-dts.mjs",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
     "package:clean-dist": "cd $INIT_CWD && rimraf --glob 'dist/**/__tests__'",
     "package:lint": "eslint --cache --quiet $INIT_CWD/src/**/*.ts",
@@ -65,6 +66,7 @@
     "syncpack": "14.3.0",
     "ts-jest": "29.1.1",
     "ts-json-schema-generator": "2.4.0",
+    "tsdown": "^0.21.7",
     "tsx": "4.20.6",
     "typescript": "5.1.6",
     "typescript-eslint": "8.42.0"
@@ -84,7 +86,7 @@
     "@yao-pkg/pkg-fetch@npm:3.5.24": "patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch"
   },
   "volta": {
-    "node": "20.11.0",
+    "node": "22.22.2",
     "yarn": "4.10.3"
   },
   "workspaces": [
