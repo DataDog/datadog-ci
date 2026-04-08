@@ -3,6 +3,8 @@ import http from 'http'
 import type {RequestConfig} from '../request'
 import type {AddressInfo} from 'net'
 
+import {EnvHttpProxyAgent} from 'undici'
+
 jest.mock('../request', () => ({
   ...jest.requireActual('../request'),
   httpRequest: jest.fn(),
@@ -108,13 +110,13 @@ describe('utils', () => {
     })
 
     describe('proxy configuration', () => {
-      test('should have a dispatcher by default', async () => {
+      test('should use EnvHttpProxyAgent as dispatcher when no proxy is configured', async () => {
         const request = ciUtils.getRequestBuilder({
           apiKey: 'apiKey',
           baseUrl: 'http://fake-base.url/',
         })
         await request({})
-        expect(capturedConfig!.dispatcher).toBeDefined()
+        expect(capturedConfig!.dispatcher).toBeInstanceOf(EnvHttpProxyAgent)
       })
 
       test('should add proxy configuration when explicitly defined', async () => {
@@ -284,9 +286,9 @@ describe('utils', () => {
       }
     })
 
-    // Proxy routing for plain HTTP is not testable here without TLS certs — undici
-    // ProxyAgent routes HTTPS via CONNECT tunnel. The unit tests in 'getRequestBuilder'
-    // above verify that proxy options correctly set the dispatcher on the request config.
+    // undici's ProxyAgent only tunnels HTTPS (via CONNECT), not plain HTTP, so
+    // end-to-end proxy routing isn't testable here without TLS certs.
+    // The unit tests above verify the dispatcher is set correctly.
   })
 
   describe('filterAndFormatGithubRemote', () => {
