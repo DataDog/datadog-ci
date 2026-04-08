@@ -146,7 +146,10 @@ jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
 jest.spyOn(helpersFlareModule, 'validateCliVersion').mockResolvedValue()
 
 // Misc
-jest.mock('axios')
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
 jest.mock('jszip')
 jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})

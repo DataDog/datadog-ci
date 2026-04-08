@@ -1,9 +1,14 @@
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
+
 import type {APIHelper} from '../api'
 import type {InitialSummary} from '../utils/public'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {default as axios} from 'axios'
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
 import {apiConstructor} from '../api'
 import {CiError} from '../errors'
@@ -80,11 +85,10 @@ describe('getTestsToTrigger', () => {
   }
 
   beforeEach(() => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((e: any) => {
       const publicId = e.url.slice(18)
       if (fakeTests[publicId]) {
-        return {data: fakeTests[publicId]}
+        return Promise.resolve({data: fakeTests[publicId], status: 200, statusText: 'OK', headers: {}, config: e})
       }
 
       throw getAxiosError(404, {errors: ['Not found']})
@@ -191,8 +195,7 @@ describe('getTestAndOverrideConfig', () => {
   const api = apiConstructor(apiConfiguration)
 
   test('Forbidden error when getting a test', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((_e: any) => {
       throw getAxiosError(403, {message: 'Forbidden'})
     }) as any)
 
@@ -204,10 +207,13 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Passes when public ID is valid', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      return {data: {subtype: 'http', public_id: '123-456-789'}}
-    }) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: {subtype: 'http', public_id: '123-456-789'},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
@@ -225,13 +231,18 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Version not found error when version is provided', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((e: any) => {
       if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
         throw getAxiosError(404, {errors: ['Version not found']})
       }
 
-      return {data: {subtype: 'http', public_id: '123-456-789'}}
+      return Promise.resolve({
+        data: {subtype: 'http', public_id: '123-456-789'},
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: e,
+      })
     }) as any)
 
     const triggerConfig = {id: '123-456-789', version: 50}
@@ -242,13 +253,12 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Passes when version exists and is provided', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
-        return {data: {}}
-      }
+    jest.mocked(requestModule.httpRequest).mockImplementation(((e: any) => {
+      const data = e.url?.includes('/synthetics/tests/123-456-789/version_history/50')
+        ? {}
+        : {subtype: 'http', public_id: '123-456-789'}
 
-      return {data: {subtype: 'http', public_id: '123-456-789'}}
+      return Promise.resolve({data, status: 200, statusText: 'OK', headers: {}, config: e})
     }) as any)
 
     const triggerConfig = {id: '123-456-789', version: 50}
@@ -258,10 +268,13 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Passes when the tunnel is enabled for HTTP test', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      return {data: {subtype: 'http', public_id: '123-456-789'}}
-    }) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: {subtype: 'http', public_id: '123-456-789'},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
@@ -270,10 +283,13 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Passes when the tunnel is enabled for Browser test', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      return {data: {type: 'browser', public_id: '123-456-789'}}
-    }) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: {type: 'browser', public_id: '123-456-789'},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
@@ -282,17 +298,18 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Passes when the tunnel is enabled for Multi step test with HTTP steps only', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      return {
-        data: {
-          type: 'api',
-          subtype: 'multi',
-          config: {steps: [{subtype: 'http'}, {subtype: 'http'}]},
-          public_id: '123-456-789',
-        },
-      }
-    }) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: {
+        type: 'api',
+        subtype: 'multi',
+        config: {steps: [{subtype: 'http'}, {subtype: 'http'}]},
+        public_id: '123-456-789',
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
@@ -308,10 +325,13 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Fails when the tunnel is enabled for an unsupported test type', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      return {data: {subtype: 'grpc', type: 'api', public_id: '123-456-789'}}
-    }) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: {subtype: 'grpc', type: 'api', public_id: '123-456-789'},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).rejects.toThrow(
@@ -320,17 +340,18 @@ describe('getTestAndOverrideConfig', () => {
   })
 
   test('Fails when the tunnel is enabled for unsupported steps in a Multi step test', async () => {
-    const axiosMock = jest.spyOn(axios, 'create')
-    axiosMock.mockImplementation((() => (e: any) => {
-      return {
-        data: {
-          type: 'api',
-          subtype: 'multi',
-          config: {steps: [{subtype: 'dns'}, {subtype: 'ssl'}, {subtype: 'http'}]},
-          public_id: '123-456-789',
-        },
-      }
-    }) as any)
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      data: {
+        type: 'api',
+        subtype: 'multi',
+        config: {steps: [{subtype: 'dns'}, {subtype: 'ssl'}, {subtype: 'http'}]},
+        public_id: '123-456-789',
+      },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as any)
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).rejects.toThrow(

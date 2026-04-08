@@ -3,7 +3,6 @@ import fs from 'fs'
 import {mkdtemp} from 'fs/promises'
 import os from 'os'
 
-import type {AxiosResponse} from 'axios'
 import type * as simpleGit from 'simple-git'
 
 import FormData from 'form-data'
@@ -13,6 +12,7 @@ import upath from 'upath'
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import type {RequestBuilder} from '../../helpers/interfaces'
 import type {Logger} from '../../helpers/logger'
+import type {RequestResponse} from '../../helpers/request'
 import {retryRequest} from '../../helpers/retry'
 
 const API_TIMEOUT = 15000
@@ -379,7 +379,7 @@ export const uploadPackfile = async (
 }
 
 // runRequest will run the passed request, with retries of retriable errors + logging of any retry attempt.
-const runRequest = async <T>(log: Logger, reqName: string, request: () => Promise<AxiosResponse<T>>) => {
+const runRequest = async <T>(log: Logger, reqName: string, request: () => Promise<RequestResponse<T>>) => {
   return retryRequest(request, {
     retries: 2,
     onRetry: (e, attempt) => {
