@@ -31,7 +31,6 @@ export interface RequestResponse<T = any> {
 
 export class RequestError extends Error {
   public config: RequestConfig
-  public isAxiosError = true as const
   public isRequestError = true as const
   public response?: {data: any; status: number; statusText: string}
 
