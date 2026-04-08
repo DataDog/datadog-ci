@@ -20,7 +20,8 @@ import type {
   TestSearchResult,
   ServerTrigger,
 } from './interfaces'
-import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
@@ -34,10 +35,6 @@ const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
 // TODO SYNTH-13709: Use the `Retry-After` header.
 const DELAY_BETWEEN_429_RETRIES = 5000 // In ms
-
-interface BackendError {
-  errors: string[]
-}
 
 export class EndpointError extends Error {
   constructor(
@@ -55,8 +52,8 @@ const PUBLIC_ID_REGEX = `[${LOWER_UNAMBIGUOUS_CHARS}]{3}-[${LOWER_UNAMBIGUOUS_CH
 /**
  * Extracts the public IDs from an error message like `Cannot write tests or results (test ids: ['aaa-aaa-aaa', 'bbb-bbb-bbb'])`.
  */
-export const extractUnauthorizedTestPublicIds = (requestError: AxiosError<BackendError>): Set<string> | undefined => {
-  const unauthorizedMessage = requestError.response?.data?.errors?.find((error) =>
+export const extractUnauthorizedTestPublicIds = (requestError: RequestError): Set<string> | undefined => {
+  const unauthorizedMessage = requestError.response?.data?.errors?.find((error: string) =>
     error.includes('Cannot write tests or results (test ids:')
   )
   if (!unauthorizedMessage) {
@@ -71,7 +68,7 @@ export const extractUnauthorizedTestPublicIds = (requestError: AxiosError<Backen
   return new Set(matchResult)
 }
 
-export const formatBackendErrors = (requestError: AxiosError<BackendError>, scopeName?: string) => {
+export const formatBackendErrors = (requestError: RequestError, scopeName?: string) => {
   if (requestError.response?.data?.errors) {
     const serverHead = `query on ${requestError.config?.baseURL}${requestError.config?.url} returned:`
     const errors = requestError.response.data.errors

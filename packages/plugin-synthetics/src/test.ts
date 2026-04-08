@@ -99,7 +99,7 @@ export const getTestsFromSearchQuery = async (
 
   const testSearchResults = await api.searchTests(testSearchQuery)
 
-  return testSearchResults.tests.map((test) => ({
+  return testSearchResults.tests.map((test: {public_id: string}) => ({
     testOverrides: defaultTestOverrides ?? {},
     id: test.public_id,
     suite: `Query: ${testSearchQuery}`,
