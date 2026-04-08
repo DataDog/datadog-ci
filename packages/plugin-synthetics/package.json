@@ -18,12 +18,19 @@
   "types": "dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/bundle.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/bundle.js"
+    },
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
   },
   "files": [
-    "dist/*.js",
-    "dist/*.js.map",
-    "dist/*.js.LEGAL.txt",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.js.LEGAL.txt",
     "dist/index.d.ts",
     "README",
     "LICENSE"

@@ -19,12 +19,16 @@
   "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/bundle.js"
+    ".": "./dist/bundle.js",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
   },
   "files": [
-    "dist/*.js",
-    "dist/*.js.map",
-    "dist/*.js.LEGAL.txt",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.js.LEGAL.txt",
     "dist/**/*.d.ts",
     "README",
     "LICENSE"

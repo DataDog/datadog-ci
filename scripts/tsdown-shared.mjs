@@ -152,6 +152,7 @@ export const createCliRuntimePlugins = ({pluginCommandsByScope}) => {
 
 export const createMainModuleBanner = () =>
   [
+    `#!/usr/bin/env node`,
     `import {fileURLToPath} from 'node:url';`,
     `import {realpathSync} from 'node:fs';`,
     `const __IS_MAIN_MODULE__ = !!process.argv[1] && (() => {`,

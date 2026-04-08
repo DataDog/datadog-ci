@@ -74,6 +74,7 @@ const assertNoExportCollisions = async () => {
 }
 
 const temporaryEntryPath = path.join(packageDir, 'dist', '.bundle-entry.js')
+const commandWrapperPaths = commands.map((command) => path.join(packageDir, 'dist', 'commands', `${command}.js`))
 const virtualEntryLines = [
   ...(hasIndex
     ? [`Object.assign(exports, require(${JSON.stringify(path.join(packageDir, 'dist', 'index.js'))}));`]
@@ -155,6 +156,15 @@ try {
     )
   )
 
+  await Promise.all(
+    commandWrapperPaths.map((commandWrapperPath, index) =>
+      writeFile(
+        commandWrapperPath,
+        `"use strict"\nmodule.exports = require("../bundle.js")[${JSON.stringify(commands[index])}]\n`
+      )
+    )
+  )
+
   await writeLegalFiles([outputPaths[0]], mainBundles)
   if (outputPaths.length > 1) {
     await writeLegalFiles(outputPaths.slice(1), standaloneBundles)
@@ -170,6 +180,7 @@ try {
     )
   )
   emittedArtifacts.add(path.join(packageDir, 'dist', 'bundle.js.LEGAL.txt'))
+  commandWrapperPaths.forEach((commandWrapperPath) => emittedArtifacts.add(commandWrapperPath))
   for (const outputPath of outputPaths.slice(1)) {
     emittedArtifacts.add(`${outputPath}.LEGAL.txt`)
   }

@@ -18,18 +18,19 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./dist/bundle.js",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    },
     "./functions/*": {
       "development": "./src/functions/*.ts",
       "default": "./dist/functions/*.js"
     }
   },
   "files": [
-    "dist/*.js",
-    "dist/*.js.map",
-    "dist/*.js.LEGAL.txt",
-    "dist/functions/*.js",
-    "dist/functions/*.js.map",
-    "dist/functions/*.js.LEGAL.txt",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.js.LEGAL.txt",
     "dist/**/*.d.ts",
     "README",
     "LICENSE"

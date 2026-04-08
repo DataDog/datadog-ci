@@ -1,4 +1,4 @@
-import {readFile} from 'fs/promises'
+import {readFile, readdir, unlink, writeFile} from 'fs/promises'
 // eslint-disable-next-line no-restricted-imports
 import path from 'path'
 
@@ -9,6 +9,7 @@ const BUNDLE_TSCONFIG = path.join(REPO_ROOT, 'tsconfig.bundle.json')
 const AXIOS_DTS_ENTRY = path.join(REPO_ROOT, 'node_modules', 'axios', 'index.d.ts')
 const cwd = process.cwd()
 const packageJson = JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8'))
+const packageName = packageJson.name
 const out = packageJson.types ?? packageJson.typings
 
 if (!out) {
@@ -19,13 +20,44 @@ if (!out) {
 const absOut = path.resolve(cwd, out)
 const outDir = path.dirname(absOut)
 const outBaseName = path.basename(absOut, '.d.ts')
+const sourceTypesEntry = `./${path.basename(absOut)}`
+const srcCommandsDir = path.join(cwd, 'src', 'commands')
+
+const toTypeAliasName = (entryName) => `__subpath_${entryName.replaceAll(/[^a-zA-Z0-9]+/g, '_')}`
+
+const listCommandNames = async () => {
+  try {
+    const files = await readdir(srcCommandsDir)
+
+    return files.filter((fileName) => fileName.endsWith('.ts') && !fileName.endsWith('.d.ts')).map((fileName) => fileName.slice(0, -3))
+  } catch {
+    return []
+  }
+}
+
+const commandNames = await listCommandNames()
+const declarationEntryPath = path.join(outDir, '.bundle-entry.d.ts')
+
+if (commandNames.length > 0) {
+  await writeFile(
+    declarationEntryPath,
+    [
+      `export * from ${JSON.stringify(sourceTypesEntry)}`,
+      ...commandNames.map(
+        (commandName) =>
+          `export {PluginCommand as ${toTypeAliasName(commandName)}} from ${JSON.stringify(`./commands/${commandName}`)}`
+      ),
+      '',
+    ].join('\n')
+  )
+}
 
 // We bundle from the already-emitted `.d.ts` surface, not from source files.
 // That keeps this step focused on the package publish output while still letting tsdown
 // inline selected dependency types through rolldown-plugin-dts.
 await build({
   entry: {
-    [outBaseName]: absOut,
+    [outBaseName]: commandNames.length > 0 ? declarationEntryPath : absOut,
   },
   alias: {
     // Axios publishes separate ESM and CJS declaration entrypoints. The default resolver
@@ -55,3 +87,34 @@ await build({
     neverBundle: [/\/package\.json$/],
   },
 })
+
+if (commandNames.length > 0) {
+  const ambientSubpathModules = commandNames
+    .map(
+      (commandName) => `declare module ${JSON.stringify(`${packageName}/commands/${commandName}`)} {
+  export {${toTypeAliasName(commandName)} as PluginCommand} from ${JSON.stringify(packageName)}
+}
+`
+    )
+    .join('\n')
+
+  const bundledTypes = await readFile(absOut, 'utf8')
+  await writeFile(absOut, `${bundledTypes.trimEnd()}\n\n${ambientSubpathModules}`)
+
+  const removeNestedDeclarations = async (dir) => {
+    const entries = await readdir(dir, {withFileTypes: true})
+    for (const entry of entries) {
+      const absolutePath = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        await removeNestedDeclarations(absolutePath)
+        continue
+      }
+
+      if (absolutePath.endsWith('.d.ts') && absolutePath !== absOut) {
+        await unlink(absolutePath)
+      }
+    }
+  }
+
+  await removeNestedDeclarations(outDir)
+}

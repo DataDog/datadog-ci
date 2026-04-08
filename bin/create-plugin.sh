@@ -63,12 +63,16 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
   "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/bundle.js"
+    ".": "./dist/bundle.js",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
   },
   "files": [
-    "dist/bundle.js",
-    "dist/bundle.js.map",
-    "dist/bundle.js.LEGAL.txt",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.js.LEGAL.txt",
     "dist/**/*.d.ts",
     "README",
     "LICENSE"
@@ -79,7 +83,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist && yarn package:bundle:npm"
+    "prepack": "yarn package:clean && yarn package:build && yarn package:clean-dist && yarn package:bundle:npm"
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*"

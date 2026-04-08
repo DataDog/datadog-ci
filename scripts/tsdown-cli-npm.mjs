@@ -1,3 +1,6 @@
+import {unlink, writeFile} from 'node:fs/promises'
+import path from 'node:path'
+
 import chalk from 'chalk'
 import {build} from 'tsdown'
 
@@ -15,12 +18,23 @@ import {
 
 const packageDir = `${REPO_ROOT}/packages/datadog-ci`
 const outputPath = `${packageDir}/dist/bundle.mjs`
+const temporaryEntryPath = path.join(packageDir, 'dist', '.bundle-entry.mjs')
 
 try {
+  await writeFile(
+    temporaryEntryPath,
+    [
+      `import cliModule from './cli.js'`,
+      `export const {gitMetadata, utils, version, BETA_COMMANDS, cli} = cliModule`,
+      `export default cliModule`,
+      '',
+    ].join('\n')
+  )
+
   const bundles = await build({
     cwd: packageDir,
     entry: {
-      bundle: `${packageDir}/dist/cli.js`,
+      bundle: temporaryEntryPath,
     },
     outDir: `${packageDir}/dist`,
     format: ['esm'],
@@ -52,4 +66,10 @@ try {
 } catch (error) {
   console.error(chalk.red('npm bundle failed:'), error)
   process.exit(1)
+} finally {
+  try {
+    await unlink(temporaryEntryPath)
+  } catch {
+    // The wrapper may not exist if the build failed before it was written.
+  }
 }
