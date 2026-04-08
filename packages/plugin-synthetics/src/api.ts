@@ -23,8 +23,8 @@ import type {
 import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-import {isAxiosError} from 'axios'
 
 import {CriticalError} from './errors'
 import {MAX_TESTS_TO_TRIGGER} from './test'
@@ -422,7 +422,7 @@ export const determineRetryDelay = (
 const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
 
 export const getErrorHttpStatus = (error: Error): number | undefined =>
-  isEndpointError(error) ? error.status : isAxiosError(error) ? error.response?.status : undefined
+  isEndpointError(error) ? error.status : isRequestError(error) ? error.response?.status : undefined
 
 export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
 
