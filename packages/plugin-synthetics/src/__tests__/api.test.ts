@@ -7,12 +7,11 @@ import {createServer} from 'http'
 
 import type {PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
-import type {AxiosResponse} from 'axios'
 import type {AddressInfo} from 'net'
 
 import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
-import {AxiosError} from 'axios'
+import {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
@@ -236,7 +235,7 @@ describe('dd-api', () => {
     test.each(cases)(
       'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
       async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
-        const serverError = new AxiosError('Server Error')
+        const serverError = new RequestError('Server Error', {baseURL: '', url: ''})
 
         const requestMock = jest.mocked(requestModule.httpRequest)
         requestMock.mockImplementation(() => {
@@ -244,7 +243,7 @@ describe('dd-api', () => {
         })
 
         {
-          serverError.response = {status: 404} as AxiosResponse
+          serverError.response = {data: undefined, status: 404, statusText: ''}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -256,7 +255,7 @@ describe('dd-api', () => {
         requestMock.mockClear()
 
         {
-          serverError.response = {status: 429} as AxiosResponse
+          serverError.response = {data: undefined, status: 429, statusText: ''}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -268,7 +267,7 @@ describe('dd-api', () => {
         requestMock.mockClear()
 
         {
-          serverError.response = {status: 502} as AxiosResponse
+          serverError.response = {data: undefined, status: 502, statusText: ''}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
