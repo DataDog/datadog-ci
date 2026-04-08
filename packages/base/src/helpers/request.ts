@@ -1,19 +1,22 @@
 import {PassThrough} from 'stream'
 
 import type {Readable} from 'stream'
+import type {Dispatcher} from 'undici'
 
 import {EnvHttpProxyAgent, ProxyAgent, fetch} from 'undici'
 
 export interface RequestConfig {
   baseURL?: string
-  data?: any
-  dispatcher?: any // undici Dispatcher — typed as any to avoid @types/node version conflict
-  headers?: any
+  data?: unknown
+  dispatcher?: Dispatcher
+  headers?: Record<string, string | null | undefined>
   maxBodyLength?: number // accepted for compat, ignored (no limit with fetch)
   maxContentLength?: number // accepted for compat, ignored (no limit with fetch)
   method?: string
-  params?: any
-  paramsSerializer?: any
+  params?: Record<string, unknown>
+  paramsSerializer?:
+    | ((params: Record<string, unknown>) => string)
+    | {serialize: (params: Record<string, unknown>) => string}
   timeout?: number
   url?: string
 }
@@ -76,7 +79,7 @@ const resolveUrl = (config: RequestConfig): string => {
 
   if (params) {
     const serializer = typeof paramsSerializer === 'function' ? paramsSerializer : paramsSerializer?.serialize
-    const qs = serializer ? serializer(params) : new URLSearchParams(params).toString()
+    const qs = serializer ? serializer(params) : new URLSearchParams(params as Record<string, string>).toString()
     const separator = resolved.includes('?') ? '&' : '?'
     resolved = `${resolved}${separator}${qs}`
   }
@@ -84,7 +87,10 @@ const resolveUrl = (config: RequestConfig): string => {
   return resolved
 }
 
-const serializeBody = (data: unknown, headers: any): {body: any; headers: any} => {
+const serializeBody = (
+  data: unknown,
+  headers: Record<string, string | null | undefined>
+): {body: unknown; headers: Record<string, string | null | undefined>} => {
   if (data === undefined) {
     return {body: undefined, headers}
   }
