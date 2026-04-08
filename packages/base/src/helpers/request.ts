@@ -10,8 +10,6 @@ export interface RequestConfig {
   data?: unknown
   dispatcher?: Dispatcher
   headers?: Record<string, string | null | undefined>
-  maxBodyLength?: number // accepted for compat, ignored (no limit with fetch)
-  maxContentLength?: number // accepted for compat, ignored (no limit with fetch)
   method?: string
   params?: Record<string, unknown>
   paramsSerializer?:

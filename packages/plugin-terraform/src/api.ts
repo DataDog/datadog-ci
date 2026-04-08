@@ -7,8 +7,6 @@ import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 
-const maxBodyLength = Infinity
-
 export const intakeUrl = getIntakeUrl('ci-intake')
 export const apiUrl = getApiUrl()
 
@@ -46,7 +44,6 @@ export const uploadTerraformArtifact =
     return request({
       data: form,
       headers: form.getHeaders(),
-      maxBodyLength,
       method: 'POST',
       url: 'api/v2/ciiac',
     })

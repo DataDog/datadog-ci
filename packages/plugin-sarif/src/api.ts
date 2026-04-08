@@ -11,10 +11,6 @@ import {v4 as uuidv4} from 'uuid'
 
 import {renderUpload} from './renderer'
 
-// Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
-// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
-const maxBodyLength = Infinity
-
 export const uploadSarifReport =
   (request: (args: RequestConfig) => Promise<RequestResponse>) =>
   async (sarifReport: Payload, write: Writable['write']) => {
@@ -38,7 +34,6 @@ export const uploadSarifReport =
     return request({
       data: form,
       headers: form.getHeaders(),
-      maxBodyLength,
       method: 'POST',
       url: 'api/v2/cicodescan',
     })

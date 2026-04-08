@@ -7,8 +7,6 @@ import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {API_ENDPOINT} from './constants'
 
-const maxBodyLength = Infinity
-
 /**
  * Get the function to upload our results to the intake.
  * @param apiKey
@@ -40,7 +38,6 @@ export const getApiHelper = (
           'DD-EVP-ORIGIN-VERSION': '0.0.1',
           'DD-SOURCE': source || 'CI',
         },
-        maxBodyLength,
         method: METHOD_POST,
         url: API_ENDPOINT,
       })
