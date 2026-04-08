@@ -344,21 +344,21 @@ export class AutotestCommand extends BaseCommand {
       return 1
     }
 
-    // Resolve diff — either from git (--base-ref), GitHub API (--pr), or CI auto-detection.
+    // Resolve diff — either from a pre-computed file, git (--base-ref), GitHub API (--pr), or CI auto-detection.
     let prInfo: PrInfo | undefined
     let diff: string
 
-    if (this.baseRef) {
+    if (process.env.AUTOTEST_DIFF_FILE) {
+      const {readFileSync} = await import('fs')
+      diff = readFileSync(process.env.AUTOTEST_DIFF_FILE, 'utf8')
+      this.context.stderr.write(
+        `Reading diff from ${process.env.AUTOTEST_DIFF_FILE} (${(diff.length / 1024).toFixed(0)} KB)\n`
+      )
+    } else if (this.baseRef) {
       this.context.stderr.write(`Computing diff from git: HEAD vs ${this.baseRef}…\n`)
       const {execSync} = await import('child_process')
       const repoDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
       try {
-        // Try to deepen history so the three-dot merge-base diff works on shallow clones
-        try {
-          execSync('git fetch --deepen=200 origin', {cwd: repoDir, stdio: 'ignore'})
-        } catch {
-          // Ignore — repo may already be full or origin may be unavailable
-        }
         diff = execSync(`git diff ${this.baseRef}...HEAD`, {
           cwd: repoDir,
           maxBuffer: MAX_DIFF_LENGTH * 2,
