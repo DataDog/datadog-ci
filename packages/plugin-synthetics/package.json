@@ -43,7 +43,6 @@
     "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "axios": "1.13.5",
     "chalk": "3.0.0",
     "debug": "4.4.1",
     "deep-extend": "0.6.0",
@@ -64,6 +63,7 @@
     "@types/ssh2": "1.15.5",
     "@types/sshpk": "1.10.7",
     "@types/ws": "7.2.9",
-    "@types/xml2js": "0.4.14"
+    "@types/xml2js": "0.4.14",
+    "axios": "1.13.5"
   }
 }
