@@ -317,7 +317,7 @@ export class PluginCommand extends JunitUploadCommand {
     } catch (error) {
       this.context.stderr.write(renderFailedUpload(jUnitXML, error))
       if (error.response) {
-        // If it's an axios error
+        // If it's an HTTP error
         if (!errorCodesStopUpload.includes(error.response.status)) {
           // And a status code that should not stop the whole upload, just return
           return

@@ -143,6 +143,3 @@ export const getRequestError = (status: number, {errors, message}: {errors?: str
     {baseURL: MOCK_BASE_URL, url: 'example'},
     {data: {errors}, status, statusText: ''}
   )
-
-// Backward-compat alias for plugin tests (removed in Stage 2)
-export const getAxiosError = getRequestError

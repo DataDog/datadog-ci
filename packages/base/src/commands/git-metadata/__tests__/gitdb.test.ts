@@ -115,7 +115,7 @@ describe('gitdb', () => {
     revparse: MockParam<string, any>[]
     version: MockParam<void, simpleGit.VersionResult>[]
     execSync: MockParam<string, Buffer>[]
-    axios: MockParam<
+    httpRequest: MockParam<
       {
         url: string
         data: any
@@ -147,7 +147,7 @@ describe('gitdb', () => {
     private execSyncMetExpectations: () => void
     private httpRequestMetExpectations: () => void
 
-    private axiosCalls: {
+    private httpRequestCalls: {
       url: string
       data: string | undefined
     }[]
@@ -226,12 +226,12 @@ describe('gitdb', () => {
       this.versionMetExpectations = initMockWithParams(this.simpleGit.version, mockParams.version, true, 'version')
       this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false, 'execSync')
 
-      this.axiosCalls = []
+      this.httpRequestCalls = []
 
       // custom way of handling httpRequest
-      mockParams.axios.forEach((param) => {
+      mockParams.httpRequest.forEach((param) => {
         this.httpRequest = this.httpRequest.mockImplementationOnce(async (config: any) => {
-          this.axiosCalls.push({url: config.url, data: config.data})
+          this.httpRequestCalls.push({url: config.url, data: config.data})
           if (param.output instanceof Error) {
             throw param.output
           }
@@ -240,12 +240,12 @@ describe('gitdb', () => {
         })
       })
       this.httpRequestMetExpectations = () => {
-        expect(this.httpRequest.mock.calls).toHaveLength(mockParams.axios.length)
-        mockParams.axios.forEach((param, i) => {
+        expect(this.httpRequest.mock.calls).toHaveLength(mockParams.httpRequest.length)
+        mockParams.httpRequest.forEach((param, i) => {
           if (param.input !== undefined) {
-            expect(this.axiosCalls[i].url).toBe(param.input.url)
+            expect(this.httpRequestCalls[i].url).toBe(param.input.url)
             if (param.input.data !== undefined) {
-              const data = this.axiosCalls[i].data as string
+              const data = this.httpRequestCalls[i].data as string
               expect(JSON.parse(data)).toStrictEqual(param.input.data)
             }
           }
@@ -276,7 +276,7 @@ describe('gitdb', () => {
       revparse: [],
       version: [],
       execSync: [],
-      axios: [],
+      httpRequest: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
@@ -339,7 +339,7 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -437,7 +437,7 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -501,7 +501,7 @@ describe('gitdb', () => {
       revparse: [],
       version: [{input: undefined, output: oldGitVersion}],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -564,7 +564,7 @@ describe('gitdb', () => {
       revparse: [],
       version: [],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -685,7 +685,7 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -803,7 +803,7 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -884,7 +884,7 @@ describe('gitdb', () => {
           output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -969,7 +969,7 @@ describe('gitdb', () => {
           output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -1070,7 +1070,7 @@ describe('gitdb', () => {
           output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -1167,7 +1167,7 @@ describe('gitdb', () => {
           output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -1267,7 +1267,7 @@ describe('gitdb', () => {
       revparse: [],
       version: [],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -1372,7 +1372,7 @@ describe('gitdb', () => {
       revparse: [],
       version: [],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',
@@ -1446,7 +1446,7 @@ describe('gitdb', () => {
       revparse: [],
       version: [],
       execSync: [],
-      axios: [
+      httpRequest: [
         {
           input: {
             url: '/api/v2/git/repository/search_commits',

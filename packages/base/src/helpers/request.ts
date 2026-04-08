@@ -135,6 +135,15 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   const method = (config.method ?? 'GET').toUpperCase()
   const {body, headers} = serializeBody(config.data, config.headers ?? {})
 
+  // Strip null/undefined header values (callers pass null to explicitly unset a header)
+  const cleanHeaders: Record<string, string> = {}
+  for (const [k, v] of Object.entries(headers)) {
+    // eslint-disable-next-line no-null/no-null
+    if (v !== undefined && v !== null) {
+      cleanHeaders[k] = String(v)
+    }
+  }
+
   const fetchOptions: Record<string, any> = {
     method,
     headers,
