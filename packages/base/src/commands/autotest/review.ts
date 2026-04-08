@@ -352,7 +352,7 @@ export class AutotestCommand extends BaseCommand {
       this.context.stderr.write(`Computing diff from git: HEAD vs ${this.baseRef}…\n`)
       const {execSync} = await import('child_process')
       try {
-        diff = execSync(`git diff ${this.baseRef}...HEAD`, {
+        diff = execSync(`git diff ${this.baseRef} HEAD`, {
           cwd: process.env.AUTOTEST_REPO_DIR || process.cwd(),
           maxBuffer: MAX_DIFF_LENGTH * 2,
         }).toString()
