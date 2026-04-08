@@ -353,26 +353,16 @@ export class AutotestCommand extends BaseCommand {
       const {execSync} = await import('child_process')
       const repoDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
       try {
-        // First get the list of changed files (small output, safe for any clone depth)
-        const changedFiles = execSync(`git diff ${this.baseRef} HEAD --name-only`, {
-          cwd: repoDir,
-          maxBuffer: 1024 * 1024,
-        })
-          .toString()
-          .trim()
-          .split('\n')
-          .filter(Boolean)
-
-        if (changedFiles.length === 0) {
-          this.context.stderr.write('No changed files detected between HEAD and base ref.\n')
-          diff = ''
-        } else {
-          // Diff only the changed files — avoids buffer overflow from two-dot diffs on large repos
-          diff = execSync(`git diff ${this.baseRef} HEAD -- ${changedFiles.map((f) => `"${f}"`).join(' ')}`, {
-            cwd: repoDir,
-            maxBuffer: MAX_DIFF_LENGTH * 4,
-          }).toString()
+        // Try to deepen history so the three-dot merge-base diff works on shallow clones
+        try {
+          execSync('git fetch --deepen=200 origin', {cwd: repoDir, stdio: 'ignore'})
+        } catch {
+          // Ignore — repo may already be full or origin may be unavailable
         }
+        diff = execSync(`git diff ${this.baseRef}...HEAD`, {
+          cwd: repoDir,
+          maxBuffer: MAX_DIFF_LENGTH * 2,
+        }).toString()
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         this.context.stderr.write(`Error: Failed to compute git diff: ${message}\n`)
