@@ -1,4 +1,4 @@
-import {createCommand, getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -175,7 +175,7 @@ describe('upload-application', () => {
       ['Endpoint error', new EndpointError('some message', 404), 'A backend error occurred: some message (404)'],
       [
         'Axios error',
-        getAxiosError(400, {message: 'Bad Request'}),
+        getRequestError(400, {message: 'Bad Request'}),
         'An unexpected error occurred: RequestError: Bad Request\n    at getRequestError',
       ],
       ['Unknown error', new Error('Unknown error'), 'An unexpected error occurred: Error: Unknown error\n    at '],

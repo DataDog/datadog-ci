@@ -3,7 +3,7 @@ import os from 'os'
 
 import type {Suite, Summary} from '../interfaces'
 
-import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import * as api from '../api'
@@ -218,7 +218,7 @@ describe('run-test', () => {
     test(`403 in getTestsList throws AUTHORIZATION_ERROR`, async () => {
       const apiHelper = {
         searchTests: jest.fn(() => {
-          throw getAxiosError(403, {message: 'Some message'})
+          throw getRequestError(403, {message: 'Some message'})
         }),
       }
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -233,7 +233,7 @@ describe('run-test', () => {
     test(`502 in getTestsList throws UNAVAILABLE_TEST_CONFIG`, async () => {
       const apiHelper = {
         searchTests: jest.fn(() => {
-          throw getAxiosError(502, {message: 'Some message'})
+          throw getRequestError(502, {message: 'Some message'})
         }),
       }
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -248,7 +248,7 @@ describe('run-test', () => {
     test(`403 in getTestsToTrigger is not a critical error`, async () => {
       const apiHelper = {
         getTest: jest.fn(() => {
-          throw getAxiosError(403, {errors: ['Some message']})
+          throw getRequestError(403, {errors: ['Some message']})
         }),
       }
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -263,7 +263,7 @@ describe('run-test', () => {
     test(`502 in getTestsToTrigger throws UNAVAILABLE_TEST_CONFIG`, async () => {
       const apiHelper = {
         getTest: jest.fn(() => {
-          throw getAxiosError(502, {errors: ['Some message']})
+          throw getRequestError(502, {errors: ['Some message']})
         }),
       }
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -296,7 +296,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getTunnelPresignedURL: jest.fn(() => {
-          throw getAxiosError(502, {message: 'Server Error'})
+          throw getRequestError(502, {message: 'Server Error'})
         }),
       }
 
@@ -331,7 +331,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getMobileApplicationPresignedURLs: jest.fn(() => {
-          throw getAxiosError(502, {message: 'Server Error'})
+          throw getRequestError(502, {message: 'Server Error'})
         }),
       }
 
@@ -369,7 +369,7 @@ describe('run-test', () => {
       const apiHelper = {
         getMobileApplicationPresignedURLs: jest.fn(() => MOBILE_PRESIGNED_URLS_PAYLOAD),
         uploadMobileApplicationPart: jest.fn(() => {
-          throw getAxiosError(502, {message: 'Server Error'})
+          throw getRequestError(502, {message: 'Server Error'})
         }),
       }
 
@@ -405,7 +405,7 @@ describe('run-test', () => {
       const apiHelper = {
         getTunnelPresignedURL: () => ({url: 'url'}),
         triggerTests: jest.fn(() => {
-          throw getAxiosError(502, {errors: ['Bad Gateway']})
+          throw getRequestError(502, {errors: ['Bad Gateway']})
         }),
       }
 
@@ -453,7 +453,7 @@ describe('run-test', () => {
         getBatch: () => ({results: []}),
         getTunnelPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
-          throw getAxiosError(502, {errors: ['Bad Gateway']})
+          throw getRequestError(502, {errors: ['Bad Gateway']})
         }),
       }
 

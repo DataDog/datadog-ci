@@ -7,7 +7,7 @@ import type {BaseResult, Batch, PollResult, Result, ResultInBatch, ServerResult,
 import type {RecursivePartial} from '../utils/internal'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {MOCK_BASE_URL, getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {MOCK_BASE_URL, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 import deepExtend from 'deep-extend'
 
@@ -140,7 +140,7 @@ describe('runTests', () => {
 
   test('triggerTests throws', async () => {
     jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-      throw getAxiosError(502, {message: 'Server Error'})
+      throw getRequestError(502, {message: 'Server Error'})
     })
 
     await expect(
@@ -736,7 +736,7 @@ describe('waitForResults', () => {
         ],
       }),
       pollResultsImplementation: async () => {
-        throw getAxiosError(404, {message: 'Test results not found'})
+        throw getRequestError(404, {message: 'Test results not found'})
       },
     })
 
@@ -787,7 +787,7 @@ describe('waitForResults', () => {
         ],
       }),
       pollResultsImplementation: async () => {
-        throw getAxiosError(404, {message: 'Test results not found'})
+        throw getRequestError(404, {message: 'Test results not found'})
       },
     })
 
@@ -1204,7 +1204,7 @@ describe('waitForResults', () => {
   test('pollResults throws', async () => {
     const {pollResultsMock} = mockApi({
       pollResultsImplementation: () => {
-        throw getAxiosError(502, {message: 'Poll results server error'})
+        throw getRequestError(502, {message: 'Poll results server error'})
       },
     })
 
@@ -1230,7 +1230,7 @@ describe('waitForResults', () => {
   test('getBatch throws', async () => {
     const {getBatchMock} = mockApi({
       getBatchImplementation: () => {
-        throw getAxiosError(502, {message: 'Get batch server error'})
+        throw getRequestError(502, {message: 'Get batch server error'})
       },
     })
 

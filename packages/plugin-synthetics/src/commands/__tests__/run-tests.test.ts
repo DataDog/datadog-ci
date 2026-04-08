@@ -1,4 +1,4 @@
-import {createCommand, getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -889,7 +889,7 @@ describe('run-tests', () => {
       }
 
       const triggerTests = jest.fn(() => {
-        throw getAxiosError(502, {message: 'Bad Gateway'})
+        throw getRequestError(502, {message: 'Bad Gateway'})
       })
       const apiHelper = mockApi({
         getTest: jest.fn(async () => ({...getApiTest('publicId')})),
@@ -1083,7 +1083,7 @@ describe('run-tests', () => {
 
       const apiHelper = mockApi({
         getTest: jest.fn(() => {
-          throw getAxiosError(404, {errors: ['Test not found']})
+          throw getRequestError(404, {errors: ['Test not found']})
         }),
       })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
@@ -1106,7 +1106,7 @@ describe('run-tests', () => {
 
           const apiHelper = mockApi({
             searchTests: jest.fn(() => {
-              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getRequestError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           })
           jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
@@ -1122,7 +1122,7 @@ describe('run-tests', () => {
 
           const apiHelper = mockApi({
             getTest: jest.fn(() => {
-              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getRequestError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
@@ -1140,7 +1140,7 @@ describe('run-tests', () => {
           const apiHelper = mockApi({
             getTest: async () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
-              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getRequestError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
@@ -1159,7 +1159,7 @@ describe('run-tests', () => {
             getBatch: async () => ({results: [], status: 'passed'}),
             getTest: async () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
-              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getRequestError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
             triggerTests: async () => mockServerTriggerResponse,
           })
@@ -1205,10 +1205,10 @@ describe('run-tests', () => {
         const apiHelper = mockApi({
           getTest: jest.fn(async (testId: string) => {
             if (testId === 'mis-sin-ggg') {
-              throw getAxiosError(404, {errors: ['Any message']})
+              throw getRequestError(404, {errors: ['Any message']})
             }
             if (testId === 'una-uth-rzd') {
-              throw getAxiosError(403, {errors: ['Any message']})
+              throw getRequestError(403, {errors: ['Any message']})
             }
 
             return {} as ServerTest
@@ -1241,7 +1241,7 @@ describe('run-tests', () => {
       const apiHelper = mockApi({
         getTest: jest.fn(async (testId: string) => {
           if (testId === 'for-bid-den') {
-            const serverError = getAxiosError(403, {errors: ['Forbidden']})
+            const serverError = getRequestError(403, {errors: ['Forbidden']})
             serverError.config.url = 'tests/for-bid-den'
             throw serverError
           }
