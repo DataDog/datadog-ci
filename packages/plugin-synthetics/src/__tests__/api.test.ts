@@ -235,7 +235,7 @@ describe('dd-api', () => {
     test.each(cases)(
       'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
       async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
-        const serverError = new RequestError('Server Error', {baseURL: '', url: ''})
+        const serverError = new RequestError('Server Error', {})
 
         const requestMock = jest.mocked(requestModule.httpRequest)
         requestMock.mockImplementation(() => {
@@ -243,7 +243,7 @@ describe('dd-api', () => {
         })
 
         {
-          serverError.response = {data: undefined, status: 404, statusText: ''}
+          serverError.response = {status: 404, statusText: '', data: undefined}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -255,7 +255,7 @@ describe('dd-api', () => {
         requestMock.mockClear()
 
         {
-          serverError.response = {data: undefined, status: 429, statusText: ''}
+          serverError.response = {status: 429, statusText: '', data: undefined}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -267,7 +267,7 @@ describe('dd-api', () => {
         requestMock.mockClear()
 
         {
-          serverError.response = {data: undefined, status: 502, statusText: ''}
+          serverError.response = {status: 502, statusText: '', data: undefined}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
