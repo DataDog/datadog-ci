@@ -698,6 +698,21 @@ export class AutotestCommand extends BaseCommand {
     }
 
     try {
+    // Capture CLI subprocess stderr for debugging exit-code-1 failures
+    const {spawn} = await import('child_process')
+    const spawnClaudeCodeProcess = (cfg: {command: string; args: string[]; cwd?: string; env?: NodeJS.ProcessEnv; signal?: AbortSignal}) => {
+      const proc = spawn(cfg.command, cfg.args, {
+        cwd: cfg.cwd,
+        env: cfg.env,
+        signal: cfg.signal,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+      proc.stderr?.on('data', (data: Buffer) => {
+        this.context.stderr.write(`[claude-code] ${data}`)
+      })
+      return proc
+    }
+
     for await (const message of query({
       prompt: userPrompt,
       options: {
@@ -708,6 +723,7 @@ export class AutotestCommand extends BaseCommand {
           : ['project'],
         allowedTools: ['*'],
         permissionMode: 'bypassPermissions',
+        spawnClaudeCodeProcess,
         systemPrompt: SYSTEM_PROMPT + (dryRun
           ? '\n\n## DRY RUN MODE\nDo NOT post any PR comments. Do NOT use gh, curl, or any other method to post comments. Only write the report to stdout and validation_report.md.'
           : ''),
