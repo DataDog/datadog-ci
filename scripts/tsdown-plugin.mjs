@@ -76,7 +76,7 @@ const temporaryEntryPath = path.join(packageDir, 'dist', '.bundle-entry.ts')
 const commandWrapperPaths = commands.map((command) => path.join(packageDir, 'dist', 'commands', `${command}.js`))
 const toCommandImportName = (command) => `command_${command.replaceAll(/[^a-zA-Z0-9_$]+/g, '_')}`
 const virtualEntryLines = [
-  ...(hasIndex ? [`import * as indexModule from '../src/index'`] : []),
+  ...(hasIndex ? [`export * from '../src/index'`] : []),
 
   ...commands.map((command) => {
     const commandImportName = toCommandImportName(command)
@@ -84,12 +84,9 @@ const virtualEntryLines = [
     return `import {PluginCommand as ${commandImportName}} from ${JSON.stringify(`../src/commands/${command}`)}`
   }),
   '',
-  `const bundleExports = {`,
-  ...(hasIndex ? [`  ...indexModule,`] : []),
+  `export const commands = {`,
   ...commands.map((command) => `  ${JSON.stringify(command)}: {PluginCommand: ${toCommandImportName(command)}},`),
   `}`,
-  '',
-  `export default bundleExports`,
 ]
 
 try {
@@ -139,7 +136,7 @@ try {
     commandWrapperPaths.map((commandWrapperPath, index) =>
       writeFile(
         commandWrapperPath,
-        `"use strict"\nmodule.exports = require("../bundle.js")[${JSON.stringify(commands[index])}]\n`
+        `"use strict"\nmodule.exports = require("../bundle.js").commands["${commands[index]}"]\n`
       )
     )
   )

@@ -309,7 +309,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   // 2. Self-contained plugin bundle (published vendored bundles)
   try {
     const bundle = require(pluginPackage)
-    const submodule = bundle[command]
+    const submodule = bundle.commands?.[command]
     if (submodule) {
       debug('Loading self-contained plugin bundle')
 
