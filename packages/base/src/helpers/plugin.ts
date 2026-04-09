@@ -147,6 +147,8 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
 
   const pluginPackage = getPackageToInstall(packageOrScope)
 
+  console.log(chalk.dim(`Installing ${pluginPackage.descriptor}...`))
+
   const {installPackage} = await importInstallPkg()
   const output = await installPackage([pluginPackage.descriptor], {
     silent: !debug.enabled,
@@ -262,13 +264,14 @@ const handlePluginAutoInstall = async (scope: string) => {
 }
 
 const printPluginVersion = (plugin: PackageInfo) => {
-  console.log(chalk.dim(`${plugin.name} v${plugin.version}`))
   if (plugin.version !== cliVersion) {
     console.log(
-      chalk.yellow(
-        `The plugin is not the same version as datadog-ci, which could lead to unexpected behavior. Consider syncing the plugin version with datadog-ci.`
+      chalk.dim(
+        `${plugin.name} v${plugin.version} (run ${chalk.cyan('datadog-ci plugin install')} to sync with datadog-ci)`
       )
     )
+  } else {
+    console.log(chalk.dim(`${plugin.name} v${plugin.version}`))
   }
 }
 
