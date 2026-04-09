@@ -70,10 +70,11 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     }
   },
   "files": [
-    "dist/**/*.js",
-    "dist/**/*.js.map",
-    "dist/**/*.js.LEGAL.txt",
-    "dist/**/*.d.ts",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/bundle.d.ts",
+    "dist/commands/*.js",
     "README",
     "LICENSE"
   ],
