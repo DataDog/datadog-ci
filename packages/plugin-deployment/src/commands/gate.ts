@@ -7,9 +7,9 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
-import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 
 import {apiConstructor} from '../api'
@@ -102,7 +102,7 @@ export class PluginCommand extends DeploymentGateCommand {
       const errorMessage = error instanceof Error ? error.message : String(error)
       this.logger.error(`Deployment gate evaluation failed due to a non-retryable error: ${errorMessage}`)
 
-      if (isAxiosError(error) && error.response?.status) {
+      if (isRequestError(error) && error.response?.status) {
         if (error.response.status >= 400 && error.response.status < 500) {
           this.logger.error(`${ICONS.FAILED} Request failed with client error, exiting with status 1`)
 
@@ -160,7 +160,7 @@ export class PluginCommand extends DeploymentGateCommand {
 
         return id
       } catch (error) {
-        if (isAxiosError(error) && error.response?.status) {
+        if (isRequestError(error) && error.response?.status) {
           this.logger.error(`Request failed with error: ${error.response.status} ${error.response.statusText}`)
         } else {
           const errorMessage = error instanceof Error ? error.message : String(error)
@@ -247,7 +247,7 @@ export class PluginCommand extends DeploymentGateCommand {
           this.logger.warn(`Unknown gate evaluation status: ${status as string}`)
       }
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status) {
+      if (isRequestError(error) && error.response?.status) {
         const status = error.response.status
         const statusText = error.response.statusText
         if (status === 404 || status >= 500) {

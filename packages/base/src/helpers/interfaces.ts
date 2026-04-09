@@ -1,3 +1,4 @@
+import type {RequestConfig, RequestResponse} from './request'
 import type {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -32,7 +33,6 @@ import type {
   PR_NUMBER,
   CI_JOB_ID,
 } from './tags'
-import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 import type {BaseContext} from 'clipanion'
 
 export interface Metadata {
@@ -122,7 +122,7 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
+export type RequestBuilder = (args: RequestConfig) => Promise<RequestResponse>
 
 /**
  * A subset of Clipanion's {@link BaseContext}.

@@ -1,5 +1,5 @@
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {AxiosPromise, AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 export interface TerraformArtifactPayload {
   artifactType: 'plan' | 'state'
@@ -12,5 +12,5 @@ export interface TerraformArtifactPayload {
 }
 
 export interface APIHelper {
-  uploadTerraformArtifact(payload: TerraformArtifactPayload): AxiosPromise<AxiosResponse>
+  uploadTerraformArtifact(payload: TerraformArtifactPayload): Promise<RequestResponse>
 }

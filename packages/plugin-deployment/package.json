@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-deployment",
-  "version": "5.12.0",
+  "version": "5.12.1",
   "description": "Datadog CI plugin for `deployment` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -41,7 +41,6 @@
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
-    "axios": "1.13.5",
     "chalk": "3.0.0",
     "simple-git": "3.33.0"
   }

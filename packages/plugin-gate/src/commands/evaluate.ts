@@ -1,6 +1,6 @@
 import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from '../interfaces'
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {GateEvaluateCommand} from '@datadog/datadog-ci-base/commands/gate/evaluate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -153,7 +153,7 @@ export class PluginCommand extends GateEvaluateCommand {
     evaluateRequest: Payload,
     attempt?: number,
     bail?: (e: Error) => void
-  ): Promise<AxiosResponse<EvaluationResponsePayload>> {
+  ): Promise<RequestResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
     const timeoutInSeconds =
       this.timeoutInSeconds !== undefined ? parseInt(String(this.timeoutInSeconds), 10) : this.defaultTimeout

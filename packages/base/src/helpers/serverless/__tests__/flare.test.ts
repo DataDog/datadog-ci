@@ -3,11 +3,18 @@ import process from 'process'
 
 import type {Writable} from 'stream'
 
-import axios from 'axios'
+jest.mock('../../request', () => ({
+  ...jest.requireActual('../../request'),
+  httpRequest: jest.fn(),
+}))
+
 import FormData from 'form-data'
 import upath from 'upath'
 
 import {MOCK_CWD} from '../../__tests__/testing-tools'
+import {RequestError} from '../../request'
+import * as requestModule from '../../request'
+
 const getLatestVersion = jest.fn()
 jest.mock('../../get-latest-version', () => ({
   getLatestVersion,
@@ -85,7 +92,8 @@ describe('flare', () => {
     const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
     const MOCK_CLI_VERSION = '1.0.0'
 
-    const axiosSpy = jest.spyOn(axios, 'post').mockImplementation()
+    const httpRequestSpy = jest.mocked(requestModule.httpRequest)
+    httpRequestSpy.mockResolvedValue({data: {}, status: 200, statusText: '', headers: {}, config: {}})
 
     it('should send data to the correct endpoint', async () => {
       await sendToDatadog(
@@ -96,10 +104,10 @@ describe('flare', () => {
         MOCK_ROOT_FOLDER_PATH,
         MOCK_CLI_VERSION
       )
-      expect(axiosSpy).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(FormData),
+      expect(httpRequestSpy).toHaveBeenCalledWith(
         expect.objectContaining({
+          url: expect.any(String),
+          data: expect.any(FormData),
           headers: expect.objectContaining({
             'DD-API-KEY': MOCK_API_KEY,
           }),
@@ -109,11 +117,9 @@ describe('flare', () => {
 
     it('should delete root folder and rethrow error if request fails', async () => {
       const error = new Error('Network error')
-      axiosSpy.mockRejectedValueOnce({
-        isAxiosError: true,
-        message: error.message,
-        response: {data: {error: 'Server error'}},
-      })
+      httpRequestSpy.mockRejectedValueOnce(
+        new RequestError(error.message, {}, {data: {error: 'Server error'}, status: 0, statusText: ''})
+      )
 
       const fn = sendToDatadog(
         MOCK_ZIP_PATH,
@@ -127,11 +133,9 @@ describe('flare', () => {
     })
 
     it('prints correct warning when post fail with error 500', async () => {
-      axiosSpy.mockRejectedValueOnce({
-        isAxiosError: true,
-        message: 'Some error',
-        response: {status: 500, data: {error: 'Server error'}},
-      })
+      httpRequestSpy.mockRejectedValueOnce(
+        new RequestError('Some error', {}, {data: {error: 'Server error'}, status: 500, statusText: ''})
+      )
 
       const fn = sendToDatadog(
         MOCK_ZIP_PATH,
@@ -147,11 +151,9 @@ describe('flare', () => {
     })
 
     it('prints correct warning when post fail with error 403', async () => {
-      axiosSpy.mockRejectedValueOnce({
-        isAxiosError: true,
-        message: 'Some error',
-        response: {status: 403, data: {error: 'Another error'}},
-      })
+      httpRequestSpy.mockRejectedValueOnce(
+        new RequestError('Some error', {}, {data: {error: 'Another error'}, status: 403, statusText: ''})
+      )
 
       const fn = sendToDatadog(
         MOCK_ZIP_PATH,
@@ -162,8 +164,7 @@ describe('flare', () => {
         MOCK_CLI_VERSION
       )
       await expect(fn).rejects.toThrow(
-        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct? Please follow this doc to set your API key: 
-https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-variables\n`
+        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct? Please follow this doc to set your API key: \nhttps://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-variables\n`
       )
     })
   })

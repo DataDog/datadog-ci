@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import type {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
-import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
@@ -245,12 +245,12 @@ describe('evaluate', () => {
         },
       }
     }
-    const waitMockResponse = (waitTime: number): AxiosResponse<EvaluationResponsePayload> => {
+    const waitMockResponse = (waitTime: number): RequestResponse<EvaluationResponsePayload> => {
       return {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as InternalAxiosRequestConfig,
+        config: {} as RequestConfig,
         data: {
           data: {
             attributes: {
@@ -264,11 +264,11 @@ describe('evaluate', () => {
         },
       }
     }
-    const passedMockResponse: AxiosResponse<EvaluationResponsePayload> = {
+    const passedMockResponse: RequestResponse<EvaluationResponsePayload> = {
       status: 200,
       statusText: 'OK',
       headers: {},
-      config: {} as InternalAxiosRequestConfig,
+      config: {} as RequestConfig,
       data: {
         data: {
           attributes: {

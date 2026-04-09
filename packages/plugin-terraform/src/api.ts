@@ -1,19 +1,17 @@
 import {createGzip} from 'zlib'
 
 import type {TerraformArtifactPayload} from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 
-const maxBodyLength = Infinity
-
 export const intakeUrl = getIntakeUrl('ci-intake')
 export const apiUrl = getApiUrl()
 
 export const uploadTerraformArtifact =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (payload: TerraformArtifactPayload) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse>) => async (payload: TerraformArtifactPayload) => {
     const form = new FormData()
 
     // Build event envelope according to RFC spec
@@ -46,7 +44,6 @@ export const uploadTerraformArtifact =
     return request({
       data: form,
       headers: form.getHeaders(),
-      maxBodyLength,
       method: 'POST',
       url: 'api/v2/ciiac',
     })

@@ -1,9 +1,14 @@
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
+
 import type {BaseResult, Batch, PollResult, Result, ResultInBatch, ServerResult, Test, TriggerInfo} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {MOCK_BASE_URL, getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {default as axios} from 'axios'
+import {MOCK_BASE_URL, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 import deepExtend from 'deep-extend'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
@@ -60,10 +65,16 @@ describe('runTests', () => {
 
   test('runTests sends batch metadata', async () => {
     const payloadMetadataSpy = jest.fn()
-    jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((request: any) => {
       payloadMetadataSpy(request.data.metadata)
       if (request.url === '/synthetics/tests/trigger/ci') {
-        return {data: mockServerTriggerResponse}
+        return Promise.resolve({
+          data: mockServerTriggerResponse,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: request,
+        })
       }
     }) as any)
 
@@ -78,11 +89,17 @@ describe('runTests', () => {
   test('runTests api call has the right payload and trigger app header', async () => {
     const testsPayloadSpy = jest.fn()
     const headersMetadataSpy = jest.fn()
-    jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((request: any) => {
       testsPayloadSpy(request.data.tests)
       headersMetadataSpy(request.headers)
       if (request.url === '/synthetics/tests/trigger/ci') {
-        return {data: mockServerTriggerResponse}
+        return Promise.resolve({
+          data: mockServerTriggerResponse,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: request,
+        })
       }
     }) as any)
 
@@ -123,7 +140,7 @@ describe('runTests', () => {
 
   test('triggerTests throws', async () => {
     jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-      throw getAxiosError(502, {message: 'Server Error'})
+      throw getRequestError(502, {message: 'Server Error'})
     })
 
     await expect(
@@ -719,7 +736,7 @@ describe('waitForResults', () => {
         ],
       }),
       pollResultsImplementation: async () => {
-        throw getAxiosError(404, {message: 'Test results not found'})
+        throw getRequestError(404, {message: 'Test results not found'})
       },
     })
 
@@ -770,7 +787,7 @@ describe('waitForResults', () => {
         ],
       }),
       pollResultsImplementation: async () => {
-        throw getAxiosError(404, {message: 'Test results not found'})
+        throw getRequestError(404, {message: 'Test results not found'})
       },
     })
 
@@ -1187,7 +1204,7 @@ describe('waitForResults', () => {
   test('pollResults throws', async () => {
     const {pollResultsMock} = mockApi({
       pollResultsImplementation: () => {
-        throw getAxiosError(502, {message: 'Poll results server error'})
+        throw getRequestError(502, {message: 'Poll results server error'})
       },
     })
 
@@ -1213,7 +1230,7 @@ describe('waitForResults', () => {
   test('getBatch throws', async () => {
     const {getBatchMock} = mockApi({
       getBatchImplementation: () => {
-        throw getAxiosError(502, {message: 'Get batch server error'})
+        throw getRequestError(502, {message: 'Get batch server error'})
       },
     })
 

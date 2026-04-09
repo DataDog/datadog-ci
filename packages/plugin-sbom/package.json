@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-sbom",
-  "version": "5.12.0",
+  "version": "5.12.1",
   "description": "Datadog CI plugin for `sbom` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -44,7 +44,6 @@
     "@types/jest": "29.5.3",
     "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
-    "axios": "1.13.5",
     "chalk": "3.0.0",
     "packageurl-js": "2.0.1",
     "simple-git": "3.33.0",

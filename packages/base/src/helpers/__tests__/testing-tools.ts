@@ -1,12 +1,12 @@
 import type {MockCommandContext} from '../interfaces'
-import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 import type {BaseContext, CommandClass} from 'clipanion'
 import type {CommandOption} from 'clipanion/lib/advanced/options'
 import type {Writable} from 'stream'
 
-import {AxiosError} from 'axios'
 import {Cli, Command} from 'clipanion'
 import upath from 'upath'
+
+import {RequestError} from '../request'
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
@@ -137,10 +137,9 @@ export const createCommand = <T extends Command>(
   return command
 }
 
-export const getAxiosError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
-  const serverError = new AxiosError(message) as AxiosError<any> & {config: InternalAxiosRequestConfig}
-  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'} as InternalAxiosRequestConfig
-  serverError.response = {data: {errors}, status} as AxiosResponse
-
-  return serverError
-}
+export const getRequestError = (status: number, {errors, message}: {errors?: string[]; message?: string}) =>
+  new RequestError(
+    message ?? 'Request failed',
+    {baseURL: MOCK_BASE_URL, url: 'example'},
+    {data: {errors}, status, statusText: ''}
+  )

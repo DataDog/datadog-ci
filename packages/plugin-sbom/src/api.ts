@@ -1,13 +1,11 @@
 import type {ScaRequest} from './types'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '@datadog/datadog-ci-base/constants'
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {API_ENDPOINT} from './constants'
-
-const maxBodyLength = Infinity
 
 /**
  * Get the function to upload our results to the intake.
@@ -17,13 +15,13 @@ export const getApiHelper = (
   apiKey: string,
   appKey: string,
   source?: string
-): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
+): ((scaRequest: ScaRequest) => Promise<RequestResponse>) => {
   /**
    * function used to marshall and send the data
-   * @param request - the AXIOS element used to send the request
+   * @param request - the request function used to send the request
    */
   const uploadSBomPayload =
-    (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (scaPayload: ScaRequest) => {
+    (request: (args: RequestConfig) => Promise<RequestResponse>) => async (scaPayload: ScaRequest) => {
       // Make sure we follow the API signature
       const payload = {
         data: {
@@ -40,7 +38,6 @@ export const getApiHelper = (
           'DD-EVP-ORIGIN-VERSION': '0.0.1',
           'DD-SOURCE': source || 'CI',
         },
-        maxBodyLength,
         method: METHOD_POST,
         url: API_ENDPOINT,
       })

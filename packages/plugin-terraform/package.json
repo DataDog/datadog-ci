@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-terraform",
-  "version": "5.12.0",
+  "version": "5.12.1",
   "description": "Datadog CI plugin for `terraform` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -44,9 +44,6 @@
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "@types/jest": "29.5.3",
-    "axios": "1.13.5",
-    "chalk": "3.0.0",
-    "form-data": "4.0.4",
     "simple-git": "3.33.0",
     "upath": "2.0.1"
   }

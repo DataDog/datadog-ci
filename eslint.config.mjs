@@ -381,20 +381,7 @@ export default defineConfig(
       'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
       'jest/padding-around-test-blocks': 'error',
       'no-prototype-builtins': 'off',
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            ...restrictedImports,
-            // We only allow this in unit tests to mock `axios.create()`.
-            {
-              name: 'axios',
-              importNames: ['default'],
-              message: 'Please only import what you need from axios, e.g. `import {isAxiosError} from "axios"`',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': ['error', {paths: restrictedImports}],
       'no-restricted-syntax': [
         'error',
         {

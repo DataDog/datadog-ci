@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-base",
-  "version": "5.12.0",
+  "version": "5.12.1",
   "description": "Base package for Datadog CI",
   "license": "Apache-2.0",
   "keywords": [
@@ -119,7 +119,6 @@
     "@antfu/install-pkg": "1.1.0",
     "@types/datadog-metrics": "0.6.1",
     "async-retry": "1.3.3",
-    "axios": "1.13.5",
     "chalk": "3.0.0",
     "clipanion": "3.2.1",
     "datadog-metrics": "0.9.3",
@@ -139,6 +138,7 @@
     "terminal-link": "2.1.1",
     "tiny-async-pool": "2.1.0",
     "typanion": "3.14.0",
+    "undici": "7.24.6",
     "upath": "2.0.1"
   },
   "devDependencies": {
@@ -148,7 +148,6 @@
     "@types/inquirer": "8.2.6",
     "@types/js-yaml": "4.0.9",
     "@types/semver": "7.7.1",
-    "@types/tiny-async-pool": "2.0.3",
-    "proxy": "2.2.0"
+    "@types/tiny-async-pool": "2.0.3"
   }
 }

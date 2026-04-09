@@ -1964,7 +1964,6 @@ __metadata:
     "@types/semver": "npm:7.7.1"
     "@types/tiny-async-pool": "npm:2.0.3"
     async-retry: "npm:1.3.3"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     clipanion: "npm:3.2.1"
     datadog-metrics: "npm:0.9.3"
@@ -1978,13 +1977,13 @@ __metadata:
     jest-diff: "npm:30.2.0"
     js-yaml: "npm:4.1.1"
     jszip: "npm:3.10.1"
-    proxy: "npm:2.2.0"
     proxy-agent: "npm:6.4.0"
     semver: "npm:7.6.3"
     simple-git: "npm:3.33.0"
     terminal-link: "npm:2.1.1"
     tiny-async-pool: "npm:2.1.0"
     typanion: "npm:3.14.0"
+    undici: "npm:7.24.6"
     upath: "npm:2.0.1"
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
@@ -2078,7 +2077,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-coverage@workspace:packages/plugin-coverage"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
@@ -2092,7 +2090,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
   languageName: unknown
@@ -2103,7 +2100,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
   languageName: unknown
@@ -2115,7 +2111,6 @@ __metadata:
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
     "@types/uuid": "npm:9.0.8"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     uuid: "npm:9.0.1"
   languageName: unknown
@@ -2126,7 +2121,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
@@ -2169,7 +2163,6 @@ __metadata:
     "@types/uuid": "npm:9.0.8"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
@@ -2186,7 +2179,6 @@ __metadata:
     "@types/jest": "npm:29.5.3"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     packageurl-js: "npm:2.0.1"
     simple-git: "npm:3.33.0"
@@ -2218,7 +2210,6 @@ __metadata:
     "@types/sshpk": "npm:1.10.7"
     "@types/ws": "npm:7.2.9"
     "@types/xml2js": "npm:0.4.14"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     debug: "npm:4.4.1"
     deep-extend: "npm:0.6.0"
@@ -2241,9 +2232,6 @@ __metadata:
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
-    axios: "npm:1.13.5"
-    chalk: "npm:3.0.0"
-    form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
     upath: "npm:2.0.1"
   languageName: unknown
@@ -5683,18 +5671,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"args@npm:^5.0.3":
-  version: 5.0.3
-  resolution: "args@npm:5.0.3"
-  dependencies:
-    camelcase: "npm:5.0.0"
-    chalk: "npm:2.4.2"
-    leven: "npm:2.1.0"
-    mri: "npm:1.1.4"
-  checksum: 10/bb12788cc8edf1332121d8d8fff3b518d75b4e10af3053e28ef3088f3b50ab47554f35b61ccbe33ae374f209b49ea911cd5548ff05c153eba5d6bb52da30ed94
-  languageName: node
-  linkType: hard
-
 "arrify@npm:^2.0.0, arrify@npm:^2.0.1":
   version: 2.0.1
   resolution: "arrify@npm:2.0.1"
@@ -5786,17 +5762,6 @@ __metadata:
     sinon: "npm:^18.0.1"
     tslib: "npm:^2.1.0"
   checksum: 10/fb855e3817784f81ffa7cf48fae12330284708ff3d266515229103c30d7943cd26680c9911387e6f878841829ebea2164fb8b0bea37dce8957563d50a8eba96b
-  languageName: node
-  linkType: hard
-
-"axios@npm:1.13.5":
-  version: 1.13.5
-  resolution: "axios@npm:1.13.5"
-  dependencies:
-    follow-redirects: "npm:^1.15.11"
-    form-data: "npm:^4.0.5"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10/db726d09902565ef9a0632893530028310e2ec2b95b727114eca1b101450b00014133dfc3871cffc87983fb922bca7e4874d7e2826d1550a377a157cdf3f05b6
   languageName: node
   linkType: hard
 
@@ -5894,13 +5859,6 @@ __metadata:
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
   checksum: 10/669632eb3745404c2f822a18fc3a0122d2f9a7a13f7fb8b5823ee19d1d2ff9ee5b52c53367176ea4ad093c332fd5ab4bd0ebae5a8e27917a4105a4cfc86b1005
-  languageName: node
-  linkType: hard
-
-"basic-auth-parser@npm:0.0.2-1":
-  version: 0.0.2-1
-  resolution: "basic-auth-parser@npm:0.0.2-1"
-  checksum: 10/b06dafe108d66290c1c02fac5d656efe810fb5a88c13bb2a5681cd07e5e11ebe5d1b8bc3b18b55bf0c4ad6dff3820fc297f958fcfeafdd67b6ed977936c55cc8
   languageName: node
   linkType: hard
 
@@ -6102,13 +6060,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camelcase@npm:5.0.0":
-  version: 5.0.0
-  resolution: "camelcase@npm:5.0.0"
-  checksum: 10/b8bdde22345e5a6ef60483bb9e3ae2af34c75b0447c7163943c86b6daea075e6222b5bd0589d2b551bf90315bc44712f403f653795fb702a8bfbbdef961b9cb8
-  languageName: node
-  linkType: hard
-
 "camelcase@npm:^5.3.1":
   version: 5.3.1
   resolution: "camelcase@npm:5.3.1"
@@ -6143,17 +6094,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chalk@npm:2.4.2, chalk@npm:^2.4.2":
-  version: 2.4.2
-  resolution: "chalk@npm:2.4.2"
-  dependencies:
-    ansi-styles: "npm:^3.2.1"
-    escape-string-regexp: "npm:^1.0.5"
-    supports-color: "npm:^5.3.0"
-  checksum: 10/3d1d103433166f6bfe82ac75724951b33769675252d8417317363ef9d54699b7c3b2d46671b772b893a8e50c3ece70c4b933c73c01e81bc60ea4df9b55afa303
-  languageName: node
-  linkType: hard
-
 "chalk@npm:3.0.0":
   version: 3.0.0
   resolution: "chalk@npm:3.0.0"
@@ -6171,6 +6111,17 @@ __metadata:
     ansi-styles: "npm:^4.1.0"
     supports-color: "npm:^7.1.0"
   checksum: 10/cb3f3e594913d63b1814d7ca7c9bafbf895f75fbf93b92991980610dfd7b48500af4e3a5d4e3a8f337990a96b168d7eb84ee55efdce965e2ee8efc20f8c8f139
+  languageName: node
+  linkType: hard
+
+"chalk@npm:^2.4.2":
+  version: 2.4.2
+  resolution: "chalk@npm:2.4.2"
+  dependencies:
+    ansi-styles: "npm:^3.2.1"
+    escape-string-regexp: "npm:^1.0.5"
+    supports-color: "npm:^5.3.0"
+  checksum: 10/3d1d103433166f6bfe82ac75724951b33769675252d8417317363ef9d54699b7c3b2d46671b772b893a8e50c3ece70c4b933c73c01e81bc60ea4df9b55afa303
   languageName: node
   linkType: hard
 
@@ -7765,16 +7716,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.15.11":
-  version: 1.15.11
-  resolution: "follow-redirects@npm:1.15.11"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10/07372fd74b98c78cf4d417d68d41fdaa0be4dcacafffb9e67b1e3cf090bc4771515e65020651528faab238f10f9b9c0d9707d6c1574a6c0387c5de1042cde9ba
-  languageName: node
-  linkType: hard
-
 "foreground-child@npm:^3.1.0":
   version: 3.2.1
   resolution: "foreground-child@npm:3.2.1"
@@ -7819,19 +7760,6 @@ __metadata:
     mime-types: "npm:^2.1.35"
     safe-buffer: "npm:^5.2.1"
   checksum: 10/4b6a8d07bb67089da41048e734215f68317a8e29dd5385a972bf5c458a023313c69d3b5d6b8baafbb7f808fa9881e0e2e030ffe61e096b3ddc894c516401271d
-  languageName: node
-  linkType: hard
-
-"form-data@npm:^4.0.5":
-  version: 4.0.5
-  resolution: "form-data@npm:4.0.5"
-  dependencies:
-    asynckit: "npm:^0.4.0"
-    combined-stream: "npm:^1.0.8"
-    es-set-tostringtag: "npm:^2.1.0"
-    hasown: "npm:^2.0.2"
-    mime-types: "npm:^2.1.12"
-  checksum: 10/52ecd6e927c8c4e215e68a7ad5e0f7c1031397439672fd9741654b4a94722c4182e74cc815b225dcb5be3f4180f36428f67c6dd39eaa98af0dcfdd26c00c19cd
   languageName: node
   linkType: hard
 
@@ -9636,13 +9564,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"leven@npm:2.1.0":
-  version: 2.1.0
-  resolution: "leven@npm:2.1.0"
-  checksum: 10/f7b4a01b15c0ee2f92a04c0367ea025d10992b044df6f0d4ee1a845d4a488b343e99799e2f31212d72a2b1dea67124f57c1bb1b4561540df45190e44b5b8b394
-  languageName: node
-  linkType: hard
-
 "leven@npm:^3.1.0":
   version: 3.1.0
   resolution: "leven@npm:3.1.0"
@@ -10107,13 +10028,6 @@ __metadata:
   version: 1.0.4
   resolution: "module-details-from-path@npm:1.0.4"
   checksum: 10/2ebfada5358492f6ab496b70f70a1042f2ee7a4c79d29467f59ed6704f741fb4461d7cecb5082144ed39a05fec4d19e9ff38b731c76228151be97227240a05b2
-  languageName: node
-  linkType: hard
-
-"mri@npm:1.1.4":
-  version: 1.1.4
-  resolution: "mri@npm:1.1.4"
-  checksum: 10/f4b18415e6b25a40f6676296cac0cd57a8cb1444c88fd13df7898a76d5e64f52300c51bff18079620079e01b54cf7cad875c302236d03fa7ebe97b1987a995a2
   languageName: node
   linkType: hard
 
@@ -11001,19 +10915,6 @@ __metadata:
   version: 1.1.0
   resolution: "proxy-from-env@npm:1.1.0"
   checksum: 10/f0bb4a87cfd18f77bc2fba23ae49c3b378fb35143af16cc478171c623eebe181678f09439707ad80081d340d1593cd54a33a0113f3ccb3f4bc9451488780ee23
-  languageName: node
-  linkType: hard
-
-"proxy@npm:2.2.0":
-  version: 2.2.0
-  resolution: "proxy@npm:2.2.0"
-  dependencies:
-    args: "npm:^5.0.3"
-    basic-auth-parser: "npm:0.0.2-1"
-    debug: "npm:^4.3.4"
-  bin:
-    proxy: dist/bin/proxy.js
-  checksum: 10/6ed7d0c83fd0523b94289eb9a32fe47740aae4cb1e1a5f7563df8885e449f5d46504044c526eaa4e08a64a266ac7746e5931fcfd9d4fc3213552aaa45fba55e4
   languageName: node
   linkType: hard
 
@@ -12571,6 +12472,13 @@ __metadata:
   version: 6.21.0
   resolution: "undici-types@npm:6.21.0"
   checksum: 10/ec8f41aa4359d50f9b59fa61fe3efce3477cc681908c8f84354d8567bb3701fafdddf36ef6bff307024d3feb42c837cf6f670314ba37fc8145e219560e473d14
+  languageName: node
+  linkType: hard
+
+"undici@npm:7.24.6":
+  version: 7.24.6
+  resolution: "undici@npm:7.24.6"
+  checksum: 10/9c8df674284b1e9b8c3fee543883ad71c20d5fb3b6f6595330342f3dad30de944c2d55ff15aa59e7a088af272ce73be6e93baad9ab817b1b82e5c83298c23d8e
   languageName: node
   linkType: hard
 

@@ -1,4 +1,4 @@
-import type {AxiosPromise, AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 export interface DeploymentEvent {
   service: string
@@ -17,5 +17,5 @@ export interface GitInfo {
 }
 
 export interface APIHelper {
-  sendDeploymentEvent(deployment: DeploymentEvent): AxiosPromise<AxiosResponse>
+  sendDeploymentEvent(deployment: DeploymentEvent): Promise<RequestResponse>
 }
