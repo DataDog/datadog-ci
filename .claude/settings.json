@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn install)",
+      "Bash(yarn build*)",
+      "Bash(yarn test*)",
+      "Bash(yarn lint*)",
+      "Bash(yarn format*)",
+      "Bash(yarn launch *)",
+      "Bash(yarn plugin:create *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(git show*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "if": "Bash(git commit*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "yarn lint --quiet 2>&1 || true",
+            "timeout": 120,
+            "statusMessage": "Running lint checks..."
+          }
+        ]
+      }
+    ]
+  }
+}

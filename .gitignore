@@ -69,8 +69,14 @@ dist
 # JetBrains files
 .idea
 
-# Claude local settings
-.claude
+# Claude Code -- ignore local/personal files, track shared config
+.claude/memory/
+.claude/plans/
+.claude/settings.local.json
+.claude/statsig/
+.claude/todos/
+.claude/credits.json
+
 .agents
 skills-lock.json
 
