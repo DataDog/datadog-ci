@@ -2232,6 +2232,8 @@ __metadata:
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
+    chalk: "npm:3.0.0"
+    form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
     upath: "npm:2.0.1"
   languageName: unknown

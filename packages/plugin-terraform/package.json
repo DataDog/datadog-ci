@@ -16,21 +16,15 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-terraform"
   },
-  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/bundle.js",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
     }
   },
   "files": [
-    "dist/bundle.js",
-    "dist/bundle.js.map",
-    "dist/bundle.js.LEGAL.txt",
-    "dist/bundle.d.ts",
-    "dist/commands/*.js",
+    "dist/**/*",
     "README",
     "LICENSE"
   ],
@@ -40,11 +34,13 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
+    "prepack": "yarn package:clean-dist"
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "@types/jest": "29.5.3",
+    "chalk": "3.0.0",
+    "form-data": "4.0.4",
     "simple-git": "3.33.0",
     "upath": "2.0.1"
   }
