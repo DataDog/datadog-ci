@@ -174,7 +174,7 @@ describe('upload-application', () => {
       ],
       ['Endpoint error', new EndpointError('some message', 404), 'A backend error occurred: some message (404)'],
       [
-        'Axios error',
+        'Request error',
         getRequestError(400, {message: 'Bad Request'}),
         'An unexpected error occurred: RequestError: Bad Request\n    at getRequestError',
       ],
