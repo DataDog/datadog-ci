@@ -239,8 +239,7 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 
   try {
-    const plugin = await importPlugin(scope)
-    printPluginVersion(plugin)
+    await importPlugin(scope)
 
     debug('Auto-install check: plugin is installed, skipping installation')
   } catch (error) {
@@ -265,6 +264,7 @@ const handlePluginAutoInstall = async (scope: string) => {
 
 const printPluginVersion = (plugin: PackageInfo) => {
   if (plugin.version !== cliVersion) {
+    // CTA about syncing the plugin version with datadog-ci, but it's dimmed to not be too intrusive.
     console.log(
       chalk.dim(
         `${plugin.name} v${plugin.version} (run ${chalk.cyan('datadog-ci plugin install')} to sync with datadog-ci)`
@@ -407,15 +407,12 @@ const importPlugin = async (scope: string): Promise<PackageInfo> => {
     return injectedPackageJson
   }
 
-  if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
-    // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
-    // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
-    return extractPackageJson(require(`${scope}/package.json`))
-  }
-
   // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
   // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
-  return extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
+  const pluginInfo = extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
+  printPluginVersion(pluginInfo)
+
+  return pluginInfo
 }
 
 const extractPackageJson = (content: unknown): PackageInfo => {
