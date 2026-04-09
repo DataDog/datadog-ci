@@ -84,3 +84,7 @@ packages/base/src/helpers/**tests**/user-provided-git.test.ts  @DataDog/datadog-
 
 # Documentation
 *.md  @DataDog/datadog-ci-admins @DataDog/documentation
+
+# Claude Code config (no docs review needed)
+CLAUDE.md       @DataDog/datadog-ci-admins
+.claude/        @DataDog/datadog-ci-admins
