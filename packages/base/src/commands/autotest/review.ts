@@ -722,8 +722,7 @@ export class AutotestCommand extends BaseCommand {
           ? process.env.AUTOTEST_SETTING_SOURCES.split(',')
           : ['project'],
         allowedTools: ['*'],
-        // bypassPermissions uses --allow-dangerously-skip-permissions which fails on root (CI runners)
-        permissionMode: 'acceptEdits',
+        permissionMode: 'bypassPermissions',
         spawnClaudeCodeProcess,
         systemPrompt: SYSTEM_PROMPT + (dryRun
           ? '\n\n## DRY RUN MODE\nDo NOT post any PR comments. Do NOT use gh, curl, or any other method to post comments. Only write the report to stdout and validation_report.md.'
