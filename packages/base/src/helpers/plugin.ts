@@ -391,7 +391,7 @@ const getPackageToInstall = (scope: string): PackageInfo => {
   return {
     name: pluginName,
     version: pluginVersion,
-    descriptor: `${pluginName}@${pluginVersion}`,
+    descriptor: packageDescriptor(pluginName, pluginVersion),
   }
 }
 
@@ -430,8 +430,14 @@ const extractPackageJson = (content: unknown): PackageInfo => {
 
   const {name, version} = content
 
-  return {name, version, descriptor: `${name}@${version}`}
+  return {
+    name,
+    version,
+    descriptor: packageDescriptor(name, version),
+  }
 }
+
+const packageDescriptor = (name: string, version: string) => `${name}@${version}`
 
 const showPluginNotInstalledMessageBox = (scope: string, command?: string) => {
   const packageName = `@datadog/datadog-ci-plugin-${scope}`
