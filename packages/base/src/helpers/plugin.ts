@@ -16,7 +16,7 @@ import {cliVersion} from '../version'
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
 
-export type PackageInfo = {name: string; version: string; descriptor: string}
+export type PackageInfo = {name: string; version: string}
 export type PluginSubModule = {PluginCommand: CommandClass<CommandContext>}
 
 // Use `DEBUG=plugins` to enable debug logs
@@ -146,23 +146,24 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
   }
 
   const pluginPackage = getPackageToInstall(packageOrScope)
+  const pluginDescriptor = packageDescriptor(pluginPackage.name, pluginPackage.version)
 
-  console.log(chalk.dim(`Installing ${pluginPackage.descriptor}...`))
+  console.log(chalk.dim(`Installing ${pluginDescriptor}...`))
 
   const {installPackage} = await importInstallPkg()
-  const output = await installPackage([pluginPackage.descriptor], {
+  const output = await installPackage([pluginDescriptor], {
     silent: !debug.enabled,
     dev: true,
   })
 
   if (output.exitCode === 0) {
     console.log()
-    messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginPackage.descriptor)}`])
+    messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginDescriptor)}`])
     console.log()
 
     return true
   } else {
-    console.log(chalk.bold.red(`Failed to install ${pluginPackage.descriptor}! 🔌`))
+    console.log(chalk.bold.red(`Failed to install ${pluginDescriptor}! 🔌`))
     console.log('Stdout:', output.stdout)
     console.log('Stderr:', output.stderr)
 
@@ -191,9 +192,10 @@ export const importInstallPkg = async () => {
 const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const isWindows = process.platform === 'win32'
   const pluginPackage = getPackageToInstall(scope)
+  const pluginDescriptor = packageDescriptor(pluginPackage.name, pluginPackage.version)
 
   const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
-  const cmd = `npx --ignore-scripts -y -p ${pluginPackage.descriptor} ${emitPath}`
+  const cmd = `npx --ignore-scripts -y -p ${pluginDescriptor} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
@@ -219,7 +221,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
 
   console.log()
   messageBox('Installed plugin 🔌', 'green', [
-    `Successfully installed ${chalk.bold(pluginPackage.descriptor)} into ${chalk.dim(nodeModulesPath)}`,
+    `Successfully installed ${chalk.bold(pluginDescriptor)} into ${chalk.dim(nodeModulesPath)}`,
     '',
     `Consider installing the plugin explicitly with ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}.`,
   ])
@@ -394,7 +396,6 @@ const getPackageToInstall = (scope: string): PackageInfo => {
   return {
     name: pluginName,
     version: pluginVersion,
-    descriptor: packageDescriptor(pluginName, pluginVersion),
   }
 }
 
@@ -433,7 +434,6 @@ const extractPackageJson = (content: unknown): PackageInfo => {
   return {
     name,
     version,
-    descriptor: packageDescriptor(name, version),
   }
 }
 

@@ -56,10 +56,11 @@ describe('checkPlugin', () => {
 
   test('returns true for standalone binary', async () => {
     mockIsStandaloneBinary.mockResolvedValueOnce(true)
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
 
     const result = await checkPlugin('test')
     expect(result).toBe(true)
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('The plugin is ready to be used! 🔌'))
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('The plugin is ready to be used! 🔌'))
   })
 
   test('returns true for valid plugin', async () => {
