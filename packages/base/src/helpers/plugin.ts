@@ -380,11 +380,10 @@ export const VERSION_OVERRIDE_REGEX = /^(\d+\.\d+\.\d+|file:\.\/[a-zA-Z0-9.\-/@]
 
 const getPackageToInstall = (scope: string): PackageInfo => {
   const pluginName = scopeToPackageName(scope)
-
-  const pluginVersionOverride = process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
+  const pluginVersionOverride = process.env['PLUGIN_INSTALL_VERSION_OVERRIDE']
 
   if (pluginVersionOverride && !VERSION_OVERRIDE_REGEX.test(pluginVersionOverride)) {
-    throw new Error(`Invalid PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE value: ${pluginVersionOverride}`)
+    throw new Error(`Invalid PLUGIN_INSTALL_VERSION_OVERRIDE value: ${pluginVersionOverride}`)
   }
 
   const pluginVersion = pluginVersionOverride ?? cliVersion

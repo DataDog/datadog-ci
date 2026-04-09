@@ -128,7 +128,7 @@ describe('installPlugin', () => {
   })
 
   test('uses version overrides when provided', async () => {
-    process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE'] = '1.0.2'
+    process.env['PLUGIN_INSTALL_VERSION_OVERRIDE'] = '1.0.2'
 
     const mockInstallPackage = jest.fn().mockResolvedValue({
       exitCode: 0,
@@ -144,7 +144,7 @@ describe('installPlugin', () => {
       dev: true,
     })
 
-    delete process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
+    delete process.env['PLUGIN_INSTALL_VERSION_OVERRIDE']
   })
 
   test('handles full package name', async () => {
