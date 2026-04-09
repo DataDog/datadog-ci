@@ -2,7 +2,7 @@ import fs from 'fs'
 import {createGzip} from 'zlib'
 
 import type {Payload} from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -10,15 +10,11 @@ import FormData from 'form-data'
 import upath from 'upath'
 import {v4 as uuidv4} from 'uuid'
 
-// Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
-// We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
-const maxBodyLength = Infinity
-
 export const intakeUrl = getIntakeUrl('cireport-intake')
 export const apiUrl = getApiUrl()
 
 export const uploadJUnitXML =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (jUnitXML: Payload) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse>) => async (jUnitXML: Payload) => {
     const form = new FormData()
 
     let fileName
@@ -60,7 +56,6 @@ export const uploadJUnitXML =
     return request({
       data: form,
       headers: form.getHeaders(),
-      maxBodyLength,
       method: 'POST',
       url: 'api/v2/cireport',
     })

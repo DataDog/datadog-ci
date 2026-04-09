@@ -1,4 +1,4 @@
-import {createCommand, getAxiosError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, getRequestError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as DeploymentCorrelateCommand} from '../commands/correlate'
 
@@ -80,12 +80,12 @@ describe('execute', () => {
   test('handleError', async () => {
     const command = createCommand(DeploymentCorrelateCommand)
 
-    const axiosError = getAxiosError(400, {
+    const requestError = getRequestError(400, {
       message: 'Request failed with status code 400',
       errors: ['Some validation error'],
     })
 
-    command['handleError'](axiosError)
+    command['handleError'](requestError)
 
     expect(command.context.stderr.toString()).toStrictEqual(
       `[ERROR] Could not send deployment correlation data: {

@@ -2030,7 +2030,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-coverage@workspace:packages/plugin-coverage"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
@@ -2045,7 +2044,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
   peerDependencies:
@@ -2057,7 +2055,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.33.0"
   peerDependencies:
@@ -2070,7 +2067,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
   dependencies:
     "@types/uuid": "npm:9.0.8"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     uuid: "npm:9.0.1"
   peerDependencies:
@@ -2082,7 +2078,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit"
   dependencies:
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.5.9"
     form-data: "npm:4.0.4"
@@ -2127,7 +2122,6 @@ __metadata:
     "@types/uuid": "npm:9.0.8"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
@@ -2145,7 +2139,6 @@ __metadata:
     "@types/jest": "npm:29.5.3"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     packageurl-js: "npm:2.0.1"
     simple-git: "npm:3.33.0"
@@ -2179,7 +2172,6 @@ __metadata:
     "@types/sshpk": "npm:1.10.7"
     "@types/ws": "npm:7.2.9"
     "@types/xml2js": "npm:0.4.14"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     debug: "npm:4.4.1"
     deep-extend: "npm:0.6.0"
@@ -2203,7 +2195,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-terraform@workspace:packages/plugin-terraform"
   dependencies:
     "@types/jest": "npm:29.5.3"
-    axios: "npm:1.13.5"
     chalk: "npm:3.0.0"
     form-data: "npm:4.0.4"
     simple-git: "npm:3.33.0"
@@ -5576,17 +5567,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:1.13.5":
-  version: 1.13.5
-  resolution: "axios@npm:1.13.5"
-  dependencies:
-    follow-redirects: "npm:^1.15.11"
-    form-data: "npm:^4.0.5"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10/db726d09902565ef9a0632893530028310e2ec2b95b727114eca1b101450b00014133dfc3871cffc87983fb922bca7e4874d7e2826d1550a377a157cdf3f05b6
-  languageName: node
-  linkType: hard
-
 "babel-jest@npm:^29.7.0":
   version: 29.7.0
   resolution: "babel-jest@npm:29.7.0"
@@ -7487,16 +7467,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.15.11":
-  version: 1.15.11
-  resolution: "follow-redirects@npm:1.15.11"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10/07372fd74b98c78cf4d417d68d41fdaa0be4dcacafffb9e67b1e3cf090bc4771515e65020651528faab238f10f9b9c0d9707d6c1574a6c0387c5de1042cde9ba
-  languageName: node
-  linkType: hard
-
 "foreground-child@npm:^3.1.0":
   version: 3.2.1
   resolution: "foreground-child@npm:3.2.1"
@@ -7541,19 +7511,6 @@ __metadata:
     mime-types: "npm:^2.1.35"
     safe-buffer: "npm:^5.2.1"
   checksum: 10/4b6a8d07bb67089da41048e734215f68317a8e29dd5385a972bf5c458a023313c69d3b5d6b8baafbb7f808fa9881e0e2e030ffe61e096b3ddc894c516401271d
-  languageName: node
-  linkType: hard
-
-"form-data@npm:^4.0.5":
-  version: 4.0.5
-  resolution: "form-data@npm:4.0.5"
-  dependencies:
-    asynckit: "npm:^0.4.0"
-    combined-stream: "npm:^1.0.8"
-    es-set-tostringtag: "npm:^2.1.0"
-    hasown: "npm:^2.0.2"
-    mime-types: "npm:^2.1.12"
-  checksum: 10/52ecd6e927c8c4e215e68a7ad5e0f7c1031397439672fd9741654b4a94722c4182e74cc815b225dcb5be3f4180f36428f67c6dd39eaa98af0dcfdd26c00c19cd
   languageName: node
   linkType: hard
 

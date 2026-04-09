@@ -7,12 +7,11 @@ import {createServer} from 'http'
 
 import type {PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
-import type {AxiosResponse} from 'axios'
 import type {AddressInfo} from 'net'
 
-import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
-import {AxiosError} from 'axios'
+import {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
@@ -236,7 +235,7 @@ describe('dd-api', () => {
     test.each(cases)(
       'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
       async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
-        const serverError = new AxiosError('Server Error')
+        const serverError = new RequestError('Server Error', {})
 
         const requestMock = jest.mocked(requestModule.httpRequest)
         requestMock.mockImplementation(() => {
@@ -244,7 +243,7 @@ describe('dd-api', () => {
         })
 
         {
-          serverError.response = {status: 404} as AxiosResponse
+          serverError.response = {status: 404, statusText: '', data: undefined}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -256,7 +255,7 @@ describe('dd-api', () => {
         requestMock.mockClear()
 
         {
-          serverError.response = {status: 429} as AxiosResponse
+          serverError.response = {status: 429, statusText: '', data: undefined}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -268,7 +267,7 @@ describe('dd-api', () => {
         requestMock.mockClear()
 
         {
-          serverError.response = {status: 502} as AxiosResponse
+          serverError.response = {status: 502, statusText: '', data: undefined}
 
           const requestPromise = makeApiRequest()
           await fastForwardRetries()
@@ -575,31 +574,31 @@ describe('getApiHelper', () => {
 
 describe('formatBackendErrors', () => {
   test('backend error - no error', () => {
-    const backendError = getAxiosError(500, {errors: []})
+    const backendError = getRequestError(500, {errors: []})
     expect(formatBackendErrors(backendError)).toBe('error querying https://app.datadoghq.com/example')
   })
 
   test('backend error - single error', () => {
-    const backendError = getAxiosError(500, {errors: ['single error']})
+    const backendError = getRequestError(500, {errors: ['single error']})
     expect(formatBackendErrors(backendError)).toBe(
       'query on https://app.datadoghq.com/example returned: "single error"'
     )
   })
 
   test('backend error - multiple errors', () => {
-    const backendError = getAxiosError(500, {errors: ['error 1', 'error 2']})
+    const backendError = getRequestError(500, {errors: ['error 1', 'error 2']})
     expect(formatBackendErrors(backendError)).toBe(
       'query on https://app.datadoghq.com/example returned:\n  - error 1\n  - error 2'
     )
   })
 
   test('not a backend error', () => {
-    const requestError = getAxiosError(403, {message: 'Forbidden'})
+    const requestError = getRequestError(403, {message: 'Forbidden'})
     expect(formatBackendErrors(requestError)).toBe('could not query https://app.datadoghq.com/example\nForbidden')
   })
 
   test('missing scope error', () => {
-    const requestError = getAxiosError(403, {errors: ['Forbidden', 'Failed permission authorization checks']})
+    const requestError = getRequestError(403, {errors: ['Forbidden', 'Failed permission authorization checks']})
     expect(formatBackendErrors(requestError, 'synthetics_default_settings_read')).toBe(
       'query on https://app.datadoghq.com/example returned:\n  - Forbidden\n  - Failed permission authorization checks\nIs the App key granted the synthetics_default_settings_read scope?'
     )

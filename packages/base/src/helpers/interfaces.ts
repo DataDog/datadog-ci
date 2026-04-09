@@ -122,12 +122,7 @@ export type SpanTag =
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
-// Stage 1 compat: permissive enough for both RequestConfig and AxiosRequestConfig callers
-export type RequestBuilder = (args: any) => Promise<any>
-
-// Backward-compat aliases for downstream plugins (removed in Stage 2)
-export type {RequestConfig as AxiosRequestConfig}
-export type AxiosPromise<T = any> = Promise<RequestResponse<T>>
+export type RequestBuilder = (args: RequestConfig) => Promise<RequestResponse>
 
 /**
  * A subset of Clipanion's {@link BaseContext}.

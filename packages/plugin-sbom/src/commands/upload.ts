@@ -2,13 +2,14 @@ import fs from 'fs'
 import process from 'process'
 
 import type {ScaRequest} from '../types'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 import type Ajv from 'ajv'
-import type {AxiosPromise, AxiosResponse} from 'axios'
 
 import {SbomUploadCommand} from '@datadog/datadog-ci-base/commands/sbom/upload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {
   GIT_SHA,
   GIT_REPOSITORY_URL,
@@ -16,7 +17,6 @@ import {
   getMissingRequiredGitTags,
   GIT_BRANCH,
 } from '@datadog/datadog-ci-base/helpers/tags'
-import {isAxiosError} from 'axios'
 
 import {getApiHelper} from '../api'
 import {generatePayload} from '../payload'
@@ -115,7 +115,7 @@ export class PluginCommand extends SbomUploadCommand {
     }
 
     // Get the API helper to send the payload
-    const api: (sbomPayload: ScaRequest) => AxiosPromise<AxiosResponse> = getApiHelper(
+    const api: (sbomPayload: ScaRequest) => Promise<RequestResponse> = getApiHelper(
       this.config.apiKey,
       this.config.appKey,
       this.source
@@ -174,7 +174,7 @@ export class PluginCommand extends SbomUploadCommand {
         this.context.stdout.write(`Upload done for ${basePath}.\n`)
       }
     } catch (error) {
-      if (isAxiosError(error)) {
+      if (isRequestError(error)) {
         if (error.response?.status === 409) {
           const sha = tags[GIT_SHA] || 'sha-not-found'
           const branch = tags[GIT_BRANCH] || 'branch-not-found'

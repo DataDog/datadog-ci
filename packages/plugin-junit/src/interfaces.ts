@@ -1,5 +1,5 @@
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {AxiosPromise, AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 export interface Payload {
   hostname: string
@@ -14,5 +14,5 @@ export interface Payload {
 }
 
 export interface APIHelper {
-  uploadJUnitXML(jUnitXML: Payload): AxiosPromise<AxiosResponse>
+  uploadJUnitXML(jUnitXML: Payload): Promise<RequestResponse>
 }

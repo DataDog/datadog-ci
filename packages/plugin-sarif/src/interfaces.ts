@@ -1,5 +1,5 @@
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {AxiosPromise, AxiosResponse} from 'axios'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 import type {Writable} from 'stream'
 
 export interface Payload {
@@ -9,5 +9,5 @@ export interface Payload {
 }
 
 export interface APIHelper {
-  uploadSarifReport(sarifReport: Payload, write: Writable['write']): AxiosPromise<AxiosResponse>
+  uploadSarifReport(sarifReport: Payload, write: Writable['write']): Promise<RequestResponse>
 }

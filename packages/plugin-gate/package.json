@@ -41,8 +41,5 @@
     "@types/uuid": "9.0.8",
     "chalk": "3.0.0",
     "uuid": "9.0.1"
-  },
-  "devDependencies": {
-    "axios": "1.13.5"
   }
 }

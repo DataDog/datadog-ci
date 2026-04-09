@@ -43,8 +43,5 @@
     "form-data": "4.0.4",
     "upath": "2.0.1",
     "uuid": "9.0.1"
-  },
-  "devDependencies": {
-    "axios": "1.13.5"
   }
 }

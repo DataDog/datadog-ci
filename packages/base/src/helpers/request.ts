@@ -1,24 +1,22 @@
 import {PassThrough} from 'stream'
 
 import type {Readable} from 'stream'
+import type {Dispatcher} from 'undici'
 
 import {EnvHttpProxyAgent, ProxyAgent, fetch} from 'undici'
 
 export interface RequestConfig {
   baseURL?: string
-  data?: any
-  dispatcher?: any // undici Dispatcher — typed as any to avoid @types/node version conflict
-  headers?: any // permissive to allow AxiosHeaders during Stage 1 migration
+  data?: unknown
+  dispatcher?: Dispatcher
+  headers?: Record<string, string | null | undefined>
   method?: string
-  params?: any
-  paramsSerializer?: any // Stage 1 compat: axios uses CustomParamsSerializer | ParamsSerializerOptions
+  params?: Record<string, unknown>
+  paramsSerializer?:
+    | ((params: Record<string, unknown>) => string)
+    | {serialize: (params: Record<string, unknown>) => string}
   timeout?: number
   url?: string
-  // Compat fields accepted but not used by httpRequest — allows callers
-  // to pass them without type errors during the migration.
-  httpAgent?: any
-  httpsAgent?: any
-  maxBodyLength?: number
 }
 
 export interface RequestResponse<T = any> {
@@ -31,7 +29,6 @@ export interface RequestResponse<T = any> {
 
 export class RequestError extends Error {
   public config: RequestConfig
-  public isAxiosError = true as const // compat: passes axios isAxiosError() check (removed in Stage 2)
   public isRequestError = true as const
   public response?: {data: any; status: number; statusText: string}
 
@@ -80,7 +77,7 @@ const resolveUrl = (config: RequestConfig): string => {
 
   if (params) {
     const serializer = typeof paramsSerializer === 'function' ? paramsSerializer : paramsSerializer?.serialize
-    const qs = serializer ? serializer(params) : new URLSearchParams(params).toString()
+    const qs = serializer ? serializer(params) : new URLSearchParams(params as Record<string, string>).toString()
     const separator = resolved.includes('?') ? '&' : '?'
     resolved = `${resolved}${separator}${qs}`
   }
@@ -88,7 +85,10 @@ const resolveUrl = (config: RequestConfig): string => {
   return resolved
 }
 
-const serializeBody = (data: unknown, headers: any): {body: any; headers: any} => {
+const serializeBody = (
+  data: unknown,
+  headers: Record<string, string | null | undefined>
+): {body: unknown; headers: Record<string, string | null | undefined>} => {
   if (data === undefined) {
     return {body: undefined, headers}
   }
@@ -132,6 +132,15 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   const resolvedUrl = resolveUrl(config)
   const method = (config.method ?? 'GET').toUpperCase()
   const {body, headers} = serializeBody(config.data, config.headers ?? {})
+
+  // Strip null/undefined header values (callers pass null to explicitly unset a header)
+  const cleanHeaders: Record<string, string> = {}
+  for (const [k, v] of Object.entries(headers)) {
+    // eslint-disable-next-line no-null/no-null
+    if (v !== undefined && v !== null) {
+      cleanHeaders[k] = String(v)
+    }
+  }
 
   const fetchOptions: Record<string, any> = {
     method,

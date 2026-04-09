@@ -1,5 +1,5 @@
 import type {DeploymentEvent} from './interfaces'
-import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
+import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -7,7 +7,7 @@ import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 export const apiUrl = getApiUrl()
 
 export const sendDeploymentEvent =
-  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (deployment: DeploymentEvent) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse>) => async (deployment: DeploymentEvent) => {
     const attrs: Record<string, any> = {
       service: deployment.service,
       started_at: deployment.startedAt.getTime() * 1e6, // ms to ns
