@@ -11,6 +11,7 @@ import {
   executePluginCommand,
   VERSION_OVERRIDE_REGEX,
 } from '../plugin'
+import {getUserAgent} from '../user-agent'
 
 import {createCommand} from './testing-tools'
 
@@ -80,14 +81,30 @@ describe('checkPlugin', () => {
 })
 
 describe('executePluginCommand', () => {
+  const module = require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests')
+  const SyntheticsRunTestsPluginCommand = module.PluginCommand.prototype
+
   test('executes plugin command successfully', async () => {
     // Mock the plugin command's `execute` method, but not the `@datadog/datadog-ci-base/commands/synthetics/run-tests` one.
-    const module = require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests')
-    const SyntheticsRunTestsPluginCommand = module.PluginCommand.prototype
     jest.spyOn(SyntheticsRunTestsPluginCommand, 'execute').mockResolvedValue(0)
     const command = createCommand(SyntheticsRunTestsCommand)
     const result = await executePluginCommand(command)
     expect(result).toBe(0)
+  })
+
+  test('injects plugin identity into the user agent context during execution', async () => {
+    let userAgent = ''
+    jest.spyOn(SyntheticsRunTestsPluginCommand, 'execute').mockImplementation(async () => {
+      userAgent = getUserAgent()
+
+      return 0
+    })
+
+    const command = createCommand(SyntheticsRunTestsCommand)
+    const result = await executePluginCommand(command)
+
+    expect(result).toBe(0)
+    expect(userAgent).toMatch(/^datadog-ci\/1\.0\.0 \(node .+; os .+; arch .+\) datadog-ci-plugin-synthetics\/.+$/)
   })
 })
 

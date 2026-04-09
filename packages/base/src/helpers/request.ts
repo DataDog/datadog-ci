@@ -5,6 +5,8 @@ import type {Dispatcher} from 'undici'
 
 import {EnvHttpProxyAgent, ProxyAgent, fetch} from 'undici'
 
+import {getUserAgent} from './user-agent'
+
 export interface RequestConfig {
   baseURL?: string
   data?: unknown
@@ -132,10 +134,11 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   const resolvedUrl = resolveUrl(config)
   const method = (config.method ?? 'GET').toUpperCase()
   const {body, headers} = serializeBody(config.data, config.headers ?? {})
+  const headersWithUserAgent = {...headers, 'User-Agent': getUserAgent()}
 
   // Strip null/undefined header values (callers pass null to explicitly unset a header)
   const cleanHeaders: Record<string, string> = {}
-  for (const [k, v] of Object.entries(headers)) {
+  for (const [k, v] of Object.entries(headersWithUserAgent)) {
     // eslint-disable-next-line no-null/no-null
     if (v !== undefined && v !== null) {
       cleanHeaders[k] = String(v)
@@ -144,7 +147,7 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
 
   const fetchOptions: Record<string, any> = {
     method,
-    headers,
+    headers: cleanHeaders,
     body,
     dispatcher: config.dispatcher,
     duplex: body !== undefined && isStream(config.data) ? 'half' : undefined,
