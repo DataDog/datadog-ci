@@ -56,15 +56,26 @@ describe('checkPlugin', () => {
 
   test('returns true for standalone binary', async () => {
     mockIsStandaloneBinary.mockResolvedValueOnce(true)
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
 
     const result = await checkPlugin('test')
     expect(result).toBe(true)
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('The plugin is ready to be used! 🔌'))
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('The plugin is ready to be used! 🔌'))
   })
 
   test('returns true for valid plugin', async () => {
     const result = await checkPlugin('synthetics')
     expect(result).toBe(true)
+  })
+
+  test('prints plugin version when plugin is found without command', async () => {
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
+
+    const result = await checkPlugin('synthetics')
+    expect(result).toBe(true)
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('@datadog/datadog-ci-plugin-synthetics'))
+
+    consoleLogSpy.mockRestore()
   })
 })
 
@@ -118,7 +129,7 @@ describe('installPlugin', () => {
   })
 
   test('uses version overrides when provided', async () => {
-    process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE'] = '1.0.2'
+    process.env['PLUGIN_INSTALL_VERSION_OVERRIDE'] = '1.0.2'
 
     const mockInstallPackage = jest.fn().mockResolvedValue({
       exitCode: 0,
@@ -134,7 +145,7 @@ describe('installPlugin', () => {
       dev: true,
     })
 
-    delete process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
+    delete process.env['PLUGIN_INSTALL_VERSION_OVERRIDE']
   })
 
   test('handles full package name', async () => {

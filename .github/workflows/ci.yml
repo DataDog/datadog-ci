@@ -339,7 +339,7 @@ jobs:
         env:
           DEBUG: plugins
           # Needed during releases, to avoid a "No matching version found" errors
-          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
+          PLUGIN_INSTALL_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
 
   # Using `npx datadog-ci` only runs the binary without fetching any package.
   test-plugin-auto-install-in-project-npm:
@@ -392,7 +392,7 @@ jobs:
         env:
           DEBUG: plugins
           # Needed during releases, to avoid a "No matching version found" errors
-          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
+          PLUGIN_INSTALL_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
         run: |
           output=$(npx datadog-ci aas instrument || true)
           if echo "$output" | grep "Successfully installed"; then
@@ -408,7 +408,7 @@ jobs:
         env:
           DEBUG: plugins
           # Needed during releases, to avoid a "No matching version found" errors
-          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
+          PLUGIN_INSTALL_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if npx datadog-ci plugin check aas; then
@@ -469,7 +469,7 @@ jobs:
         env:
           DEBUG: plugins
           # Needed during releases, to avoid a "No matching version found" errors
-          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
+          PLUGIN_INSTALL_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
         run: |
           output=$(yarn datadog-ci aas instrument || true)
           if echo "$output" | grep "Successfully installed"; then
@@ -485,7 +485,7 @@ jobs:
         env:
           DEBUG: plugins
           # Needed during releases, to avoid a "No matching version found" errors
-          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
+          PLUGIN_INSTALL_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if yarn datadog-ci plugin check aas; then

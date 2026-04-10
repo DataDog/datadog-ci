@@ -18,6 +18,7 @@
     "knip:strict": "knip --include dependencies --no-config-hints --strict",
     "launch": "tsx --conditions=development packages/datadog-ci/src/cli.ts",
     "launch:debug": "tsx --conditions=development --inspect-brk packages/datadog-ci/src/cli.ts",
+    "launch:dist": "tsx packages/datadog-ci/dist/cli.js",
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "lint:all": "eslint --cache --quiet '**/*.ts'",
     "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
