@@ -14,15 +14,21 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-junit"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
+    ".": "./dist/bundle.js",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
     }
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/bundle.d.ts",
+    "dist/commands/*.js",
     "README",
     "LICENSE"
   ],
@@ -32,12 +38,10 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
+  "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
     "chalk": "3.0.0",
     "fast-xml-parser": "5.5.9",
     "form-data": "4.0.4",

@@ -1,1 +1,2 @@
-export {Tunnel, TunnelInfo, TunnelReporter} from './tunnel'
+export type {TunnelInfo, TunnelReporter} from './tunnel'
+export {Tunnel} from './tunnel'

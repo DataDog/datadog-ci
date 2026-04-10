@@ -14,15 +14,21 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-cloud-run"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
+    ".": "./dist/bundle.js",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
     }
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/bundle.d.ts",
+    "dist/commands/*.js",
     "README",
     "LICENSE"
   ],
@@ -32,12 +38,10 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
+  "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
     "@google-cloud/logging": "11.2.0",
     "@google-cloud/run": "3.0.0",
     "chalk": "3.0.0",

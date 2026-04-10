@@ -397,7 +397,7 @@ export default defineConfig(
     },
   },
   {
-    files: ['jest.config*.mjs', 'jest.setup.ts', 'bin/*.ts', 'packages/datadog-ci/scripts/esbuild.mjs'],
+    files: ['jest.config*.mjs', 'jest.setup.ts', 'bin/*.ts', 'scripts/*.mjs', 'packages/datadog-ci/shims/*.mjs'],
     extends: [tseslint.configs.disableTypeChecked],
   },
   {

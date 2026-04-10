@@ -14,15 +14,21 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-stepfunctions"
   },
+  "main": "dist/bundle.js",
   "exports": {
     "./package.json": "./package.json",
+    ".": "./dist/bundle.js",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
     }
   },
   "files": [
-    "dist/**/*",
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/bundle.d.ts",
+    "dist/commands/*.js",
     "README",
     "LICENSE"
   ],
@@ -32,18 +38,14 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
+  "devDependencies": {
     "@aws-sdk/client-cloudwatch-logs": "3.981.0",
     "@aws-sdk/client-iam": "3.981.0",
     "@aws-sdk/client-sfn": "3.981.0",
+    "@datadog/datadog-ci-base": "workspace:*",
+    "aws-sdk-client-mock": "4.1.0",
     "deep-object-diff": "1.1.9"
-  },
-  "devDependencies": {
-    "aws-sdk-client-mock": "4.1.0"
   }
 }

@@ -1,1 +1,3 @@
-export {version as cliVersion} from '@datadog/datadog-ci-base/package.json'
+import {version} from '@datadog/datadog-ci-base/package.json'
+
+export const cliVersion: string = version

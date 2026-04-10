@@ -129,7 +129,8 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
 }
 
 /**
- * Installs a plugin and the base package as `devDependencies` in the current project with the right package manager.
+ * Installs a plugin as a dev dependency in the current project with the right package manager.
+ * Plugin bundles are self-contained (all deps vendored), so only the plugin itself is needed.
  */
 export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
   if (!isValidScope(packageOrScope)) {
@@ -144,11 +145,10 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
     return false
   }
 
-  const {basePackage, pluginPackage} = getPackagesToInstall(packageOrScope)
+  const pluginPackage = getPackageToInstall(packageOrScope)
 
-  // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
   const {installPackage} = await importInstallPkg()
-  const output = await installPackage([basePackage, pluginPackage], {
+  const output = await installPackage([pluginPackage], {
     silent: !debug.enabled,
     dev: true,
   })
@@ -188,10 +188,10 @@ export const importInstallPkg = async () => {
 
 const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const isWindows = process.platform === 'win32'
-  const {basePackage, pluginPackage} = getPackagesToInstall(scope)
+  const pluginPackage = getPackageToInstall(scope)
 
   const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
-  const cmd = `npx --ignore-scripts -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+  const cmd = `npx --ignore-scripts -y -p ${pluginPackage} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
@@ -258,24 +258,68 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 }
 
+// Injected by esbuild in bundled builds (SEA and NPM bundle).
+// eslint-disable-next-line @typescript-eslint/naming-convention
+declare const __getInjectedPlugins:
+  | (() => {
+      injectedPluginSubmodules?: Record<string, Record<string, PluginSubModule>>
+      injectedPluginPackageJsons?: Record<string, PluginPackageJson>
+    })
+  | undefined
+
+const getInjectedPluginSubmodules = () => {
+  if (typeof __getInjectedPlugins === 'undefined') {
+    return undefined
+  }
+
+  return __getInjectedPlugins().injectedPluginSubmodules
+}
+
+const getInjectedPluginPackageJson = (scope: string): PluginPackageJson | undefined => {
+  if (typeof __getInjectedPlugins === 'undefined') {
+    return undefined
+  }
+
+  return __getInjectedPlugins().injectedPluginPackageJsons?.[scope]
+}
+
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (!isValidScope(scope)) {
     throw new Error(`Invalid scope: ${scope}`)
   }
 
-  if (await isStandaloneBinary()) {
-    debug(`Loading plugin injected in the standalone binary`)
+  // 1. Bundled: injected at build time (SEA has all plugins, NPM bundle has only the builtin ones)
+  const injectedPluginSubmodules = getInjectedPluginSubmodules()
+  if (injectedPluginSubmodules) {
+    const injected = injectedPluginSubmodules[scope]?.[command]
+    if (injected) {
+      debug('Loading pre-bundled plugin')
 
-    // @ts-expect-error - All plugins are injected in the standalone binary with esbuild.
-    return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
+      return injected
+    }
   }
 
   // Add current working directory's `node_modules` to the module resolution paths
   // in case the command is running in NPX.
   patchModulePaths()
-
   await handlePluginAutoInstall(scope)
 
+  const pluginPackage = `@datadog/datadog-ci-plugin-${scope}`
+
+  // 2. Self-contained plugin bundle (published vendored bundles)
+  try {
+    const bundle = require(pluginPackage)
+    const submodule = bundle.commands?.[command]
+    if (submodule) {
+      debug('Loading self-contained plugin bundle')
+
+      return submodule as PluginSubModule
+    }
+  } catch (error) {
+    debug('Plugin bundle load failed, trying submodule path:', error)
+  }
+
+  // 3. Development mode: load individual command submodule.
   const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
   debug('Resolving submodule:', submoduleName)
   let submodulePath = submoduleName
@@ -320,42 +364,45 @@ const isValidScope = (scope: string): boolean => {
  */
 export const VERSION_OVERRIDE_REGEX = /^(\d+\.\d+\.\d+|file:\.\/[a-zA-Z0-9.\-/@]+)$/
 
-const getPackagesToInstall = (scope: string) => {
+const getPackageToInstall = (scope: string) => {
   const pluginName = scopeToPackageName(scope)
 
-  // Useful for testing with different versions than the current CLI version.
-  // This supports any format that the current package manager supports.
-  const baseVersionOverride = process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE']
   const pluginVersionOverride = process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
-
-  if (baseVersionOverride && !VERSION_OVERRIDE_REGEX.test(baseVersionOverride)) {
-    throw new Error(`Invalid PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE value: ${baseVersionOverride}`)
-  }
 
   if (pluginVersionOverride && !VERSION_OVERRIDE_REGEX.test(pluginVersionOverride)) {
     throw new Error(`Invalid PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE value: ${pluginVersionOverride}`)
   }
 
-  const basePackage = `@datadog/datadog-ci-base@${baseVersionOverride ?? cliVersion}`
-  const pluginPackage = `${pluginName}@${pluginVersionOverride ?? cliVersion}`
-
-  return {basePackage, pluginPackage}
+  return `${pluginName}@${pluginVersionOverride ?? cliVersion}`
 }
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
+  const packageNameMatch = scope.match(/^@datadog\/datadog-ci-plugin-([a-z-]+)$/)
+  const normalizedScope = packageNameMatch?.[1] ?? scope
+
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
+    const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
+    if (injectedPackageJson) {
+      return injectedPackageJson
+    }
+
     // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
     // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
     return extractPackageJson(require(`${scope}/package.json`))
   }
 
   if (!command) {
+    const injectedPackageJson = getInjectedPluginPackageJson(normalizedScope)
+    if (injectedPackageJson) {
+      return injectedPackageJson
+    }
+
     // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
     // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
-    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
+    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
   }
 
-  return importPluginSubmodule(scope, command)
+  return importPluginSubmodule(normalizedScope, command)
 }
 
 const extractPackageJson = (content: unknown): PluginPackageJson => {

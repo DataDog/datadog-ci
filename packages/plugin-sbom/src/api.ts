@@ -43,9 +43,7 @@ export const getApiHelper = (
       })
     }
 
-  // Get the intake name
   const url = getBaseUrl()
-  // Get the AXIOS request/response function
   const requestIntake = getRequestBuilder({baseUrl: url, apiKey, appKey})
 
   return uploadSBomPayload(requestIntake)
