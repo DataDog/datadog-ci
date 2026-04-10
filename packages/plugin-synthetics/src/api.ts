@@ -26,6 +26,7 @@ import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {CriticalError} from './errors'
+import {getSyntheticsProxyDispatcher} from './proxy'
 import {MAX_TESTS_TO_TRIGGER} from './test'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 
@@ -448,7 +449,7 @@ const retryRequest = <T>(
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseV1Url, baseV2Url, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
-  const baseOptions = {apiKey, appKey, proxyOpts}
+  const baseOptions = {apiKey, appKey, dispatcher: getSyntheticsProxyDispatcher(proxyOpts)}
   const requestV1 = getRequestBuilder({...baseOptions, baseUrl: baseV1Url})
   const requestV2 = getRequestBuilder({...baseOptions, baseUrl: baseV2Url})
   const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})

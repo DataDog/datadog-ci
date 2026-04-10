@@ -119,34 +119,15 @@ describe('utils', () => {
         expect(capturedConfig!.dispatcher).toBeInstanceOf(EnvHttpProxyAgent)
       })
 
-      test('should add proxy configuration when explicitly defined', async () => {
+      test('should use the provided dispatcher when explicitly defined', async () => {
+        const dispatcher = requestModule.getProxyDispatcher('http://1.2.3.4:1234')
         const request = ciUtils.getRequestBuilder({
           apiKey: 'apiKey',
           baseUrl: 'http://fake-base.url/',
-          proxyOpts: {protocol: 'http', host: '1.2.3.4', port: 1234},
+          dispatcher,
         })
         await request({})
-        expect(capturedConfig!.dispatcher).toBeDefined()
-      })
-
-      test('should re-use the same dispatcher for the same proxy options', async () => {
-        const request1 = ciUtils.getRequestBuilder({
-          apiKey: 'apiKey',
-          baseUrl: 'http://fake-base.url/',
-          proxyOpts: {protocol: 'http', host: '1.2.3.4', port: 1234},
-        })
-        await request1({})
-        const dispatcher1 = capturedConfig!.dispatcher
-
-        const request2 = ciUtils.getRequestBuilder({
-          apiKey: 'apiKey',
-          baseUrl: 'http://fake-base.url/',
-          proxyOpts: {protocol: 'http', host: '1.2.3.4', port: 1234},
-        })
-        await request2({})
-        const dispatcher2 = capturedConfig!.dispatcher
-
-        expect(dispatcher1).toBe(dispatcher2)
+        expect(capturedConfig!.dispatcher).toBe(dispatcher)
       })
     })
 
@@ -201,21 +182,6 @@ describe('utils', () => {
 
       expect(ciUtils.buildPath(pathWithNoTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')
       expect(ciUtils.buildPath(pathWithTrailingSlash, fileName)).toBe('sourcemaps/js/file1.min.js')
-    })
-  })
-
-  describe('getProxyUrl', () => {
-    test('should return correct proxy URI', () => {
-      expect(ciUtils.getProxyUrl()).toBe('')
-      expect(ciUtils.getProxyUrl({protocol: 'http'})).toBe('')
-      expect(ciUtils.getProxyUrl({host: '127.0.0.1', protocol: 'http'})).toBe('')
-      expect(ciUtils.getProxyUrl({host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe('http://127.0.0.1:1234')
-
-      const auth = {password: 'pwd', username: 'john'}
-      expect(ciUtils.getProxyUrl({auth, host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe(
-        'http://john:pwd@127.0.0.1:1234'
-      )
-      expect(ciUtils.getProxyUrl({auth, protocol: 'http'})).toBe('')
     })
   })
 

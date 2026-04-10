@@ -5,10 +5,10 @@ import {promisify} from 'util'
 import type {RequestBuilder, SpanTag, SpanTags} from './interfaces'
 import type {RequestConfig} from './request'
 import type {BaseContext, CommandClass} from 'clipanion'
+import type {Dispatcher} from 'undici'
 
 import {Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
-import {ProxyAgent} from 'proxy-agent'
 import terminalLink from 'terminal-link'
 
 import {getProxyDispatcher, httpRequest} from './request'
@@ -108,59 +108,17 @@ export const resolveConfigFromFile = async <T>(
   return deepExtend(baseConfig, parsedConfig)
 }
 
-type ProxyType =
-  | 'http'
-  | 'https'
-  | 'socks'
-  | 'socks4'
-  | 'socks4a'
-  | 'socks5'
-  | 'socks5h'
-  | 'pac+data'
-  | 'pac+file'
-  | 'pac+ftp'
-  | 'pac+http'
-  | 'pac+https'
-
-export interface ProxyConfiguration {
-  auth?: {
-    password: string
-    username: string
-  }
-  host?: string
-  port?: number
-  protocol: ProxyType
-}
-
-export const getProxyUrl = (options?: ProxyConfiguration): string => {
-  if (!options) {
-    return ''
-  }
-
-  const {auth, host, port, protocol} = options
-
-  if (!host || !port) {
-    return ''
-  }
-
-  const authFragment = auth ? `${auth.username}:${auth.password}@` : ''
-
-  return `${protocol}://${authFragment}${host}:${port}`
-}
-
 export interface RequestOptions {
   apiKey: string
   appKey?: string
   baseUrl: string
+  dispatcher?: Dispatcher
   headers?: Map<string, string>
   overrideUrl?: string
-  proxyOpts?: ProxyConfiguration
 }
 
 export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
-  const {apiKey, appKey, baseUrl, overrideUrl, proxyOpts} = options
-  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
-  const dispatcher = getProxyDispatcher(proxyUrlFromConfiguration)
+  const {apiKey, appKey, baseUrl, overrideUrl, dispatcher = getProxyDispatcher('')} = options
 
   const overrideArgs = (args: RequestConfig): RequestConfig => {
     const newArguments: RequestConfig = {
@@ -188,38 +146,6 @@ export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
   }
 
   return (args: RequestConfig) => httpRequest(overrideArgs(args))
-}
-
-const proxyAgentCache = new Map<string, ProxyAgent>()
-
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
-  const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
-
-  let proxyAgent = proxyAgentCache.get(proxyUrlFromConfiguration)
-  if (!proxyAgent) {
-    proxyAgent = createProxyAgentForUrl(proxyUrlFromConfiguration)
-    proxyAgentCache.set(proxyUrlFromConfiguration, proxyAgent)
-  }
-
-  return proxyAgent
-}
-
-const createProxyAgentForUrl = (proxyUrl: string) => {
-  if (!proxyUrl) {
-    // Let the default proxy agent discover environment variables.
-    return new ProxyAgent()
-  }
-
-  return new ProxyAgent({
-    getProxyForUrl: (url) => {
-      // Do not proxy the WebSocket connections.
-      if (url?.match(/^wss?:/)) {
-        return ''
-      }
-
-      return proxyUrl
-    },
-  })
 }
 
 export const getApiHostForSite = (site: string) => {

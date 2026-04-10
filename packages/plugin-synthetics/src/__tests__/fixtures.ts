@@ -35,8 +35,8 @@ import type {
   LocalTestDefinition,
   TriggerInfo,
 } from '../interfaces'
+import type {ProxyConfiguration} from '../proxy'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import type WebSocket from 'ws'
 
 import {Server as WebSocketServer} from 'ws'

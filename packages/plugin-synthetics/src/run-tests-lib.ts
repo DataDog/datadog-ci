@@ -18,12 +18,12 @@ import type {InitialSummary} from './utils/public'
 
 import {getCIMetadata} from '@datadog/datadog-ci-base/helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
-import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {getApiHelper, isForbiddenError} from './api'
 import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {ExecutionRule} from './interfaces'
+import {getTunnelProxyAgent} from './proxy'
 import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
@@ -162,7 +162,7 @@ export const executeTests = async (
     }
     // Open a tunnel to Datadog
     try {
-      const tunnelProxyAgent = getProxyAgent(config.proxy)
+      const tunnelProxyAgent = getTunnelProxyAgent(config.proxy)
       const tunnelReporter = getTunnelReporter(reporter)
       tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
 
