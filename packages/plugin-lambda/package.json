@@ -67,5 +67,12 @@
     "inquirer-checkbox-plus-prompt": "1.4.2",
     "ora": "5.4.1",
     "upath": "2.0.1"
+  },
+  "devDependencies": {
+    "@aws-sdk/credential-provider-ini": "3.972.9",
+    "@aws-sdk/types": "3.973.6",
+    "aws-sdk-client-mock": "4.1.0",
+    "aws-sdk-client-mock-jest": "4.1.0",
+    "clipanion": "3.2.1"
   }
 }
