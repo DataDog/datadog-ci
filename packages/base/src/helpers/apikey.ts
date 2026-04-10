@@ -2,6 +2,7 @@ import type {BufferedMetricsLogger} from 'datadog-metrics'
 
 import chalk from 'chalk'
 
+import {datadogRoute} from './datadog-route'
 import {InvalidConfigurationError} from './errors'
 import {httpRequest, isRequestError} from './request'
 
@@ -74,7 +75,8 @@ class ApiKeyValidatorImplem {
           'DD-API-KEY': this.apiKey,
         },
         method: 'GET',
-        url: this.getApiKeyValidationURL(),
+        baseURL: `https://api.${this.datadogSite}`,
+        url: datadogRoute('/api/v1/validate'),
       })
 
       return response.data.valid
@@ -84,10 +86,6 @@ class ApiKeyValidatorImplem {
       }
       throw error
     }
-  }
-
-  private getApiKeyValidationURL(): string {
-    return `https://api.${this.datadogSite}/api/v1/validate`
   }
 
   private async isApiKeyValid(): Promise<boolean | undefined> {

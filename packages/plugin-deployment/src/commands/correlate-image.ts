@@ -1,6 +1,7 @@
 import {DeploymentCorrelateImageCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-image'
 import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
@@ -76,7 +77,7 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
           data: correlateEvent,
         },
         method: 'post',
-        url: '/api/v2/ci/deployments/correlate-image',
+        url: datadogRoute('/api/v2/ci/deployments/correlate-image'),
       })
 
     try {

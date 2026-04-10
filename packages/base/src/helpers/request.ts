@@ -1,11 +1,18 @@
 import {PassThrough} from 'stream'
 
+import type {DatadogRoute} from './datadog-route'
 import type {Readable} from 'stream'
 import type {Dispatcher} from 'undici'
 
 import {EnvHttpProxyAgent, ProxyAgent, fetch} from 'undici'
 
 import {getUserAgent} from './user-agent'
+
+declare const thirdPartyRouteBrand: unique symbol
+
+export type ThirdPartyRoute = string & {[thirdPartyRouteBrand]: true}
+
+export const thirdPartyRoute = (url: string): ThirdPartyRoute => url as ThirdPartyRoute
 
 export interface RequestConfig {
   baseURL?: string
@@ -18,7 +25,7 @@ export interface RequestConfig {
     | ((params: Record<string, unknown>) => string)
     | {serialize: (params: Record<string, unknown>) => string}
   timeout?: number
-  url?: string
+  url?: DatadogRoute | ThirdPartyRoute
 }
 
 export interface RequestResponse<T = any> {

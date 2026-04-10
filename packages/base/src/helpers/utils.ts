@@ -2,6 +2,7 @@ import {exec} from 'child_process'
 import {readFile, existsSync, statSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
+import type {DatadogRoute} from './datadog-route'
 import type {RequestBuilder, SpanTag, SpanTags} from './interfaces'
 import type {RequestConfig} from './request'
 import type {BaseContext, CommandClass} from 'clipanion'
@@ -153,7 +154,7 @@ export interface RequestOptions {
   appKey?: string
   baseUrl: string
   headers?: Map<string, string>
-  overrideUrl?: string
+  overrideUrl?: DatadogRoute
   proxyOpts?: ProxyConfiguration
 }
 

@@ -9,15 +9,16 @@ import type {Writable} from 'stream'
 import FormData from 'form-data'
 import upath from 'upath'
 
-import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
+import {DATADOG_SITES} from '../../constants'
 
+import {getDatadogSite} from '../api'
+import {getBaseUrl} from '../app'
+import {datadogRoute} from '../datadog-route'
 import {deleteFolder} from '../fs'
 import {getLatestVersion} from '../get-latest-version'
 import * as helpersRenderer from '../renderer'
 import {httpRequest, isRequestError} from '../request'
 import {isValidDatadogSite} from '../validation'
-
-import {CI_SITE_ENV_VAR, FLARE_ENDPOINT_PATH, SITE_ENV_VAR} from './constants'
 
 /**
  * Send the zip file to Datadog support
@@ -36,7 +37,11 @@ export const sendToDatadog = async (
   rootFolderPath: string,
   cliVersion: string
 ) => {
-  const endpointUrl = getEndpointUrl()
+  const site = getDatadogSite()
+  if (!isValidDatadogSite(site)) {
+    throw Error(`Invalid site: ${site}. Must be one of: ${DATADOG_SITES.join(', ')}`)
+  }
+
   const form = new FormData()
   form.append('case_id', caseId)
   form.append('flare_file', fs.createReadStream(zipPath))
@@ -48,7 +53,13 @@ export const sendToDatadog = async (
   }
 
   try {
-    await httpRequest({url: endpointUrl, method: 'POST', data: form, headers})
+    await httpRequest({
+      baseURL: getBaseUrl(),
+      url: datadogRoute('/api/ui/support/serverless/flare'),
+      method: 'POST',
+      data: form,
+      headers,
+    })
   } catch (err) {
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)
@@ -78,27 +89,6 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
 
     throw err
   }
-}
-
-/**
- * Calculates the full endpoint URL
- * @throws Error if the site is invalid
- * @returns the full endpoint URL
- */
-export const getEndpointUrl = () => {
-  const baseUrl = process.env[CI_SITE_ENV_VAR] ?? process.env[SITE_ENV_VAR] ?? DATADOG_SITE_US1
-  // The DNS doesn't redirect to the proper endpoint when a subdomain is not present in the baseUrl.
-  // There is a DNS inconsistency
-  let endpointUrl = baseUrl
-  if ([DATADOG_SITE_US1, DATADOG_SITE_EU1, DATADOG_SITE_GOV].includes(baseUrl)) {
-    endpointUrl = 'app.' + baseUrl
-  }
-
-  if (!isValidDatadogSite(baseUrl)) {
-    throw Error(`Invalid site: ${baseUrl}. Must be one of: ${DATADOG_SITES.join(', ')}`)
-  }
-
-  return 'https://' + endpointUrl + FLARE_ENDPOINT_PATH
 }
 
 /**

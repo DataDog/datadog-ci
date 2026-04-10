@@ -2,6 +2,7 @@ import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {MultipartPayload, UploadOptions} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {upload} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -13,7 +14,7 @@ export const getPERequestBuilder = (apiKey: string, cliVersion: string, site: st
       ['DD-EVP-ORIGIN', 'datadog-ci_pe-symbols'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
-    overrideUrl: 'api/v2/srcmap',
+    overrideUrl: datadogRoute('/api/v2/srcmap'),
   })
 
 // TODO: this is an exact duplicate of elf-symbols --> should we share the implementation in a more shared helper.ts file?

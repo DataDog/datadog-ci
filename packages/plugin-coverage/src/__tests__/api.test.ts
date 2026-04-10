@@ -73,7 +73,7 @@ describe('uploadCodeCoverageReport', () => {
     expect(requestMock).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: 'api/v2/cicovreprt',
+        url: '/api/v2/cicovreprt',
         data: formMock,
         headers: formMock.getHeaders(),
       })
@@ -125,7 +125,7 @@ describe('uploadCodeCoverageReport', () => {
     expect(requestMock).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: 'api/v2/cicovreprt',
+        url: '/api/v2/cicovreprt',
         data: formMock,
         headers: formMock.getHeaders(),
       })

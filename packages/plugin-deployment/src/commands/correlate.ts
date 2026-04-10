@@ -2,6 +2,7 @@ import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/depl
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
@@ -120,7 +121,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
           data: correlateEvent,
         },
         method: 'post',
-        url: '/api/v2/ci/deployments/correlate',
+        url: datadogRoute('/api/v2/ci/deployments/correlate'),
       })
 
     try {

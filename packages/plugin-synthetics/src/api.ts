@@ -22,7 +22,8 @@ import type {
 } from './interfaces'
 import type {RequestConfig, RequestResponse, RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
-import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
+import {thirdPartyRoute, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {CriticalError} from './errors'
@@ -98,7 +99,7 @@ const triggerTests =
         data,
         headers: {'X-Trigger-App': ciTriggerApp},
         method: 'POST',
-        url: '/synthetics/tests/trigger/ci',
+        url: datadogRoute('/synthetics/tests/trigger/ci'),
       },
       request,
       {retryOn429: true}
@@ -112,7 +113,9 @@ const getTest =
   async (testId: string, testType?: string) => {
     const resp = await retryRequest(
       {
-        url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
+        url: testType
+          ? datadogRoute('/synthetics/tests/:testType/:testId', {testId, testType})
+          : datadogRoute('/synthetics/tests/:testId', {testId}),
       },
       request,
       {retryOn429: true}
@@ -125,7 +128,10 @@ const getTestVersion =
   (request: (args: RequestConfig) => Promise<RequestResponse<void>>) => async (testId: string, version: number) => {
     await retryRequest(
       {
-        url: `/synthetics/tests/${testId}/version_history/${version}?only_check_existence=true`,
+        url: datadogRoute('/synthetics/tests/:testId/version_history/:version?only_check_existence=true', {
+          testId,
+          version,
+        }),
       },
       request,
       {retryOn429: true}
@@ -140,7 +146,9 @@ const getLocalTestDefinition =
         params: {
           format: 'ltd',
         },
-        url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
+        url: testType
+          ? datadogRoute('/synthetics/tests/:testType/:testId', {testId, testType})
+          : datadogRoute('/synthetics/tests/:testId', {testId}),
       },
       request,
       {retryOn429: true}
@@ -155,7 +163,7 @@ const editTest =
       {
         data,
         method: 'PUT',
-        url: `/synthetics/tests/${testId}`,
+        url: datadogRoute('/synthetics/tests/:testId', {testId}),
       },
       request,
       {retryOn429: true}
@@ -171,7 +179,7 @@ const searchTests =
           count: MAX_TESTS_TO_TRIGGER + 1,
           text: query,
         },
-        url: '/synthetics/tests/search',
+        url: datadogRoute('/synthetics/tests/search'),
       },
       request
     )
@@ -183,7 +191,7 @@ const getSyntheticsOrgSettings =
   (request: (args: RequestConfig) => Promise<RequestResponse<SyntheticsOrgSettings>>) => async () => {
     const resp = await retryRequest(
       {
-        url: '/synthetics/settings',
+        url: datadogRoute('/synthetics/settings'),
       },
       request
     )
@@ -194,7 +202,7 @@ const getSyntheticsOrgSettings =
 const getBatch =
   (request: (args: RequestConfig) => Promise<RequestResponse<{data: ServerBatch}>>) =>
   async (batchId: string): Promise<Batch> => {
-    const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {
+    const resp = await retryRequest({url: datadogRoute('/synthetics/ci/batch/:batchId', {batchId})}, request, {
       retryOn404: true,
       retryOn429: true,
     })
@@ -214,7 +222,7 @@ const pollResults =
         params: {
           result_ids: JSON.stringify(resultIds),
         },
-        url: '/synthetics/tests/poll_results',
+        url: datadogRoute('/synthetics/tests/poll_results'),
       },
       request,
       {retryOn404: true, retryOn429: true}
@@ -273,7 +281,7 @@ const getTunnelPresignedURL =
           test_id: testIds,
         },
         paramsSerializer: (params: any) => stringify(params),
-        url: '/synthetics/ci/tunnel',
+        url: datadogRoute('/synthetics/ci/tunnel'),
       },
       request
     )
@@ -300,7 +308,9 @@ const getMobileApplicationPresignedURLs =
           parts: parts.map(partForRequest),
         },
         method: 'POST',
-        url: `/synthetics/mobile/applications/${applicationId}/multipart-presigned-urls`,
+        url: datadogRoute('/synthetics/mobile/applications/:applicationId/multipart-presigned-urls', {
+          applicationId,
+        }),
       },
       request
     )
@@ -326,7 +336,7 @@ const uploadMobileApplicationPart =
             'Content-Type': null,
           },
           method: 'PUT',
-          url: presignedUrl,
+          url: thirdPartyRoute(presignedUrl),
         },
         request
       )
@@ -362,7 +372,9 @@ export const completeMultipartMobileApplicationUpload =
           validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
         },
         method: 'POST',
-        url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
+        url: datadogRoute('/synthetics/mobile/applications/:applicationId/multipart-upload-complete', {
+          applicationId,
+        }),
       },
       request
     )
@@ -376,7 +388,7 @@ export const pollMobileApplicationUploadResponse =
     const response = await retryRequest(
       {
         method: 'GET',
-        url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
+        url: datadogRoute('/synthetics/mobile/applications/validation-job-status/:jobId', {jobId}),
       },
       request
     )

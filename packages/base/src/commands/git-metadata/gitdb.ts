@@ -9,6 +9,7 @@ import FormData from 'form-data'
 import {lte} from 'semver'
 import upath from 'upath'
 
+import {datadogRoute} from '../../helpers/datadog-route'
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import type {RequestBuilder} from '../../helpers/interfaces'
 import type {Logger} from '../../helpers/logger'
@@ -235,7 +236,7 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
   })
   const response = await runRequest(log, 'search_commits', () =>
     request({
-      url: '/api/v2/git/repository/search_commits',
+      url: datadogRoute('/api/v2/git/repository/search_commits'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -367,7 +368,7 @@ export const uploadPackfile = async (
 
   return runRequest(log, 'packfile', () =>
     request({
-      url: '/api/v2/git/repository/packfile',
+      url: datadogRoute('/api/v2/git/repository/packfile'),
       headers: {
         ...form.getHeaders(),
       },

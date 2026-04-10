@@ -4,6 +4,7 @@ import type {TerraformArtifactPayload} from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 
@@ -45,7 +46,7 @@ export const uploadTerraformArtifact =
       data: form,
       headers: form.getHeaders(),
       method: 'POST',
-      url: 'api/v2/ciiac',
+      url: datadogRoute('/api/v2/ciiac'),
     })
   }
 

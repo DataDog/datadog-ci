@@ -6,6 +6,7 @@ import {Command, Option} from 'clipanion'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import type {ApiKeyValidator} from '../../helpers/apikey'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {datadogRoute} from '../../helpers/datadog-route'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
@@ -214,7 +215,7 @@ export class GitMetadataUploadCommand extends BaseCommand {
         ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: datadogRoute('/api/v2/srcmap'),
     })
   }
 

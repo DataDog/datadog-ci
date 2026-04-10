@@ -1,5 +1,3 @@
-export const API_ENDPOINT = 'api/v2/static-analysis-sca/dependencies'
-
 // os-scanner specific SBOM properties
 export const LEGACY_PACKAGE_MANAGER_PROPERTY_KEY = 'osv-scanner:package-manager'
 export const LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY = 'osv-scanner:is-direct'

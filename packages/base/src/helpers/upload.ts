@@ -6,6 +6,7 @@ import type {RequestBuilder} from './interfaces'
 
 import FormData from 'form-data'
 
+import {datadogRoute} from './datadog-route'
 import {retryRequest} from './retry'
 
 /** Multipart payload destined to be sent to Datadog's API
@@ -122,6 +123,6 @@ const uploadMultipart = async (request: RequestBuilder, payload: MultipartPayloa
     data,
     headers,
     method: 'POST',
-    url: 'v1/input',
+    url: datadogRoute('/v1/input'),
   })
 }

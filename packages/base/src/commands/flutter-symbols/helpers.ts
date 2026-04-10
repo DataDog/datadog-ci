@@ -4,6 +4,7 @@ import type {MultipartPayload, UploadOptions} from '@datadog/datadog-ci-base/hel
 import upath from 'upath'
 
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {upload} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -15,7 +16,7 @@ export const getFlutterRequestBuilder = (apiKey: string, cliVersion: string, sit
       ['DD-EVP-ORIGIN', 'datadog-ci_flutter-symbols'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
-    overrideUrl: 'api/v2/srcmap',
+    overrideUrl: datadogRoute('/api/v2/srcmap'),
   })
 
 // This function exists partially just to make mocking network calls easier.

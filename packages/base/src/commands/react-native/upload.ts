@@ -13,6 +13,7 @@ import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -292,7 +293,7 @@ export class ReactNativeUploadCommand extends BaseCommand {
         ['DD-EVP-ORIGIN', 'datadog-ci_react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: datadogRoute('/api/v2/srcmap'),
     })
   }
 

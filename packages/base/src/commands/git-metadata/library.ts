@@ -2,6 +2,7 @@ import type {CommitInfo} from './interfaces'
 import type {SimpleGit} from 'simple-git'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {datadogRoute} from '../../helpers/datadog-route'
 import type {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import type {UploadOptions} from '../../helpers/upload'
@@ -80,7 +81,7 @@ const uploadToSrcmapTrack = async (apiKey: string, datadogSite: string, payload:
       ['DD-EVP-ORIGIN', 'datadog-ci_sci'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
-    overrideUrl: 'api/v2/srcmap',
+    overrideUrl: datadogRoute('/api/v2/srcmap'),
   })
 
   const status = await uploadRepository(requestBuilder, cliVersion)(payload, {

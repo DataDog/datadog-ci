@@ -6,6 +6,7 @@ import type {
 } from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 const requestGateEvaluation =
@@ -33,7 +34,7 @@ const requestGateEvaluation =
         'Content-Type': 'application/json',
       },
       method: 'POST',
-      url: '/api/unstable/deployments/gates/evaluation',
+      url: datadogRoute('/api/unstable/deployments/gates/evaluation'),
     })
   }
 
@@ -42,7 +43,7 @@ const getGateEvaluationResult =
   async (evaluationId: string) => {
     return request({
       method: 'GET',
-      url: `/api/unstable/deployments/gates/evaluation/${evaluationId}`,
+      url: datadogRoute('/api/unstable/deployments/gates/evaluation/:evaluationId', {evaluationId}),
     })
   }
 

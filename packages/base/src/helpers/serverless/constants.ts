@@ -32,7 +32,6 @@ export const LOGS_DIRECTORY = 'logs'
 export const PROJECT_FILES_DIRECTORY = 'project_files'
 export const ADDITIONAL_FILES_DIRECTORY = 'additional_files'
 export const INSIGHTS_FILE_NAME = 'INSIGHTS.md'
-export const FLARE_ENDPOINT_PATH = '/api/ui/support/serverless/flare'
 
 // Project files to search for in Flare
 export const FLARE_PROJECT_FILES = [

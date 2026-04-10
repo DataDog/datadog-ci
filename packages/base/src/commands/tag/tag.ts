@@ -5,6 +5,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
 import type {CILevel} from '../../helpers/ci'
 import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '../../helpers/ci'
+import {datadogRoute} from '../../helpers/datadog-route'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import type {RequestError} from '../../helpers/request'
@@ -167,7 +168,7 @@ export class TagCommand extends BaseCommand {
       request({
         data: this.buildTagRequest(ciEnv, level, provider, tags),
         method: 'post',
-        url: 'api/v2/ci/pipeline/tags',
+        url: datadogRoute('/api/v2/ci/pipeline/tags'),
       })
 
     try {

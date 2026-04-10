@@ -11,7 +11,7 @@ jest.mock('undici', () => {
 
 import {fetch} from 'undici'
 
-import {httpRequest} from '../request'
+import {httpRequest, thirdPartyRoute} from '../request'
 import {getUserAgent, withPluginUserAgent} from '../user-agent'
 
 type MockFetchResponse = {
@@ -60,7 +60,7 @@ describe('httpRequest', () => {
   })
 
   test('adds the default datadog-ci user agent header', async () => {
-    await httpRequest({url: 'https://example.com'})
+    await httpRequest({url: thirdPartyRoute('https://example.com')})
 
     expect(mockedFetch).toHaveBeenCalledWith('https://example.com', expect.any(Object))
     expect(getLastFetchHeaders()['User-Agent']).toBe(getUserAgent())
@@ -68,7 +68,7 @@ describe('httpRequest', () => {
 
   test('appends the active plugin token when a plugin command is running', async () => {
     await withPluginUserAgent('@datadog/datadog-ci-plugin-synthetics', '9.9.9', async () => {
-      await httpRequest({url: 'https://example.com'})
+      await httpRequest({url: thirdPartyRoute('https://example.com')})
     })
 
     expect(mockedFetch).toHaveBeenCalledWith('https://example.com', expect.any(Object))
@@ -89,7 +89,7 @@ describe('httpRequest', () => {
       }
       mockedFetch.mockResolvedValue(response as Awaited<ReturnType<typeof fetch>>)
 
-      const result = await httpRequest({url: 'https://example.com'})
+      const result = await httpRequest({url: thirdPartyRoute('https://example.com')})
 
       expect(result.data).toEqual({data: [{id: 'abc', type: 'commit'}]})
     })
@@ -102,7 +102,7 @@ describe('httpRequest', () => {
       }
       mockedFetch.mockResolvedValue(response as Awaited<ReturnType<typeof fetch>>)
 
-      const result = await httpRequest({url: 'https://example.com'})
+      const result = await httpRequest({url: thirdPartyRoute('https://example.com')})
 
       expect(result.data).toBe(body)
     })
