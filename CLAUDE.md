@@ -49,3 +49,10 @@ Not enforced by lint -- follow manually:
 - Use `createMockContext()` and `makeRunCLI()` from `packages/base/src/helpers/__tests__/testing-tools.ts`
 - Use `createCommand()` to instantiate a command with mock context for unit tests
 - `jest.spyOn()` for mocking, follow existing patterns in nearby test files
+
+## Verification
+
+After making changes, always verify by running:
+1. `yarn build` -- ensure TypeScript compiles cleanly
+2. `yarn lint` -- ensure no lint errors (use `yarn format` to auto-fix)
+3. `yarn test <path to relevant test files>` -- ensure tests pass for affected packages
