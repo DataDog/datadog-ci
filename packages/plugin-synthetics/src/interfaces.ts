@@ -1,5 +1,5 @@
-import type {TunnelInfo} from './tunnel'
 import type {ProxyConfiguration} from './proxy'
+import type {TunnelInfo} from './tunnel'
 import type {RecursivePartial} from './utils/internal'
 import type {InitialSummary} from './utils/public'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'

@@ -1,8 +1,8 @@
 import {timingSafeEqual} from 'crypto'
-import type {Agent} from 'http'
 import {Socket} from 'net'
 import {pipeline} from 'stream'
 
+import type {Agent} from 'http'
 import type {
   AuthContext,
   Connection as SSHConnection,

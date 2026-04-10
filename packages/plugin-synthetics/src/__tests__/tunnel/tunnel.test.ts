@@ -1,7 +1,7 @@
 import {PassThrough} from 'stream'
 
-import {getTunnelReporter} from '../../reporters/default'
 import {getTunnelProxyAgent} from '../../proxy'
+import {getTunnelReporter} from '../../reporters/default'
 import {Tunnel} from '../../tunnel'
 import {WebSocket} from '../../tunnel/websocket'
 jest.mock('../../tunnel/websocket')

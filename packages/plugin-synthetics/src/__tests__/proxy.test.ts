@@ -8,9 +8,7 @@ describe('synthetics proxy helpers', () => {
     expect(getProxyUrl({host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe('http://127.0.0.1:1234')
 
     const auth = {password: 'pwd', username: 'john'}
-    expect(getProxyUrl({auth, host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe(
-      'http://john:pwd@127.0.0.1:1234'
-    )
+    expect(getProxyUrl({auth, host: '127.0.0.1', port: 1234, protocol: 'http'})).toBe('http://john:pwd@127.0.0.1:1234')
     expect(getProxyUrl({auth, protocol: 'http'})).toBe('')
   })
 

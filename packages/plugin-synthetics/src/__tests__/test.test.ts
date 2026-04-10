@@ -4,8 +4,8 @@ jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
 }))
 
 import type {APIHelper} from '../api'
-import type {InitialSummary} from '../utils/public'
 import type {ProxyConfiguration} from '../proxy'
+import type {InitialSummary} from '../utils/public'
 
 import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
