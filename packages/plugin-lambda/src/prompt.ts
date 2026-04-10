@@ -1,4 +1,5 @@
-import type {CheckboxConfig, InputConfig, PasswordConfig, SelectConfig} from '@datadog/datadog-ci-base/helpers/inquirer'
+import type {InputConfig, PasswordConfig, SelectConfig} from '@datadog/datadog-ci-base/helpers/inquirer'
+import type {SearchableCheckboxConfig} from './searchable-checkbox-prompt'
 
 import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
 import {loadPrompts} from '@datadog/datadog-ci-base/helpers/inquirer'
@@ -11,7 +12,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
-import {filter} from 'fuzzy'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -28,6 +28,7 @@ import {
   DATADOG_API_KEY_REG_EXP,
 } from './constants'
 import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
+import {loadSearchableCheckboxPrompt} from './searchable-checkbox-prompt'
 
 type DatadogApiKeyType = {
   envVar: string
@@ -168,37 +169,11 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: DatadogApiKeyType): I
   },
 })
 
-const getFilteredFunctionNames = (functionNames: string[], searchTerm?: string) => {
-  if (!searchTerm) {
-    return functionNames
-  }
-
-  return filter(searchTerm, functionNames).map((element) => element.original)
-}
-
-const functionSearchQuestion = (functionNames: string[]): InputConfig => ({
-  default: '',
-  message: 'Filter functions to modify (press Enter to show all functions):',
-  validate: (value) => {
-    if (getFilteredFunctionNames(functionNames, value).length < 1) {
-      return 'No functions matched that filter. Try another search term.'
-    }
-
-    return true
-  },
-})
-
-export const functionSelectionQuestion = (
-  functionNames: string[],
-  selectedFunctions: string[] = []
-): CheckboxConfig<string> => ({
-  choices: functionNames.map((functionName) => ({
-    checked: selectedFunctions.includes(functionName),
-    name: functionName,
-    value: functionName,
-  })),
+export const functionSelectionQuestion = (functionNames: string[]): SearchableCheckboxConfig => ({
+  choices: functionNames,
+  message:
+    'Select the functions to modify (Press <space> to select, p.s. start typing the name instead of manually scrolling)',
   pageSize: 10,
-  message: 'Select the functions to modify (Press <space> to select and <enter> to continue)',
   validate: (selectedFunctionNames) => {
     if (selectedFunctionNames.length < 1) {
       return 'You must choose at least one function.'
@@ -274,35 +249,12 @@ export const requestEnvServiceVersion = async (): Promise<void> => {
 
 export const requestFunctionSelection = async (functionNames: string[]): Promise<string[]> => {
   try {
-    const {checkbox, confirm, input} = await loadPrompts()
-    const selectedFunctions = new Set<string>()
-    let continueFiltering = true
+    const searchableCheckboxPrompt = await loadSearchableCheckboxPrompt()
 
-    while (continueFiltering) {
-      const searchTerm = await input(functionSearchQuestion(functionNames))
-      const filteredFunctionNames = getFilteredFunctionNames(functionNames, searchTerm)
-      const filteredSelection = await checkbox(functionSelectionQuestion(filteredFunctionNames, [...selectedFunctions]))
-
-      for (const functionName of filteredFunctionNames) {
-        selectedFunctions.delete(functionName)
-      }
-
-      for (const functionName of filteredSelection) {
-        selectedFunctions.add(functionName)
-      }
-
-      continueFiltering = await confirm({
-        default: false,
-        message: 'Would you like to apply another filter to add or remove more functions?',
-      })
-    }
-
-    return [...selectedFunctions]
+    return await searchableCheckboxPrompt(functionSelectionQuestion(functionNames))
   } catch (e) {
-    if (e instanceof Error) {
-      throw Error(`Couldn't receive selected functions. ${e.message}`)
-    }
+    const message = e instanceof Error ? e.message : String(e)
 
-    throw e
+    throw Error(`Couldn't receive selected functions. ${message}`)
   }
 }

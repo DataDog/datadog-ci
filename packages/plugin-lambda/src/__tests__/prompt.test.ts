@@ -1,8 +1,9 @@
 jest.mock('@datadog/datadog-ci-base/helpers/inquirer', () => ({
+  loadCore: jest.fn(),
   loadPrompts: jest.fn(),
 }))
 import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {loadPrompts} from '@datadog/datadog-ci-base/helpers/inquirer'
+import {loadCore, loadPrompts} from '@datadog/datadog-ci-base/helpers/inquirer'
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 import {
@@ -26,12 +27,17 @@ import {mockAwsAccessKeyId, mockAwsSecretAccessKey} from './fixtures'
 describe('prompt', () => {
   const mockCheckbox = jest.fn()
   const mockConfirm = jest.fn()
+  const mockCreatePrompt = jest.fn()
   const mockInput = jest.fn()
   const mockPassword = jest.fn()
+  const mockSearchableCheckboxPrompt = jest.fn()
   const mockSelect = jest.fn()
 
   beforeEach(() => {
     jest.resetAllMocks()
+    ;(loadCore as jest.Mock).mockResolvedValue({
+      createPrompt: mockCreatePrompt.mockReturnValue(mockSearchableCheckboxPrompt),
+    })
     ;(loadPrompts as jest.Mock).mockResolvedValue({
       checkbox: mockCheckbox,
       confirm: mockConfirm,
@@ -114,13 +120,12 @@ describe('prompt', () => {
     test('returns question with the provided function names being its choices', () => {
       const functionNames = ['my-func', 'my-func-2', 'my-third-func']
       const question = functionSelectionQuestion(functionNames)
-      expect(question.choices).toEqual(
-        functionNames.map((functionName) => ({
-          checked: false,
-          name: functionName,
-          value: functionName,
-        }))
+      expect(question.choices).toEqual(functionNames)
+      expect(question.message).toBe(
+        'Select the functions to modify (Press <space> to select, p.s. start typing the name instead of manually scrolling)'
       )
+      expect(question.validate(['my-func'])).toBe(true)
+      expect(question.validate([])).toBe('You must choose at least one function.')
     })
   })
 
@@ -211,16 +216,23 @@ describe('prompt', () => {
     const selectedFunctions = ['my-func', 'my-func-2', 'my-third-func']
 
     test('returns the selected functions', async () => {
-      mockInput.mockResolvedValue('')
-      mockCheckbox.mockResolvedValue(selectedFunctions)
-      mockConfirm.mockResolvedValue(false)
+      mockSearchableCheckboxPrompt.mockResolvedValue(selectedFunctions)
 
       const functions = await requestFunctionSelection(selectedFunctions)
       expect(functions).toEqual(selectedFunctions)
+      expect(mockCreatePrompt).toHaveBeenCalledTimes(1)
+      expect(mockSearchableCheckboxPrompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          choices: selectedFunctions,
+          message:
+            'Select the functions to modify (Press <space> to select, p.s. start typing the name instead of manually scrolling)',
+          pageSize: 10,
+        })
+      )
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      mockInput.mockRejectedValue(new Error('Unexpected error'))
+      mockSearchableCheckboxPrompt.mockRejectedValue(new Error('Unexpected error'))
       let error
       try {
         await requestFunctionSelection(selectedFunctions)

@@ -1955,6 +1955,7 @@ __metadata:
   resolution: "@datadog/datadog-ci-base@workspace:packages/base"
   dependencies:
     "@antfu/install-pkg": "npm:1.1.0"
+    "@inquirer/core": "npm:11.1.8"
     "@inquirer/prompts": "npm:8.4.1"
     "@types/async-retry": "npm:1.4.8"
     "@types/datadog-metrics": "npm:0.6.1"
@@ -2882,7 +2883,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@inquirer/core@npm:^11.1.8":
+"@inquirer/core@npm:11.1.8, @inquirer/core@npm:^11.1.8":
   version: 11.1.8
   resolution: "@inquirer/core@npm:11.1.8"
   dependencies:
