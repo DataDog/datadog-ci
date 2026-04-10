@@ -445,6 +445,7 @@ export class AutotestCommand extends BaseCommand {
 
   private async fetchGitHubDiff(pr: PrInfo): Promise<string> {
     const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+    const pathFilter = process.env.AUTOTEST_PATH_FILTER
 
     const response = await fetch(`${GITHUB_API_BASE}/repos/${pr.repo}/pulls/${pr.number}`, {
       headers: {
@@ -458,7 +459,19 @@ export class AutotestCommand extends BaseCommand {
       throw new Error(`GitHub API error ${response.status}: ${await response.text()}`)
     }
 
-    return response.text()
+    const fullDiff = await response.text()
+
+    if (!pathFilter) {
+      return fullDiff
+    }
+
+    // Filter diff to only include hunks for files matching the path prefix
+    const sections = fullDiff.split(/(?=^diff --git )/m)
+    const filtered = sections.filter((s) => {
+      const match = s.match(/^diff --git a\/(.+) b\//)
+      return match && match[1].startsWith(pathFilter)
+    })
+    return filtered.join('')
   }
 
   private async fetchGitLabDiff(pr: PrInfo): Promise<string> {
@@ -728,6 +741,7 @@ export class AutotestCommand extends BaseCommand {
           ? '\n\n## DRY RUN MODE\nDo NOT post any PR comments. Do NOT use gh, curl, or any other method to post comments. Only write the report to stdout and validation_report.md.'
           : ''),
         model: MODEL,
+        maxTurns: 50,
         agents: {
           'prod-data-collector': {
             description:
