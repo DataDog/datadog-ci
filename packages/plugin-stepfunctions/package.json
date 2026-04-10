@@ -15,9 +15,13 @@
     "directory": "packages/plugin-stepfunctions"
   },
   "main": "dist/bundle.js",
+  "types": "dist/bundle.d.ts",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/bundle.js",
+    ".": {
+      "types": "./dist/bundle.d.ts",
+      "default": "./dist/bundle.js"
+    },
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"

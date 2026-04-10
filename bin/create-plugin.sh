@@ -61,9 +61,13 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "directory": "$PLUGIN_DIR"
   },
   "main": "dist/bundle.js",
+  "types": "dist/bundle.d.ts",
   "exports": {
     "./package.json": "./package.json",
-    ".": "./dist/bundle.js",
+    ".": {
+      "types": "./dist/bundle.d.ts",
+      "default": "./dist/bundle.js"
+    },
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
