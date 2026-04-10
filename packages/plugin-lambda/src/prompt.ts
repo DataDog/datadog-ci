@@ -1,5 +1,5 @@
-import type {InputConfig, PasswordConfig, SelectConfig} from '@datadog/datadog-ci-base/helpers/inquirer'
 import type {SearchableCheckboxConfig} from './searchable-checkbox-prompt'
+import type {InputConfig, PasswordConfig, SelectConfig} from '@datadog/datadog-ci-base/helpers/inquirer'
 
 import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
 import {loadPrompts} from '@datadog/datadog-ci-base/helpers/inquirer'

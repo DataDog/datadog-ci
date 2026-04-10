@@ -100,9 +100,9 @@ type InquirerCore = {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-implied-eval -- TypeScript rewrites plain `import()` to `require()` in our CommonJS emit.
-const importInquirerModule = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<
-  unknown
->
+const importInquirerModule = new Function('specifier', 'return import(specifier)') as (
+  specifier: string
+) => Promise<unknown>
 
 // Preserve a real runtime dynamic import so Node can load the ESM-only prompt package from CommonJS output.
 export const loadPrompts = () => importInquirerModule('@inquirer/prompts') as Promise<InquirerPrompts>
