@@ -2,7 +2,7 @@ import {AsyncLocalStorage} from 'node:async_hooks'
 
 import {cliVersion} from '../version'
 
-const pluginUserAgentStorage = new AsyncLocalStorage<string | undefined>()
+const pluginUserAgentStorage = new AsyncLocalStorage<string>()
 
 const formatPluginName = (pluginName: string) => pluginName.replace(/^@datadog\//, '')
 const formatPluginUserAgent = (pluginName: string, pluginVersion: string) =>
@@ -21,7 +21,7 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
 /**
  * Gets the user agent for requests made by the CLI.
  *
- * @example `datadog-ci/1.0.0 (node v18.17.0; os darwin; arch arm64) datadog-ci-plugin-synthetics/1.0.0`
+ * @example `datadog-ci/1.0.0 (node 18.17.0; os darwin; arch arm64) datadog-ci-plugin-synthetics/1.0.0`
  * @example `datadog-ci/1.0.0 (runtime unknown) datadog-ci-plugin-synthetics/1.0.0`
  * @example `datadog-ci/1.0.0 (runtime unknown)`
  */
