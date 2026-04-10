@@ -15,6 +15,7 @@ import type {Writable} from 'stream'
 
 import {ListFunctionsCommand, GetFunctionCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {loadPrompts} from '@datadog/datadog-ci-base/helpers/inquirer'
 import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {
   API_KEY_ENV_VAR,
@@ -25,7 +26,6 @@ import {LAMBDA_LAYER_VERSIONS} from '@datadog/datadog-ci-base/helpers/serverless
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {CredentialsProviderError} from '@smithy/property-provider'
-import inquirer from 'inquirer'
 
 import {
   ARM64_ARCHITECTURE,
@@ -164,9 +164,9 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
   // If provided profile is enforced by MFA and a session
   // token is not set we must request for the MFA token.
   init.mfaCodeProvider = async (mfaSerial) => {
-    const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
+    const {input} = await loadPrompts()
 
-    return answer.AWS_MFA
+    return input(awsProfileQuestion(mfaSerial))
   }
 
   return init

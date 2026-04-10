@@ -1,14 +1,12 @@
-import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
-import inquirer from 'inquirer'
+import type {ConfirmConfig, InputConfig, SelectConfig} from '@datadog/datadog-ci-base/helpers/inquirer'
 
-const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
-inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
+import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
+import {loadPrompts} from '@datadog/datadog-ci-base/helpers/inquirer'
 
 export const requestGCPProject = async (): Promise<string> => {
-  const answer = await inquirer.prompt({
+  const {input} = await loadPrompts()
+  const question: InputConfig = {
     message: 'Enter GCP Project ID:',
-    name: 'project',
-    type: 'input',
     validate: (value: string) => {
       if (!value || value.trim().length === 0) {
         return 'Project ID is required.'
@@ -16,17 +14,16 @@ export const requestGCPProject = async (): Promise<string> => {
 
       return true
     },
-  })
+  }
 
-  return answer.project
+  return input(question)
 }
 
 export const requestGCPRegion = async (defaultRegion?: string): Promise<string> => {
-  const answer = await inquirer.prompt({
+  const {input} = await loadPrompts()
+  const question: InputConfig = {
     default: defaultRegion || 'us-central1',
     message: 'Enter GCP Region:',
-    name: 'region',
-    type: 'input',
     validate: (value: string) => {
       if (!value || value.trim().length === 0) {
         return 'Region is required.'
@@ -34,16 +31,15 @@ export const requestGCPRegion = async (defaultRegion?: string): Promise<string> 
 
       return true
     },
-  })
+  }
 
-  return answer.region
+  return input(question)
 }
 
 export const requestServiceName = async (): Promise<string> => {
-  const answer = await inquirer.prompt({
+  const {input} = await loadPrompts()
+  const question: InputConfig = {
     message: 'Enter Cloud Run service name:',
-    name: 'serviceName',
-    type: 'input',
     validate: (value: string) => {
       if (!value || value.trim().length === 0) {
         return 'Service name is required.'
@@ -51,29 +47,27 @@ export const requestServiceName = async (): Promise<string> => {
 
       return true
     },
-  })
+  }
 
-  return answer.serviceName
+  return input(question)
 }
 
 export const requestSite = async (): Promise<string> => {
-  const answer = await inquirer.prompt({
+  const {select} = await loadPrompts()
+  const question: SelectConfig = {
     choices: DATADOG_SITES,
     message: 'Select a Datadog Site:',
-    name: 'site',
-    type: 'list',
-  })
+  }
 
-  return answer.site
+  return select(question)
 }
 
 export const requestConfirmation = async (message: string, defaultValue = true) => {
-  const confirmationAnswer = await inquirer.prompt({
+  const {confirm} = await loadPrompts()
+  const question: ConfirmConfig = {
     message,
-    name: 'confirmation',
-    type: 'confirm',
     default: defaultValue,
-  })
+  }
 
-  return confirmationAnswer.confirmation !== false
+  return confirm(question)
 }
