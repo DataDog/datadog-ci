@@ -432,8 +432,9 @@ export class AutotestCommand extends BaseCommand {
     }
 
     // Write debug info to a file that survives process.exit
+    const debugDir = process.env.HOME || logDir
     const {writeFileSync} = await import('fs')
-    writeFileSync(join(logDir, '.autotest-debug.txt'), [
+    writeFileSync(join(debugDir, '.autotest-debug.txt'), [
       `exitCode=${exitCode}`,
       `prInfo=${JSON.stringify(prInfo)}`,
       `dryRun=${this.dryRun}`,
@@ -529,7 +530,7 @@ export class AutotestCommand extends BaseCommand {
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // Raw log file for full agent trace.
-    const logDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
+    const logDir = process.env.HOME || process.env.AUTOTEST_REPO_DIR || process.cwd()
     const logPath = join(logDir, '.autotest-agent.log')
     const logStream = createWriteStream(logPath, {flags: 'w'})
     const log = (entry: string) => logStream.write(`[${new Date().toISOString()}] ${entry}\n`)
