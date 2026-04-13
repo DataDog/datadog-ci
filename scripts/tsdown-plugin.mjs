@@ -23,6 +23,9 @@ const rootMetaPath = path.join(REPO_ROOT, 'datadog-ci.meta.json')
 const rootMeta = JSON.parse(await readFile(rootMetaPath, 'utf8'))
 const bundleConfig = rootMeta.plugins?.[pluginName]?.bundle ?? {}
 const extraBundlePatterns = Array.isArray(bundleConfig.extraBundlePatterns) ? bundleConfig.extraBundlePatterns : []
+const extraBundleExternalPatterns = Array.isArray(bundleConfig.extraBundleExternalPatterns)
+  ? bundleConfig.extraBundleExternalPatterns
+  : []
 const srcDir = path.join(packageDir, 'src')
 
 const srcCommandsDir = path.join(packageDir, 'src', 'commands')
@@ -117,10 +120,22 @@ try {
     },
   })
 
+  const extraBuildDeps =
+    extraBundleExternalPatterns.length > 0
+      ? {
+          ...buildOptions.deps,
+          neverBundle: [
+            ...buildOptions.deps.neverBundle,
+            ...extraBundleExternalPatterns.map((prefix) => new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)),
+          ],
+        }
+      : buildOptions.deps
+
   const extraBundles = []
   for (const {outputName, sourcePath} of extraBundleEntries) {
     const entryBundles = await build({
       ...buildOptions,
+      deps: extraBuildDeps,
       outputOptions: createOutputOptions(),
       entry: {
         [outputName]: sourcePath,

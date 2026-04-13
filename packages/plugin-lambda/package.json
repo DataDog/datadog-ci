@@ -37,6 +37,10 @@
     "dist/bundle.js.LEGAL.txt",
     "dist/bundle.d.ts",
     "dist/commands/*.js",
+    "dist/functions/*.js",
+    "dist/functions/*.js.map",
+    "dist/functions/*.js.LEGAL.txt",
+    "dist/functions/*.d.ts",
     "README",
     "LICENSE"
   ],
@@ -47,6 +51,26 @@
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.0.0",
+    "@aws-sdk/client-iam": "^3.0.0",
+    "@aws-sdk/client-lambda": "^3.0.0",
+    "@aws-sdk/credential-providers": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-cloudwatch-logs": {
+      "optional": true
+    },
+    "@aws-sdk/client-iam": {
+      "optional": true
+    },
+    "@aws-sdk/client-lambda": {
+      "optional": true
+    },
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch-logs": "3.981.0",
