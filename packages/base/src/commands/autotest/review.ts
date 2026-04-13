@@ -644,9 +644,25 @@ export class AutotestCommand extends BaseCommand {
         if (!isSubagent) {
           spinner.stop()
           this.context.stdout.write(text + '\n')
+
+          // Post PR comment immediately when the main agent's result arrives.
+          // Must happen here because the SDK may call process.exit() after the stream ends,
+          // preventing finally blocks from running.
+          resultText += text + '\n'
+          if (prInfo && !dryRun) {
+            try {
+              await this.postPrComment(resultText, prInfo)
+            } catch (e) {
+              this.context.stderr.write(`PR comment error: ${e}\n`)
+            }
+            try {
+              await this.reportTelemetry(resultText, prInfo)
+            } catch {
+              // best effort
+            }
+          }
         }
-        // Accumulate all result text — the main agent's result may arrive before or after the subagent's.
-        resultText += text + '\n'
+        resultText += isSubagent ? text + '\n' : ''
       }
     }
 
@@ -654,27 +670,6 @@ export class AutotestCommand extends BaseCommand {
       clearTimeout(timeoutHandle)
       spinner.stop()
       logStream.end()
-
-      // Post the PR comment programmatically — runs even if the agent was aborted by timeout.
-      const fs = await import('fs')
-      const debugPath = join(logDir, '.autotest-postcomment-debug.txt')
-      const debugLines: string[] = [`finally_reached=true`, `prInfo=${!!prInfo}`, `dryRun=${dryRun}`, `resultLen=${resultText.trim().length}`, `GITHUB_TOKEN=${!!process.env.GITHUB_TOKEN}`]
-      if (prInfo && !dryRun && resultText.trim()) {
-        try {
-          debugLines.push('calling_postPrComment=true')
-          await this.postPrComment(resultText, prInfo)
-          debugLines.push('comment_posted=true')
-        } catch (e) {
-          debugLines.push(`comment_error=${e}`)
-        }
-      } else {
-        debugLines.push(`skipped: prInfo=${!!prInfo} dryRun=${dryRun} hasResult=${!!resultText.trim()}`)
-      }
-      fs.writeFileSync(debugPath, debugLines.join('\n'))
-      this.context.stderr.write(`postPrComment debug: ${debugLines.join(' | ')}\n`)
-
-      // Report telemetry to Datadog.
-      await this.reportTelemetry(resultText, prInfo)
     }
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
