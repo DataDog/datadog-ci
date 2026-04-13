@@ -731,7 +731,7 @@ export class AutotestCommand extends BaseCommand {
     const timeoutHandle = setTimeout(() => {
       this.context.stderr.write('Autotest timeout reached (50min), aborting query...\n')
       abortController.abort()
-    }, 50 * 60 * 1000)
+    }, 25 * 60 * 1000)
 
     for await (const message of query({
       prompt: userPrompt,
@@ -749,7 +749,7 @@ export class AutotestCommand extends BaseCommand {
           ? '\n\n## DRY RUN MODE\nDo NOT post any PR comments. Do NOT use gh, curl, or any other method to post comments. Only write the report to stdout and validation_report.md.'
           : ''),
         model: MODEL,
-        maxTurns: 50,
+        maxTurns: 25,
         agents: {
           'prod-data-collector': {
             description:
