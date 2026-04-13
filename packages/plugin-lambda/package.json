@@ -53,10 +53,10 @@
     "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
   "peerDependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.0.0",
-    "@aws-sdk/client-iam": "^3.0.0",
-    "@aws-sdk/client-lambda": "^3.0.0",
-    "@aws-sdk/credential-providers": "^3.0.0"
+    "@aws-sdk/client-cloudwatch-logs": "^3.981.0",
+    "@aws-sdk/client-iam": "^3.981.0",
+    "@aws-sdk/client-lambda": "^3.981.0",
+    "@aws-sdk/credential-providers": "^3.981.0"
   },
   "peerDependenciesMeta": {
     "@aws-sdk/client-cloudwatch-logs": {

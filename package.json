@@ -76,7 +76,9 @@
       "@datadog/datadog-ci-plugin-*",
       "@microsoft/eslint-formatter-sarif",
       "dd-trace",
-      "syncpack"
+      "glob",
+      "syncpack",
+      "tsdown"
     ]
   },
   "packageManager": "yarn@4.10.3",

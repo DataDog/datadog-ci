@@ -2151,6 +2151,20 @@ __metadata:
     inquirer-checkbox-plus-prompt: "npm:1.4.2"
     ora: "npm:5.4.1"
     upath: "npm:2.0.1"
+  peerDependencies:
+    "@aws-sdk/client-cloudwatch-logs": ^3.981.0
+    "@aws-sdk/client-iam": ^3.981.0
+    "@aws-sdk/client-lambda": ^3.981.0
+    "@aws-sdk/credential-providers": ^3.981.0
+  peerDependenciesMeta:
+    "@aws-sdk/client-cloudwatch-logs":
+      optional: true
+    "@aws-sdk/client-iam":
+      optional: true
+    "@aws-sdk/client-lambda":
+      optional: true
+    "@aws-sdk/credential-providers":
+      optional: true
   languageName: unknown
   linkType: soft
 
