@@ -431,16 +431,6 @@ export class AutotestCommand extends BaseCommand {
       exitCode = 1
     }
 
-    // Write debug info to a file that survives process.exit
-    const debugDir = process.env.HOME || logDir
-    const {writeFileSync} = await import('fs')
-    writeFileSync(join(debugDir, '.autotest-debug.txt'), [
-      `exitCode=${exitCode}`,
-      `prInfo=${JSON.stringify(prInfo)}`,
-      `dryRun=${this.dryRun}`,
-      `resultLen=${(result as any)?.resultText?.length ?? 'N/A'}`,
-    ].join('\n'))
-
     // Force exit — the SDK may leave open connections (MCP, HTTP) that keep the event loop alive.
     process.exit(exitCode)
   }
@@ -666,26 +656,22 @@ export class AutotestCommand extends BaseCommand {
       logStream.end()
 
       // Post the PR comment programmatically — runs even if the agent was aborted by timeout.
-      const {writeFileSync: wfs} = await import('fs')
-      wfs(join(logDir, '.autotest-finally-debug.txt'), [
-        `finally_reached=true`,
-        `prInfo=${!!prInfo}`,
-        `prInfo_json=${JSON.stringify(prInfo)}`,
-        `dryRun=${dryRun}`,
-        `resultLen=${resultText.trim().length}`,
-        `resultPreview=${resultText.trim().slice(0, 200)}`,
-        `GITHUB_TOKEN_set=${!!process.env.GITHUB_TOKEN}`,
-      ].join('\n'))
-      console.error(`[postPrComment] prInfo=${!!prInfo} dryRun=${dryRun} resultLen=${resultText.trim().length}`)
+      const fs = await import('fs')
+      const debugPath = join(logDir, '.autotest-postcomment-debug.txt')
+      const debugLines: string[] = [`finally_reached=true`, `prInfo=${!!prInfo}`, `dryRun=${dryRun}`, `resultLen=${resultText.trim().length}`, `GITHUB_TOKEN=${!!process.env.GITHUB_TOKEN}`]
       if (prInfo && !dryRun && resultText.trim()) {
         try {
+          debugLines.push('calling_postPrComment=true')
           await this.postPrComment(resultText, prInfo)
-          wfs(join(logDir, '.autotest-comment-result.txt'), 'comment_posted=true')
+          debugLines.push('comment_posted=true')
         } catch (e) {
-          wfs(join(logDir, '.autotest-comment-result.txt'), `comment_error=${e}`)
-          console.error(`[postPrComment] error: ${e}`)
+          debugLines.push(`comment_error=${e}`)
         }
+      } else {
+        debugLines.push(`skipped: prInfo=${!!prInfo} dryRun=${dryRun} hasResult=${!!resultText.trim()}`)
       }
+      fs.writeFileSync(debugPath, debugLines.join('\n'))
+      this.context.stderr.write(`postPrComment debug: ${debugLines.join(' | ')}\n`)
 
       // Report telemetry to Datadog.
       await this.reportTelemetry(resultText, prInfo)
