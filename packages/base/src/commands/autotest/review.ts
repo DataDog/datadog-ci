@@ -534,13 +534,17 @@ export class AutotestCommand extends BaseCommand {
         body: body ? JSON.stringify(body) : undefined,
       })
       if (!response.ok) {
+        const errText = await response.text()
+        this.context.stderr.write(`[github-api] ${method} ${path}: ${response.status} ${errText.slice(0, 200)}\n`)
         return {
-          content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${await response.text()}`}],
+          content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${errText}`}],
           isError: true,
         }
       }
 
-      return {content: [{type: 'text' as const, text: JSON.stringify(await response.json())}]}
+      const json = await response.json()
+      this.context.stderr.write(`[github-api] ${method} ${path}: ${response.status} OK\n`)
+      return {content: [{type: 'text' as const, text: JSON.stringify(json)}]}
     }
 
     const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
