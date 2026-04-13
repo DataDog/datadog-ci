@@ -656,9 +656,13 @@ export class AutotestCommand extends BaseCommand {
       logStream.end()
 
       // Post the PR comment programmatically — runs even if the agent was aborted by timeout.
-      this.context.stderr.write(`[postPrComment] prInfo=${!!prInfo} dryRun=${dryRun} resultLen=${resultText.trim().length}\n`)
+      console.error(`[postPrComment] prInfo=${!!prInfo} dryRun=${dryRun} resultLen=${resultText.trim().length}`)
       if (prInfo && !dryRun && resultText.trim()) {
-        await this.postPrComment(resultText, prInfo)
+        try {
+          await this.postPrComment(resultText, prInfo)
+        } catch (e) {
+          console.error(`[postPrComment] error: ${e}`)
+        }
       }
 
       // Report telemetry to Datadog.
