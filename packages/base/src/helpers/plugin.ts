@@ -15,6 +15,7 @@ import {cliVersion} from '../version'
 
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
+import {withPluginUserAgent} from './user-agent'
 
 export type PackageInfo = {name: string; version: string}
 export type PluginSubModule = {PluginCommand: CommandClass<CommandContext>}
@@ -30,9 +31,12 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
     const submodule = await importPluginSubmodule(scope, command)
     debug(`Done importing plugin command`)
 
+    const plugin = await importPlugin(scope)
+    printPluginVersion(plugin)
+
     const pluginCommand = Object.assign(new submodule.PluginCommand(), instance)
 
-    return pluginCommand.execute()
+    return withPluginUserAgent(plugin.name, plugin.version, () => pluginCommand.execute())
   } catch (error) {
     debug('Error in executePluginCommand:', error)
 
@@ -92,7 +96,10 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
   }
 
   try {
-    const module = command ? await importPluginSubmodule(scope, command) : await importPlugin(scope)
+    const plugin = await importPlugin(scope)
+    printPluginVersion(plugin)
+
+    const module = command ? await importPluginSubmodule(scope, command) : plugin
 
     console.log(
       [
@@ -410,10 +417,7 @@ const importPlugin = async (scope: string): Promise<PackageInfo> => {
 
   // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
   // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
-  const pluginInfo = extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
-  printPluginVersion(pluginInfo)
-
-  return pluginInfo
+  return extractPackageJson(require(`@datadog/datadog-ci-plugin-${normalizedScope}/package.json`))
 }
 
 const extractPackageJson = (content: unknown): PackageInfo => {
