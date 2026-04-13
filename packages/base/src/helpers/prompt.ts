@@ -2,23 +2,20 @@
  * @file Functions used to prompt the user for input.
  */
 
-import inquirer from 'inquirer'
+import type {ConfirmConfig, InputConfig} from './inquirer'
 
-export const confirmationQuestion = (
-  message: string,
-  defaultValue = true
-): inquirer.ConfirmQuestion<{confirmation: boolean}> => ({
+import {loadPrompts} from './inquirer'
+
+export const confirmationQuestion = (message: string, defaultValue = true): ConfirmConfig => ({
   message,
-  name: 'confirmation',
-  type: 'confirm',
   default: defaultValue,
 })
 
 export const requestConfirmation = async (message: string, defaultValue = true) => {
   try {
-    const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message, defaultValue))
+    const {confirm} = await loadPrompts()
 
-    return confirmationAnswer.confirmation
+    return await confirm(confirmationQuestion(message, defaultValue))
   } catch (err) {
     if (err instanceof Error) {
       throw Error(`Couldn't receive confirmation. ${err.message}`)
@@ -29,14 +26,12 @@ export const requestConfirmation = async (message: string, defaultValue = true) 
 
 export const requestFilePath = async () => {
   try {
-    const question: inquirer.InputQuestion<{filePath: string}> = {
+    const question: InputConfig = {
       message: 'Please enter a file path, or press Enter to finish:',
-      name: 'filePath',
-      type: 'input',
     }
-    const filePathAnswer = await inquirer.prompt([question])
+    const {input} = await loadPrompts()
 
-    return filePathAnswer.filePath
+    return await input(question)
   } catch (err) {
     if (err instanceof Error) {
       throw Error(`Couldn't receive file path. ${err.message}`)

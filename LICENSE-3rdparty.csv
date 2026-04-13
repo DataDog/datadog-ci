@@ -18,7 +18,6 @@ Component,Origin,Licence,Copyright
 @types/debug,dev,MIT,Copyright (c) Microsoft Corporation
 @types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
-@types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/js-yaml,dev,MIT,Bart van der Schoor
 @types/node,dev,MIT,Copyright Microsoft Corporation
@@ -45,8 +44,6 @@ form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.co
 fuzzy,import,MIT,Copyright (c) 2012 Matt York
 get-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
-inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
-inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
 is-docker,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
 jest,dev,MIT,"Copyright (c) Facebook, Inc. and its affiliates."
 js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
@@ -88,6 +85,8 @@ jszip,import,MIT,Copyright (c) 2009-2016 Stuart Knightley and other contributors
 @google-cloud/run,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 google-auth-library,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 @google-cloud/logging,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
+@inquirer/core,import,MIT,Copyright (c) 2025 Simon Boudrias
+@inquirer/prompts,import,MIT,Copyright (c) 2025 Simon Boudrias
 jest-diff,import,MIT,"Copyright (c) Meta Platforms, Inc. and other contributors"
 tsx,dev,MIT,Copyright (c) Hiroki Osame <hiroki.osame@gmail.com>
 typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contributors

@@ -74,8 +74,12 @@
   "knip": {
     "ignoreDependencies": [
       "@datadog/datadog-ci-plugin-*",
+      "@inquirer/prompts",
+      "@inquirer/core",
       "@microsoft/eslint-formatter-sarif",
       "dd-trace",
+      "glob",
+      "tsdown",
       "syncpack"
     ]
   },
