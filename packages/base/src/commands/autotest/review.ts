@@ -854,6 +854,7 @@ export class AutotestCommand extends BaseCommand {
         `method:${method}`,
         `provider:${prInfo?.provider ?? 'unknown'}`,
         ...(prInfo ? [`repo:${prInfo.repo}`] : []),
+        ...(prInfo ? [`pr:${prInfo.number}`] : []),
       ]
 
       const {logger, flush} = getMetricsLogger({
