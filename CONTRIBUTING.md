@@ -138,6 +138,60 @@ Optionally, you can create a pre-release for your command by following the [Pre-
   - Update [`advanced-issue-labeler.yml`](.github/advanced-issue-labeler.yml).
   - Update the `changelog` configuration in [`release.yml`](.github/release.yml).
 
+### Plugin bundle architecture
+
+Each plugin is bundled with [tsdown](https://tsdown.dev/) via `scripts/tsdown-plugin.mjs` (triggered by `yarn prepack`). The build produces three kinds of outputs, configured in part by `datadog-ci.meta.json` at the repo root.
+
+#### Main bundle (`dist/bundle.js` + `dist/bundle.d.ts`)
+
+The main bundle is a **fully self-contained** CJS file with zero runtime dependencies. All `devDependencies` (including heavy ones like `@aws-sdk/*`) are inlined into the bundle. This is what the `datadog-ci` CLI loads at runtime.
+
+The entry point is a virtual file that re-exports `src/index.ts` (if present) and all command implementations as a `commands` map.
+
+#### Command entrypoints (`dist/commands/<command>.js`)
+
+Thin JS wrappers that re-export a single command from the main bundle:
+
+```js
+module.exports = require("../bundle.js").commands["<command>"]
+```
+
+These exist for backwards compatibility with the CLI's plugin loader. They have no `.d.ts` — they are not meant to be imported by external consumers.
+
+#### Extra bundles (`dist/<subpath>.js` + `dist/<subpath>.d.ts`)
+
+Extra bundles are separate entrypoints exposed via `package.json` `exports` for **programmatic use by external projects** (e.g. `serverless-remote-instrumentation` importing `@datadog/datadog-ci-plugin-lambda/functions/instrument`).
+
+Unlike the main bundle, extra bundles may **externalize** certain dependencies so that the consumer's own copies are used at runtime and — critically — so that TypeScript types are compatible. Without externalization, the `.d.ts` would inline all transitive type definitions (e.g. 22K+ lines from `@smithy/types`), causing type conflicts when the consumer also depends on those packages.
+
+Extra bundles are configured in `datadog-ci.meta.json`.
+
+#### `datadog-ci.meta.json`
+
+This file configures per-plugin bundle behavior. Structure:
+
+```jsonc
+{
+  "plugins": {
+    "<plugin-package-name>": {
+      "bundle": {
+        // Glob patterns (relative to plugin root) for extra bundle entry files.
+        // Each matched .ts file becomes a separate bundle under dist/.
+        "extraBundlePatterns": ["./src/functions/*.ts"],
+
+        // Package name prefixes to externalize in extra bundles only.
+        // Matching packages become `require()` calls in JS and proper
+        // `import` statements in .d.ts (instead of being inlined).
+        // The main bundle is NOT affected — it always bundles everything.
+        "extraBundleExternalPatterns": ["@aws-sdk/", "@smithy/"]
+      }
+    }
+  }
+}
+```
+
+When `extraBundleExternalPatterns` is set, the plugin's `package.json` should declare matching packages as optional `peerDependencies`, since consumers of extra bundles need them installed.
+
 ### Continuous Integration tests
 
 The CI performs tests to avoid regressions by building the project, running unit tests and running end-to-end tests.
