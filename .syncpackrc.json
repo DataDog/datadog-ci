@@ -23,13 +23,23 @@
   ],
   "versionGroups": [
     {
-      "label": "Always use workspace:* for local packages",
+      "label": "Always use workspace:* for local packages, including peer dependencies in base package",
       "dependencyTypes": [
         "local"
       ]
     }
   ],
   "semverGroups": [
+    {
+      "label": "Always use ^ for peer dependencies in plugin packages",
+      "dependencies": [
+        "@aws-sdk/*"
+      ],
+      "dependencyTypes": [
+        "peer"
+      ],
+      "range": "^"
+    },
     {
       "label": "Always pin exact versions",
       "packages": [
