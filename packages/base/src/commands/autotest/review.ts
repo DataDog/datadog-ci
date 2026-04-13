@@ -178,7 +178,7 @@ Once the prod-data-collector subagent returns with real production inputs:
    0 where a value should be present, missing fields in serialized output, or silently
    dropped/ignored inputs).
 
-4. **Post the report** using the post_pr_comment tool. This is REQUIRED. Do NOT use "gh pr comment", curl, or any other method — only the post_pr_comment tool. It handles deduplication (updates existing comment instead of creating duplicates).
+4. **Output the report** as your final message. The system will post it as a PR comment automatically. Do NOT use "gh pr comment", curl, or any other tool to post — just output the report text.
 
 The PR comment MUST follow this exact format. Keep it concise — no walls of text.
 
@@ -512,180 +512,12 @@ export class AutotestCommand extends BaseCommand {
   }
 
   private async runReview(diff: string, prInfo?: PrInfo, dryRun = false): Promise<{exitCode: number; resultText: string}> {
-    const {query, tool, createSdkMcpServer} = await import('@anthropic-ai/claude-agent-sdk')
+    const {query} = await import('@anthropic-ai/claude-agent-sdk')
     const {z} = await import('zod')
 
     let resultText = ''
     let prCommentBody = ''
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
-
-    // GitHub PR tools — uses the REST API directly (no gh CLI dependency).
-    const githubToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
-
-    const githubApiFetch = async (path: string, method: string, body?: object) => {
-      const response = await fetch(`${GITHUB_API_BASE}${path}`, {
-        method,
-        headers: {
-          Authorization: `token ${githubToken}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-          'User-Agent': GITHUB_USER_AGENT,
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      })
-      if (!response.ok) {
-        const errText = await response.text()
-        this.context.stderr.write(`[github-api] ${method} ${path}: ${response.status} ${errText.slice(0, 200)}\n`)
-        return {
-          content: [{type: 'text' as const, text: `GitHub API error ${response.status}: ${errText}`}],
-          isError: true,
-        }
-      }
-
-      const json = await response.json()
-      this.context.stderr.write(`[github-api] ${method} ${path}: ${response.status} OK\n`)
-      return {content: [{type: 'text' as const, text: JSON.stringify(json)}]}
-    }
-
-    const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
-
-    const githubTools = prInfo && prInfo.provider === 'github' && githubToken
-      ? (() => {
-          const {repo, number: prNumber} = prInfo
-
-          // Find existing autotest comment on this PR.
-          const findExistingComment = async (): Promise<number | undefined> => {
-            let page = 1
-            while (page <= 10) {
-              const response = await fetch(
-                `${GITHUB_API_BASE}/repos/${repo}/issues/${prNumber}/comments?per_page=100&page=${page}`,
-                {
-                  headers: {
-                    Authorization: `token ${githubToken}`,
-                    Accept: 'application/vnd.github.v3+json',
-                    'User-Agent': GITHUB_USER_AGENT,
-                  },
-                }
-              )
-              if (!response.ok) {
-                return undefined
-              }
-              const comments = (await response.json()) as Array<{id: number; body: string}>
-              const existing = comments.find((c) => c.body.includes(COMMENT_MARKER))
-              if (existing) {
-                return existing.id
-              }
-              if (comments.length < 100) {
-                break
-              }
-              page++
-            }
-
-            return undefined
-          }
-
-          const postPrComment = tool(
-            'post_pr_comment',
-            'Post the validation report as a PR comment. Creates a new comment or updates the existing one.',
-            {body: z.string().describe('Markdown body of the validation report')},
-            async (args: {body: string}) => {
-              const markedBody = `${COMMENT_MARKER}\n${args.body}`
-              const existingId = await findExistingComment()
-
-              if (existingId) {
-                return githubApiFetch(
-                  `/repos/${repo}/issues/comments/${existingId}`,
-                  'PATCH',
-                  {body: markedBody}
-                )
-              }
-
-              return githubApiFetch(
-                `/repos/${repo}/issues/${prNumber}/comments`,
-                'POST',
-                {body: markedBody}
-              )
-            }
-          )
-
-          return createSdkMcpServer({
-            name: 'github-pr',
-            version: '1.0.0',
-            tools: [postPrComment],
-          })
-        })()
-      : undefined
-
-    // GitLab MR tools — uses CI_JOB_TOKEN or GITLAB_TOKEN with the GitLab notes API.
-    const gitlabToken = process.env.CI_JOB_TOKEN || process.env.GITLAB_TOKEN
-    const gitlabTools = prInfo && prInfo.provider === 'gitlab' && gitlabToken && !dryRun
-      ? (() => {
-          const gitlabUrl = process.env.CI_SERVER_URL || 'https://gitlab.com'
-          const projectId = encodeURIComponent(prInfo.repo)
-          const {number: mrIid} = prInfo
-
-          const gitlabApiFetch = async (path: string, method: string, body?: object) => {
-            const response = await fetch(`${gitlabUrl}/api/v4${path}`, {
-              method,
-              headers: {
-                Authorization: `Bearer ${gitlabToken}`,
-                'Content-Type': 'application/json',
-              },
-              body: body ? JSON.stringify(body) : undefined,
-            })
-            if (!response.ok) {
-              return {
-                content: [{type: 'text' as const, text: `GitLab API error ${response.status}: ${await response.text()}`}],
-                isError: true,
-              }
-            }
-
-            return {content: [{type: 'text' as const, text: JSON.stringify(await response.json())}]}
-          }
-
-          const findExistingNote = async (): Promise<number | undefined> => {
-            const response = await fetch(
-              `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes?per_page=100`,
-              {headers: {Authorization: `Bearer ${gitlabToken}`}}
-            )
-            if (!response.ok) {
-              return undefined
-            }
-            const notes = (await response.json()) as Array<{id: number; body: string}>
-            return notes.find((n) => n.body.includes(COMMENT_MARKER))?.id
-          }
-
-          const postPrComment = tool(
-            'post_pr_comment',
-            'Post the validation report as an MR comment. Creates a new note or updates the existing one.',
-            {body: z.string().describe('Markdown body of the validation report')},
-            async (args: {body: string}) => {
-              const markedBody = `${COMMENT_MARKER}\n${args.body}`
-              const existingId = await findExistingNote()
-
-              if (existingId) {
-                return gitlabApiFetch(
-                  `/projects/${projectId}/merge_requests/${mrIid}/notes/${existingId}`,
-                  'PUT',
-                  {body: markedBody}
-                )
-              }
-
-              return gitlabApiFetch(
-                `/projects/${projectId}/merge_requests/${mrIid}/notes`,
-                'POST',
-                {body: markedBody}
-              )
-            }
-          )
-
-          return createSdkMcpServer({
-            name: 'gitlab-mr',
-            version: '1.0.0',
-            tools: [postPrComment],
-          })
-        })()
-      : undefined
 
     // Raw log file for full agent trace.
     const logDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
@@ -706,12 +538,6 @@ export class AutotestCommand extends BaseCommand {
           'DD-APPLICATION-KEY': process.env.DD_APPLICATION_KEY ?? '',
         },
       },
-    }
-    if (githubTools) {
-      mcpServers['github-pr'] = githubTools
-    }
-    if (gitlabTools) {
-      mcpServers['gitlab-mr'] = gitlabTools
     }
 
     try {
@@ -831,12 +657,104 @@ export class AutotestCommand extends BaseCommand {
     }
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
+    // Post the PR comment programmatically (more reliable than relying on AI tool calls).
+    if (prInfo && !dryRun) {
+      await this.postPrComment(resultText, prInfo)
+    }
+
     // Report telemetry to Datadog.
     await this.reportTelemetry(resultText, prInfo)
 
     const isFail = /\bFAIL\b|bug found|broken|regression/i.test(resultText)
 
     return {exitCode: isFail ? 1 : 0, resultText}
+  }
+
+  private async postPrComment(resultText: string, prInfo: PrInfo) {
+    const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
+
+    const markedBody = `${COMMENT_MARKER}\n${resultText.trim()}`
+
+    try {
+      if (prInfo.provider === 'github') {
+        const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+        if (!token) {
+          this.context.stderr.write('No GITHUB_TOKEN, skipping PR comment.\n')
+          return
+        }
+
+        const headers = {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          'User-Agent': GITHUB_USER_AGENT,
+        }
+
+        // Find existing comment with marker
+        let existingId: number | undefined
+        for (let page = 1; page <= 10; page++) {
+          const resp = await fetch(
+            `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments?per_page=100&page=${page}`,
+            {headers}
+          )
+          if (!resp.ok) {
+            break
+          }
+          const comments = (await resp.json()) as Array<{id: number; body: string}>
+          const found = comments.find((c) => c.body.includes(COMMENT_MARKER))
+          if (found) {
+            existingId = found.id
+            break
+          }
+          if (comments.length < 100) {
+            break
+          }
+        }
+
+        // Update or create
+        const url = existingId
+          ? `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/comments/${existingId}`
+          : `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments`
+        const method = existingId ? 'PATCH' : 'POST'
+
+        const resp = await fetch(url, {method, headers, body: JSON.stringify({body: markedBody})})
+        if (resp.ok) {
+          const json = (await resp.json()) as {html_url: string}
+          this.context.stderr.write(`PR comment ${existingId ? 'updated' : 'created'}: ${json.html_url}\n`)
+        } else {
+          this.context.stderr.write(`PR comment failed: ${resp.status} ${(await resp.text()).slice(0, 200)}\n`)
+        }
+      } else if (prInfo.provider === 'gitlab') {
+        const token = process.env.CI_JOB_TOKEN || process.env.GITLAB_TOKEN
+        if (!token) {
+          return
+        }
+        const gitlabUrl = process.env.CI_SERVER_URL || 'https://gitlab.com'
+        const projectId = encodeURIComponent(prInfo.repo)
+        const mrIid = prInfo.number
+        const glHeaders = {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'}
+
+        // Find existing
+        const listResp = await fetch(
+          `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes?per_page=100`,
+          {headers: glHeaders}
+        )
+        let existingId: number | undefined
+        if (listResp.ok) {
+          const notes = (await listResp.json()) as Array<{id: number; body: string}>
+          existingId = notes.find((n) => n.body.includes(COMMENT_MARKER))?.id
+        }
+
+        const url = existingId
+          ? `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes/${existingId}`
+          : `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
+        const method = existingId ? 'PUT' : 'POST'
+
+        await fetch(url, {method, headers: glHeaders, body: JSON.stringify({body: markedBody})})
+      }
+    } catch (err) {
+      this.context.stderr.write(`PR comment error: ${err}\n`)
+    }
   }
 
   private async reportTelemetry(resultText: string, prInfo?: PrInfo) {
