@@ -656,6 +656,7 @@ export class AutotestCommand extends BaseCommand {
       logStream.end()
 
       // Post the PR comment programmatically — runs even if the agent was aborted by timeout.
+      this.context.stderr.write(`[postPrComment] prInfo=${!!prInfo} dryRun=${dryRun} resultLen=${resultText.trim().length}\n`)
       if (prInfo && !dryRun && resultText.trim()) {
         await this.postPrComment(resultText, prInfo)
       }
