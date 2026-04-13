@@ -23,19 +23,19 @@ npm install --save-dev @datadog/datadog-ci
 yarn add --dev @datadog/datadog-ci
 ```
 
-If you need `datadog-ci` as a CLI tool instead of a package, you can install it globally or run it with `npx` or `yarn dlx`:
+If you want to use `datadog-ci` without installing it in your project:
 
 ```sh
 # Install globally with NPM
 npm install -g @datadog/datadog-ci
 
-# Install globally with Yarn 1 (Classic)
+# ...or with Yarn 1 (Classic)
 yarn global add @datadog/datadog-ci
 
-# npx
+# ...or run a one-shot install with NPM
 npx @datadog/datadog-ci@v5 [scope]
 
-# yarn dlx
+# or with Yarn
 yarn dlx @datadog/datadog-ci@v5 [scope]
 ```
 
@@ -61,7 +61,8 @@ datadog-ci plugin install <scope>
 
 For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed by default.
 
-**Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>`. To disable auto-installation, set `DISABLE_PLUGIN_AUTO_INSTALL=1`.**
+> [!WARNING]
+> Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>`. To disable auto-installation, set `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
 ## Usage
 
