@@ -776,8 +776,7 @@ export class AutotestCommand extends BaseCommand {
         `method:${method}`,
         `provider:${prInfo?.provider ?? 'unknown'}`,
         ...(prInfo ? [`repo:${prInfo.repo}`] : []),
-        ...(prInfo ? [`pr_number:${prInfo.number}`] : []),
-        ...(prInfo && prInfo.provider === 'github' ? [`pr_url:https://github.com/${prInfo.repo}/pull/${prInfo.number}`] : []),
+        ...(prInfo ? [`pr:${prInfo.number}`] : []),
       ]
 
       const {logger, flush} = getMetricsLogger({
