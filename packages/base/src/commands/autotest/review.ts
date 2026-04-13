@@ -726,6 +726,13 @@ export class AutotestCommand extends BaseCommand {
       return proc
     }
 
+    // Abort after 50 minutes so the process exits cleanly before CI job timeout
+    const abortController = new AbortController()
+    const timeoutHandle = setTimeout(() => {
+      this.context.stderr.write('Autotest timeout reached (50min), aborting query...\n')
+      abortController.abort()
+    }, 50 * 60 * 1000)
+
     for await (const message of query({
       prompt: userPrompt,
       options: {
@@ -737,6 +744,7 @@ export class AutotestCommand extends BaseCommand {
         allowedTools: ['*'],
         permissionMode: 'bypassPermissions',
         spawnClaudeCodeProcess,
+        abortController,
         systemPrompt: SYSTEM_PROMPT + (dryRun
           ? '\n\n## DRY RUN MODE\nDo NOT post any PR comments. Do NOT use gh, curl, or any other method to post comments. Only write the report to stdout and validation_report.md.'
           : ''),
@@ -813,6 +821,7 @@ export class AutotestCommand extends BaseCommand {
     }
 
     } finally {
+      clearTimeout(timeoutHandle)
       spinner.stop()
       logStream.end()
     }
