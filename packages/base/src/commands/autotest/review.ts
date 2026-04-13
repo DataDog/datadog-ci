@@ -178,7 +178,7 @@ Once the prod-data-collector subagent returns with real production inputs:
    0 where a value should be present, missing fields in serialized output, or silently
    dropped/ignored inputs).
 
-4. **Post the report** using the `post_pr_comment` tool. This is REQUIRED. Do NOT use `gh pr comment`, `curl`, or any other method — only the `post_pr_comment` tool. It handles deduplication (updates existing comment instead of creating duplicates).
+4. **Post the report** using the post_pr_comment tool. This is REQUIRED. Do NOT use "gh pr comment", curl, or any other method — only the post_pr_comment tool. It handles deduplication (updates existing comment instead of creating duplicates).
 
 The PR comment MUST follow this exact format. Keep it concise — no walls of text.
 
