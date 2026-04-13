@@ -431,6 +431,15 @@ export class AutotestCommand extends BaseCommand {
       exitCode = 1
     }
 
+    // Write debug info to a file that survives process.exit
+    const {writeFileSync} = await import('fs')
+    writeFileSync(join(logDir, '.autotest-debug.txt'), [
+      `exitCode=${exitCode}`,
+      `prInfo=${JSON.stringify(prInfo)}`,
+      `dryRun=${this.dryRun}`,
+      `resultLen=${(result as any)?.resultText?.length ?? 'N/A'}`,
+    ].join('\n'))
+
     // Force exit — the SDK may leave open connections (MCP, HTTP) that keep the event loop alive.
     process.exit(exitCode)
   }
@@ -656,11 +665,23 @@ export class AutotestCommand extends BaseCommand {
       logStream.end()
 
       // Post the PR comment programmatically — runs even if the agent was aborted by timeout.
+      const {writeFileSync: wfs} = await import('fs')
+      wfs(join(logDir, '.autotest-finally-debug.txt'), [
+        `finally_reached=true`,
+        `prInfo=${!!prInfo}`,
+        `prInfo_json=${JSON.stringify(prInfo)}`,
+        `dryRun=${dryRun}`,
+        `resultLen=${resultText.trim().length}`,
+        `resultPreview=${resultText.trim().slice(0, 200)}`,
+        `GITHUB_TOKEN_set=${!!process.env.GITHUB_TOKEN}`,
+      ].join('\n'))
       console.error(`[postPrComment] prInfo=${!!prInfo} dryRun=${dryRun} resultLen=${resultText.trim().length}`)
       if (prInfo && !dryRun && resultText.trim()) {
         try {
           await this.postPrComment(resultText, prInfo)
+          wfs(join(logDir, '.autotest-comment-result.txt'), 'comment_posted=true')
         } catch (e) {
+          wfs(join(logDir, '.autotest-comment-result.txt'), `comment_error=${e}`)
           console.error(`[postPrComment] error: ${e}`)
         }
       }
