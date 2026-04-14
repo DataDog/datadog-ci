@@ -520,7 +520,9 @@ export class AutotestCommand extends BaseCommand {
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // Raw log file for full agent trace.
-    const logDir = process.env.HOME || process.env.AUTOTEST_REPO_DIR || process.cwd()
+    const repoDir = process.env.AUTOTEST_REPO_DIR || process.cwd()
+    // Log files go to HOME (writable by nobody in CI), agent cwd goes to repoDir (the git checkout)
+    const logDir = process.env.HOME || repoDir
     const logPath = join(logDir, '.autotest-agent.log')
     const logStream = createWriteStream(logPath, {flags: 'w'})
     const log = (entry: string) => logStream.write(`[${new Date().toISOString()}] ${entry}\n`)
@@ -567,7 +569,7 @@ export class AutotestCommand extends BaseCommand {
       prompt: userPrompt,
       options: {
         mcpServers,
-        cwd: logDir,
+        cwd: repoDir,
         settingSources: process.env.AUTOTEST_SETTING_SOURCES
           ? process.env.AUTOTEST_SETTING_SOURCES.split(',')
           : ['project'],
