@@ -572,6 +572,19 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       "jobName": "__default"
     }`
 
+  // Variant with explicit jobId for testing same-planId disambiguation on multi-runners
+  const sampleLogContentWithPlanIdAndJobId = (jobDisplayName: string, planId: string, jobId: string): string => `
+    [2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.
+    [2025-09-15 10:14:00Z INFO ProcessChannel] Receiving message of length 22985, with hash 'abcdef'
+    [2025-09-15 10:14:00Z INFO Worker] Message received.
+    [2025-09-15 10:14:00Z INFO Worker] Job message:
+    {
+      "planId": "${planId}",
+      "jobId": "${jobId}",
+      "jobDisplayName": ${JSON.stringify(jobDisplayName)},
+      "jobName": "__default"
+    }`
+
   const sampleLogFileName = 'Worker_20251014-083000.log'
   const sampleJobDisplayName = 'build-and-test'
 
@@ -1025,8 +1038,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('Worker log identification with ACTIONS_ORCHESTRATION_ID', () => {
     test('should use ACTIONS_ORCHESTRATION_ID to find correct Worker log', () => {
       const planId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
+      // jobId must match what sampleLogContentWithPlanId embeds in the log
+      const jobId = '95a4619c-e316-542f-8a21-74cd5a8ac9ca'
       const originalEnv = process.env
-      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${planId}.test-job.__default`}
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${planId}.${jobId}.__default`}
 
       const targetDir = githubWellKnownDiagnosticDirsUnix[0]
       const logContent = sampleLogContentWithPlanId('correct-job-name', planId)
@@ -1043,8 +1058,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     test('should select correct log among multiple Worker logs on non-ephemeral runner', () => {
       const correctPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
       const wrongPlanId = '12345678-1234-1234-1234-123456789abc'
+      // jobId must match what sampleLogContentWithPlanId embeds in the log
+      const jobId = '95a4619c-e316-542f-8a21-74cd5a8ac9ca'
       const originalEnv = process.env
-      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${correctPlanId}.test-job.__default`}
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${correctPlanId}.${jobId}.__default`}
 
       const targetDir = githubWellKnownDiagnosticDirsUnix[0]
 
@@ -1080,6 +1097,50 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       expect(jobName).toBe('correct-job-name')
       // Should read 2 logs searching for planId, then read the matched log again = 3 total
       expect(fs.readFileSync).toHaveBeenCalledTimes(3)
+      process.env = originalEnv
+    })
+
+    test('should disambiguate logs sharing the same planId using jobId on multi-runners', () => {
+      // On a non-ephemeral (multi) runner, sequential jobs from the same workflow run all
+      // share the same planId. The previous job's Worker log is found first (alphabetical
+      // order). Without jobId matching, the wrong log is returned.
+      const sharedPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
+      const previousJobId = 'aaaaaaaa-0000-0000-0000-000000000001'
+      const currentJobId = 'bbbbbbbb-0000-0000-0000-000000000002'
+      const originalEnv = process.env
+      process.env = {
+        ...originalEnv,
+        ACTIONS_ORCHESTRATION_ID: `${sharedPlanId}.${currentJobId}.__default`,
+      }
+
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+
+      jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
+        if (String(pathToRead) === String(targetDir)) {
+          return [
+            mockLogFileDirent('Worker_20251014-083000.log'), // previous job (same planId, different jobId)
+            mockLogFileDirent('Worker_20251014-090000.log'), // current job (same planId, matching jobId)
+          ]
+        }
+        throw getNotFoundFsError()
+      })
+
+      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath: any) => {
+        const filePathStr = String(filePath)
+        if (filePathStr.includes('Worker_20251014-083000.log')) {
+          return sampleLogContentWithPlanIdAndJobId('previous-job-name', sharedPlanId, previousJobId)
+        }
+        if (filePathStr.includes('Worker_20251014-090000.log')) {
+          return sampleLogContentWithPlanIdAndJobId('current-job-name', sharedPlanId, currentJobId)
+        }
+
+        return ''
+      })
+
+      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      // Must return the current job's name, not the previous job's name
+      expect(jobName).toBe('current-job-name')
       process.env = originalEnv
     })
 

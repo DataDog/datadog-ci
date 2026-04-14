@@ -1215,6 +1215,17 @@ const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | und
 /**
  * Narrows the list of Worker log files to check by using ACTIONS_ORCHESTRATION_ID
  * to identify the correct log for the current job on non-ephemeral runners.
+ *
+ * ACTIONS_ORCHESTRATION_ID format: <planId>.<jobId>.__default
+ *
+ * All jobs in the same GitHub Actions workflow run share the same planId.
+ * On multi-runners (non-ephemeral runners processing sequential jobs), multiple
+ * Worker log files can exist from different jobs of the same workflow run,
+ * all containing the same planId. Matching only on planId causes the first
+ * (chronologically oldest) log to be selected, which may belong to a previous
+ * job. The jobId (second segment of ACTIONS_ORCHESTRATION_ID) is unique per job
+ * and is serialized as "jobId" in the Worker log's job message JSON, allowing
+ * unambiguous identification of the current job's log.
  */
 const getTargetWorkerLogFiles = (context: BaseContext, foundDiagDir: string, workerLogFiles: string[]): string[] => {
   const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
@@ -1222,23 +1233,30 @@ const getTargetWorkerLogFiles = (context: BaseContext, foundDiagDir: string, wor
     return workerLogFiles
   }
 
-  // Extract planId GUID (everything before first dot)
-  const planId = orchestrationId.split('.')[0]
+  // ACTIONS_ORCHESTRATION_ID format: <planId>.<jobId>.__default
+  const parts = orchestrationId.split('.')
+  const planId = parts[0]
+  // jobId is unique per job within a workflow run; planId is shared across all jobs
+  const jobId = parts[1]
 
-  // Find the Worker log containing this planId
+  // Find the Worker log matching both planId and jobId for the current job
   for (const logFile of workerLogFiles) {
     const filePath = upath.join(foundDiagDir, logFile)
     const content = fs.readFileSync(filePath, 'utf-8')
 
-    if (content.includes(`"planId": "${planId}"`)) {
-      context.stdout.write(`Found Worker log for planId ${planId}: ${logFile}\n`)
+    const matchesPlanId = content.includes(`"planId": "${planId}"`)
+    // jobId may be absent on older runner versions; fall back to planId-only match
+    const matchesJobId = !jobId || content.includes(`"jobId": "${jobId}"`)
+
+    if (matchesPlanId && matchesJobId) {
+      context.stdout.write(`Found Worker log for planId ${planId}, jobId ${jobId ?? 'N/A'}: ${logFile}\n`)
 
       return [logFile]
     }
   }
 
   context.stderr.write(
-    `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
+    `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, jobId ${jobId ?? 'N/A'}, checking all logs\n`
   )
 
   return workerLogFiles
