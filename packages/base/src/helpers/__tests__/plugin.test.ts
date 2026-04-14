@@ -75,6 +75,12 @@ describe('checkPlugin', () => {
     const result = await checkPlugin('synthetics')
     expect(result).toBe(true)
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('@datadog/datadog-ci-plugin-synthetics'))
+    expect(
+      consoleLogSpy.mock.calls.filter(
+        ([message]) =>
+          typeof message === 'string' && message.includes('@datadog/datadog-ci-plugin-synthetics v5.13.0')
+      )
+    ).toHaveLength(1)
 
     consoleLogSpy.mockRestore()
   })
@@ -105,6 +111,24 @@ describe('executePluginCommand', () => {
 
     expect(result).toBe(0)
     expect(userAgent).toMatch(/^datadog-ci\/1\.0\.0 \(node .+; os .+; arch .+\) datadog-ci-plugin-synthetics\/.+$/)
+  })
+
+  test('prints plugin version once during command execution', async () => {
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
+    jest.spyOn(SyntheticsRunTestsPluginCommand, 'execute').mockResolvedValue(0)
+
+    const command = createCommand(SyntheticsRunTestsCommand)
+    const result = await executePluginCommand(command)
+
+    expect(result).toBe(0)
+    expect(
+      consoleLogSpy.mock.calls.filter(
+        ([message]) =>
+          typeof message === 'string' && message.includes('@datadog/datadog-ci-plugin-synthetics v5.13.0')
+      )
+    ).toHaveLength(1)
+
+    consoleLogSpy.mockRestore()
   })
 })
 
