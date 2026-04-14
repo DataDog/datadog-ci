@@ -18,3 +18,4 @@ export const REACHABLE_SYMBOL_LOCATION_KEY_PREFIX = 'datadog:reachable-symbol-lo
 
 // datadog-sca specific SBOM properties
 export const TARGET_FRAMEWORK_KEY = 'datadog:target-framework'
+export const OPAQUE_KEY = 'datadog:opaque'
