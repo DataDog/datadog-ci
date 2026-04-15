@@ -4,17 +4,17 @@
 # Commands (grouped by product)
 
 ## Software Delivery (label: software-delivery)
-packages/plugin-coverage                       @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/coverage            @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/plugin-deployment                     @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/deployment          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/plugin-dora                           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/dora                @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/plugin-junit                          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/junit               @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/measure             @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/tag                 @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/commands/trace               @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/plugin-coverage                       @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/coverage            @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/plugin-deployment                     @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/deployment          @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/plugin-dora                           @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/dora                @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/plugin-junit                          @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/junit               @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/measure             @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/tag                 @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/commands/trace               @DataDog/datadog-ci-admins @DataDog/ci-app-backend
 
 ## Static Analysis (label: static-analysis)
 packages/plugin-sarif                    @DataDog/datadog-ci-admins @DataDog/k9-vm-ast
@@ -68,18 +68,18 @@ packages/base/src/commands/terraform          @DataDog/datadog-ci-admins @DataDo
 # Shared utilities
 
 ## Git
-packages/base/src/helpers/git  @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/source-code-integration
+packages/base/src/helpers/git  @DataDog/datadog-ci-admins @DataDog/source-code-integration
 
 ## CI
-packages/base/src/helpers/file-finder.ts                       @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/helpers/filereader.ts                        @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/base/src/helpers/ci.ts                                @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
-packages/base/src/helpers/tags.ts                              @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
-packages/base/src/helpers/user-provided-git.ts                 @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
-packages/base/src/helpers/**tests**/ci-env                     @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
-packages/base/src/helpers/**tests**/ci.test.ts                 @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
-packages/base/src/helpers/**tests**/tags.test.ts               @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
-packages/base/src/helpers/**tests**/user-provided-git.test.ts  @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/file-finder.ts                       @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/helpers/filereader.ts                        @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+packages/base/src/helpers/ci.ts                                @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/tags.ts                              @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/user-provided-git.ts                 @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/**tests**/ci-env                     @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/**tests**/ci.test.ts                 @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/**tests**/tags.test.ts               @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
+packages/base/src/helpers/**tests**/user-provided-git.test.ts  @DataDog/datadog-ci-admins @DataDog/ci-app-backend @DataDog/synthetics-orchestrating-managing
 
 
 # Documentation
