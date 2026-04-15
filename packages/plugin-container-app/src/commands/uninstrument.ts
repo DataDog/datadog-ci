@@ -9,6 +9,11 @@ import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
+  SSI_ENV_VAR_NAMES,
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
@@ -156,8 +161,12 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
       )
     }
 
-    // Remove shared volume
-    const updatedVolumes = volumes.filter((v) => v.name !== config.sharedVolumeName)
+    // Remove shared volume and dd-tracer volume
+    const updatedVolumes = volumes.filter((v) => v.name !== config.sharedVolumeName && v.name !== TRACER_VOLUME_NAME)
+
+    // Remove tracer-init from initContainers
+    const initContainers = containerApp?.template?.initContainers || []
+    const updatedInitContainers = initContainers.filter((c) => c.name !== TRACER_INIT_CONTAINER_NAME)
 
     // Update app containers to remove volume mounts and DD_* env vars
     updatedContainers = updatedContainers.map((c) => this.updateAppContainer(c, config))
@@ -172,24 +181,25 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
       template: {
         ...containerApp.template,
         containers: updatedContainers,
+        initContainers: updatedInitContainers,
         volumes: updatedVolumes,
       },
     }
   }
 
-  // Remove volume mount, DD_* env vars, and custom env vars
+  // Remove volume mounts, DD_* env vars, SSI env vars, and custom env vars
   private updateAppContainer(appContainer: Container, config: ContainerAppConfigOptions): Container {
     const existingVolumeMounts = appContainer.volumeMounts || []
     const updatedVolumeMounts = existingVolumeMounts.filter(
-      (v: VolumeMount) => v.volumeName !== config.sharedVolumeName
+      (v: VolumeMount) => v.volumeName !== config.sharedVolumeName && v.volumeName !== TRACER_VOLUME_NAME
     )
 
     const customEnvVars = parseEnvVars(config.envVars)
 
     const existingEnvVars = appContainer.env || []
-    // Remove env vars beginning with DD_ and custom env vars
+    // Remove env vars beginning with DD_, custom env vars, and SSI env vars
     const updatedEnvVars = existingEnvVars.filter(
-      (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars)
+      (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars) && !SSI_ENV_VAR_NAMES.includes(v.name)
     )
 
     return {

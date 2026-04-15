@@ -1,10 +1,13 @@
+export const SSI_LANGUAGES = ['python', 'nodejs', 'java'] as const
+export type SSILanguage = (typeof SSI_LANGUAGES)[number]
+
 export interface SSILanguageConfig {
   envVar: string
   envValue: string
   initImage: string
 }
 
-export const SSI_LANGUAGE_CONFIGS: Record<string, SSILanguageConfig> = {
+export const SSI_LANGUAGE_CONFIGS: Record<SSILanguage, SSILanguageConfig> = {
   python: {
     envVar: 'PYTHONPATH',
     envValue: '/dd-tracer',

@@ -1,5 +1,6 @@
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume, IVolumeMount} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import type {SSILanguage} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -27,6 +28,13 @@ import {
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {
+  SSI_LANGUAGE_CONFIGS,
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+  TRACER_VOLUME_PATH,
+  TRACER_INIT_HEALTH_PORT,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
@@ -35,13 +43,6 @@ import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
-import {
-  SSI_LANGUAGE_CONFIGS,
-  TRACER_INIT_CONTAINER_NAME,
-  TRACER_VOLUME_NAME,
-  TRACER_VOLUME_PATH,
-  TRACER_INIT_HEALTH_PORT,
-} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
@@ -261,7 +262,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     )
 
     if (this.ssi && this.language) {
-      template = this.applySSI(template, this.language)
+      template = this.applySSI(template, this.language as SSILanguage)
     }
 
     // Let GCR generate the next revision name
@@ -340,7 +341,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
   }
 
-  public applySSI(template: IServiceTemplate, language: string): IServiceTemplate {
+  public applySSI(template: IServiceTemplate, language: SSILanguage): IServiceTemplate {
     const config = SSI_LANGUAGE_CONFIGS[language]
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
