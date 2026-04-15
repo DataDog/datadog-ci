@@ -74,4 +74,37 @@ describe('httpRequest', () => {
     expect(mockedFetch).toHaveBeenCalledWith('https://example.com', expect.any(Object))
     expect(getLastFetchHeaders()['User-Agent']).toBe(`${getUserAgent()} datadog-ci-plugin-synthetics/9.9.9`)
   })
+
+  describe('JSON response parsing', () => {
+    test.each([
+      ['application/json'],
+      ['application/json; charset=utf-8'],
+      ['application/vnd.api+json'],
+      ['application/vnd.api+json; charset=utf-8'],
+    ])('parses JSON body when content-type is %s', async (contentType) => {
+      const body = JSON.stringify({data: [{id: 'abc', type: 'commit'}]})
+      const response = {
+        ...createResponse({'content-type': contentType}),
+        text: async () => body,
+      }
+      mockedFetch.mockResolvedValue(response as Awaited<ReturnType<typeof fetch>>)
+
+      const result = await httpRequest({url: 'https://example.com'})
+
+      expect(result.data).toEqual({data: [{id: 'abc', type: 'commit'}]})
+    })
+
+    test('does not parse body when content-type is text/plain', async () => {
+      const body = JSON.stringify({data: 'value'})
+      const response = {
+        ...createResponse({'content-type': 'text/plain'}),
+        text: async () => body,
+      }
+      mockedFetch.mockResolvedValue(response as Awaited<ReturnType<typeof fetch>>)
+
+      const result = await httpRequest({url: 'https://example.com'})
+
+      expect(result.data).toBe(body)
+    })
+  })
 })

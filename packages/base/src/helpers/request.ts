@@ -171,10 +171,10 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   }
 
   const responseHeaders = parseResponseHeaders(response.headers)
-  const contentType = responseHeaders['content-type'] ?? ''
+  const mediaType = (responseHeaders['content-type'] ?? '').split(';')[0].trim()
   const rawBody = await response.text()
   let data: any = rawBody
-  if (contentType.includes('application/json') && rawBody.length > 0) {
+  if (rawBody.length > 0 && (mediaType === 'application/json' || mediaType === 'application/vnd.api+json')) {
     try {
       data = JSON.parse(rawBody)
     } catch {
