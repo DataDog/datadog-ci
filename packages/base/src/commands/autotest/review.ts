@@ -516,7 +516,7 @@ export class AutotestCommand extends BaseCommand {
     const {z} = await import('zod')
 
     let resultText = ''
-    let prCommentBody = ''
+    let prCommentPosted = false
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
     // Raw log file for full agent trace.
@@ -647,11 +647,12 @@ export class AutotestCommand extends BaseCommand {
           spinner.stop()
           this.context.stdout.write(text + '\n')
 
-          // Post PR comment immediately when the main agent's result arrives.
-          // Must happen here because the SDK may call process.exit() after the stream ends,
-          // preventing finally blocks from running.
+          // Post PR comment on the FIRST main agent result only.
+          // Later results (after subagent completion) are just summaries that would overwrite the full report.
+          // Must happen here because the SDK may call process.exit() after the stream ends.
           resultText += text + '\n'
-          if (prInfo && !dryRun) {
+          if (prInfo && !dryRun && !prCommentPosted) {
+            prCommentPosted = true
             try {
               await this.postPrComment(resultText, prInfo)
             } catch (e) {
