@@ -542,6 +542,13 @@ export class AutotestCommand extends BaseCommand {
       },
     }
 
+    // Abort after 25 minutes so the process exits cleanly before CI job timeout
+    const abortController = new AbortController()
+    const timeoutHandle = setTimeout(() => {
+      this.context.stderr.write('Autotest timeout reached (25min), aborting query...\n')
+      abortController.abort()
+    }, 25 * 60 * 1000)
+
     try {
     // Capture CLI subprocess stderr for debugging exit-code-1 failures
     const {spawn} = await import('child_process')
@@ -557,13 +564,6 @@ export class AutotestCommand extends BaseCommand {
       })
       return proc
     }
-
-    // Abort after 50 minutes so the process exits cleanly before CI job timeout
-    const abortController = new AbortController()
-    const timeoutHandle = setTimeout(() => {
-      this.context.stderr.write('Autotest timeout reached (50min), aborting query...\n')
-      abortController.abort()
-    }, 25 * 60 * 1000)
 
     for await (const message of query({
       prompt: userPrompt,
