@@ -31,7 +31,7 @@
     "package:clean-dist": "cd $INIT_CWD && rimraf --glob 'dist/**/__tests__'",
     "package:lint": "eslint --cache --quiet $INIT_CWD/src/**/*.ts",
     "plugin:create": "bin/create-plugin.sh",
-    "publish:all": "yarn publish:deps $@ && yarn publish:cli $@",
+    "publish:all": "yarn publish:deps \"$@\" && yarn publish:cli \"$@\"",
     "publish:cli": "yarn workspace @datadog/datadog-ci npm publish",
     "publish:deps": "yarn workspaces foreach --all --no-private --exclude packages/datadog-ci --topological --verbose npm publish",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest --colors",
