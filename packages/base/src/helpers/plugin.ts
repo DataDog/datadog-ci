@@ -236,8 +236,6 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
 
   // Make the plugin resolvable.
   patchModulePaths(nodeModulesPath)
-
-  printPluginVersion(pluginPackage)
 }
 
 const handlePluginAutoInstall = async (scope: string) => {
