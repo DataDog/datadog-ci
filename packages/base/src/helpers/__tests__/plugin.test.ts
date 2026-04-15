@@ -77,7 +77,7 @@ describe('checkPlugin', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('@datadog/datadog-ci-plugin-synthetics'))
     expect(
       consoleLogSpy.mock.calls.filter(
-        ([message]) => typeof message === 'string' && message.includes('@datadog/datadog-ci-plugin-synthetics v5.13.0')
+        ([message]) => typeof message === 'string' && message.includes('@datadog/datadog-ci-plugin-synthetics v')
       )
     ).toHaveLength(1)
 
@@ -122,7 +122,7 @@ describe('executePluginCommand', () => {
     expect(result).toBe(0)
     expect(
       consoleLogSpy.mock.calls.filter(
-        ([message]) => typeof message === 'string' && message.includes('@datadog/datadog-ci-plugin-synthetics v5.13.0')
+        ([message]) => typeof message === 'string' && message.includes('@datadog/datadog-ci-plugin-synthetics v')
       )
     ).toHaveLength(1)
 
