@@ -61,6 +61,9 @@ export class SyntheticsRunTestsCommand extends BaseCommand {
   public jUnitReport = Option.String('-j,--jUnitReport', {
     description: 'The filename for a JUnit report if you want to generate one.',
   })
+  public jsonReport = Option.String('--jsonReport', {
+    description: 'The filename for a JSON report of your test results if you want to generate one.',
+  })
   public runName = Option.String('-n,--runName', {
     description: 'A name for this run, which will be included in the JUnit report.',
   })

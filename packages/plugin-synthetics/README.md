@@ -390,6 +390,17 @@ The filename for a JUnit report if you want to generate one.
 * ENV variable: `DATADOG_SYNTHETICS_JUNIT_REPORT="e2e-test-junit.xml"`
 * CLI param:`-j "e2e-test-junit.xml"` / `--jUnitReport "e2e-test-junit.xml"`
 
+#### `jsonReport`
+
+The filename for a JSON report of your test results if you want to generate one. The shape of the results is [`synthetics.Result[]`][19].
+
+**Configuration options**
+
+* Default: None
+* Global Config: `"jsonReport": "test-results-report.json"`
+* ENV variable: `DATADOG_SYNTHETICS_JSON_REPORT="test-results-report.json"`
+* CLI param: `--jsonReport "test-results-report.json"`
+
 #### `mobileApplicationVersionFilePath`
 
 Override the mobile application version for [Synthetic mobile application tests][18] with a local or recently built application.
@@ -1031,11 +1042,18 @@ Two reporters are supported out-of-the-box:
 
 1. `stdout`
 2. JUnit
+3. JSON
 
 To enable the JUnit report, specify a filename for your JUnit report with `-j/--jUnitReport`.
 
 ```bash
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport junit-report.xml
+```
+
+To enable the JSON report, specify a filename for your JSON report with `--jsonReport`.
+
+```bash
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jsonReport test-results-report.json
 ```
 
 Reporters can hook themselves into the `MainReporter` of the command.
@@ -1113,6 +1131,7 @@ Additional helpful documentation, links, and articles:
 [16]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
 [17]: https://app.datadoghq.com/synthetics/settings/continuous-testing
 [18]: https://docs.datadoghq.com/synthetics/mobile_app_testing/
+[19]: https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/src/interfaces.ts#L223-L254
 
 <!--
   This page is single-sourced:

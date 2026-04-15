@@ -18,6 +18,7 @@ import deepExtend from 'deep-extend'
 import {buildAssets} from '../build-and-test'
 import {CiError} from '../errors'
 import {DefaultReporter} from '../reporters/default'
+import {JSONReporter} from '../reporters/json'
 import {JUnitReporter} from '../reporters/junit'
 import {planDryRun, executeTests, getDefaultConfig} from '../run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from '../utils/internal'
@@ -217,6 +218,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       failOnTimeout: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
       files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
       jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
+      jsonReport: process.env.DATADOG_SYNTHETICS_JSON_REPORT,
       publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
       selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
       subdomain: process.env.DATADOG_SUBDOMAIN,
@@ -293,6 +295,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       failOnTimeout: this.failOnTimeout,
       files: this.files,
       jUnitReport: this.jUnitReport,
+      jsonReport: this.jsonReport,
       publicIds: this.publicIds,
       selectiveRerun: this.selectiveRerun,
       subdomain: this.subdomain,
@@ -339,16 +342,27 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
   }
 
   protected getReporters(): Reporter[] {
+    const reporters: Reporter[] = []
+
     if (this.config.jUnitReport) {
-      return [
+      reporters.push(
         new JUnitReporter({
           context: this.context,
           jUnitReport: this.config.jUnitReport,
           runName: this.runName,
-        }),
-      ]
+        })
+      )
     }
 
-    return []
+    if (this.config.jsonReport) {
+      reporters.push(
+        new JSONReporter({
+          context: this.context,
+          jsonReport: this.config.jsonReport,
+        })
+      )
+    }
+
+    return reporters
   }
 }

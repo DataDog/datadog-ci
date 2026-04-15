@@ -26,6 +26,7 @@ import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {ExecutionRule} from './interfaces'
 import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
+import {JSONReporter} from './reporters/json'
 import {JUnitReporter} from './reporters/junit'
 import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
@@ -49,6 +50,7 @@ import {
 type ExecuteOptions = {
   initialSummary?: InitialSummary
   jUnitReport?: string
+  jsonReport?: string
   reporters?: (SupportedReporter | Reporter)[]
   runId?: string
   suites?: Suite[]
@@ -370,12 +372,13 @@ export const planDryRun = async (
 
 export const executeWithDetails = async (
   runConfig: WrapperConfig,
-  {initialSummary, jUnitReport, reporters, runId, suites, testPlan}: ExecuteOptions
+  executeOptions: ExecuteOptions
 ): Promise<{
   results: Result[]
   summary: Summary
   exitCode: 0 | 1
 }> => {
+  const {initialSummary, jUnitReport, jsonReport, reporters, runId, suites, testPlan} = executeOptions
   const startTime = Date.now()
   const localConfig = {
     ...getDefaultConfig(),
@@ -394,6 +397,14 @@ export const executeWithDetails = async (
             context: process,
             jUnitReport: jUnitReport || './junit.xml',
             runName: `Run ${runId || 'undefined'}`,
+          })
+        )
+      }
+      if (reporter === 'json') {
+        localReporters.push(
+          new JSONReporter({
+            context: process,
+            jsonReport: jsonReport || './test-results-report.json',
           })
         )
       }

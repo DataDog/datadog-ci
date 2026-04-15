@@ -448,7 +448,17 @@ export class DefaultReporter implements MainReporter {
     }
 
     if (config) {
-      const {batchTimeout, failOnCriticalErrors, failOnMissingTests, failOnTimeout, selectiveRerun, tunnel} = config
+      const {
+        batchTimeout,
+        failOnCriticalErrors,
+        failOnMissingTests,
+        failOnTimeout,
+        selectiveRerun,
+        tunnel,
+        jUnitReport,
+        jsonReport,
+      } = config
+
       lines.push(`• Fail on timeout: ${b(failOnTimeout)}`)
       lines.push(`• Fail on missing tests: ${b(failOnMissingTests)}`)
       lines.push(`• Fail on critical errors: ${b(failOnCriticalErrors)}`)
@@ -460,6 +470,12 @@ export class DefaultReporter implements MainReporter {
       }
       if (batchTimeout !== undefined) {
         lines.push(`• Batch timeout: ${b(batchTimeout)}ms`)
+      }
+      if (jUnitReport) {
+        lines.push(`• JUnit report: ${b(jUnitReport)}`)
+      }
+      if (jsonReport) {
+        lines.push(`• JSON report: ${b(jsonReport)}`)
       }
     }
 

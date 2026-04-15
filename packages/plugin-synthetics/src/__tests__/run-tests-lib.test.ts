@@ -11,6 +11,7 @@ import * as batchUtils from '../batch'
 import {CiError, CriticalError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
+import {JSONReporter} from '../reporters/json'
 import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'
 import * as runTests from '../run-tests-lib'
@@ -616,9 +617,9 @@ describe('run-test', () => {
 
       test('should use custom reporters', async () => {
         const CustomReporter = {}
-        await runTests.executeWithDetails({}, {reporters: ['junit', CustomReporter]})
+        await runTests.executeWithDetails({}, {reporters: ['junit', 'json', CustomReporter]})
         expect(utils.getReporter).toHaveBeenCalledWith(
-          expect.arrayContaining([expect.any(JUnitReporter), CustomReporter])
+          expect.arrayContaining([expect.any(JUnitReporter), expect.any(JSONReporter), CustomReporter])
         )
       })
     })

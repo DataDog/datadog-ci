@@ -37,6 +37,7 @@ describe('run-tests', () => {
         DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'false',
         DATADOG_SYNTHETICS_FILES: 'test-file1;test-file2;test-file3',
         DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report.xml',
+        DATADOG_SYNTHETICS_JSON_REPORT: 'json-report.json',
         DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id;another-public-id',
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
@@ -118,6 +119,7 @@ describe('run-tests', () => {
         failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
         jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
+        jsonReport: overrideEnv.DATADOG_SYNTHETICS_JSON_REPORT,
         publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
         selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
@@ -192,6 +194,7 @@ describe('run-tests', () => {
         failOnTimeout: false,
         files: ['my-new-file'],
         jUnitReport: 'junit-report.xml',
+        jsonReport: 'test-results-report.json',
         proxy: {
           protocol: 'https',
         },
@@ -221,6 +224,7 @@ describe('run-tests', () => {
         failOnTimeout: false,
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
+        jsonReport: 'test-results-report.json',
         mobileApplicationVersionFilePath: './path/to/application.apk',
         publicIds: ['ran-dom-id2'],
         selectiveRerun: true,
@@ -271,6 +275,7 @@ describe('run-tests', () => {
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
       command['jUnitReport'] = overrideCLI.jUnitReport
+      command['jsonReport'] = overrideCLI.jsonReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       command['publicIds'] = overrideCLI.publicIds
@@ -355,6 +360,7 @@ describe('run-tests', () => {
         failOnTimeout: false,
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
+        jsonReport: 'test-results-report.json',
         publicIds: ['ran-dom-id2'],
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
@@ -411,6 +417,7 @@ describe('run-tests', () => {
         failOnTimeout: false,
         files: ['from_config_file.json'],
         jUnitReport: 'junit-report-from-config-file.xml',
+        jsonReport: 'json-report-from-config-file.json',
         proxy: {protocol: 'http'},
         publicIds: ['public-id-from-config-file'],
         selectiveRerun: false,
@@ -438,6 +445,7 @@ describe('run-tests', () => {
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
           DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
           DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
+          DATADOG_SYNTHETICS_JSON_REPORT: 'json-report-from-env.json',
           DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
@@ -524,6 +532,7 @@ describe('run-tests', () => {
           failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
           files: overrideEnv.DATADOG_SYNTHETICS_FILES?.split(';'),
           jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
+          jsonReport: overrideEnv.DATADOG_SYNTHETICS_JSON_REPORT,
           publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
           selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
           subdomain: overrideEnv.DATADOG_SUBDOMAIN,
@@ -559,6 +568,7 @@ describe('run-tests', () => {
           failOnTimeout: true,
           files: ['new-file-from-cli'],
           jUnitReport: 'junit-report-from-cli.xml',
+          jsonReport: 'json-report-from-cli.json',
           mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
           publicIds: ['public-id-from-cli'],
           selectiveRerun: true,
@@ -616,6 +626,7 @@ describe('run-tests', () => {
         command['failOnTimeout'] = overrideCLI.failOnTimeout
         command['files'] = overrideCLI.files
         command['jUnitReport'] = overrideCLI.jUnitReport
+        command['jsonReport'] = overrideCLI.jsonReport
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
         command['publicIds'] = overrideCLI.publicIds
@@ -688,6 +699,7 @@ describe('run-tests', () => {
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
           DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
           DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
+          DATADOG_SYNTHETICS_JSON_REPORT: 'json-report-from-env.json',
           DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
@@ -731,6 +743,7 @@ describe('run-tests', () => {
           failOnTimeout: false,
           files: ['file-from-cli-1;file-from-cli-2'],
           jUnitReport: 'junit-report-from-cli.xml',
+          jsonReport: 'json-report-from-cli.json',
           mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
           publicIds: ['public-id-from-cli-1', 'public-id-from-cli-2'],
           selectiveRerun: false,
@@ -790,6 +803,7 @@ describe('run-tests', () => {
         command['failOnTimeout'] = overrideCLI.failOnTimeout
         command['files'] = overrideCLI.files
         command['jUnitReport'] = overrideCLI.jUnitReport
+        command['jsonReport'] = overrideCLI.jsonReport
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
         command['publicIds'] = overrideCLI.publicIds

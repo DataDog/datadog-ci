@@ -5,7 +5,7 @@ import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import type {Writable} from 'stream'
 
-export type SupportedReporter = 'junit' | 'default'
+export type SupportedReporter = 'junit' | 'json' | 'default'
 
 export interface MainReporter {
   log(log: string): void
@@ -748,6 +748,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnTimeout: boolean
   files: string[]
   jUnitReport?: string
+  jsonReport?: string
   mobileApplicationVersionFilePath?: string
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */

@@ -387,6 +387,24 @@ describe('Junit reporter', () => {
         steps_warnings: 1,
       })
     })
+
+    it('should read start_url from browser results', () => {
+      const testCase = reporter['getTestCase'](
+        {
+          ...globalBrowserResultMock,
+          result: {
+            ...getBrowserServerResult(),
+            start_url: 'https://example.com/from-start-url',
+          },
+        },
+        '',
+        ''
+      )
+
+      expect(testCase.properties.property).toContainEqual({
+        $: {name: 'start_url', value: 'https://example.com/from-start-url'},
+      })
+    })
   })
 })
 
