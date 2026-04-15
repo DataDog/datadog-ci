@@ -516,6 +516,7 @@ export class AutotestCommand extends BaseCommand {
     const {z} = await import('zod')
 
     let resultText = ''
+    let reportText = ''  // The ## 🔬 Autotest: report — captured from any message
     let prCommentPosted = false
     const userPrompt = `Here is the pull request diff to validate:\n\n\`\`\`diff\n${diff}\n\`\`\``
 
@@ -630,9 +631,14 @@ export class AutotestCommand extends BaseCommand {
         const content = msg.message?.content ?? msg.content ?? []
         for (const block of content) {
           if (block.type === 'text') {
-            const firstLine = (block.text ?? '').split('\n')[0].slice(0, 80)
+            const text = block.text ?? ''
+            const firstLine = text.split('\n')[0].slice(0, 80)
             if (firstLine) {
               spinner.text = `${prefix}${firstLine}`
+            }
+            // Capture the latest report — always keep the most recent one
+            if (!isSubagent && text.includes('## \u{1F52C} Autotest:')) {
+              reportText = text
             }
           }
           if (block.type === 'tool_use') {
@@ -647,14 +653,18 @@ export class AutotestCommand extends BaseCommand {
           spinner.stop()
           this.context.stdout.write(text + '\n')
 
-          // Post PR comment on the FIRST main agent result only.
-          // Later results (after subagent completion) are just summaries that would overwrite the full report.
+          // Post PR comment when we have the report.
+          // Use reportText (from assistant messages) if available, fall back to resultText.
           // Must happen here because the SDK may call process.exit() after the stream ends.
           resultText += text + '\n'
-          if (prInfo && !dryRun && !prCommentPosted) {
+          if (text.includes('## \u{1F52C} Autotest:')) {
+            reportText = text
+          }
+          const commentBody = reportText || resultText.trim()
+          if (prInfo && !dryRun && !prCommentPosted && commentBody.length > 0) {
             prCommentPosted = true
             try {
-              await this.postPrComment(resultText, prInfo)
+              await this.postPrComment(commentBody, prInfo)
             } catch (e) {
               this.context.stderr.write(`PR comment error: ${e}\n`)
             }
