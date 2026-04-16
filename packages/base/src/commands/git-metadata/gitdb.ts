@@ -9,11 +9,11 @@ import FormData from 'form-data'
 import {lte} from 'semver'
 import upath from 'upath'
 
-import {datadogRoute} from '../../helpers/datadog-route'
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import type {RequestBuilder} from '../../helpers/interfaces'
 import type {Logger} from '../../helpers/logger'
 import type {RequestResponse} from '../../helpers/request'
+import {datadogRoute} from '../../helpers/request/datadog-route'
 import {retryRequest} from '../../helpers/retry'
 
 const API_TIMEOUT = 15000

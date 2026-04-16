@@ -1,18 +1,13 @@
 import {PassThrough} from 'stream'
 
-import type {DatadogRoute} from './datadog-route'
+import type {DatadogRoute} from './request/datadog-route'
+import type {ThirdPartyRoute} from './request/third-party-route'
 import type {Readable} from 'stream'
 import type {Dispatcher} from 'undici'
 
 import {EnvHttpProxyAgent, ProxyAgent, fetch} from 'undici'
 
 import {getUserAgent} from './user-agent'
-
-declare const thirdPartyRouteBrand: unique symbol
-
-export type ThirdPartyRoute = string & {[thirdPartyRouteBrand]: true}
-
-export const thirdPartyRoute = (url: string): ThirdPartyRoute => url as ThirdPartyRoute
 
 export interface RequestConfig {
   baseURL?: string

@@ -11,7 +11,8 @@ jest.mock('undici', () => {
 
 import {fetch} from 'undici'
 
-import {httpRequest, thirdPartyRoute} from '../request'
+import {httpRequest} from '../request'
+import {thirdPartyRoute} from '../request/third-party-route'
 import {getUserAgent, withPluginUserAgent} from '../user-agent'
 
 type MockFetchResponse = {

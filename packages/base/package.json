@@ -33,6 +33,10 @@
       "development": "./src/constants.ts",
       "default": "./dist/constants.js"
     },
+    "./helpers/request/*": {
+      "development": "./src/helpers/request/*.ts",
+      "default": "./dist/helpers/request/*.js"
+    },
     "./helpers/*": {
       "development": "./src/helpers/*.ts",
       "default": "./dist/helpers/*.js"

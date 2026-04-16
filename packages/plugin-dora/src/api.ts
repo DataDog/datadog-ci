@@ -2,7 +2,7 @@ import type {DeploymentEvent} from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
-import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const apiUrl = getApiUrl()

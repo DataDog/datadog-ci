@@ -1,6 +1,6 @@
 import {createCommand, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
-import {thirdPartyRoute} from '@datadog/datadog-ci-base/helpers/request'
+import {thirdPartyRoute} from '@datadog/datadog-ci-base/helpers/request/third-party-route'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import {getApiTest, getTestSuite, mockApi, mockServerTriggerResponse} from '../../__tests__/fixtures'

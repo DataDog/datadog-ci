@@ -2,9 +2,10 @@ import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {MultipartPayload, UploadOptions} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
-import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
 import {upload} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+
+import {datadogRoute} from '../../helpers/request/datadog-route'
 
 export const getPERequestBuilder = (apiKey: string, cliVersion: string, site: string) =>
   getRequestBuilder({

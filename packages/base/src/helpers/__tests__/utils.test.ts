@@ -10,8 +10,8 @@ jest.mock('../request', () => ({
   httpRequest: jest.fn(),
 }))
 
-import {datadogRoute} from '../datadog-route'
 import * as requestModule from '../request'
+import {datadogRoute} from '../request/datadog-route'
 import * as ciUtils from '../utils'
 import {formatBytes, isFile, maskString} from '../utils'
 

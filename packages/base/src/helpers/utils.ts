@@ -2,26 +2,18 @@ import {exec} from 'child_process'
 import {readFile, existsSync, statSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
-import type {DatadogRoute} from './datadog-route'
 import type {RequestBuilder, SpanTag, SpanTags} from './interfaces'
 import type {RequestConfig} from './request'
+import type {DatadogRoute} from './request/datadog-route'
 import type {BaseContext, CommandClass} from 'clipanion'
 
 import {Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
-import terminalLink from 'terminal-link'
 
 import {getProxyDispatcher, httpRequest} from './request'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
-
-// Use a branded type to force TS to show the URL in the type tooltip.
-type TerminalLink<URL extends string> = (strings: TemplateStringsArray) => string & {targetUrl: URL}
-
-export const makeTerminalLink = <URL extends string>(url: URL) => {
-  return ((strings: TemplateStringsArray) => terminalLink(strings[0], url)) as TerminalLink<URL>
-}
 
 export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
   const definedKeys = keys.filter((key) => !!base[key])

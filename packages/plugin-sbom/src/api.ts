@@ -3,7 +3,7 @@ import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/help
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '@datadog/datadog-ci-base/constants'
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
-import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 /**

@@ -1,3 +1,8 @@
+/**
+ * List of all Datadog API routes used by datadog-ci.
+ *
+ * Only those routes are accepted by {@link datadogRoute}.
+ */
 export const DATADOG_ROUTE_PATHS = [
   '/api/intake/ci/custom_spans',
   '/api/ui/support/serverless/flare',
@@ -33,11 +38,34 @@ export const DATADOG_ROUTE_PATHS = [
   '/v1/input',
 ] as const
 
-export type DatadogRoutePath = (typeof DATADOG_ROUTE_PATHS)[number]
+/**
+ * Format a Datadog API route with optional parameters.
+ *
+ * @example
+ * ```ts
+ * const route = datadogRoute('/api/v2/resources/:resourceId', {
+ *   resourceId: '123',
+ * })
+ * ```
+ */
+export const datadogRoute = <Route extends DatadogRoutePath>(
+  route: Route,
+  ...[params]: DatadogRouteArgs<Route>
+): DatadogRoute<Route> => {
+  if (!params) {
+    return route as DatadogRoute<Route>
+  }
 
-declare const datadogRouteBrand: unique symbol
+  return route.replace(/:([A-Za-z0-9_]+)/g, (_, key: keyof DatadogRouteParams<Route>) =>
+    encodeURIComponent(String(params[key]))
+  ) as DatadogRoute<Route>
+}
 
 export type DatadogRoute<Route extends string = string> = Route & {[datadogRouteBrand]: true}
+
+type DatadogRoutePath = (typeof DATADOG_ROUTE_PATHS)[number]
+
+declare const datadogRouteBrand: unique symbol
 
 type RouteParamNames<Route extends string> = Route extends `${string}:${infer Param}/${infer Rest}`
   ? Param | RouteParamNames<Rest>
@@ -53,16 +81,3 @@ type DatadogRouteParams<Route extends DatadogRoutePath> = {
 
 type DatadogRouteArgs<Route extends DatadogRoutePath> =
   RouteParamNames<Route> extends never ? [] : [params: DatadogRouteParams<Route>]
-
-export const datadogRoute = <Route extends DatadogRoutePath>(
-  route: Route,
-  ...[params]: DatadogRouteArgs<Route>
-): DatadogRoute<Route> => {
-  if (!params) {
-    return route as DatadogRoute<Route>
-  }
-
-  return route.replace(/:([A-Za-z0-9_]+)/g, (_, key: keyof DatadogRouteParams<Route>) =>
-    encodeURIComponent(String(params[key]))
-  ) as DatadogRoute<Route>
-}

@@ -1,6 +1,6 @@
-import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
-
 import {CI_ENGINES} from '@datadog/datadog-ci-base/helpers/ci'
+
+import type {RequestResponse} from '../../helpers/request'
 
 export const SUPPORTED_PROVIDERS = [
   CI_ENGINES.GITHUB,

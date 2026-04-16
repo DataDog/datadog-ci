@@ -13,11 +13,11 @@ import {DATADOG_SITES} from '../../constants'
 
 import {getDatadogSite} from '../api'
 import {getBaseUrl} from '../app'
-import {datadogRoute} from '../datadog-route'
 import {deleteFolder} from '../fs'
 import {getLatestVersion} from '../get-latest-version'
 import * as helpersRenderer from '../renderer'
 import {httpRequest, isRequestError} from '../request'
+import {datadogRoute} from '../request/datadog-route'
 import {isValidDatadogSite} from '../validation'
 
 /**

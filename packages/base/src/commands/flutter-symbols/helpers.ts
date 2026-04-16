@@ -4,7 +4,7 @@ import type {MultipartPayload, UploadOptions} from '@datadog/datadog-ci-base/hel
 import upath from 'upath'
 
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
-import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {upload} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 

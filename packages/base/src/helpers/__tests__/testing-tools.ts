@@ -6,7 +6,8 @@ import type {Writable} from 'stream'
 import {Cli, Command} from 'clipanion'
 import upath from 'upath'
 
-import {RequestError, thirdPartyRoute} from '../request'
+import {RequestError} from '../request'
+import {thirdPartyRoute} from '../request/third-party-route'
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'

@@ -4,7 +4,7 @@ import type {TerraformArtifactPayload} from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
-import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 

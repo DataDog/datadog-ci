@@ -22,8 +22,9 @@ import type {
 } from './interfaces'
 import type {RequestConfig, RequestResponse, RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
-import {datadogRoute} from '@datadog/datadog-ci-base/helpers/datadog-route'
-import {thirdPartyRoute, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
+import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
+import {thirdPartyRoute} from '@datadog/datadog-ci-base/helpers/request/third-party-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {CriticalError} from './errors'

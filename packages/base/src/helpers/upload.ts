@@ -6,7 +6,7 @@ import type {RequestBuilder} from './interfaces'
 
 import FormData from 'form-data'
 
-import {datadogRoute} from './datadog-route'
+import {datadogRoute} from './request/datadog-route'
 import {retryRequest} from './retry'
 
 /** Multipart payload destined to be sent to Datadog's API

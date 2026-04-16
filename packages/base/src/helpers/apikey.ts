@@ -2,9 +2,9 @@ import type {BufferedMetricsLogger} from 'datadog-metrics'
 
 import chalk from 'chalk'
 
-import {datadogRoute} from './datadog-route'
 import {InvalidConfigurationError} from './errors'
 import {httpRequest, isRequestError} from './request'
+import {datadogRoute} from './request/datadog-route'
 
 /** ApiKeyValidator is an helper interface to interpret Datadog error responses and possibly check the
  * validity of the api key.
