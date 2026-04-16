@@ -1,6 +1,6 @@
 import {createCommand, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
-import {thirdPartyRoute} from '@datadog/datadog-ci-base/helpers/request/third-party-route'
+import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import {getApiTest, getTestSuite, mockApi, mockServerTriggerResponse} from '../../__tests__/fixtures'
@@ -1243,7 +1243,7 @@ describe('run-tests', () => {
         getTest: jest.fn(async (testId: string) => {
           if (testId === 'for-bid-den') {
             const serverError = getRequestError(403, {errors: ['Forbidden']})
-            serverError.config.url = thirdPartyRoute('tests/for-bid-den')
+            serverError.config.url = thirdParty('tests/for-bid-den')
             throw serverError
           }
 

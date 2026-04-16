@@ -24,7 +24,7 @@ import type {RequestConfig, RequestResponse, RequestError} from '@datadog/datado
 
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
-import {thirdPartyRoute} from '@datadog/datadog-ci-base/helpers/request/third-party-route'
+import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {CriticalError} from './errors'
@@ -337,7 +337,7 @@ const uploadMobileApplicationPart =
             'Content-Type': null,
           },
           method: 'PUT',
-          url: thirdPartyRoute(presignedUrl),
+          url: thirdParty(presignedUrl),
         },
         request
       )

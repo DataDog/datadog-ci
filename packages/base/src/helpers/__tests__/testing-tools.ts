@@ -7,7 +7,7 @@ import {Cli, Command} from 'clipanion'
 import upath from 'upath'
 
 import {RequestError} from '../request'
-import {thirdPartyRoute} from '../request/third-party-route'
+import {thirdParty} from '../request/third-party'
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
@@ -141,6 +141,6 @@ export const createCommand = <T extends Command>(
 export const getRequestError = (status: number, {errors, message}: {errors?: string[]; message?: string}) =>
   new RequestError(
     message ?? 'Request failed',
-    {baseURL: MOCK_BASE_URL, url: thirdPartyRoute('example')},
+    {baseURL: MOCK_BASE_URL, url: thirdParty('example')},
     {data: {errors}, status, statusText: ''}
   )
