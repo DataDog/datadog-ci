@@ -1,7 +1,7 @@
 import type {Payload} from './interfaces'
-import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 
-import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+import type {RequestBuilder} from '../../helpers/interfaces'
+import {getRequestBuilder} from '../../helpers/utils'
 
 export const reportCustomSpan = (request: RequestBuilder) => async (customSpan: Payload) => {
   return request({

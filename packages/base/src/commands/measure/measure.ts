@@ -1,18 +1,17 @@
-import type {CILevel} from '@datadog/datadog-ci-base/helpers/ci'
-import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
-
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {BaseCommand} from '@datadog/datadog-ci-base'
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '@datadog/datadog-ci-base/helpers/ci'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
-import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
-import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogSite} from '../../helpers/api'
+import type {CILevel} from '../../helpers/ci'
+import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+import type {RequestError} from '../../helpers/request'
+import {retryRequest} from '../../helpers/retry'
+import {parseMeasuresFile} from '../../helpers/tags'
+import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
+import {BaseCommand} from '../../index'
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {

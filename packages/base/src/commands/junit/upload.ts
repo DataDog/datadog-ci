@@ -1,10 +1,9 @@
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
-import {BaseCommand} from '@datadog/datadog-ci-base'
-import * as validation from '@datadog/datadog-ci-base/helpers/validation'
-
 import {executePluginCommand} from '../../helpers/plugin'
+import * as validation from '../../helpers/validation'
+import {BaseCommand} from '../../index'
 
 export class JunitUploadCommand extends BaseCommand {
   public static paths = [['junit', 'upload']]

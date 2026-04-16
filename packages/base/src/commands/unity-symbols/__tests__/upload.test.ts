@@ -1,17 +1,12 @@
 import {execSync} from 'child_process'
 
-import type {
-  MultipartFileValue,
-  MultipartPayload,
-  MultipartStringValue,
-  MultipartValue,
-} from '@datadog/datadog-ci-base/helpers/upload'
+import {createCommand} from '../../../helpers/__tests__/testing-tools'
+import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
+import type {MultipartFileValue, MultipartPayload, MultipartStringValue, MultipartValue} from '../../../helpers/upload'
+import {performSubCommand} from '../../../helpers/utils'
+import {cliVersion} from '../../../version'
 
-import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
-import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {DsymsUploadCommand} from '../../dsyms/upload'
 
 import {uploadMultipartHelper} from '../helpers'
 import {

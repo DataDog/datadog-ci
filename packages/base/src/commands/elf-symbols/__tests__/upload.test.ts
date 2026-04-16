@@ -2,14 +2,13 @@ import {execSync} from 'child_process'
 import fs from 'fs'
 import os from 'os'
 
-import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
-
 import upath from 'upath'
 
-import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {createCommand} from '../../../helpers/__tests__/testing-tools'
+import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
+import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '../../../helpers/upload'
+import {UploadStatus} from '../../../helpers/upload'
+import {cliVersion} from '../../../version'
 
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'

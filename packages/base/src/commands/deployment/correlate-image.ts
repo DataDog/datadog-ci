@@ -1,6 +1,6 @@
 import {Command, Option} from 'clipanion'
 
-import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
+import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
 

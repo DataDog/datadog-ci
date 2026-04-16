@@ -1,6 +1,6 @@
 import {Cli} from 'clipanion'
 
-import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 
 import {CiEnvReadCommand} from '../read'
 

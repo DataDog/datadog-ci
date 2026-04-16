@@ -2,9 +2,9 @@ import type {RNSourcemap} from './interfaces'
 
 import chalk from 'chalk'
 
-import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
-import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
-import {pluralize} from '@datadog/datadog-ci-base/helpers/utils'
+import {ICONS} from '../../helpers/formatting'
+import {UploadStatus} from '../../helpers/upload'
+import {pluralize} from '../../helpers/utils'
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}

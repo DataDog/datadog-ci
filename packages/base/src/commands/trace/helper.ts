@@ -1,26 +1,21 @@
 import crypto from 'crypto'
 
 import type {APIHelper, Payload} from './interfaces'
-import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import chalk from 'chalk'
 import {Option} from 'clipanion'
 
-import {BaseCommand} from '@datadog/datadog-ci-base'
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
-import {
-  getCIProvider,
-  getCISpanTags,
-  getGithubJobNameFromLogs,
-  getGithubJobIDFromLogs,
-} from '@datadog/datadog-ci-base/helpers/ci'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
-import {parseTags} from '@datadog/datadog-ci-base/helpers/tags'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getApiUrl} from '../../helpers/api'
+import {getCIProvider, getCISpanTags, getGithubJobNameFromLogs, getGithubJobIDFromLogs} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import type {RequestError} from '../../helpers/request'
+import {retryRequest} from '../../helpers/retry'
+import {parseTags} from '../../helpers/tags'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import {BaseCommand} from '../../index'
 
 import {apiConstructor} from './api'
 import {SUPPORTED_PROVIDERS} from './interfaces'

@@ -1,5 +1,5 @@
 /* eslint-disable quote-props */
-import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
+import type {RecordWithKebabCaseKeys} from './helpers/types'
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
 

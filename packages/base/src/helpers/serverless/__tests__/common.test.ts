@@ -1,5 +1,5 @@
 /* eslint-disable no-null/no-null */
-import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars, sortedEqual} from '../common'
 
 describe('generateConfigDiff', () => {
   test('should generate correct diffs for various config changes', () => {

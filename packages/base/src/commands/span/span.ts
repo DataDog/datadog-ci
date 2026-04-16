@@ -1,6 +1,6 @@
 import {Command, Option} from 'clipanion'
 
-import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import * as validation from '../../helpers/validation'
 
 import {CustomSpanCommand} from '../trace/helper'
 

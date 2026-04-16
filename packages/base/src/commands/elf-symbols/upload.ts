@@ -2,34 +2,30 @@ import fs from 'fs'
 
 import type {ElfFileMetadata} from './elf'
 import type {MappingMetadata} from './interfaces'
-import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {BaseCommand} from '@datadog/datadog-ci-base'
-import {createUniqueTmpDirectory, deleteDirectory} from '@datadog/datadog-ci-base/commands/dsyms/utils'
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
-import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
-import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {globAsync} from '@datadog/datadog-ci-base/helpers/glob'
-import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
-import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
-import {
-  buildPath,
-  DEFAULT_CONFIG_PATHS,
-  execute,
-  resolveConfigFromFileAndEnvironment,
-} from '@datadog/datadog-ci-base/helpers/utils'
-import * as validation from '@datadog/datadog-ci-base/helpers/validation'
-import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogSiteFromEnv} from '../../helpers/api'
+import {newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+import type {RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
+import {globAsync} from '../../helpers/glob'
+import type {MetricsLogger} from '../../helpers/metrics'
+import {getMetricsLogger} from '../../helpers/metrics'
+import type {MultipartValue} from '../../helpers/upload'
+import {UploadStatus} from '../../helpers/upload'
+import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
+import {checkAPIKeyOverride} from '../../helpers/validation'
+import {BaseCommand} from '../../index'
+import {cliVersion} from '../../version'
+
+import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
 
 import {
   getElfFileMetadata,

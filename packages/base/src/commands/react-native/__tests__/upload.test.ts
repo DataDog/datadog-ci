@@ -1,15 +1,10 @@
-import type {CommandContext} from '@datadog/datadog-ci-base'
-import type {MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
-
 import chalk from 'chalk'
 import {Cli} from 'clipanion'
 
-import {
-  createCommand,
-  createMockContext,
-  getEnvVarPlaceholders,
-} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import * as APIKeyHelpers from '@datadog/datadog-ci-base/helpers/apikey'
+import {createCommand, createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
+import * as APIKeyHelpers from '../../../helpers/apikey'
+import type {MultipartStringValue} from '../../../helpers/upload'
+import type {CommandContext} from '../../../index'
 
 import {RNSourcemap} from '../interfaces'
 import {ReactNativeUploadCommand} from '../upload'

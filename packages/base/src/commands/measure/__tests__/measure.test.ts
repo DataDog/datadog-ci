@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import {Cli} from 'clipanion'
 
-import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {MeasureCommand, parseMeasures} from '../measure'
 

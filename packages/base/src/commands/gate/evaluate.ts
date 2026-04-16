@@ -1,7 +1,7 @@
 import {Command, Option} from 'clipanion'
 
-import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
-import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import {executePluginCommand} from '../../helpers/plugin'
+import * as validation from '../../helpers/validation'
 
 import {BaseCommand} from '../..'
 

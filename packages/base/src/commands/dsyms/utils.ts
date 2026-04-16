@@ -3,8 +3,8 @@ import {tmpdir} from 'os'
 
 import upath from 'upath'
 
-import {getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
-import {buildPath, execute} from '@datadog/datadog-ci-base/helpers/utils'
+import {getIntakeUrl} from '../../helpers/api'
+import {buildPath, execute} from '../../helpers/utils'
 
 export const isZipFile = async (filepath: string) => {
   try {

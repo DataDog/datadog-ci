@@ -1,7 +1,6 @@
 import {Command} from 'clipanion'
 
-import {BaseCommand} from '@datadog/datadog-ci-base'
-
+import {BaseCommand} from '../../index'
 import {cliVersion} from '../../version'
 
 export class VersionCommand extends BaseCommand {
