@@ -4,8 +4,8 @@ jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
 }))
 
 import type {BaseResult, Batch, PollResult, Result, ResultInBatch, ServerResult, Test, TriggerInfo} from '../interfaces'
+import type {ProxyConfiguration} from '../proxy'
 import type {RecursivePartial} from '../utils/internal'
-import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {MOCK_BASE_URL, getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'

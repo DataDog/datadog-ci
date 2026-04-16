@@ -1,8 +1,8 @@
+import type {ProxyConfiguration} from './proxy'
 import type {TunnelInfo} from './tunnel'
 import type {RecursivePartial} from './utils/internal'
 import type {InitialSummary} from './utils/public'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
-import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import type {Writable} from 'stream'
 
 export type SupportedReporter = 'junit' | 'json' | 'default'

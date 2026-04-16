@@ -58,6 +58,7 @@
     "fast-levenshtein": "3.0.0",
     "get-value": "4.0.1",
     "ora": "5.4.1",
+    "proxy-agent": "6.4.0",
     "set-value": "4.1.0",
     "ssh2": "1.17.0",
     "sshpk": "1.16.1",

@@ -1,7 +1,6 @@
 import {PassThrough} from 'stream'
 
-import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
-
+import {getTunnelProxyAgent} from '../../proxy'
 import {getTunnelReporter} from '../../reporters/default'
 import {Tunnel} from '../../tunnel'
 import {WebSocket} from '../../tunnel/websocket'
@@ -68,7 +67,7 @@ describe('Tunnel', () => {
 
   test('use provided proxy agent', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
-    const localProxyAgent = getProxyAgent({
+    const localProxyAgent = getTunnelProxyAgent({
       host: '127.0.0.1',
       port: 8080,
       protocol: 'http',

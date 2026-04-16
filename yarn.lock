@@ -2230,6 +2230,7 @@ __metadata:
     fast-levenshtein: "npm:3.0.0"
     get-value: "npm:4.0.1"
     ora: "npm:5.4.1"
+    proxy-agent: "npm:6.4.0"
     set-value: "npm:4.1.0"
     ssh2: "npm:1.17.0"
     sshpk: "npm:1.16.1"
