@@ -4,10 +4,6 @@
       "bundle": {
         "extraBundlePatterns": [
           "./src/functions/*.ts"
-        ],
-        "extraBundleExternalPatterns": [
-          "@aws-sdk/",
-          "@smithy/"
         ]
       }
     }
