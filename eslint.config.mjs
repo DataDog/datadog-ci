@@ -10,6 +10,8 @@ import preferArrow from 'eslint-plugin-prefer-arrow'
 import prettierRecommended from 'eslint-plugin-prettier/recommended'
 import tseslint from 'typescript-eslint'
 
+import localPlugin from './eslint-local-plugin.mjs'
+
 const restrictedImports = [
   {
     // forbid using named imports for chalk
@@ -102,6 +104,7 @@ const restrictedImports = [
 export default defineConfig(
   globalIgnores([
     'eslint.config.mjs',
+    'eslint-local-plugin.mjs',
     'packages/*/dist',
     'packages/datadog-ci/shims/injected-plugin-submodules.js',
     'packages/datadog-ci/shims/intl-collator.js',
@@ -132,6 +135,7 @@ export default defineConfig(
       '@stylistic': stylistic,
       'no-null': noNull,
       'prefer-arrow': preferArrow,
+      local: localPlugin,
     },
     rules: {
       '@typescript-eslint/adjacent-overload-signatures': 'error',
@@ -381,6 +385,7 @@ export default defineConfig(
       'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
       'jest/padding-around-test-blocks': 'error',
       'no-prototype-builtins': 'off',
+      'local/no-self-package-imports': 'error',
       'no-restricted-imports': ['error', {paths: restrictedImports}],
       'no-restricted-syntax': [
         'error',
