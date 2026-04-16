@@ -10,6 +10,7 @@
   "failOnTimeout": false,
   "files": ["my-new-file"],
   "jUnitReport": "junit-report.xml",
+  "jsonReport": "test-results-report.json",
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},

@@ -1,5 +1,3 @@
-import fs from 'fs'
-
 import type {
   ApiServerResult,
   Assertion,
@@ -14,10 +12,7 @@ import type {
   Test,
   UserConfigOverride,
 } from '../interfaces'
-import type {Writable} from 'stream'
 
-import c from 'chalk'
-import upath from 'upath'
 import {Builder} from 'xml2js'
 
 import {ExecutionRule} from '../interfaces'
@@ -32,6 +27,8 @@ import {
   pluralize,
   readableOperation,
 } from '../utils/public'
+
+import {FileReporter} from './file'
 
 interface SuiteStats {
   errors: number
@@ -182,18 +179,17 @@ export const getDefaultSuiteStats = (): SuiteStats => ({
   tests: 0,
 })
 
-export class JUnitReporter implements Reporter {
+export class JUnitReporter extends FileReporter implements Reporter {
   private builder: Builder
-  private destination: string
   private json: XMLJSON
-  private write: Writable['write']
 
   constructor({context, jUnitReport, runName}: Args) {
-    this.write = context.stdout.write.bind(context.stdout)
-    this.destination = jUnitReport!
-    if (!this.destination.endsWith('.xml')) {
-      this.destination += '.xml'
-    }
+    super({
+      context,
+      defaultExtension: '.xml',
+      destination: jUnitReport!,
+      reportName: 'JUnit report',
+    })
     this.builder = new Builder()
     this.json = {
       testsuites: {
@@ -296,12 +292,9 @@ export class JUnitReporter implements Reporter {
 
     // Write the file
     try {
-      const xml = this.builder.buildObject(this.json)
-      fs.mkdirSync(upath.dirname(this.destination), {recursive: true})
-      fs.writeFileSync(this.destination, xml, 'utf8')
-      this.write(`\n✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
+      this.writeReportToFile(this.builder.buildObject(this.json))
     } catch (e) {
-      this.write(`\n❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
+      this.write(`\n❌ Couldn't write the JUnit report to ${this.destination}:\n${e}\n`)
     }
   }
 
@@ -558,7 +551,7 @@ export class JUnitReporter implements Reporter {
           {
             $: {
               name: 'start_url',
-              value: hasDefinedResult(result) && 'startUrl' in result.result && result.result.startUrl,
+              value: hasDefinedResult(result) && 'start_url' in result.result && result.result.start_url,
             },
           },
           ...('status' in test ? [{$: {name: 'status', value: test.status}}] : []),

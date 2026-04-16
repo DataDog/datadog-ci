@@ -75,6 +75,7 @@ export const ciConfig: RunTestsCommandConfig = {
   failOnTimeout: true,
   files: [],
   jUnitReport: '',
+  jsonReport: '',
   defaultTestOverrides: {},
   proxy: {protocol: 'http'},
   publicIds: [],
