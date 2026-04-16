@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/constants'
-
-import {BaseCommand} from '../..'
 
 export class CloudRunUninstrumentCommand extends BaseCommand {
   public static paths = [['cloud-run', 'uninstrument']]

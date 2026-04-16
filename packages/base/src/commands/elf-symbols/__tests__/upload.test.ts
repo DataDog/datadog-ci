@@ -15,13 +15,13 @@ import {uploadMultipartHelper} from '../helpers'
 import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
 import {ElfSymbolsUploadCommand} from '../upload'
 
-jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
-  ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
+jest.mock('../../../helpers/utils', () => ({
+  ...jest.requireActual('../../../helpers/utils'),
   performSubCommand: jest.fn(),
 }))
 
-jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () => ({
-  ...jest.requireActual('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'),
+jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
+  ...jest.requireActual('../../../helpers/git/format-git-sourcemaps-data'),
   getRepositoryData: jest.fn(),
 }))
 

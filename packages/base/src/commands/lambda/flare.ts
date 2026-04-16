@@ -1,8 +1,7 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
-
-import {BaseCommand} from '../..'
 
 export class LambdaFlareCommand extends BaseCommand {
   public static paths = [['lambda', 'flare']]

@@ -1,8 +1,7 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
-
-import {BaseCommand} from '../..'
 
 /**
  * This command collects environment variables and git information to correlate commits from the

@@ -74,7 +74,7 @@ Your new command can be put:
 To add a new command to a scope, create `packages/base/src/commands/<scope>/<command>.ts`:
 
 ```typescript
-import {BaseCommand} from '@datadog/datadog-ci-base'
+import {BaseCommand} from '../../base-command'
 import {Command, Option} from 'clipanion'
 
 export class FooBarCommand extends BaseCommand {

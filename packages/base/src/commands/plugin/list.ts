@@ -1,10 +1,9 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {LogLevel, Logger} from '../../helpers/logger'
 import {listAllPlugins} from '../../helpers/plugin'
-
-import {BaseCommand} from '../..'
 
 export class PluginListCommand extends BaseCommand {
   public static paths = [['plugin', 'list']]

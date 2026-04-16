@@ -4,10 +4,10 @@ import type {RNPlatform} from './interfaces'
 
 import {Cli, Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {BaseCommand} from '../../index'
 
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RN_SUPPORTED_PLATFORMS} from './interfaces'

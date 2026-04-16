@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
-
-import {BaseCommand} from '../..'
 
 export class DoraDeploymentCommand extends BaseCommand {
   public static paths = [['dora', 'deployment']]

@@ -7,6 +7,7 @@ import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
+import {BaseCommand} from '../../base-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSiteFromEnv} from '../../helpers/api'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -28,7 +29,6 @@ import {
 } from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
-import {BaseCommand} from '../../index'
 import {cliVersion} from '../../version'
 
 import {DsymsUploadCommand} from '../dsyms/upload'

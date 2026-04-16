@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
 import * as validation from '../../helpers/validation'
-
-import {BaseCommand} from '../..'
 
 export class GateEvaluateCommand extends BaseCommand {
   public static paths = [['gate', 'evaluate']]

@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {messageBox} from '../../helpers/message-box'
 import {checkPlugin, scopeToPackageName} from '../../helpers/plugin'
-
-import {BaseCommand} from '../..'
 
 export class PluginCheckCommand extends BaseCommand {
   public static paths = [['plugin', 'check']]

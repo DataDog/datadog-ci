@@ -3,6 +3,7 @@ import type {CommitInfo} from './interfaces'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import type {ApiKeyValidator} from '../../helpers/apikey'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -17,8 +18,6 @@ import {getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {cliVersion} from '../../version'
-
-import {BaseCommand} from '../..'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'

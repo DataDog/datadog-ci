@@ -1,8 +1,7 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
-
-import {BaseCommand} from '../..'
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs

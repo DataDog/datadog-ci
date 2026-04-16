@@ -1,7 +1,6 @@
-import type {CommandContext} from '../../..'
-
 import {Cli} from 'clipanion'
 
+import type {CommandContext} from '../../../base-command'
 import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 import {listAllPlugins} from '../../../helpers/plugin'
 

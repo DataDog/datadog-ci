@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
-
-import {BaseCommand} from '../..'
 
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 const datadogAppBaseUrl = 'https://app.datadoghq.com'

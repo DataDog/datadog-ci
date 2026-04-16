@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
 import {LAMBDA_LAYER_VERSIONS} from '../../helpers/serverless/lambda-layer-versions'
-
-import {BaseCommand} from '../..'
 
 const LAYER_VERSIONS_HELP_STRING = Object.entries(LAMBDA_LAYER_VERSIONS)
   .filter(([key, _]) => key !== 'extension')

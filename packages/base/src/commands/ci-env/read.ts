@@ -1,6 +1,7 @@
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
+import {BaseCommand} from '../../base-command'
 import {getCISpanTags} from '../../helpers/ci'
 import {
   CI_ENV_VARS,
@@ -34,7 +35,6 @@ import {
   PR_NUMBER,
 } from '../../helpers/tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {BaseCommand} from '../../index'
 
 /**
  * Explicit mapping from internal tag keys to DD_* environment variable names.

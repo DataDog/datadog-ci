@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
 import {isInteger} from '../../helpers/validation'
-
-import {BaseCommand} from '../..'
 
 export class SarifUploadCommand extends BaseCommand {
   public static paths = [['sarif', 'upload']]

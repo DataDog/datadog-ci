@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
 import type {CILevel} from '../../helpers/ci'
@@ -11,7 +12,6 @@ import type {RequestError} from '../../helpers/request'
 import {retryRequest} from '../../helpers/retry'
 import {parseMeasuresFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
-import {BaseCommand} from '../../index'
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {

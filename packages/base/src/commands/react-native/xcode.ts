@@ -4,11 +4,11 @@ import {existsSync, readFileSync, statSync, unlinkSync, writeFileSync} from 'fs'
 
 import {Cli, Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {parsePlist} from '../../helpers/plist'
-import {BaseCommand} from '../../index'
 
 import {ReactNativeUploadCommand} from './upload'
 import {getReactNativeVersion} from './utils'

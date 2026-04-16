@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {BaseCommand} from '../../base-command'
 import {executePluginCommand} from '../../helpers/plugin'
 import {
   DEFAULT_VOLUME_PATH,
@@ -7,8 +8,6 @@ import {
   DEFAULT_SIDECAR_NAME,
   DEFAULT_VOLUME_NAME,
 } from '../../helpers/serverless/constants'
-
-import {BaseCommand} from '../..'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 

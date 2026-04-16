@@ -1,6 +1,6 @@
 import {Command} from 'clipanion'
 
-import {BaseCommand} from '../../index'
+import {BaseCommand} from '../../base-command'
 import {cliVersion} from '../../version'
 
 export class VersionCommand extends BaseCommand {
