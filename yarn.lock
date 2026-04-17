@@ -2156,6 +2156,8 @@ __metadata:
     "@aws-sdk/client-iam": ^3.981.0
     "@aws-sdk/client-lambda": ^3.981.0
     "@aws-sdk/credential-providers": ^3.981.0
+    "@smithy/property-provider": 2.2.0
+    "@smithy/util-retry": 2.2.0
   peerDependenciesMeta:
     "@aws-sdk/client-cloudwatch-logs":
       optional: true
@@ -2164,6 +2166,10 @@ __metadata:
     "@aws-sdk/client-lambda":
       optional: true
     "@aws-sdk/credential-providers":
+      optional: true
+    "@smithy/property-provider":
+      optional: true
+    "@smithy/util-retry":
       optional: true
   languageName: unknown
   linkType: soft
