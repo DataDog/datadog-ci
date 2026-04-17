@@ -24,13 +24,12 @@ const PROD_DATA_COLLECTOR_PROMPT = `You are a production data collector. Your ON
 production inputs using Datadog Live Debugger logpoints.
 
 CRITICAL: You MUST use these steps in order:
-  1. Bash: git rev-parse HEAD  (get SHA from the checked-out worktree)
-  2. mcp__datadog-mcp__create_datadog_logpoint  (NO discover step — go straight to create)
-  3. Bash: sleep 120
-  4. mcp__datadog-mcp__search_datadog_logs
-  5. mcp__datadog-mcp__delete_datadog_session
-
-Do NOT call discover_datadog_logpoint — skip it entirely.
+  1. Resolve the APM service name from the codebase
+  2. mcp__datadog-mcp__discover_datadog_logpoint  (get the deployed SHA)
+  3. mcp__datadog-mcp__create_datadog_logpoint  (use the discovered SHA)
+  4. Bash: sleep 120
+  5. mcp__datadog-mcp__search_datadog_logs
+  6. mcp__datadog-mcp__delete_datadog_session
 Do NOT fall back to search_datadog_spans, search_datadog_logs, search_datadog_metrics,
 or any other Datadog tool to substitute for real logpoint captures.
 If DI is not available, return SKIP immediately — do NOT produce a result from other sources.
@@ -55,24 +54,34 @@ TARGETING RULES:
 
 ## Detailed steps
 
-### Step 1 — Get SHA and resolve the APM service name
-
-Run: Bash git rev-parse HEAD
-This gives the git SHA of the deployed code to instrument.
+### Step 1 — Resolve the APM service name and repository URL
 
 Search the codebase for the changed function. Then trace from the function's package to
 the main.go that imports it and extract the service name from ddapp.NewApp(...), appName
 constants, or DD_SERVICE env vars. The APM service name is often NOT the directory name.
 
-Also determine the repository URL from the git remote:
+Determine the repository URL from the git remote:
   Bash: git remote get-url origin
 
-### Step 2 — Call create_datadog_logpoint directly (NO discover)
+### Step 2 — Discover the deployed SHA via Live Debugger
+
+Call mcp__datadog-mcp__discover_datadog_logpoint with:
+- service_name: from step 1
+- environment: "prod"
+
+This returns the SHA currently running in production. Use THAT SHA for create_logpoint.
+Do NOT use git rev-parse HEAD — that's the PR branch tip which has NOT been deployed.
+
+If discover fails or returns no active instances:
+Return "SKIP: DI not available for <service> in prod (<error>)" immediately.
+Do NOT attempt any fallback. Do NOT search spans or logs as a substitute.
+
+### Step 3 — Call create_datadog_logpoint
 
 Arguments:
 - service_name: the resolved APM service name
 - repository_url: from git remote (strip .git suffix if present)
-- git_sha: from step 1
+- git_sha: the deployed SHA from discover (step 2)
 - environment: "prod"
 - language: infer from file extension (go, python, java, etc.)
 - file_path: Start with shortest package-relative path (e.g. processor/processor.go).
@@ -87,22 +96,22 @@ If create fails with ANY error (no active instances, SHA mismatch, not found):
 Return "SKIP: DI not available for <service> in prod (<error>)" immediately.
 Do NOT attempt any fallback. Do NOT search spans or logs as a substitute.
 
-### Step 3 — Wait 2 minutes
+### Step 4 — Wait 2 minutes
 
 Run: Bash sleep 120
 
-### Step 4 — Collect captured data
+### Step 5 — Collect captured data
 
 Call mcp__datadog-mcp__search_datadog_logs to fetch the captured logpoint data.
 Use use_log_patterns: true for clustering.
 
 Do NOT request extra_fields: ['debugger*'] — snapshots are enormous.
 
-### Step 5 — Clean up
+### Step 6 — Clean up
 
-Call mcp__datadog-mcp__delete_datadog_session with the session_id from step 2.
+Call mcp__datadog-mcp__delete_datadog_session with the session_id from step 3.
 
-### Step 6 — Return results
+### Step 7 — Return results
 
 Return a structured summary:
 - total captures
@@ -594,6 +603,7 @@ export class AutotestCommand extends BaseCommand {
               'Grep',
               'Glob',
               'Bash',
+              'mcp__datadog-mcp__discover_datadog_logpoint',
               'mcp__datadog-mcp__create_datadog_logpoint',
               'mcp__datadog-mcp__search_datadog_logs',
               'mcp__datadog-mcp__analyze_datadog_logs',
