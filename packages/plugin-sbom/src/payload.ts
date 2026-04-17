@@ -38,6 +38,7 @@ import {
   LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
   LEGACY_PACKAGE_MANAGER_PROPERTY_KEY,
   LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
+  OPAQUE_KEY,
   PACKAGE_MANAGER_PROPERTY_KEY,
   REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
   TARGET_FRAMEWORK_KEY,
@@ -261,6 +262,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
   const exclusions: Set<string> = new Set<string>()
   const targetFrameworks: string[] = []
   const reachableSymbolProperties: Property[] = []
+  let opaque: boolean | undefined
 
   for (const property of component['properties'] ?? []) {
     const propertyName: string = property.name
@@ -283,6 +285,8 @@ const extractingDependency = (component: any): Dependency | undefined => {
       isDev = parseTrueOrUndefined(propertyValue)
     } else if (propertyName === TARGET_FRAMEWORK_KEY) {
       targetFrameworks.push(propertyValue)
+    } else if (propertyName === OPAQUE_KEY) {
+      opaque = propertyValue.toLowerCase() === 'true' ? true : undefined
     } else if (
       propertyName.startsWith(LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX) ||
       propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)
@@ -321,6 +325,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     reachable_symbol_properties: reachableSymbolProperties,
     target_frameworks: targetFrameworks,
     exclusions: Array.from(exclusions),
+    opaque,
   }
 
   return dependency
