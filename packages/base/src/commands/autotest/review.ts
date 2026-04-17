@@ -686,7 +686,7 @@ export class AutotestCommand extends BaseCommand {
     }
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
-    const isFail = /\bFAIL\b|bug found|broken|regression/i.test(resultText)
+    const isFail = /## 🔬 Autotest: FAIL/i.test(resultText)
 
     return {exitCode: isFail ? 1 : 0, resultText}
   }
@@ -785,7 +785,7 @@ export class AutotestCommand extends BaseCommand {
     }
 
     try {
-      const isFail = /FAIL/i.test(resultText)
+      const isFail = /## 🔬 Autotest: FAIL/i.test(resultText)
       const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*executed/i)
       const prodInputsMatch = resultText.match(/(\d+)\s*prod\s*inputs?\s*captured/i)
       const findingsMatch = resultText.match(/(\d+)\s*suspicious\s*findings?/i)
