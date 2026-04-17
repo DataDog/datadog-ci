@@ -560,29 +560,23 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       "jobName": "__default"
     }`
 
-  const sampleLogContentWithPlanId = (jobDisplayName: string, planId: string): string => `
+  // Variant with system.orchestrationId variable — reflects real runner log format.
+  // ACTIONS_ORCHESTRATION_ID is sourced from this variable, so they always share the same value.
+  const sampleLogContentWithOrchestrationId = (jobDisplayName: string, orchestrationId: string): string => `
     [2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.
     [2025-09-15 10:14:00Z INFO ProcessChannel] Receiving message of length 22985, with hash 'abcdef'
     [2025-09-15 10:14:00Z INFO Worker] Message received.
     [2025-09-15 10:14:00Z INFO Worker] Job message:
     {
-      "planId": "${planId}",
       "jobId": "95a4619c-e316-542f-8a21-74cd5a8ac9ca",
       "jobDisplayName": ${JSON.stringify(jobDisplayName)},
-      "jobName": "__default"
-    }`
-
-  // Variant with explicit jobId for testing same-planId disambiguation on multi-runners
-  const sampleLogContentWithPlanIdAndJobId = (jobDisplayName: string, planId: string, jobId: string): string => `
-    [2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.
-    [2025-09-15 10:14:00Z INFO ProcessChannel] Receiving message of length 22985, with hash 'abcdef'
-    [2025-09-15 10:14:00Z INFO Worker] Message received.
-    [2025-09-15 10:14:00Z INFO Worker] Job message:
-    {
-      "planId": "${planId}",
-      "jobId": "${jobId}",
-      "jobDisplayName": ${JSON.stringify(jobDisplayName)},
-      "jobName": "__default"
+      "jobName": "__default",
+      "variables": {
+        "system.orchestrationId": {
+          "value": "${orchestrationId}",
+          "isSecret": false
+        }
+      }
     }`
 
   const sampleLogFileName = 'Worker_20251014-083000.log'
@@ -1036,18 +1030,34 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   describe('Worker log identification with ACTIONS_ORCHESTRATION_ID', () => {
-    test('should use ACTIONS_ORCHESTRATION_ID to find correct Worker log', () => {
-      const planId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
-      // jobId must match what sampleLogContentWithPlanId embeds in the log
-      const jobId = '95a4619c-e316-542f-8a21-74cd5a8ac9ca'
+    // ACTIONS_ORCHESTRATION_ID is set by the runner (>= v2.331.0, feature-flag gated) from the
+    // system.orchestrationId variable in the job message. The runner serializes that variable
+    // into the Worker log, so matching the full value is a unique-per-job identifier.
+    // When ACTIONS_ORCHESTRATION_ID is not set (older runners), we fall back to the original
+    // behavior: return all logs and iterate until jobDisplayName is found.
+    //
+    // Value format (server-generated, opaque to the runner):
+    //   Non-matrix job:        <planId>.<yaml-job-key>.__default
+    //     e.g. 9f25551c-ce16-4f8f-a662-8575df3d1354.build-and-test.__default
+    //   Single-dimension matrix: <planId>.<yaml-job-key>.<matrix-value>
+    //     e.g. 9f25551c-ce16-4f8f-a662-8575df3d1354.build-and-test.22
+    //   Multi-dimension matrix: <planId>.<yaml-job-key>.<val1>.<val2>[...]
+    //     e.g. 9f25551c-ce16-4f8f-a662-8575df3d1354.test.ubuntu-22.04.20
+    //
+    // planId is a GUID that is shared across all jobs in the same workflow run. It is NOT
+    // unique per job, which is why we match on the full orchestration ID rather than planId alone.
+
+    test('should find the correct Worker log via system.orchestrationId', () => {
+      // Non-matrix job format: <planId>.<yaml-job-key>.__default
+      const orchestrationId = '9f25551c-ce16-4f8f-a662-8575df3d1354.build-and-test.__default'
       const originalEnv = process.env
-      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${planId}.${jobId}.__default`}
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: orchestrationId}
 
       const targetDir = githubWellKnownDiagnosticDirsUnix[0]
-      const logContent = sampleLogContentWithPlanId('correct-job-name', planId)
-
       mockReaddirSync(targetDir, 'Worker_20251014-083000.log')
-      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+      jest
+        .spyOn(fs, 'readFileSync')
+        .mockReturnValue(sampleLogContentWithOrchestrationId('correct-job-name', orchestrationId))
 
       const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
@@ -1055,134 +1065,85 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       process.env = originalEnv
     })
 
-    test('should select correct log among multiple Worker logs on non-ephemeral runner', () => {
-      const correctPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
-      const wrongPlanId = '12345678-1234-1234-1234-123456789abc'
-      // jobId must match what sampleLogContentWithPlanId embeds in the log
-      const jobId = '95a4619c-e316-542f-8a21-74cd5a8ac9ca'
-      const originalEnv = process.env
-      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${correctPlanId}.${jobId}.__default`}
-
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
-
-      // Multiple Worker logs from different runs
-      jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
-        if (String(pathToRead) === String(targetDir)) {
-          return [
-            mockLogFileDirent('Worker_20251014-083000.log'), // Old job
-            mockLogFileDirent('Worker_20251014-090000.log'), // Current job
-            mockLogFileDirent('Worker_20251014-095000.log'), // Another old job
-          ]
-        }
-        throw getNotFoundFsError()
-      })
-
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath: any) => {
-        const filePathStr = String(filePath)
-        if (filePathStr.includes('Worker_20251014-083000.log')) {
-          return sampleLogContentWithPlanId('old-job-name-1', wrongPlanId)
-        }
-        if (filePathStr.includes('Worker_20251014-090000.log')) {
-          return sampleLogContentWithPlanId('correct-job-name', correctPlanId)
-        }
-        if (filePathStr.includes('Worker_20251014-095000.log')) {
-          return sampleLogContentWithPlanId('old-job-name-2', '87654321-4321-4321-4321-cba987654321')
-        }
-
-        return ''
-      })
-
-      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
-
-      expect(jobName).toBe('correct-job-name')
-      // Should read 2 logs searching for planId, then read the matched log again = 3 total
-      expect(fs.readFileSync).toHaveBeenCalledTimes(3)
-      process.env = originalEnv
-    })
-
-    test('should disambiguate logs sharing the same planId using jobId on multi-runners', () => {
-      // On a non-ephemeral (multi) runner, sequential jobs from the same workflow run all
-      // share the same planId. The previous job's Worker log is found first (alphabetical
-      // order). Without jobId matching, the wrong log is returned.
-      const sharedPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
-      const previousJobId = 'aaaaaaaa-0000-0000-0000-000000000001'
-      const currentJobId = 'bbbbbbbb-0000-0000-0000-000000000002'
-      const originalEnv = process.env
-      process.env = {
-        ...originalEnv,
-        ACTIONS_ORCHESTRATION_ID: `${sharedPlanId}.${currentJobId}.__default`,
-      }
-
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
-
-      jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
-        if (String(pathToRead) === String(targetDir)) {
-          return [
-            mockLogFileDirent('Worker_20251014-083000.log'), // previous job (same planId, different jobId)
-            mockLogFileDirent('Worker_20251014-090000.log'), // current job (same planId, matching jobId)
-          ]
-        }
-        throw getNotFoundFsError()
-      })
-
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath: any) => {
-        const filePathStr = String(filePath)
-        if (filePathStr.includes('Worker_20251014-083000.log')) {
-          return sampleLogContentWithPlanIdAndJobId('previous-job-name', sharedPlanId, previousJobId)
-        }
-        if (filePathStr.includes('Worker_20251014-090000.log')) {
-          return sampleLogContentWithPlanIdAndJobId('current-job-name', sharedPlanId, currentJobId)
-        }
-
-        return ''
-      })
-
-      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
-
-      // Must return the current job's name, not the previous job's name
-      expect(jobName).toBe('current-job-name')
-      process.env = originalEnv
-    })
-
-    test('should fall back to first match when ACTIONS_ORCHESTRATION_ID not available', () => {
+    test('should check logs newest-first when ACTIONS_ORCHESTRATION_ID is not set (runner < v2.331.0)', () => {
+      // Runners older than v2.331.0 (or without the feature flag) do not set ACTIONS_ORCHESTRATION_ID.
+      // On a multi-runner, multiple Worker logs exist. Iterating newest-first ensures the current
+      // job's log (most recent) is found first.
       const originalEnv = process.env
       process.env = {...originalEnv}
       delete process.env.ACTIONS_ORCHESTRATION_ID
 
       const targetDir = githubWellKnownDiagnosticDirsUnix[0]
-      const logContent = sampleLogContent('first-job-found')
 
-      mockReaddirSync(targetDir, 'Worker_20251014-083000.log')
-      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+      jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
+        if (String(pathToRead) === String(targetDir)) {
+          return [
+            mockLogFileDirent('Worker_20251014-083000.log'), // previous job (older timestamp)
+            mockLogFileDirent('Worker_20251014-090000.log'), // current job (newer timestamp)
+          ]
+        }
+        throw getNotFoundFsError()
+      })
+
+      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath: any) => {
+        const filePathStr = String(filePath)
+        if (filePathStr.includes('Worker_20251014-083000.log')) {
+          return sampleLogContent('previous-job-name')
+        }
+        if (filePathStr.includes('Worker_20251014-090000.log')) {
+          return sampleLogContent('current-job-name')
+        }
+
+        return ''
+      })
 
       const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
-      expect(jobName).toBe('first-job-found')
+      // The newest log (090000) is the current job's log and must be returned first
+      expect(jobName).toBe('current-job-name')
       process.env = originalEnv
     })
 
-    test('should fall back to checking all logs if planId not found', () => {
-      const searchPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
+    test('should check logs newest-first when system.orchestrationId is not found in any log', () => {
+      // ACTIONS_ORCHESTRATION_ID is set but system.orchestrationId is absent from all logs
+      // (e.g., a runner that sets the env var but does not yet write it to the log).
+      // We emit a warning and fall back to newest-first iteration so multi-runners still
+      // pick the current job's log correctly.
+      // Non-matrix format: <planId>.<yaml-job-key>.__default
+      const orchestrationId = '9f25551c-ce16-4f8f-a662-8575df3d1354.build-and-test.__default'
       const originalEnv = process.env
-      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${searchPlanId}.test-job.__default`}
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: orchestrationId}
 
       const targetDir = githubWellKnownDiagnosticDirsUnix[0]
 
       jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
         if (String(pathToRead) === String(targetDir)) {
-          return [mockLogFileDirent('Worker_20251014-083000.log')]
+          return [
+            mockLogFileDirent('Worker_20251014-083000.log'), // previous job (older timestamp)
+            mockLogFileDirent('Worker_20251014-090000.log'), // current job (newer timestamp)
+          ]
         }
         throw getNotFoundFsError()
       })
 
-      // Log contains different planId, but still has jobDisplayName
-      jest
-        .spyOn(fs, 'readFileSync')
-        .mockReturnValue(sampleLogContentWithPlanId('fallback-job-name', 'different-plan-id'))
+      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath: any) => {
+        const filePathStr = String(filePath)
+        // Neither log contains system.orchestrationId
+        if (filePathStr.includes('Worker_20251014-083000.log')) {
+          return sampleLogContent('previous-job-name')
+        }
+        if (filePathStr.includes('Worker_20251014-090000.log')) {
+          return sampleLogContent('current-job-name')
+        }
 
-      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+        return ''
+      })
 
-      expect(jobName).toBe('fallback-job-name')
+      const context = createMockContext() as BaseContext
+      const jobName = getGithubJobNameFromLogs(context)
+
+      expect(jobName).toBe('current-job-name')
+      expect(context.stderr.toString()).toContain('Could not find Worker log via system.orchestrationId')
       process.env = originalEnv
     })
   })

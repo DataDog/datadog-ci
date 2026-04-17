@@ -1213,53 +1213,51 @@ const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | und
 }
 
 /**
- * Narrows the list of Worker log files to check by using ACTIONS_ORCHESTRATION_ID
- * to identify the correct log for the current job on non-ephemeral runners.
+ * Narrows the list of Worker log files to the one belonging to the current job.
  *
- * ACTIONS_ORCHESTRATION_ID format: <planId>.<jobId>.__default
+ * Worker log filenames contain a timestamp (Worker_YYYYMMDD-HHMMSS-utc.log), so
+ * alphabetical order equals chronological order. Logs are always returned
+ * newest-first so that the caller's iteration naturally encounters the current
+ * job's log before any earlier ones — correct on both ephemeral and non-ephemeral
+ * (multi) runners regardless of the strategy used.
  *
- * All jobs in the same GitHub Actions workflow run share the same planId.
- * On multi-runners (non-ephemeral runners processing sequential jobs), multiple
- * Worker log files can exist from different jobs of the same workflow run,
- * all containing the same planId. Matching only on planId causes the first
- * (chronologically oldest) log to be selected, which may belong to a previous
- * job. The jobId (second segment of ACTIONS_ORCHESTRATION_ID) is unique per job
- * and is serialized as "jobId" in the Worker log's job message JSON, allowing
- * unambiguous identification of the current job's log.
+ * Primary strategy (runner >= v2.331.0, feature-flag gated):
+ *   ACTIONS_ORCHESTRATION_ID is set by the runner from the system.orchestrationId
+ *   variable in the job request message. That variable is serialized into the Worker
+ *   log as part of the job message JSON. planId is a GUID shared by all jobs in the
+ *   same workflow run, so the full orchestration ID is needed for a unique match:
+ *     Non-matrix job:          <planId>.<yaml-job-key>.__default
+ *     Single-dimension matrix: <planId>.<yaml-job-key>.<matrix-value>
+ *     Multi-dimension matrix:  <planId>.<yaml-job-key>.<val1>.<val2>[...]
+ *
+ * Fallback (runner < v2.331.0 or ACTIONS_ORCHESTRATION_ID absent/unmatched):
+ *   Return all logs newest-first. The caller iterates until it finds a jobDisplayName,
+ *   which on a single-job runner is immediate, and on a multi-runner is the current
+ *   job's (most recent) log.
  */
 const getTargetWorkerLogFiles = (context: BaseContext, foundDiagDir: string, workerLogFiles: string[]): string[] => {
+  // Always sort newest-first so the fallback iteration is in the right order.
+  const sortedNewestFirst = [...workerLogFiles].sort().reverse()
+
   const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
-  if (!orchestrationId) {
-    return workerLogFiles
-  }
+  if (orchestrationId) {
+    for (const logFile of sortedNewestFirst) {
+      const filePath = upath.join(foundDiagDir, logFile)
+      const content = fs.readFileSync(filePath, 'utf-8')
 
-  // ACTIONS_ORCHESTRATION_ID format: <planId>.<jobId>.__default
-  const parts = orchestrationId.split('.')
-  const planId = parts[0]
-  // jobId is unique per job within a workflow run; planId is shared across all jobs
-  const jobId = parts[1]
+      if (content.includes('"system.orchestrationId":') && content.includes(`"${orchestrationId}"`)) {
+        context.stdout.write(`Found Worker log via system.orchestrationId for ${orchestrationId}: ${logFile}\n`)
 
-  // Find the Worker log matching both planId and jobId for the current job
-  for (const logFile of workerLogFiles) {
-    const filePath = upath.join(foundDiagDir, logFile)
-    const content = fs.readFileSync(filePath, 'utf-8')
-
-    const matchesPlanId = content.includes(`"planId": "${planId}"`)
-    // jobId may be absent on older runner versions; fall back to planId-only match
-    const matchesJobId = !jobId || content.includes(`"jobId": "${jobId}"`)
-
-    if (matchesPlanId && matchesJobId) {
-      context.stdout.write(`Found Worker log for planId ${planId}, jobId ${jobId ?? 'N/A'}: ${logFile}\n`)
-
-      return [logFile]
+        return [logFile]
+      }
     }
+
+    context.stderr.write(
+      `${chalk.yellow.bold('[WARNING]')} Could not find Worker log via system.orchestrationId for ${orchestrationId}, checking all logs\n`
+    )
   }
 
-  context.stderr.write(
-    `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, jobId ${jobId ?? 'N/A'}, checking all logs\n`
-  )
-
-  return workerLogFiles
+  return sortedNewestFirst
 }
 
 const getGithubJobAttributeFromLogFiles = (
