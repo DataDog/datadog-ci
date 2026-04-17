@@ -14,6 +14,7 @@ import type {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import type {MetricsLogger} from '../../helpers/metrics'
 import {getMetricsLogger} from '../../helpers/metrics'
+import {datadogRoute} from '../../helpers/request/datadog-route'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {cliVersion} from '../../version'
@@ -214,7 +215,7 @@ export class GitMetadataUploadCommand extends BaseCommand {
         ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: datadogRoute('/api/v2/srcmap'),
     })
   }
 

@@ -1,6 +1,7 @@
 import type {Payload} from './interfaces'
 import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const reportCustomSpan = (request: RequestBuilder) => async (customSpan: Payload) => {
@@ -12,7 +13,7 @@ export const reportCustomSpan = (request: RequestBuilder) => async (customSpan: 
       },
     },
     method: 'POST',
-    url: '/api/intake/ci/custom_spans',
+    url: datadogRoute('/api/intake/ci/custom_spans'),
   })
 }
 

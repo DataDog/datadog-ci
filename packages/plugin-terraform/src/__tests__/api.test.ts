@@ -72,7 +72,7 @@ describe('uploadTerraformArtifact', () => {
     expect(requestMock).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: 'api/v2/ciiac',
+        url: '/api/v2/ciiac',
         data: formMock,
         headers: formMock.getHeaders(),
       })

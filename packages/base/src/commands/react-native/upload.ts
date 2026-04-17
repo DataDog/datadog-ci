@@ -18,6 +18,7 @@ import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
@@ -292,7 +293,7 @@ export class ReactNativeUploadCommand extends BaseCommand {
         ['DD-EVP-ORIGIN', 'datadog-ci_react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: datadogRoute('/api/v2/srcmap'),
     })
   }
 

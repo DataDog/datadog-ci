@@ -1,7 +1,6 @@
 import crypto from 'crypto'
 
 import type {APIHelper, Payload} from './interfaces'
-import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import chalk from 'chalk'
 import {Option} from 'clipanion'
@@ -21,6 +20,8 @@ import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-sp
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
+
+import type {RequestError} from '../../helpers/request'
 
 import {apiConstructor} from './api'
 import {SUPPORTED_PROVIDERS} from './interfaces'

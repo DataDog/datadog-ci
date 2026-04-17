@@ -8,6 +8,7 @@ import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} fro
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import type {RequestError} from '../../helpers/request'
+import {datadogRoute} from '../../helpers/request/datadog-route'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
@@ -167,7 +168,7 @@ export class TagCommand extends BaseCommand {
       request({
         data: this.buildTagRequest(ciEnv, level, provider, tags),
         method: 'post',
-        url: 'api/v2/ci/pipeline/tags',
+        url: datadogRoute('/api/v2/ci/pipeline/tags'),
       })
 
     try {

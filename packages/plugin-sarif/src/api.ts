@@ -5,6 +5,7 @@ import type {Payload} from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 import type {Writable} from 'stream'
 
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 import {v4 as uuidv4} from 'uuid'
@@ -35,7 +36,7 @@ export const uploadSarifReport =
       data: form,
       headers: form.getHeaders(),
       method: 'POST',
-      url: 'api/v2/cicodescan',
+      url: datadogRoute('/api/v2/cicodescan'),
     })
   }
 

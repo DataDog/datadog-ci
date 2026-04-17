@@ -4,6 +4,7 @@ import chalk from 'chalk'
 
 import {InvalidConfigurationError} from './errors'
 import {httpRequest, isRequestError} from './request'
+import {datadogRoute} from './request/datadog-route'
 
 /** ApiKeyValidator is an helper interface to interpret Datadog error responses and possibly check the
  * validity of the api key.
@@ -74,7 +75,8 @@ class ApiKeyValidatorImplem {
           'DD-API-KEY': this.apiKey,
         },
         method: 'GET',
-        url: this.getApiKeyValidationURL(),
+        baseURL: `https://api.${this.datadogSite}`,
+        url: datadogRoute('/api/v1/validate'),
       })
 
       return response.data.valid
@@ -84,10 +86,6 @@ class ApiKeyValidatorImplem {
       }
       throw error
     }
-  }
-
-  private getApiKeyValidationURL(): string {
-    return `https://api.${this.datadogSite}/api/v1/validate`
   }
 
   private async isApiKeyValid(): Promise<boolean | undefined> {

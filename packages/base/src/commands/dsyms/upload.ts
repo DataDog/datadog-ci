@@ -19,6 +19,7 @@ import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
@@ -343,7 +344,7 @@ export class DsymsUploadCommand extends BaseCommand {
         ['DD-EVP-ORIGIN', 'datadog-ci_dsyms'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: datadogRoute('/api/v2/srcmap'),
     })
   }
 

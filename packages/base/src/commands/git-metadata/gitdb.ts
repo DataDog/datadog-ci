@@ -13,6 +13,7 @@ import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/g
 import type {RequestBuilder} from '../../helpers/interfaces'
 import type {Logger} from '../../helpers/logger'
 import type {RequestResponse} from '../../helpers/request'
+import {datadogRoute} from '../../helpers/request/datadog-route'
 import {retryRequest} from '../../helpers/retry'
 
 const API_TIMEOUT = 15000
@@ -235,7 +236,7 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
   })
   const response = await runRequest(log, 'search_commits', () =>
     request({
-      url: '/api/v2/git/repository/search_commits',
+      url: datadogRoute('/api/v2/git/repository/search_commits'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -367,7 +368,7 @@ export const uploadPackfile = async (
 
   return runRequest(log, 'packfile', () =>
     request({
-      url: '/api/v2/git/repository/packfile',
+      url: datadogRoute('/api/v2/git/repository/packfile'),
       headers: {
         ...form.getHeaders(),
       },

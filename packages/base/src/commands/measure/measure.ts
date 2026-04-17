@@ -1,5 +1,4 @@
 import type {CILevel} from '@datadog/datadog-ci-base/helpers/ci'
-import type {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -13,6 +12,9 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+
+import type {RequestError} from '../../helpers/request'
+import {datadogRoute} from '../../helpers/request/datadog-route'
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {
@@ -156,7 +158,7 @@ export class MeasureCommand extends BaseCommand {
       request({
         data: this.buildMeasureRequest(ciEnv, level, provider, measures),
         method: 'post',
-        url: 'api/v2/ci/pipeline/metrics',
+        url: datadogRoute('/api/v2/ci/pipeline/metrics'),
       })
 
     try {

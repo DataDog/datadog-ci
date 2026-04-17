@@ -6,6 +6,7 @@ import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/help
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 
@@ -64,7 +65,7 @@ export const uploadCodeCoverageReport =
       data: form,
       headers: form.getHeaders(),
       method: 'POST',
-      url: 'api/v2/cicovreprt',
+      url: datadogRoute('/api/v2/cicovreprt'),
     })
   }
 

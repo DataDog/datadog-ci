@@ -42,6 +42,7 @@ Prettier + ESLint enforce formatting and style. Run `yarn format` to auto-fix, `
 
 Not enforced by lint -- follow manually:
 - Use `getRequestBuilder()` from `helpers/utils` or `httpRequest()` from `helpers/request` for HTTP -- not raw fetch or axios
+- Use `datadogRoute()` from `helpers/request/datadog-route` to build Datadog API paths, and `thirdParty()` from `helpers/request/third-party` for external URLs. Never try to bypass this with casts, and never use `thirdParty()` for Datadog API calls.
 
 ## Testing
 

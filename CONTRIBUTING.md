@@ -138,6 +138,36 @@ Optionally, you can create a pre-release for your command by following the [Pre-
   - Update [`advanced-issue-labeler.yml`](.github/advanced-issue-labeler.yml).
   - Update the `changelog` configuration in [`release.yml`](.github/release.yml).
 
+### Registering API calls
+
+All API calls are typed to make datadog-ci's network traffic auditable. All Datadog API calls are marked with `datadogRoute()`, the rest is marked with `thirdParty()`.
+
+**Never** cast raw strings to `DatadogRoute` or `ThirdParty` directly.
+
+#### Datadog API calls
+
+Add the path to `DATADOG_ROUTE_PATHS` in `packages/base/src/helpers/request/datadog-route.ts`, then use `datadogRoute()` to build the route:
+
+```typescript
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
+
+// Static path
+const url = datadogRoute('/api/v2/cireport')
+
+// Path with parameters
+const url = datadogRoute('/synthetics/ci/batch/:batchId', {batchId: '123'})
+```
+
+#### Third-party API calls
+
+Use `thirdParty()` for external URLs, like blob storage presigned URLs:
+
+```typescript
+import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
+
+const url = thirdParty('https://cloud-provider.com/blob-storage/presigned-url')
+```
+
 ### Plugin bundle architecture
 
 Each plugin is bundled with [tsdown](https://tsdown.dev/) via `scripts/tsdown-plugin.mjs` (triggered by `yarn prepack`). The build produces three kinds of outputs, configured in part by `datadog-ci.meta.json` at the repo root.

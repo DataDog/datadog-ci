@@ -26,6 +26,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
@@ -375,7 +376,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
         ['DD-EVP-ORIGIN', 'datadog-ci_sourcemaps'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
-      overrideUrl: 'api/v2/srcmap',
+      overrideUrl: datadogRoute('/api/v2/srcmap'),
     })
   }
 

@@ -21,14 +21,7 @@ jest.mock('../../get-latest-version', () => ({
 }))
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
-import {
-  getEndpointUrl,
-  getProjectFiles,
-  sendToDatadog,
-  validateCliVersion,
-  validateFilePath,
-  validateStartEndFlags,
-} from '../flare'
+import {getProjectFiles, sendToDatadog, validateCliVersion, validateFilePath, validateStartEndFlags} from '../flare'
 import * as flareModule from '../flare'
 
 // Mocks
@@ -39,8 +32,17 @@ fs.createReadStream = jest.fn().mockReturnValue('test data')
 jest.mock('jszip')
 
 describe('flare', () => {
-  describe('getEndpointUrl', () => {
+  describe('sendToDatadog', () => {
+    const MOCK_ZIP_PATH = '/path/to/zip'
+    const MOCK_CASE_ID = 'case1234'
+    const MOCK_EMAIL = 'test@example.com'
+    const MOCK_API_KEY = 'api-key'
+    const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
+    const MOCK_CLI_VERSION = '1.0.0'
     const ORIGINAL_ENV = process.env
+
+    const httpRequestSpy = jest.mocked(requestModule.httpRequest)
+    httpRequestSpy.mockResolvedValue({data: {}, status: 200, statusText: '', headers: {}, config: {}})
 
     beforeEach(() => {
       process.env = {...ORIGINAL_ENV}
@@ -49,51 +51,6 @@ describe('flare', () => {
     afterAll(() => {
       process.env = ORIGINAL_ENV
     })
-
-    it('should return correct endpoint url', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-    })
-
-    it('should throw error if the site is invalid', () => {
-      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
-      expect(() => getEndpointUrl()).toThrowErrorMatchingSnapshot()
-    })
-
-    it('should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set', () => {
-      process.env['DD_CI_BYPASS_SITE_VALIDATION'] = 'true'
-      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-      delete process.env['DD_CI_BYPASS_SITE_VALIDATION']
-    })
-
-    it('should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set', () => {
-      delete process.env[CI_SITE_ENV_VAR]
-      process.env[SITE_ENV_VAR] = 'us3.datadoghq.com'
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-    })
-
-    it('should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set', () => {
-      delete process.env[CI_SITE_ENV_VAR]
-      delete process.env[SITE_ENV_VAR]
-      const url = getEndpointUrl()
-      expect(url).toMatchSnapshot()
-    })
-  })
-
-  describe('sendToDatadog', () => {
-    const MOCK_ZIP_PATH = '/path/to/zip'
-    const MOCK_CASE_ID = 'case1234'
-    const MOCK_EMAIL = 'test@example.com'
-    const MOCK_API_KEY = 'api-key'
-    const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
-    const MOCK_CLI_VERSION = '1.0.0'
-
-    const httpRequestSpy = jest.mocked(requestModule.httpRequest)
-    httpRequestSpy.mockResolvedValue({data: {}, status: 200, statusText: '', headers: {}, config: {}})
 
     it('should send data to the correct endpoint', async () => {
       await sendToDatadog(
@@ -106,11 +63,62 @@ describe('flare', () => {
       )
       expect(httpRequestSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: expect.any(String),
+          baseURL: 'https://app.datadoghq.com/',
+          url: '/api/ui/support/serverless/flare',
           data: expect.any(FormData),
           headers: expect.objectContaining({
             'DD-API-KEY': MOCK_API_KEY,
           }),
+        })
+      )
+    })
+
+    it('should use SITE_ENV_VAR for the request base URL when CI_SITE_ENV_VAR is not set', async () => {
+      delete process.env[CI_SITE_ENV_VAR]
+      process.env[SITE_ENV_VAR] = 'us3.datadoghq.com'
+
+      await sendToDatadog(
+        MOCK_ZIP_PATH,
+        MOCK_CASE_ID,
+        MOCK_EMAIL,
+        MOCK_API_KEY,
+        MOCK_ROOT_FOLDER_PATH,
+        MOCK_CLI_VERSION
+      )
+
+      expect(httpRequestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseURL: 'https://us3.datadoghq.com/',
+          url: '/api/ui/support/serverless/flare',
+        })
+      )
+    })
+
+    it('should throw error if the site is invalid', async () => {
+      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
+
+      await expect(
+        sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH, MOCK_CLI_VERSION)
+      ).rejects.toThrow('Invalid site: datad0ge.com. Must be one of:')
+    })
+
+    it('should not throw if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set', async () => {
+      process.env['DD_CI_BYPASS_SITE_VALIDATION'] = 'true'
+      process.env[CI_SITE_ENV_VAR] = 'datad0ge.com'
+
+      await sendToDatadog(
+        MOCK_ZIP_PATH,
+        MOCK_CASE_ID,
+        MOCK_EMAIL,
+        MOCK_API_KEY,
+        MOCK_ROOT_FOLDER_PATH,
+        MOCK_CLI_VERSION
+      )
+
+      expect(httpRequestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseURL: 'https://app.datad0ge.com/',
+          url: '/api/ui/support/serverless/flare',
         })
       )
     })

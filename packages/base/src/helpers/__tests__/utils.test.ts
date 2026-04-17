@@ -11,6 +11,7 @@ jest.mock('../request', () => ({
 }))
 
 import * as requestModule from '../request'
+import {datadogRoute} from '../request/datadog-route'
 import * as ciUtils from '../utils'
 import {formatBytes, isFile, maskString} from '../utils'
 
@@ -155,10 +156,10 @@ describe('utils', () => {
         apiKey: 'apiKey',
         appKey: 'applicationKey',
         baseUrl: 'http://fake-base.url/',
-        overrideUrl: 'override/url',
+        overrideUrl: datadogRoute('/api/v2/srcmap'),
       })
       await request({})
-      expect(capturedConfig!.url).toStrictEqual('override/url')
+      expect(capturedConfig!.url).toStrictEqual('/api/v2/srcmap')
     })
 
     test('should accept additional headers', async () => {
@@ -170,7 +171,7 @@ describe('utils', () => {
           ['HEADER1', 'value1'],
           ['HEADER2', 'value2'],
         ]),
-        overrideUrl: 'override/url',
+        overrideUrl: datadogRoute('/api/v2/srcmap'),
       })
       await request({})
       expect(capturedConfig!.headers).toStrictEqual({
@@ -279,7 +280,7 @@ describe('utils', () => {
           apiKey: 'abc',
           baseUrl: `http://localhost:${targetServer.port}`,
         })
-        await requestBuilder({method: 'GET', url: 'test-from-proxy'})
+        await requestBuilder({method: 'GET', url: datadogRoute('/api/v2/git/repository/packfile')})
         expect(targetServer.spy.mock.calls.length).toBe(1)
       } finally {
         await targetServer.close()

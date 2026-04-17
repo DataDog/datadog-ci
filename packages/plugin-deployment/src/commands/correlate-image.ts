@@ -5,6 +5,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
@@ -76,7 +77,7 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
           data: correlateEvent,
         },
         method: 'post',
-        url: '/api/v2/ci/deployments/correlate-image',
+        url: datadogRoute('/api/v2/ci/deployments/correlate-image'),
       })
 
     try {

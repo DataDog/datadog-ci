@@ -7,6 +7,7 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -120,7 +121,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
           data: correlateEvent,
         },
         method: 'post',
-        url: '/api/v2/ci/deployments/correlate',
+        url: datadogRoute('/api/v2/ci/deployments/correlate'),
       })
 
     try {

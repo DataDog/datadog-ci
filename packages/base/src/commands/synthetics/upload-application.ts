@@ -2,7 +2,7 @@
 import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
-import {makeTerminalLink} from '../../helpers/utils'
+import {makeTerminalLink} from '../../helpers/terminal-link'
 
 import {BaseCommand} from '../..'
 

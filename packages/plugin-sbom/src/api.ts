@@ -3,9 +3,8 @@ import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/help
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '@datadog/datadog-ci-base/constants'
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {API_ENDPOINT} from './constants'
 
 /**
  * Get the function to upload our results to the intake.
@@ -39,7 +38,7 @@ export const getApiHelper = (
           'DD-SOURCE': source || 'CI',
         },
         method: METHOD_POST,
-        url: API_ENDPOINT,
+        url: datadogRoute('/api/v2/static-analysis-sca/dependencies'),
       })
     }
 
