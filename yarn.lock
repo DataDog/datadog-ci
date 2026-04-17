@@ -1956,7 +1956,6 @@ __metadata:
   dependencies:
     "@antfu/install-pkg": "npm:1.1.0"
     "@types/async-retry": "npm:1.4.8"
-    "@types/datadog-metrics": "npm:0.6.1"
     "@types/debug": "npm:4.1.12"
     "@types/deep-extend": "npm:0.4.31"
     "@types/inquirer": "npm:8.2.6"
@@ -1966,7 +1965,7 @@ __metadata:
     async-retry: "npm:1.3.3"
     chalk: "npm:3.0.0"
     clipanion: "npm:3.2.1"
-    datadog-metrics: "npm:0.9.3"
+    datadog-metrics: "patch:datadog-metrics@npm%3A0.13.0-pre.1#~/.yarn/patches/datadog-metrics-npm-0.13.0-pre.1-d40793195b.patch"
     debug: "npm:4.4.1"
     deep-extend: "npm:0.6.0"
     fast-xml-parser: "npm:5.5.9"
@@ -4746,13 +4745,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/datadog-metrics@npm:0.6.1":
-  version: 0.6.1
-  resolution: "@types/datadog-metrics@npm:0.6.1"
-  checksum: 10/a55e5661b91318ca5786675c56d054bb5b54a7e8882d87d359a844add1c06d44bf45b1cf8f33b67e1b4f017f617a023e044788a370244a912a0141dfbe55e441
-  languageName: node
-  linkType: hard
-
 "@types/debug@npm:4.1.12":
   version: 4.1.12
   resolution: "@types/debug@npm:4.1.12"
@@ -6380,6 +6372,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cross-fetch@npm:^4.0.0":
+  version: 4.1.0
+  resolution: "cross-fetch@npm:4.1.0"
+  dependencies:
+    node-fetch: "npm:^2.7.0"
+  checksum: 10/07624940607b64777d27ec9c668ddb6649e8c59ee0a5a10e63a51ce857e2bbb1294a45854a31c10eccb91b65909a5b199fcb0217339b44156f85900a7384f489
+  languageName: node
+  linkType: hard
+
 "cross-spawn@npm:^7.0.0, cross-spawn@npm:^7.0.2, cross-spawn@npm:^7.0.3, cross-spawn@npm:^7.0.6":
   version: 7.0.6
   resolution: "cross-spawn@npm:7.0.6"
@@ -6456,13 +6457,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"datadog-metrics@npm:0.9.3":
-  version: 0.9.3
-  resolution: "datadog-metrics@npm:0.9.3"
+"datadog-metrics@npm:0.13.0-pre.1":
+  version: 0.13.0-pre.1
+  resolution: "datadog-metrics@npm:0.13.0-pre.1"
   dependencies:
-    debug: "npm:3.1.0"
-    dogapi: "npm:2.8.4"
-  checksum: 10/c22ad483fe072cf288ec27aa94550b354d209c626aeebadb4ef5e02875a8d65aea5184d256b5a040f2a01ff3a447e40423e9b12d89ea4af2aadc23bba7ea8189
+    cross-fetch: "npm:^4.0.0"
+    debug: "npm:^4.1.0"
+  checksum: 10/d6a548e2e6b45e05bd81fdeac19f1a30dd7405140ddbc1f7fb335e47e1e29717e557f6260b77b0729d8999078577428e566998ca2a24aabbe3038f44aca4da7a
+  languageName: node
+  linkType: hard
+
+"datadog-metrics@patch:datadog-metrics@npm%3A0.13.0-pre.1#~/.yarn/patches/datadog-metrics-npm-0.13.0-pre.1-d40793195b.patch":
+  version: 0.13.0-pre.1
+  resolution: "datadog-metrics@patch:datadog-metrics@npm%3A0.13.0-pre.1#~/.yarn/patches/datadog-metrics-npm-0.13.0-pre.1-d40793195b.patch::version=0.13.0-pre.1&hash=9f9b86"
+  dependencies:
+    cross-fetch: "npm:^4.0.0"
+    debug: "npm:^4.1.0"
+  checksum: 10/a43f0364eeef7b8fb4543b3eac4e102151814c1a7a253abbf13f81b9028653d7f3b5f9839b88d6536e142cd3ac07ca4cd7486cc7db59f8140cc53f11f57819c3
   languageName: node
   linkType: hard
 
@@ -6522,15 +6533,6 @@ __metadata:
     "@openfeature/server-sdk":
       optional: true
   checksum: 10/dae1e084fe47a70f1462d20628215ef0a77f8f68ddafe168ddd35884bbd77808ccb30099f942146c588f0bc27ca75ea9745aeda7db78e845114c64f39b2990e9
-  languageName: node
-  linkType: hard
-
-"debug@npm:3.1.0":
-  version: 3.1.0
-  resolution: "debug@npm:3.1.0"
-  dependencies:
-    ms: "npm:2.0.0"
-  checksum: 10/f5fd4b1390dd3b03a78aa30133a4b4db62acc3e6cd86af49f114bf7f7bd57c41a5c5c2eced2ad2c8190d70c60309f2dd5782feeaa0704dbaa5697890e3c5ad07
   languageName: node
   linkType: hard
 
@@ -6725,21 +6727,6 @@ __metadata:
   dependencies:
     esutils: "npm:^2.0.2"
   checksum: 10/b4b28f1df5c563f7d876e7461254a4597b8cabe915abe94d7c5d1633fed263fcf9a85e8d3836591fc2d040108e822b0d32758e5ec1fe31c590dc7e08086e3e48
-  languageName: node
-  linkType: hard
-
-"dogapi@npm:2.8.4":
-  version: 2.8.4
-  resolution: "dogapi@npm:2.8.4"
-  dependencies:
-    extend: "npm:^3.0.2"
-    json-bigint: "npm:^1.0.0"
-    lodash: "npm:^4.17.21"
-    minimist: "npm:^1.2.5"
-    rc: "npm:^1.2.8"
-  bin:
-    dogapi: bin/dogapi
-  checksum: 10/1c4010411a7fa8f16db96f00169d07d4b40230a7828e72aca430e6a7389ee064696a6c03d5e8a67a4c71fe53d9b6ce25581fe5f3a6262a4745d98d47d11edfaa
   languageName: node
   linkType: hard
 
@@ -9936,7 +9923,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimist@npm:^1.2.0, minimist@npm:^1.2.3, minimist@npm:^1.2.5, minimist@npm:^1.2.6, minimist@npm:^1.2.8":
+"minimist@npm:^1.2.0, minimist@npm:^1.2.3, minimist@npm:^1.2.6, minimist@npm:^1.2.8":
   version: 1.2.8
   resolution: "minimist@npm:1.2.8"
   checksum: 10/908491b6cc15a6c440ba5b22780a0ba89b9810e1aea684e253e43c4e3b8d56ec1dcdd7ea96dde119c29df59c936cde16062159eae4225c691e19c70b432b6e6f
@@ -10044,13 +10031,6 @@ __metadata:
   version: 1.0.4
   resolution: "module-details-from-path@npm:1.0.4"
   checksum: 10/2ebfada5358492f6ab496b70f70a1042f2ee7a4c79d29467f59ed6704f741fb4461d7cecb5082144ed39a05fec4d19e9ff38b731c76228151be97227240a05b2
-  languageName: node
-  linkType: hard
-
-"ms@npm:2.0.0":
-  version: 2.0.0
-  resolution: "ms@npm:2.0.0"
-  checksum: 10/0e6a22b8b746d2e0b65a430519934fefd41b6db0682e3477c10f60c76e947c4c0ad06f63ffdf1d78d335f83edee8c0aa928aa66a36c7cd95b69b26f468d527f4
   languageName: node
   linkType: hard
 
@@ -10990,7 +10970,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rc@npm:^1.2.7, rc@npm:^1.2.8":
+"rc@npm:^1.2.7":
   version: 1.2.8
   resolution: "rc@npm:1.2.8"
   dependencies:
