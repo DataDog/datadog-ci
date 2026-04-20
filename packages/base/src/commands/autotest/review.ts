@@ -67,6 +67,52 @@ export const parseAgentReport = (text: string): AgentReport | undefined => {
   }
 }
 
+export const getCiJobUrl = (): string | undefined => {
+  // GitLab CI
+  if (process.env.CI_JOB_URL) {
+    return process.env.CI_JOB_URL
+  }
+
+  // GitHub Actions
+  const serverUrl = process.env.GITHUB_SERVER_URL
+  const repo = process.env.GITHUB_REPOSITORY
+  const runId = process.env.GITHUB_RUN_ID
+  if (serverUrl && repo && runId) {
+    return `${serverUrl}/${repo}/actions/runs/${runId}`
+  }
+
+  return undefined
+}
+
+const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
+
+export const formatComment = (
+  report: AgentReport,
+  finding: AgentFinding | undefined,
+  ciJobUrl: string | undefined
+): string => {
+  const statsItems = [`${report.stats.scenarios} scenarios`, `${report.stats.prod_inputs} prod inputs`]
+  const statsLine = ciJobUrl
+    ? `> 📊 ${statsItems.join(' · ')} · [View full log](${ciJobUrl})`
+    : `> 📊 ${statsItems.join(' · ')}`
+
+  const footer = `${statsLine}\n\nWas this helpful? 👍 👎`
+
+  if (!finding) {
+    // PASS comment
+    return `${COMMENT_MARKER}\n## ✅ Autotest: PASS\n\n${report.explanation}\n\n${footer}`
+  }
+
+  const isInline = !!(finding.file && finding.line)
+  if (isInline) {
+    // Inline review comment — no title needed, the line provides context
+    return `${COMMENT_MARKER}\n## 🔴 Autotest: FAIL\n\n${finding.explanation}\n\n${footer}`
+  }
+
+  // Issue comment for finding without a specific line — include title
+  return `${COMMENT_MARKER}\n## 🔴 Autotest: FAIL\n\n**${finding.title}**\n\n${finding.explanation}\n\n${footer}`
+}
+
 const PROD_DATA_COLLECTOR_PROMPT = `You are a production data collector. Your ONLY job is to capture live
 production inputs using Datadog Live Debugger logpoints.
 
