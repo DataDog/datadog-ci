@@ -99,6 +99,10 @@ export const formatComment = (
   const footer = `${statsLine}\n\nWas this helpful? 👍 👎`
 
   if (!finding) {
+    if (report.result === 'FAIL') {
+      // FAIL with no specific finding — use top-level explanation
+      return `${COMMENT_MARKER}\n## 🔴 Autotest: FAIL\n\n${report.explanation}\n\n${footer}`
+    }
     // PASS comment
     return `${COMMENT_MARKER}\n## ✅ Autotest: PASS\n\n${report.explanation}\n\n${footer}`
   }

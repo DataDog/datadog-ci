@@ -94,4 +94,37 @@ describe('formatComment', () => {
     expect(result).toContain('The new code path has no retry mechanism.')
     expect(result).not.toContain('View full log')
   })
+
+  it('formats a FAIL comment with empty findings (uses top-level explanation)', () => {
+    const report: AgentReport = {
+      result: 'FAIL',
+      explanation: 'The agent detected a regression but could not pin it to a specific line.',
+      findings: [],
+      stats: {scenarios: 4, prod_inputs: 10},
+    }
+
+    const result = formatComment(report, undefined, 'https://ci.example.com/job/1')
+    expect(result).toContain('## 🔴 Autotest: FAIL')
+    expect(result).not.toContain('## ✅ Autotest: PASS')
+    expect(result).toContain('The agent detected a regression')
+    expect(result).toContain('Was this helpful? 👍 👎')
+  })
+
+  it('formats a FAIL finding with file but no line as non-inline', () => {
+    const finding: AgentFinding = {
+      title: 'Broad issue in module',
+      file: 'worker.go',
+      explanation: 'Multiple functions affected.',
+    }
+    const report: AgentReport = {
+      result: 'FAIL',
+      explanation: '',
+      findings: [finding],
+      stats: {scenarios: 2, prod_inputs: 5},
+    }
+
+    const result = formatComment(report, finding, undefined)
+    expect(result).toContain('## 🔴 Autotest: FAIL')
+    expect(result).toContain('**Broad issue in module**')
+  })
 })
