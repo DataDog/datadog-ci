@@ -562,7 +562,6 @@ export class AutotestCommand extends BaseCommand {
 
   private async runReview(diff: string, prInfo?: PrInfo, dryRun = false): Promise<{exitCode: number; resultText: string}> {
     const {query} = await import('@anthropic-ai/claude-agent-sdk')
-    const {z} = await import('zod')
 
     let resultText = ''
     let reportText = ''  // The ## 🔬 Autotest: report — captured from any message
@@ -686,8 +685,8 @@ export class AutotestCommand extends BaseCommand {
             if (firstLine) {
               spinner.text = `${prefix}${firstLine}`
             }
-            // Capture the latest report — always keep the most recent one
-            if (!isSubagent && (text.includes('## \u{1F52C} Autotest:') || text.includes('```json'))) {
+            // Capture the report only if it parses as a valid AgentReport
+            if (!isSubagent && parseAgentReport(text)) {
               reportText = text
             }
           }
@@ -704,13 +703,13 @@ export class AutotestCommand extends BaseCommand {
           this.context.stdout.write(text + '\n')
 
           // Post PR comment when we have the report.
-          // Use reportText (from assistant messages) if available, fall back to resultText.
           // Must happen here because the SDK may call process.exit() after the stream ends.
           resultText += text + '\n'
-          if (text.includes('## \u{1F52C} Autotest:')) {
+          if (parseAgentReport(text)) {
             reportText = text
           }
-          const commentBody = reportText || resultText.trim()
+          // Prefer resultText (the actual final output) over reportText from assistant messages
+          const commentBody = resultText.trim() || reportText
           if (prInfo && !dryRun && !prCommentPosted && commentBody.length > 0) {
             prCommentPosted = true
             try {
