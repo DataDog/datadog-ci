@@ -280,94 +280,37 @@ Once the prod-data-collector subagent returns with real production inputs:
    0 where a value should be present, missing fields in serialized output, or silently
    dropped/ignored inputs).
 
-4. **Output the report** as your final message. The system will post it as a PR comment automatically. Do NOT use "gh pr comment", curl, or any other tool to post — just output the report text.
+4. **Output the report** as your final message. The system will parse it and post PR comments automatically. Do NOT use "gh pr comment", curl, or any other tool to post — just output the report text.
 
-The PR comment MUST follow this exact format. Keep it concise — no walls of text.
+Your LAST message MUST end with a fenced JSON block in this exact schema:
 
----
-
-## 🔬 Autotest: [PASS or FAIL] — [one-line summary of what was validated]
-
-**[X scenarios executed] · [Y prod inputs captured] · [Z suspicious findings]**
-
-<details>
-<summary>What changed</summary>
-
-2-5 bullet points on what the PR modifies.
-
-</details>
-
-<details>
-<summary>Production data</summary>
-
-One short paragraph: what the live debugger captured (service, function, volume,
-input patterns). If capture was skipped, say why in one line.
-
-</details>
-
-### Findings
-
-If PASS (no suspicious findings):
-> ✅ No suspicious regressions detected. All [X] scenarios passed.
-
-If FAIL (suspicious findings found), for each finding:
-
-#### ⚠️ [Short title]
-
-| Field | Value |
-|---|---|
-| **Input** | [scenario that triggers it] |
-| **Expected** | [what should happen] |
-| **Actual** | [what happened — crash, wrong output, error] |
-
-**Why it matters:** One sentence explaining the production impact.
-
-<details>
-<summary>Scenarios executed</summary>
-
-Bullet list. Mark each as (prod input) or (synthetic).
-
-</details>
-
-<details>
-<summary>Execution log</summary>
-
-MANDATORY: Paste the raw terminal output from your test/validation commands here.
-This is the PROOF that code was actually executed — without this section, the report
-has no credibility. Include the full command and its output, for example:
-
-\`\`\`
-$ go test -run TestAutotest -v ./path/to/package/
-=== RUN   TestAutotest/scenario_name
-    Expected: 5, Got: 0
---- FAIL: TestAutotest/scenario_name (0.00s)
-FAIL
+\`\`\`json
+{
+  "result": "PASS or FAIL",
+  "explanation": "What was validated and why it's correct (PASS) or a brief summary of what's wrong (FAIL)",
+  "findings": [
+    {
+      "title": "Short title of the issue",
+      "file": "path/to/file.go",
+      "line": 256,
+      "explanation": "Full explanation of the issue. Can be as long as needed to properly explain the problem, its impact, and what production data confirms it."
+    }
+  ],
+  "stats": {
+    "scenarios": 6,
+    "prod_inputs": 34
+  }
+}
 \`\`\`
 
-If you could NOT execute code (build failures, missing deps), say so explicitly and
-explain what you tried. Do NOT fabricate test output.
+Rules for the JSON output:
+- Use "PASS" when there are zero suspicious findings. Use "FAIL" when there are any.
+- \`explanation\` at the top level: for PASS, explain what was validated and why it looks correct (2-3 sentences). For FAIL, give a brief summary.
+- Each finding in \`findings\`: \`title\` is a short label. \`file\` and \`line\` are optional — include them when the issue maps to a specific line in the diff. \`explanation\` is the full description, as detailed as needed.
+- \`stats.scenarios\`: number of test scenarios executed. \`stats.prod_inputs\`: number of production inputs captured via Live Debugger (0 if skipped).
+- The JSON block must be valid JSON. Do not include comments or trailing commas.
 
-</details>
-
-<details>
-<summary>Validation gaps</summary>
-
-What you could not validate and why. If none, omit this section.
-
-</details>
-
----
-
-*🤖 Validated by [Datadog Autotest](https://github.com/DataDog/datadog-ci) using real production inputs via Live Debugger*
-
----
-
-Important formatting rules:
-- Use PASS when there are zero suspicious findings. Use FAIL when there are any.
-- The header line is the most important — it must be scannable in a PR notification email.
-- Use <details> to collapse verbose sections. Keep the top-level comment short.
-- The findings table format is mandatory for FAIL — it lets reviewers compare at a glance.
-- Do NOT include the full validation_report.md content — the PR comment is a summary.
+Before the JSON block, you may include your full analysis, execution logs, and reasoning as regular text. This text will be saved to validation_report.md as a CI artifact. Only the JSON block is used for PR comments.
 
 ## Important constraints
 - Prefer execution over speculation.
