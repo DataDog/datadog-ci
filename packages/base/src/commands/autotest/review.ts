@@ -741,8 +741,8 @@ export class AutotestCommand extends BaseCommand {
       const reportPath = join(repoDir, 'validation_report.md')
       writeFileSync(reportPath, resultText)
       this.context.stderr.write(`Full report saved to ${reportPath}\n`)
-    } catch {
-      // best effort
+    } catch (err) {
+      this.context.stderr.write(`Warning: Failed to write validation_report.md: ${err}\n`)
     }
 
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
