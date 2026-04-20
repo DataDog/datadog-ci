@@ -20,6 +20,53 @@ const parseGitHubPrUrl = (url: string): {repo: string; number: number} | undefin
   return {repo: match[1], number: parseInt(match[2], 10)}
 }
 
+export interface AgentFinding {
+  title: string
+  file?: string
+  line?: number
+  explanation: string
+}
+
+export interface AgentReport {
+  result: 'PASS' | 'FAIL'
+  explanation: string
+  findings: AgentFinding[]
+  stats: {scenarios: number; prod_inputs: number}
+}
+
+export const parseAgentReport = (text: string): AgentReport | undefined => {
+  // Find the last ```json ... ``` block in the text
+  const matches = [...text.matchAll(/```json\s*\n([\s\S]*?)```/g)]
+  if (matches.length === 0) {
+    return undefined
+  }
+
+  const lastMatch = matches[matches.length - 1]
+  try {
+    const parsed = JSON.parse(lastMatch[1])
+    if (!parsed.result || !parsed.stats) {
+      return undefined
+    }
+
+    return {
+      result: parsed.result === 'FAIL' ? 'FAIL' : 'PASS',
+      explanation: parsed.explanation ?? '',
+      findings: (parsed.findings ?? []).map((f: any) => ({
+        title: f.title ?? '',
+        file: f.file,
+        line: f.line,
+        explanation: f.explanation ?? '',
+      })),
+      stats: {
+        scenarios: parsed.stats.scenarios ?? 0,
+        prod_inputs: parsed.stats.prod_inputs ?? 0,
+      },
+    }
+  } catch {
+    return undefined
+  }
+}
+
 const PROD_DATA_COLLECTOR_PROMPT = `You are a production data collector. Your ONLY job is to capture live
 production inputs using Datadog Live Debugger logpoints.
 
