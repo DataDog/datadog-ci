@@ -683,7 +683,7 @@ export class AutotestCommand extends BaseCommand {
               spinner.text = `${prefix}${firstLine}`
             }
             // Capture the latest report — always keep the most recent one
-            if (!isSubagent && text.includes('## \u{1F52C} Autotest:')) {
+            if (!isSubagent && (text.includes('## \u{1F52C} Autotest:') || text.includes('```json'))) {
               reportText = text
             }
           }
@@ -730,9 +730,21 @@ export class AutotestCommand extends BaseCommand {
       spinner.stop()
       logStream.end()
     }
+
+    // Write full agent output to validation_report.md for CI artifact
+    try {
+      const {writeFileSync} = await import('fs')
+      const reportPath = join(repoDir, 'validation_report.md')
+      writeFileSync(reportPath, resultText)
+      this.context.stderr.write(`Full report saved to ${reportPath}\n`)
+    } catch {
+      // best effort
+    }
+
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
-    const isFail = /## 🔬 Autotest: FAIL/i.test(resultText)
+    const report = parseAgentReport(resultText)
+    const isFail = report ? report.result === 'FAIL' : /FAIL/i.test(resultText)
 
     return {exitCode: isFail ? 1 : 0, resultText}
   }
