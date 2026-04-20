@@ -875,10 +875,12 @@ export class AutotestCommand extends BaseCommand {
     }
 
     try {
-      const isFail = /## 🔬 Autotest: FAIL/i.test(resultText)
-      const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*executed/i)
-      const prodInputsMatch = resultText.match(/(\d+)\s*prod\s*inputs?\s*captured/i)
-      const findingsMatch = resultText.match(/(\d+)\s*suspicious\s*findings?/i)
+      const report = parseAgentReport(resultText)
+
+      const isFail = report ? report.result === 'FAIL' : /## 🔬 Autotest: FAIL/i.test(resultText)
+      const scenarios = report?.stats.scenarios ?? 0
+      const prodInputs = report?.stats.prod_inputs ?? 0
+      const findingsCount = report?.findings.length ?? 0
       const hasExecutionLog = /Execution log/.test(resultText) && /\$\s+\w/.test(resultText)
       const method = hasExecutionLog ? 'execution' : 'static_analysis'
 
@@ -901,15 +903,9 @@ export class AutotestCommand extends BaseCommand {
       if (isFail) {
         logger.increment('regression_found', 1)
       }
-      if (scenariosMatch) {
-        logger.gauge('scenarios_executed', parseInt(scenariosMatch[1], 10))
-      }
-      if (prodInputsMatch) {
-        logger.gauge('prod_inputs_captured', parseInt(prodInputsMatch[1], 10))
-      }
-      if (findingsMatch) {
-        logger.gauge('suspicious_findings', parseInt(findingsMatch[1], 10))
-      }
+      logger.gauge('scenarios_executed', scenarios)
+      logger.gauge('prod_inputs_captured', prodInputs)
+      logger.gauge('suspicious_findings', findingsCount)
 
       await flush()
     } catch {
