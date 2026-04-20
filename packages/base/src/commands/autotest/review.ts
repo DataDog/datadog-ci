@@ -767,7 +767,7 @@ export class AutotestCommand extends BaseCommand {
           if (prInfo && !dryRun && !prCommentPosted && commentBody.length > 0) {
             prCommentPosted = true
             try {
-              await this.postPrComment(commentBody, prInfo)
+              await this.postResults(commentBody, prInfo)
             } catch (e) {
               this.context.stderr.write(`PR comment error: ${e}\n`)
             }
@@ -794,11 +794,35 @@ export class AutotestCommand extends BaseCommand {
     return {exitCode: isFail ? 1 : 0, resultText}
   }
 
-  private async postPrComment(resultText: string, prInfo: PrInfo) {
-    const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
+  private async postResults(resultText: string, prInfo: PrInfo) {
+    const report = parseAgentReport(resultText)
+    const ciJobUrl = getCiJobUrl()
 
-    const markedBody = `${COMMENT_MARKER}\n${resultText.trim()}`
+    if (!report) {
+      // Fallback: post raw text as a single issue comment (current behavior)
+      await this.postIssueComment(`${COMMENT_MARKER}\n${resultText.trim()}`, prInfo)
+      return
+    }
 
+    if (report.result === 'PASS' || report.findings.length === 0) {
+      const body = formatComment(report, undefined, ciJobUrl)
+      await this.postIssueComment(body, prInfo)
+      return
+    }
+
+    // FAIL — post each finding as its own comment
+    for (const finding of report.findings) {
+      const body = formatComment(report, finding, ciJobUrl)
+
+      if (finding.file && finding.line && prInfo.provider === 'github') {
+        await this.postInlineReviewComment(body, finding.file, finding.line, prInfo)
+      } else {
+        await this.postIssueComment(body, prInfo)
+      }
+    }
+  }
+
+  private async postIssueComment(body: string, prInfo: PrInfo) {
     try {
       if (prInfo.provider === 'github') {
         const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
@@ -814,37 +838,13 @@ export class AutotestCommand extends BaseCommand {
           'User-Agent': GITHUB_USER_AGENT,
         }
 
-        // Find existing comment with marker
-        let existingId: number | undefined
-        for (let page = 1; page <= 10; page++) {
-          const resp = await fetch(
-            `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments?per_page=100&page=${page}`,
-            {headers}
-          )
-          if (!resp.ok) {
-            break
-          }
-          const comments = (await resp.json()) as Array<{id: number; body: string}>
-          const found = comments.find((c) => c.body.includes(COMMENT_MARKER))
-          if (found) {
-            existingId = found.id
-            break
-          }
-          if (comments.length < 100) {
-            break
-          }
-        }
-
-        // Update or create
-        const url = existingId
-          ? `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/comments/${existingId}`
-          : `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments`
-        const method = existingId ? 'PATCH' : 'POST'
-
-        const resp = await fetch(url, {method, headers, body: JSON.stringify({body: markedBody})})
+        const resp = await fetch(
+          `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments`,
+          {method: 'POST', headers, body: JSON.stringify({body})}
+        )
         if (resp.ok) {
           const json = (await resp.json()) as {html_url: string}
-          this.context.stderr.write(`PR comment ${existingId ? 'updated' : 'created'}: ${json.html_url}\n`)
+          this.context.stderr.write(`PR comment created: ${json.html_url}\n`)
         } else {
           this.context.stderr.write(`PR comment failed: ${resp.status} ${(await resp.text()).slice(0, 200)}\n`)
         }
@@ -855,29 +855,73 @@ export class AutotestCommand extends BaseCommand {
         }
         const gitlabUrl = process.env.CI_SERVER_URL || 'https://gitlab.com'
         const projectId = encodeURIComponent(prInfo.repo)
-        const mrIid = prInfo.number
-        const glHeaders = {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'}
 
-        // Find existing
-        const listResp = await fetch(
-          `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes?per_page=100`,
-          {headers: glHeaders}
+        await fetch(
+          `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${prInfo.number}/notes`,
+          {
+            method: 'POST',
+            headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'},
+            body: JSON.stringify({body}),
+          }
         )
-        let existingId: number | undefined
-        if (listResp.ok) {
-          const notes = (await listResp.json()) as Array<{id: number; body: string}>
-          existingId = notes.find((n) => n.body.includes(COMMENT_MARKER))?.id
-        }
-
-        const url = existingId
-          ? `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes/${existingId}`
-          : `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
-        const method = existingId ? 'PUT' : 'POST'
-
-        await fetch(url, {method, headers: glHeaders, body: JSON.stringify({body: markedBody})})
       }
     } catch (err) {
       this.context.stderr.write(`PR comment error: ${err}\n`)
+    }
+  }
+
+  private async postInlineReviewComment(body: string, file: string, line: number, prInfo: PrInfo) {
+    try {
+      const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+      if (!token) {
+        await this.postIssueComment(body, prInfo)
+        return
+      }
+
+      const headers = {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': GITHUB_USER_AGENT,
+      }
+
+      // Get the latest commit SHA on the PR (required for the review API)
+      const prResp = await fetch(`${GITHUB_API_BASE}/repos/${prInfo.repo}/pulls/${prInfo.number}`, {headers})
+      if (!prResp.ok) {
+        this.context.stderr.write(`Failed to fetch PR details: ${prResp.status}\n`)
+        await this.postIssueComment(body, prInfo)
+        return
+      }
+      const prData = (await prResp.json()) as {head: {sha: string}}
+      const commitId = prData.head.sha
+
+      const resp = await fetch(`${GITHUB_API_BASE}/repos/${prInfo.repo}/pulls/${prInfo.number}/reviews`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          commit_id: commitId,
+          event: 'COMMENT',
+          comments: [
+            {
+              path: file,
+              line,
+              side: 'RIGHT',
+              body,
+            },
+          ],
+        }),
+      })
+
+      if (resp.ok) {
+        this.context.stderr.write(`Inline review comment posted on ${file}:${line}\n`)
+      } else {
+        const errText = (await resp.text()).slice(0, 200)
+        this.context.stderr.write(`Inline review failed (${resp.status}: ${errText}), falling back to issue comment\n`)
+        await this.postIssueComment(body, prInfo)
+      }
+    } catch (err) {
+      this.context.stderr.write(`Inline review error: ${err}, falling back to issue comment\n`)
+      await this.postIssueComment(body, prInfo)
     }
   }
 
