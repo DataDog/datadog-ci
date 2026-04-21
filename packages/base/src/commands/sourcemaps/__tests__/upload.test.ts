@@ -17,7 +17,7 @@ describe('upload', () => {
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
         'http://datadog.com/js/common.min.js.map',
-        '/common.min.js.map',
+        'common.min.js.map',
       ])
     })
   })
@@ -29,7 +29,7 @@ describe('upload', () => {
       command['minifiedPathPrefix'] = '//datadog.com/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
         '//datadog.com/js/common.min.js.map',
-        '/common.min.js.map',
+        'common.min.js.map',
       ])
     })
   })
@@ -41,7 +41,29 @@ describe('upload', () => {
       command['minifiedPathPrefix'] = '/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
         '/js/common.min.js.map',
-        '/common.min.js.map',
+        'common.min.js.map',
+      ])
+    })
+  })
+
+  describe('getMinifiedURL: basePath is current directory', () => {
+    test('should preserve dots in filenames when basePath is "."', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['basePath'] = '.'
+      command['minifiedPathPrefix'] = '/dist/app/'
+      expect(command['getMinifiedURLAndRelativePath']('main.bundle.js')).toStrictEqual([
+        '/dist/app/main.bundle.js',
+        'main.bundle.js',
+      ])
+    })
+
+    test('should preserve dots in subdirectory paths when basePath is "."', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['basePath'] = '.'
+      command['minifiedPathPrefix'] = '/dist/app/'
+      expect(command['getMinifiedURLAndRelativePath']('subdir/component.module.js')).toStrictEqual([
+        '/dist/app/subdir/component.module.js',
+        'subdir/component.module.js',
       ])
     })
   })

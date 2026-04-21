@@ -278,7 +278,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
-    const relativePath = minifiedFilePath.replace(this.basePath, '')
+    const relativePath = upath.relative(this.basePath, minifiedFilePath)
 
     return [buildPath(this.minifiedPathPrefix!, relativePath), relativePath]
   }
