@@ -564,6 +564,28 @@ describe('generation of payload', () => {
     expect(dependencies[1].target_frameworks).toHaveLength(0)
   })
 
+  test('should correctly set opaque flag from datadog:opaque property', async () => {
+    const sbomFile = './src/__tests__/fixtures/sbom-with-opaque.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(2)
+    const dependencies = payload!.dependencies
+
+    expect(dependencies[0].name).toEqual('log4j-core')
+    expect(dependencies[0].opaque).toStrictEqual(true)
+
+    expect(dependencies[1].name).toEqual('jackson-databind')
+    expect(dependencies[1].opaque).toBeUndefined()
+  })
+
   test('should fail to read git information', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
     const config: DatadogCiConfig = {

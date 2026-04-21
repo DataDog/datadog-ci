@@ -1,0 +1,39 @@
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "version": 1,
+    "components": [
+        {
+            "bom-ref": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+            "type": "library",
+            "name": "log4j-core",
+            "version": "2.14.1",
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+            "properties": [
+                {
+                    "name": "datadog:opaque",
+                    "value": "true"
+                },
+                {
+                    "name": "datadog:package-manager",
+                    "value": "Maven"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+            "type": "library",
+            "name": "jackson-databind",
+            "version": "2.9.10",
+            "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+            "properties": [
+                {
+                    "name": "datadog:package-manager",
+                    "value": "Maven"
+                }
+            ]
+        }
+    ],
+    "vulnerabilities": []
+}

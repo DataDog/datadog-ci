@@ -97,6 +97,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
         target_frameworks: undefined,
+        opaque: undefined,
       })
     ).toBeFalsy()
     expect(
@@ -114,6 +115,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
         target_frameworks: undefined,
+        opaque: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -131,6 +133,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
         target_frameworks: undefined,
+        opaque: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -148,6 +151,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
         target_frameworks: undefined,
+        opaque: undefined,
       })
     ).toBeTruthy()
   })
