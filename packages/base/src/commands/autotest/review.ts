@@ -20,6 +20,103 @@ const parseGitHubPrUrl = (url: string): {repo: string; number: number} | undefin
   return {repo: match[1], number: parseInt(match[2], 10)}
 }
 
+export interface AgentFinding {
+  title: string
+  file?: string
+  line?: number
+  explanation: string
+}
+
+export interface AgentReport {
+  result: 'PASS' | 'FAIL'
+  explanation: string
+  findings: AgentFinding[]
+  stats: {scenarios: number; prod_inputs: number}
+}
+
+export const parseAgentReport = (text: string): AgentReport | undefined => {
+  // Find the last ```json ... ``` block in the text
+  const matches = [...text.matchAll(/```json\s*\n([\s\S]*?)```/g)]
+  if (matches.length === 0) {
+    return undefined
+  }
+
+  const lastMatch = matches[matches.length - 1]
+  try {
+    const parsed = JSON.parse(lastMatch[1])
+    if (!parsed.result || !parsed.stats) {
+      return undefined
+    }
+
+    return {
+      result: parsed.result === 'FAIL' ? 'FAIL' : 'PASS',
+      explanation: parsed.explanation ?? '',
+      findings: (parsed.findings ?? []).map((f: any) => ({
+        title: f.title ?? '',
+        file: f.file,
+        line: f.line,
+        explanation: f.explanation ?? '',
+      })),
+      stats: {
+        scenarios: parsed.stats.scenarios ?? 0,
+        prod_inputs: parsed.stats.prod_inputs ?? 0,
+      },
+    }
+  } catch {
+    return undefined
+  }
+}
+
+export const getCiJobUrl = (): string | undefined => {
+  // GitLab CI
+  if (process.env.CI_JOB_URL) {
+    return process.env.CI_JOB_URL
+  }
+
+  // GitHub Actions
+  const serverUrl = process.env.GITHUB_SERVER_URL
+  const repo = process.env.GITHUB_REPOSITORY
+  const runId = process.env.GITHUB_RUN_ID
+  if (serverUrl && repo && runId) {
+    return `${serverUrl}/${repo}/actions/runs/${runId}`
+  }
+
+  return undefined
+}
+
+const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
+
+export const formatComment = (
+  report: AgentReport,
+  finding: AgentFinding | undefined,
+  ciJobUrl: string | undefined
+): string => {
+  const statsItems = [`${report.stats.scenarios} scenarios`, `${report.stats.prod_inputs} prod inputs`]
+  const statsLine = ciJobUrl
+    ? `> 📊 ${statsItems.join(' · ')} · [View full log](${ciJobUrl})`
+    : `> 📊 ${statsItems.join(' · ')}`
+
+  const footer = `${statsLine}\n\nWas this helpful? 👍 👎`
+
+  if (!finding) {
+    if (report.result === 'FAIL') {
+      // FAIL with no specific finding — use top-level explanation
+      return `${COMMENT_MARKER}\n## 🔴 Autotest: FAIL\n\n${report.explanation}\n\n${footer}`
+    }
+    // PASS comment
+    return `${COMMENT_MARKER}\n## ✅ Autotest: PASS\n\n${report.explanation}\n\n${footer}`
+  }
+
+  const isInline = !!(finding.file && finding.line)
+  if (isInline) {
+    // Inline review comment — no title needed, the line provides context
+    return `${COMMENT_MARKER}\n## 🔴 Autotest: FAIL\n\n${finding.explanation}\n\n${footer}`
+  }
+
+  // Issue comment for finding without a specific line — include title
+  return `${COMMENT_MARKER}\n## 🔴 Autotest: FAIL\n\n**${finding.title}**\n\n${finding.explanation}\n\n${footer}`
+}
+
 const PROD_DATA_COLLECTOR_PROMPT = `You are a production data collector. Your ONLY job is to capture live
 production inputs using Datadog Live Debugger logpoints.
 
@@ -187,94 +284,37 @@ Once the prod-data-collector subagent returns with real production inputs:
    0 where a value should be present, missing fields in serialized output, or silently
    dropped/ignored inputs).
 
-4. **Output the report** as your final message. The system will post it as a PR comment automatically. Do NOT use "gh pr comment", curl, or any other tool to post — just output the report text.
+4. **Output the report** as your final message. The system will parse it and post PR comments automatically. Do NOT use "gh pr comment", curl, or any other tool to post — just output the report text.
 
-The PR comment MUST follow this exact format. Keep it concise — no walls of text.
+Your LAST message MUST end with a fenced JSON block in this exact schema:
 
----
-
-## 🔬 Autotest: [PASS or FAIL] — [one-line summary of what was validated]
-
-**[X scenarios executed] · [Y prod inputs captured] · [Z suspicious findings]**
-
-<details>
-<summary>What changed</summary>
-
-2-5 bullet points on what the PR modifies.
-
-</details>
-
-<details>
-<summary>Production data</summary>
-
-One short paragraph: what the live debugger captured (service, function, volume,
-input patterns). If capture was skipped, say why in one line.
-
-</details>
-
-### Findings
-
-If PASS (no suspicious findings):
-> ✅ No suspicious regressions detected. All [X] scenarios passed.
-
-If FAIL (suspicious findings found), for each finding:
-
-#### ⚠️ [Short title]
-
-| Field | Value |
-|---|---|
-| **Input** | [scenario that triggers it] |
-| **Expected** | [what should happen] |
-| **Actual** | [what happened — crash, wrong output, error] |
-
-**Why it matters:** One sentence explaining the production impact.
-
-<details>
-<summary>Scenarios executed</summary>
-
-Bullet list. Mark each as (prod input) or (synthetic).
-
-</details>
-
-<details>
-<summary>Execution log</summary>
-
-MANDATORY: Paste the raw terminal output from your test/validation commands here.
-This is the PROOF that code was actually executed — without this section, the report
-has no credibility. Include the full command and its output, for example:
-
-\`\`\`
-$ go test -run TestAutotest -v ./path/to/package/
-=== RUN   TestAutotest/scenario_name
-    Expected: 5, Got: 0
---- FAIL: TestAutotest/scenario_name (0.00s)
-FAIL
+\`\`\`json
+{
+  "result": "PASS or FAIL",
+  "explanation": "What was validated and why it's correct (PASS) or a brief summary of what's wrong (FAIL)",
+  "findings": [
+    {
+      "title": "Short title of the issue",
+      "file": "path/to/file.go",
+      "line": 256,
+      "explanation": "Full explanation of the issue. Can be as long as needed to properly explain the problem, its impact, and what production data confirms it."
+    }
+  ],
+  "stats": {
+    "scenarios": 6,
+    "prod_inputs": 34
+  }
+}
 \`\`\`
 
-If you could NOT execute code (build failures, missing deps), say so explicitly and
-explain what you tried. Do NOT fabricate test output.
+Rules for the JSON output:
+- Use "PASS" when there are zero suspicious findings. Use "FAIL" when there are any.
+- \`explanation\` at the top level: for PASS, explain what was validated and why it looks correct (2-3 sentences). For FAIL, give a brief summary.
+- Each finding in \`findings\`: \`title\` is a short label. \`file\` and \`line\` are optional — include them when the issue maps to a specific line in the diff. \`explanation\` is the full description, as detailed as needed.
+- \`stats.scenarios\`: number of test scenarios executed. \`stats.prod_inputs\`: number of production inputs captured via Live Debugger (0 if skipped).
+- The JSON block must be valid JSON. Do not include comments or trailing commas.
 
-</details>
-
-<details>
-<summary>Validation gaps</summary>
-
-What you could not validate and why. If none, omit this section.
-
-</details>
-
----
-
-*🤖 Validated by [Datadog Autotest](https://github.com/DataDog/datadog-ci) using real production inputs via Live Debugger*
-
----
-
-Important formatting rules:
-- Use PASS when there are zero suspicious findings. Use FAIL when there are any.
-- The header line is the most important — it must be scannable in a PR notification email.
-- Use <details> to collapse verbose sections. Keep the top-level comment short.
-- The findings table format is mandatory for FAIL — it lets reviewers compare at a glance.
-- Do NOT include the full validation_report.md content — the PR comment is a summary.
+Before the JSON block, you may include your full analysis, execution logs, and reasoning as regular text. This text will be saved to validation_report.md as a CI artifact. Only the JSON block is used for PR comments.
 
 ## Important constraints
 - Prefer execution over speculation.
@@ -522,7 +562,6 @@ export class AutotestCommand extends BaseCommand {
 
   private async runReview(diff: string, prInfo?: PrInfo, dryRun = false): Promise<{exitCode: number; resultText: string}> {
     const {query} = await import('@anthropic-ai/claude-agent-sdk')
-    const {z} = await import('zod')
 
     let resultText = ''
     let reportText = ''  // The ## 🔬 Autotest: report — captured from any message
@@ -646,8 +685,8 @@ export class AutotestCommand extends BaseCommand {
             if (firstLine) {
               spinner.text = `${prefix}${firstLine}`
             }
-            // Capture the latest report — always keep the most recent one
-            if (!isSubagent && text.includes('## \u{1F52C} Autotest:')) {
+            // Capture the report only if it parses as a valid AgentReport
+            if (!isSubagent && parseAgentReport(text)) {
               reportText = text
             }
           }
@@ -664,17 +703,17 @@ export class AutotestCommand extends BaseCommand {
           this.context.stdout.write(text + '\n')
 
           // Post PR comment when we have the report.
-          // Use reportText (from assistant messages) if available, fall back to resultText.
           // Must happen here because the SDK may call process.exit() after the stream ends.
           resultText += text + '\n'
-          if (text.includes('## \u{1F52C} Autotest:')) {
+          if (parseAgentReport(text)) {
             reportText = text
           }
-          const commentBody = reportText || resultText.trim()
+          // Prefer resultText (the actual final output) over reportText from assistant messages
+          const commentBody = resultText.trim() || reportText
           if (prInfo && !dryRun && !prCommentPosted && commentBody.length > 0) {
             prCommentPosted = true
             try {
-              await this.postPrComment(commentBody, prInfo)
+              await this.postResults(commentBody, prInfo)
             } catch (e) {
               this.context.stderr.write(`PR comment error: ${e}\n`)
             }
@@ -694,18 +733,54 @@ export class AutotestCommand extends BaseCommand {
       spinner.stop()
       logStream.end()
     }
+
+    // Write full agent output to validation_report.md for CI artifact
+    try {
+      const {writeFileSync} = await import('fs')
+      const reportPath = join(repoDir, 'validation_report.md')
+      writeFileSync(reportPath, resultText)
+      this.context.stderr.write(`Full report saved to ${reportPath}\n`)
+    } catch (err) {
+      this.context.stderr.write(`Warning: Failed to write validation_report.md: ${err}\n`)
+    }
+
     this.context.stderr.write(`Agent log saved to ${logPath}\n`)
 
-    const isFail = /## 🔬 Autotest: FAIL/i.test(resultText)
+    const report = parseAgentReport(resultText)
+    const isFail = report ? report.result === 'FAIL' : /FAIL/i.test(resultText)
 
     return {exitCode: isFail ? 1 : 0, resultText}
   }
 
-  private async postPrComment(resultText: string, prInfo: PrInfo) {
-    const COMMENT_MARKER = '<!-- datadog-ci-autotest -->'
+  private async postResults(resultText: string, prInfo: PrInfo) {
+    const report = parseAgentReport(resultText)
+    const ciJobUrl = getCiJobUrl()
 
-    const markedBody = `${COMMENT_MARKER}\n${resultText.trim()}`
+    if (!report) {
+      // Fallback: post raw text as a single issue comment (current behavior)
+      await this.postIssueComment(`${COMMENT_MARKER}\n${resultText.trim()}`, prInfo)
+      return
+    }
 
+    if (report.result === 'PASS' || report.findings.length === 0) {
+      const body = formatComment(report, undefined, ciJobUrl)
+      await this.postIssueComment(body, prInfo)
+      return
+    }
+
+    // FAIL — post each finding as its own comment
+    for (const finding of report.findings) {
+      const body = formatComment(report, finding, ciJobUrl)
+
+      if (finding.file && finding.line && prInfo.provider === 'github') {
+        await this.postInlineReviewComment(body, finding.file, finding.line, prInfo)
+      } else {
+        await this.postIssueComment(body, prInfo)
+      }
+    }
+  }
+
+  private async postIssueComment(body: string, prInfo: PrInfo) {
     try {
       if (prInfo.provider === 'github') {
         const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
@@ -721,37 +796,13 @@ export class AutotestCommand extends BaseCommand {
           'User-Agent': GITHUB_USER_AGENT,
         }
 
-        // Find existing comment with marker
-        let existingId: number | undefined
-        for (let page = 1; page <= 10; page++) {
-          const resp = await fetch(
-            `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments?per_page=100&page=${page}`,
-            {headers}
-          )
-          if (!resp.ok) {
-            break
-          }
-          const comments = (await resp.json()) as Array<{id: number; body: string}>
-          const found = comments.find((c) => c.body.includes(COMMENT_MARKER))
-          if (found) {
-            existingId = found.id
-            break
-          }
-          if (comments.length < 100) {
-            break
-          }
-        }
-
-        // Update or create
-        const url = existingId
-          ? `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/comments/${existingId}`
-          : `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments`
-        const method = existingId ? 'PATCH' : 'POST'
-
-        const resp = await fetch(url, {method, headers, body: JSON.stringify({body: markedBody})})
+        const resp = await fetch(
+          `${GITHUB_API_BASE}/repos/${prInfo.repo}/issues/${prInfo.number}/comments`,
+          {method: 'POST', headers, body: JSON.stringify({body})}
+        )
         if (resp.ok) {
           const json = (await resp.json()) as {html_url: string}
-          this.context.stderr.write(`PR comment ${existingId ? 'updated' : 'created'}: ${json.html_url}\n`)
+          this.context.stderr.write(`PR comment created: ${json.html_url}\n`)
         } else {
           this.context.stderr.write(`PR comment failed: ${resp.status} ${(await resp.text()).slice(0, 200)}\n`)
         }
@@ -762,29 +813,73 @@ export class AutotestCommand extends BaseCommand {
         }
         const gitlabUrl = process.env.CI_SERVER_URL || 'https://gitlab.com'
         const projectId = encodeURIComponent(prInfo.repo)
-        const mrIid = prInfo.number
-        const glHeaders = {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'}
 
-        // Find existing
-        const listResp = await fetch(
-          `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes?per_page=100`,
-          {headers: glHeaders}
+        await fetch(
+          `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${prInfo.number}/notes`,
+          {
+            method: 'POST',
+            headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'},
+            body: JSON.stringify({body}),
+          }
         )
-        let existingId: number | undefined
-        if (listResp.ok) {
-          const notes = (await listResp.json()) as Array<{id: number; body: string}>
-          existingId = notes.find((n) => n.body.includes(COMMENT_MARKER))?.id
-        }
-
-        const url = existingId
-          ? `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes/${existingId}`
-          : `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
-        const method = existingId ? 'PUT' : 'POST'
-
-        await fetch(url, {method, headers: glHeaders, body: JSON.stringify({body: markedBody})})
       }
     } catch (err) {
       this.context.stderr.write(`PR comment error: ${err}\n`)
+    }
+  }
+
+  private async postInlineReviewComment(body: string, file: string, line: number, prInfo: PrInfo) {
+    try {
+      const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+      if (!token) {
+        await this.postIssueComment(body, prInfo)
+        return
+      }
+
+      const headers = {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': GITHUB_USER_AGENT,
+      }
+
+      // Get the latest commit SHA on the PR (required for the review API)
+      const prResp = await fetch(`${GITHUB_API_BASE}/repos/${prInfo.repo}/pulls/${prInfo.number}`, {headers})
+      if (!prResp.ok) {
+        this.context.stderr.write(`Failed to fetch PR details: ${prResp.status}\n`)
+        await this.postIssueComment(body, prInfo)
+        return
+      }
+      const prData = (await prResp.json()) as {head: {sha: string}}
+      const commitId = prData.head.sha
+
+      const resp = await fetch(`${GITHUB_API_BASE}/repos/${prInfo.repo}/pulls/${prInfo.number}/reviews`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          commit_id: commitId,
+          event: 'COMMENT',
+          comments: [
+            {
+              path: file,
+              line,
+              side: 'RIGHT',
+              body,
+            },
+          ],
+        }),
+      })
+
+      if (resp.ok) {
+        this.context.stderr.write(`Inline review comment posted on ${file}:${line}\n`)
+      } else {
+        const errText = (await resp.text()).slice(0, 200)
+        this.context.stderr.write(`Inline review failed (${resp.status}: ${errText}), falling back to issue comment\n`)
+        await this.postIssueComment(body, prInfo)
+      }
+    } catch (err) {
+      this.context.stderr.write(`Inline review error: ${err}, falling back to issue comment\n`)
+      await this.postIssueComment(body, prInfo)
     }
   }
 
@@ -795,10 +890,12 @@ export class AutotestCommand extends BaseCommand {
     }
 
     try {
-      const isFail = /## 🔬 Autotest: FAIL/i.test(resultText)
-      const scenariosMatch = resultText.match(/(\d+)\s*scenarios?\s*executed/i)
-      const prodInputsMatch = resultText.match(/(\d+)\s*prod\s*inputs?\s*captured/i)
-      const findingsMatch = resultText.match(/(\d+)\s*suspicious\s*findings?/i)
+      const report = parseAgentReport(resultText)
+
+      const isFail = report ? report.result === 'FAIL' : /## 🔬 Autotest: FAIL/i.test(resultText)
+      const scenarios = report?.stats.scenarios ?? 0
+      const prodInputs = report?.stats.prod_inputs ?? 0
+      const findingsCount = report?.findings.length ?? 0
       const hasExecutionLog = /Execution log/.test(resultText) && /\$\s+\w/.test(resultText)
       const method = hasExecutionLog ? 'execution' : 'static_analysis'
 
@@ -821,15 +918,9 @@ export class AutotestCommand extends BaseCommand {
       if (isFail) {
         logger.increment('regression_found', 1)
       }
-      if (scenariosMatch) {
-        logger.gauge('scenarios_executed', parseInt(scenariosMatch[1], 10))
-      }
-      if (prodInputsMatch) {
-        logger.gauge('prod_inputs_captured', parseInt(prodInputsMatch[1], 10))
-      }
-      if (findingsMatch) {
-        logger.gauge('suspicious_findings', parseInt(findingsMatch[1], 10))
-      }
+      logger.gauge('scenarios_executed', scenarios)
+      logger.gauge('prod_inputs_captured', prodInputs)
+      logger.gauge('suspicious_findings', findingsCount)
 
       await flush()
     } catch {
