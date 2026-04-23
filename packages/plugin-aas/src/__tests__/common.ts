@@ -70,6 +70,14 @@ export const CONTAINER_WEB_APP: Site = {
   sku: 'PremiumV2',
 }
 
+export const LINUX_CODE_WEB_APP: Site = {
+  ...CONTAINER_WEB_APP,
+  siteConfig: {
+    ...CONTAINER_WEB_APP.siteConfig,
+    linuxFxVersion: 'NODE|18',
+  },
+}
+
 export const WINDOWS_DOTNET_WEB_APP: Site = {
   ...CONTAINER_WEB_APP,
   kind: 'app,windows',

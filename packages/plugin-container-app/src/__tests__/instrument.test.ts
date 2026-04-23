@@ -168,6 +168,26 @@ describe('container-app instrument', () => {
       })
     })
 
+    test('Uses a custom sidecar image when --sidecar-image is passed', async () => {
+      const customImage = 'custom.io/my-image:tag'
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-image', customImage])
+      expect(code).toEqual(0)
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-container-app',
+        expect.objectContaining({
+          template: expect.objectContaining({
+            containers: expect.arrayContaining([
+              expect.objectContaining({
+                name: 'datadog-sidecar',
+                image: customImage,
+              }),
+            ]),
+          }),
+        })
+      )
+    })
+
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
       const output = context.stdout.toString()
