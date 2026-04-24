@@ -1,10 +1,9 @@
-import metrics from 'datadog-metrics'
-import {ProxyAgent} from 'proxy-agent'
+import {BufferedMetricsLogger} from 'datadog-metrics'
 
 import {getDatadogSite} from './api'
 
 export interface MetricsLogger {
-  logger: metrics.BufferedMetricsLogger
+  logger: BufferedMetricsLogger
   flush(): Promise<void>
 }
 
@@ -18,24 +17,22 @@ export interface MetricsLoggerOptions {
 export const getMetricsLogger = (opts: MetricsLoggerOptions): MetricsLogger => {
   const apiUrl = 'api.' + getDatadogSite(opts.datadogSite)
 
-  const metricsOpts = {
-    // ProxyAgent will retrieve proxy agent from env vars when relevant
-    // agent is not in the type definitions file but has been introduced in datadog-metrics 0.8.x
-    agent: new ProxyAgent(),
-    apiHost: apiUrl,
+  const logger = new BufferedMetricsLogger({
     apiKey: opts.apiKey,
+    site: opts.datadogSite,
     defaultTags: opts.defaultTags,
     flushIntervalSeconds: 15,
     prefix: opts.prefix,
-  }
-
-  const logger = new metrics.BufferedMetricsLogger(metricsOpts)
+  })
 
   return {
-    flush: () =>
-      new Promise((resolve, reject) => {
-        logger.flush(resolve, (err) => reject(new Error(`Could not flush metrics to ${apiUrl}: ${err}`)))
-      }),
+    flush: async () => {
+      try {
+        await logger.flush()
+      } catch (error) {
+        throw new Error(`Could not flush metrics to ${apiUrl}: ${error}`)
+      }
+    },
     logger,
   }
 }
