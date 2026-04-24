@@ -216,7 +216,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     // Build base sidecar container
     const baseSidecar: Container = {
       name: config.sidecarName,
-      image: SIDECAR_IMAGE,
+      image: config.sidecarImage ?? SIDECAR_IMAGE,
       resources: {
         cpu: config.sidecarCpu ?? DEFAULT_SIDECAR_CPU,
         memory: (config.sidecarMemory ?? DEFAULT_SIDECAR_MEMORY) + 'Gi',

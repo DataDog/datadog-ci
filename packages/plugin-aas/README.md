@@ -106,6 +106,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2" |  |
 | `--windows-runtime` |  | Manually specify the Windows runtime (`node`, `dotnet`, or `java`) used by the extension to override automatic detection. |  |
+| `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Only applies to Linux web apps. | `index.docker.io/datadog/serverless-init:latest` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`

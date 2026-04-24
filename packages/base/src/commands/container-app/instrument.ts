@@ -9,6 +9,7 @@ import {
   DEFAULT_LOGS_PATH,
   DEFAULT_VOLUME_NAME,
   DEFAULT_SIDECAR_NAME,
+  SIDECAR_IMAGE,
 } from '../../helpers/serverless/constants'
 
 import {ContainerAppCommand} from './common'
@@ -55,6 +56,9 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: `The amount of memory (in GiB) to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
     validator: isNumber(),
   })
+  private sidecarImage = Option.String('--sidecar-image', SIDECAR_IMAGE, {
+    description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Defaults to '${SIDECAR_IMAGE}'`,
+  })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
     description:
@@ -81,6 +85,7 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       logsPath: this.logsPath,
       sidecarCpu: this.sidecarCpu,
       sidecarMemory: this.sidecarMemory,
+      sidecarImage: this.sidecarImage,
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,

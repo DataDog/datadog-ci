@@ -65,6 +65,7 @@ import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
 import {
   CONTAINER_WEB_APP,
+  LINUX_CODE_WEB_APP,
   WINDOWS_DOTNET_WEB_APP,
   WINDOWS_NODE_WEB_APP,
   WINDOWS_JAVA_WEB_APP,
@@ -218,6 +219,31 @@ describe('aas instrument', () => {
         properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
       })
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
+    })
+
+    test('Uses a custom sidecar image when --sidecar-image is passed (containerized Linux)', async () => {
+      const customImage = 'custom.io/my-image:tag'
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-image', customImage])
+      expect(code).toEqual(0)
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar',
+        expect.objectContaining({image: customImage})
+      )
+    })
+
+    test('Uses a custom sidecar image when --sidecar-image is passed (code-based Linux)', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      const customImage = 'custom.io/my-image:tag'
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-image', customImage])
+      expect(code).toEqual(0)
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar',
+        expect.objectContaining({image: customImage})
+      )
     })
 
     test('Fails if not authenticated with Azure', async () => {

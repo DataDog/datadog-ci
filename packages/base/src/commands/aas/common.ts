@@ -82,6 +82,7 @@ export type AasConfigOptions = Partial<{
   uploadGitMetadata: boolean
   extraTags: string
   windowsRuntime: WindowsRuntime
+  sidecarImage: string
 }>
 
 export abstract class AasCommand extends BaseCommand {

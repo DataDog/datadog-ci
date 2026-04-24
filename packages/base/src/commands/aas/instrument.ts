@@ -3,6 +3,7 @@ import type {AasConfigOptions, WindowsRuntime} from './common'
 import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
+import {SIDECAR_IMAGE} from '../../helpers/serverless/constants'
 
 import {AasCommand} from './common'
 
@@ -59,6 +60,9 @@ export class AasInstrumentCommand extends AasCommand {
     description:
       'Manually specify the Windows runtime (`node`, `dotnet`, or `java`) used by the extension to override automatic detection.',
   })
+  private sidecarImage = Option.String('--sidecar-image', SIDECAR_IMAGE, {
+    description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Only applies to Linux web apps. Defaults to '${SIDECAR_IMAGE}'`,
+  })
 
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
@@ -74,6 +78,7 @@ export class AasInstrumentCommand extends AasCommand {
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
       windowsRuntime: this.windowsRuntime as WindowsRuntime | undefined,
+      sidecarImage: this.sidecarImage,
     }
   }
 

@@ -307,7 +307,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     // env values point to env keys in the main App Settings. (essentially env var forwarding)
     if (
       sidecarContainer === undefined ||
-      sidecarContainer.image !== SIDECAR_IMAGE ||
+      sidecarContainer.image !== (config.sidecarImage ?? SIDECAR_IMAGE) ||
       sidecarContainer.targetPort !== String(SIDECAR_PORT) ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
       !sortedEqual(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
@@ -319,7 +319,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       )
       if (!this.dryRun) {
         const sidecar: SiteContainer = {
-          image: SIDECAR_IMAGE,
+          image: config.sidecarImage ?? SIDECAR_IMAGE,
           targetPort: String(SIDECAR_PORT),
           isMain: false,
           // We're allowing access to all env vars since it is simpler
