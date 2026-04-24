@@ -120,20 +120,17 @@ export const validateLevel = (level: string | undefined): string | undefined => 
 }
 
 export const githubWellKnownDiagnosticDirsUnix = [
-  '/home/runner/actions-runner/cached/_diag', // for SaaS
   '/home/runner/actions-runner/_diag', // for self-hosted
   '/opt/actions-runner/_diag', // self-hosted in some cases
 ]
 export const githubWellKnownDiagnosticDirsWin = [
-  'C:/actions-runner/cached/_diag', // for SaaS
   'C:/actions-runner/_diag', // for self-hosted
 ]
 
-// Glob patterns covering the version-namespaced layout deployed on GitHub-hosted
-// runners alongside runner v2.334.0 (2026-04-21): _diag moved from
-// <runnerRoot>/cached/_diag to <runnerRoot>/cached/<version>/_diag.
-// With globstar, `**` matches zero or more segments, so a single pattern covers
-// both the old and the new layout.
+// Glob patterns covering the SaaS layout. With globstar, `**` matches zero or
+// more segments, so a single pattern covers both the pre-2.334.0 layout
+// (<runnerRoot>/cached/_diag) and the version-namespaced layout deployed on
+// GitHub-hosted runners alongside v2.334.0 (<runnerRoot>/cached/<version>/_diag).
 export const githubWellKnownDiagnosticDirPatternsUnix = [
   '/home/runner/actions-runner/cached/**/_diag',
 ]
@@ -178,12 +175,10 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
   if (runnerTemp) {
     // RUNNER_TEMP is typically: <runnerRoot>/_work/_temp
     const runnerRoot = upath.resolve(runnerTemp, '..', '..')
-    dirs.push(upath.join(runnerRoot, 'cached', '_diag'))
-    // Version-namespaced layout deployed alongside runner v2.334.0.
+    // `cached/**/_diag` matches both pre-2.334.0 (cached/_diag) and the
+    // version-namespaced layout (cached/<version>/_diag) via globstar.
     dirs.push(`${runnerRoot}/cached/**/_diag`)
     dirs.push(upath.join(runnerRoot, '_diag'))
-    // actions-runner variants
-    dirs.push(upath.join(runnerRoot, 'actions-runner', 'cached', '_diag'))
     dirs.push(`${runnerRoot}/actions-runner/cached/**/_diag`)
     dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
   }
