@@ -12,6 +12,9 @@ describeOrSkip('aas (Windows)', () => {
   const windowsPlan = process.env.AZURE_AAS_WINDOWS_PLAN!
 
   beforeAll(async () => {
+    // Stagger parallel matrix runs to avoid Azure extension install conflicts
+    await new Promise((resolve) => setTimeout(resolve, Math.random() * 60_000))
+
     const result = await execPromiseWithRetries(
       `az webapp create` +
         ` --name "${windowsAppName}"` +
@@ -42,7 +45,8 @@ describeOrSkip('aas (Windows)', () => {
       `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}" --windows-runtime node --no-source-code-integration`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
-      }
+      },
+      {maxAttempts: 5, delaySeconds: 30}
     )
     expect(result.exitCode).toBe(0)
 
