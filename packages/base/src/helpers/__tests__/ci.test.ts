@@ -5,18 +5,30 @@ import type {BaseContext} from 'clipanion'
 
 import upath from 'upath'
 
+jest.mock('../glob', () => {
+  const actual = jest.requireActual('../glob')
+
+  return {
+    ...actual,
+    globSync: jest.fn<string[], [string]>(() => []),
+  }
+})
+
 import {
   getCIEnv,
   getCIMetadata,
   getCISpanTags,
   getGithubJobNameFromLogs,
   getGithubStepInfoFromLogs,
+  githubWellKnownDiagnosticDirPatternsUnix,
+  githubWellKnownDiagnosticDirPatternsWin,
   githubWellKnownDiagnosticDirsUnix,
   githubWellKnownDiagnosticDirsWin,
   isGithubWindowsRunner,
   isInteractive,
   shouldGetGithubJobDisplayName,
 } from '../ci'
+import {globSync} from '../glob'
 import {
   CI_ENV_VARS,
   CI_NODE_LABELS,
@@ -30,6 +42,14 @@ import {
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 import {createMockContext} from './testing-tools'
+
+const mockedGlobSync = globSync as jest.MockedFunction<typeof globSync>
+
+// Synthetic hosted-runner diag dirs used to exercise the glob-expansion path.
+// The real patterns live in githubWellKnownDiagnosticDirPatternsUnix/Win; these
+// are the paths that globSync is made to "expand" to in tests.
+const HOSTED_SAAS_DIAG_DIR_UNIX = '/home/runner/actions-runner/cached/2.334.0/_diag'
+const HOSTED_SAAS_DIAG_DIR_WIN = 'C:/actions-runner/cached/2.334.0/_diag'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 
@@ -522,6 +542,18 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     process.env = {
       GITHUB_ACTIONS: 'true',
     }
+    // Default: SaaS patterns expand to the synthetic hosted dirs; everything
+    // else expands to nothing. Individual tests can override.
+    mockedGlobSync.mockImplementation((pattern: string) => {
+      if (githubWellKnownDiagnosticDirPatternsUnix.includes(pattern)) {
+        return [HOSTED_SAAS_DIAG_DIR_UNIX]
+      }
+      if (githubWellKnownDiagnosticDirPatternsWin.includes(pattern)) {
+        return [HOSTED_SAAS_DIAG_DIR_WIN]
+      }
+
+      return []
+    })
   })
   afterEach(() => {
     jest.resetAllMocks()
@@ -592,7 +624,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   }
 
   test('should find and return the job display name (SaaS)', () => {
-    const targetDir = githubWellKnownDiagnosticDirsUnix[0] // SaaS directory
+    const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX // SaaS directory
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -606,7 +638,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should find and return the job display name (self-hosted)', () => {
-    const targetDir = githubWellKnownDiagnosticDirsUnix[1] // self-hosted directory
+    const targetDir = githubWellKnownDiagnosticDirsUnix[0] // self-hosted directory
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -620,7 +652,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should find and return the job display name in opt directory', () => {
-    const targetDir = githubWellKnownDiagnosticDirsUnix[2]
+    const targetDir = githubWellKnownDiagnosticDirsUnix[1]
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -635,7 +667,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
   test('should find and return the job display name windows (SaaS)', () => {
     process.env.RUNNER_OS = 'Windows'
-    const targetDir = githubWellKnownDiagnosticDirsWin[0]
+    const targetDir = HOSTED_SAAS_DIAG_DIR_WIN
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -650,7 +682,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
   test('should find and return the job display name windows (self-hosted)', () => {
     process.env.RUNNER_OS = 'Windows'
-    const targetDir = githubWellKnownDiagnosticDirsWin[1]
+    const targetDir = githubWellKnownDiagnosticDirsWin[0]
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -717,6 +749,26 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       const derivedDiagDir = upath.join(runnerRoot, ...routeParts)
       const logContent = sampleLogContent(sampleJobDisplayName)
 
+      // The bounded-depth globs emitted by getGithubDiagnosticDirsFromEnv are
+      // the only way paths with intermediate segments (e.g. cached/_diag) are
+      // reached now, so expand them to the test's target when the route
+      // contains an intermediate segment.
+      const cachedPatterns = new Set([
+        `${runnerRoot}/*/_diag`,
+        `${runnerRoot}/*/*/_diag`,
+        `${runnerRoot}/actions-runner/*/_diag`,
+        `${runnerRoot}/actions-runner/*/*/_diag`,
+        ...githubWellKnownDiagnosticDirPatternsUnix,
+        ...githubWellKnownDiagnosticDirPatternsWin,
+      ])
+      mockedGlobSync.mockImplementation((pattern: string) => {
+        if (routeParts.includes('cached') && cachedPatterns.has(pattern)) {
+          return [derivedDiagDir]
+        }
+
+        return []
+      })
+
       mockReaddirSync(derivedDiagDir, sampleLogFileName)
       jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
     })
@@ -728,7 +780,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('log files found but none contain the display name', () => {
-    const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+    const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
     const logContent = 'This log does not have the job display name.'
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -784,7 +836,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('job names with quotes', () => {
     test('should parse job name with single quoted word', () => {
       const jobName = 'Build "production" artifacts'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -797,7 +849,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with multiple quotes', () => {
       const jobName = 'Test "foo" and "bar"'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -810,7 +862,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse complex job name with quotes and special chars', () => {
       const jobName = 'End-to-End Tests (@org/backend, "features/a*", apps/backend)'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -825,7 +877,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('job names with backslashes', () => {
     test('should parse job name with Windows paths', () => {
       const jobName = 'Path\\\\to\\\\file'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -838,7 +890,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with regex patterns', () => {
       const jobName = 'Regex \\\\d+ test'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -851,7 +903,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with literal escape sequences', () => {
       const jobName = 'Literal \\\\n and \\\\t'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -866,7 +918,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('matrix jobs', () => {
     test('should parse basic matrix job', () => {
       const jobName = 'Build (ubuntu-latest, 18.x)'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -879,7 +931,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse matrix job with quotes', () => {
       const jobName = 'Test (macos, "3.9")'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -894,7 +946,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('reusable workflows', () => {
     test('should parse job name with slashes', () => {
       const jobName = 'Terraform CI / Validate'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -907,7 +959,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with multiple levels', () => {
       const jobName = 'CI / CD / Deploy'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -922,7 +974,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('unicode and emojis', () => {
     test('should parse job name with emojis', () => {
       const jobName = '🚀 Deploy to production'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -935,7 +987,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with Chinese characters', () => {
       const jobName = '测试任务'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -948,7 +1000,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with Japanese characters', () => {
       const jobName = 'テストジョブ'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -961,7 +1013,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with Arabic characters', () => {
       const jobName = 'اختبار العمل'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -974,7 +1026,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with Cyrillic characters', () => {
       const jobName = 'Тестовое задание'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -989,7 +1041,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('special characters', () => {
     test('should parse job name with parentheses and brackets', () => {
       const jobName = 'Test [feature] (branch)'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -1002,7 +1054,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     test('should parse job name with symbols', () => {
       const jobName = 'Build @scope/package #123'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -1017,7 +1069,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   describe('complex combinations', () => {
     test('should parse job name with everything combined', () => {
       const jobName = '🔧 Build "app-v2.0" (@org/repo, ubuntu-latest, node-18.x) ✅'
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       const logContent = sampleLogContent(jobName)
 
       mockReaddirSync(targetDir, sampleLogFileName)
@@ -1053,7 +1105,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       const originalEnv = process.env
       process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: orchestrationId}
 
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
       mockReaddirSync(targetDir, 'Worker_20251014-083000.log')
       jest
         .spyOn(fs, 'readFileSync')
@@ -1073,7 +1125,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       process.env = {...originalEnv}
       delete process.env.ACTIONS_ORCHESTRATION_ID
 
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
 
       jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
         if (String(pathToRead) === String(targetDir)) {
@@ -1114,7 +1166,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       const originalEnv = process.env
       process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: orchestrationId}
 
-      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const targetDir = HOSTED_SAAS_DIAG_DIR_UNIX
 
       jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
         if (String(pathToRead) === String(targetDir)) {
