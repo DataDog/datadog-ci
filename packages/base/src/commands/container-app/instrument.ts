@@ -57,7 +57,7 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     validator: isNumber(),
   })
   private sidecarImage = Option.String('--sidecar-image', SIDECAR_IMAGE, {
-    description: `The image to use for the sidecar container. Defaults to '${SIDECAR_IMAGE}'`,
+    description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Defaults to '${SIDECAR_IMAGE}'`,
   })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
