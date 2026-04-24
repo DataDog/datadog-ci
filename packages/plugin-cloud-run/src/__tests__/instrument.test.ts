@@ -8,6 +8,7 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
+import {TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME, TRACER_VOLUME_PATH, SSI_LANGUAGE_CONFIGS} from '../ssi'
 import * as utils from '../utils'
 
 jest.mock('@datadog/datadog-ci-base/helpers/apikey')
@@ -220,6 +221,8 @@ describe('InstrumentCommand', () => {
       ;(command as any).environment = undefined
       ;(command as any).version = undefined
       ;(command as any).envVars = []
+      ;(command as any).ssi = false
+      ;(command as any).language = undefined
     })
 
     test('adds sidecar and shared volume when missing', () => {
@@ -388,6 +391,170 @@ describe('InstrumentCommand', () => {
 
       // Should not throw and should work normally
       expect(result.template?.containers).toHaveLength(2)
+    })
+  })
+
+  describe('SSI validation', () => {
+    test('should fail if --ssi is set without --language', async () => {
+      const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
+      jest.spyOn(InstrumentCommand.prototype as any, 'instrumentSidecar').mockImplementation(mockInstrumentSidecar)
+
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--ssi',
+      ])
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('--ssi requires --language')
+    })
+
+    test('should fail if --ssi is set with unsupported language', async () => {
+      const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
+      jest.spyOn(InstrumentCommand.prototype as any, 'instrumentSidecar').mockImplementation(mockInstrumentSidecar)
+
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--ssi',
+        '--language',
+        'go',
+      ])
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('Unsupported SSI language: "go"')
+    })
+
+    test('--language without --ssi only sets DD_SOURCE, no SSI artifacts', () => {
+      const command = new InstrumentCommand()
+      ;(command as any).tracing = undefined
+      ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).sharedVolumePath = '/shared-volume'
+      ;(command as any).logsPath = '/shared-volume/logs/*.log'
+      ;(command as any).environment = undefined
+      ;(command as any).version = undefined
+      ;(command as any).envVars = []
+      ;(command as any).ssi = false
+      ;(command as any).language = 'python'
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      // Should have app + sidecar only, no tracer-init
+      expect(result.template?.containers).toHaveLength(2)
+      expect(result.template?.containers?.map((c: IContainer) => c.name)).toEqual(['main', 'datadog-sidecar'])
+
+      // DD_SOURCE should be set on the main container
+      const main = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(main?.env?.find((e: IEnvVar) => e.name === 'DD_SOURCE')?.value).toBe('python')
+
+      // No SSI env vars
+      expect(main?.env?.find((e: IEnvVar) => e.name === 'PYTHONPATH')).toBeUndefined()
+
+      // No dd-tracer volume
+      expect(result.template?.volumes?.find((v) => v.name === TRACER_VOLUME_NAME)).toBeUndefined()
+    })
+  })
+
+  describe('SSI instrumentation', () => {
+    let command: InstrumentCommand
+
+    beforeEach(() => {
+      command = new InstrumentCommand()
+      ;(command as any).tracing = undefined
+      ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).sharedVolumePath = '/shared-volume'
+      ;(command as any).logsPath = '/shared-volume/logs/*.log'
+      ;(command as any).environment = undefined
+      ;(command as any).version = undefined
+      ;(command as any).envVars = []
+      ;(command as any).ssi = true
+    })
+
+    test.each(['python', 'nodejs', 'java'])('instruments with SSI for %s', (language) => {
+      ;(command as any).language = language
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+      const config = SSI_LANGUAGE_CONFIGS[language]
+
+      // Should have app + sidecar + tracer-init
+      expect(result.template?.containers).toHaveLength(3)
+      const containerNames = result.template?.containers?.map((c: IContainer) => c.name)
+      expect(containerNames).toContain('main')
+      expect(containerNames).toContain('datadog-sidecar')
+      expect(containerNames).toContain(TRACER_INIT_CONTAINER_NAME)
+
+      // Tracer-init container should have correct image
+      const tracerInit = result.template?.containers?.find((c: IContainer) => c.name === TRACER_INIT_CONTAINER_NAME)
+      expect(tracerInit?.image).toBe(config.initImage)
+      expect(tracerInit?.volumeMounts?.some((vm: IVolumeMount) => vm.name === TRACER_VOLUME_NAME)).toBe(true)
+      expect(tracerInit?.startupProbe?.tcpSocket?.port).toBe(18999)
+
+      // App container should have SSI env var and tracer volume mount
+      const main = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(main?.env?.find((e: IEnvVar) => e.name === config.envVar)?.value).toBe(config.envValue)
+      expect(main?.volumeMounts?.some((vm: IVolumeMount) => vm.name === TRACER_VOLUME_NAME)).toBe(true)
+      expect(main?.dependsOn).toEqual(['datadog-sidecar', TRACER_INIT_CONTAINER_NAME])
+
+      // Agent sidecar should depend on tracer-init
+      const sidecar = result.template?.containers?.find((c: IContainer) => c.name === 'datadog-sidecar')
+      expect(sidecar?.dependsOn).toEqual([TRACER_INIT_CONTAINER_NAME])
+
+      // dd-tracer volume should exist
+      expect(result.template?.volumes?.find((v) => v.name === TRACER_VOLUME_NAME)).toBeDefined()
+    })
+
+    test('idempotency: instrumenting twice does not duplicate SSI artifacts', () => {
+      ;(command as any).language = 'python'
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      // Instrument once
+      const firstResult = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      // Instrument again on the result
+      const secondResult = command.createInstrumentedServiceConfig(firstResult, 'my-service')
+
+      // Should still have exactly 3 containers
+      expect(secondResult.template?.containers).toHaveLength(3)
+
+      // Should still have exactly 2 volumes (shared-volume + dd-tracer)
+      expect(secondResult.template?.volumes).toHaveLength(2)
+
+      // App container should have exactly one PYTHONPATH and one dd-tracer mount
+      const main = secondResult.template?.containers?.find((c: IContainer) => c.name === 'main')
+      const pythonpathEnvs = main?.env?.filter((e: IEnvVar) => e.name === 'PYTHONPATH')
+      expect(pythonpathEnvs).toHaveLength(1)
+      const tracerMounts = main?.volumeMounts?.filter((vm: IVolumeMount) => vm.name === TRACER_VOLUME_NAME)
+      expect(tracerMounts).toHaveLength(1)
     })
   })
 })
