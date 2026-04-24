@@ -7,7 +7,6 @@ import chalk from 'chalk'
 import upath from 'upath'
 
 import {globSync, hasMagic} from './glob'
-
 import {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -131,12 +130,8 @@ export const githubWellKnownDiagnosticDirsWin = [
 // more segments, so a single pattern covers both the pre-2.334.0 layout
 // (<runnerRoot>/cached/_diag) and the version-namespaced layout deployed on
 // GitHub-hosted runners alongside v2.334.0 (<runnerRoot>/cached/<version>/_diag).
-export const githubWellKnownDiagnosticDirPatternsUnix = [
-  '/home/runner/actions-runner/cached/**/_diag',
-]
-export const githubWellKnownDiagnosticDirPatternsWin = [
-  'C:/actions-runner/cached/**/_diag',
-]
+export const githubWellKnownDiagnosticDirPatternsUnix = ['/home/runner/actions-runner/cached/**/_diag']
+export const githubWellKnownDiagnosticDirPatternsWin = ['C:/actions-runner/cached/**/_diag']
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
 const githubJodIDRegex = /"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/

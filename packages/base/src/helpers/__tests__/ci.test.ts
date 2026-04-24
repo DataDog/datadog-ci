@@ -6,15 +6,13 @@ import type {BaseContext} from 'clipanion'
 import upath from 'upath'
 
 jest.mock('../glob', () => {
-  const actual = jest.requireActual('../glob') as typeof import('../glob')
+  const actual = jest.requireActual('../glob')
 
   return {
     ...actual,
     globSync: jest.fn<string[], [string]>(() => []),
   }
 })
-
-import {globSync} from '../glob'
 
 import {
   getCIEnv,
@@ -30,7 +28,7 @@ import {
   isInteractive,
   shouldGetGithubJobDisplayName,
 } from '../ci'
-
+import {globSync} from '../glob'
 import {
   CI_ENV_VARS,
   CI_NODE_LABELS,
