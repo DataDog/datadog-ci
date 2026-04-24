@@ -6,6 +6,8 @@ import type {BaseContext} from 'clipanion'
 import chalk from 'chalk'
 import upath from 'upath'
 
+import {globSync, hasMagic} from './glob'
+
 import {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -127,6 +129,18 @@ export const githubWellKnownDiagnosticDirsWin = [
   'C:/actions-runner/_diag', // for self-hosted
 ]
 
+// Glob patterns covering the version-namespaced layout deployed on GitHub-hosted
+// runners alongside runner v2.334.0 (2026-04-21): _diag moved from
+// <runnerRoot>/cached/_diag to <runnerRoot>/cached/<version>/_diag.
+// With globstar, `**` matches zero or more segments, so a single pattern covers
+// both the old and the new layout.
+export const githubWellKnownDiagnosticDirPatternsUnix = [
+  '/home/runner/actions-runner/cached/**/_diag',
+]
+export const githubWellKnownDiagnosticDirPatternsWin = [
+  'C:/actions-runner/cached/**/_diag',
+]
+
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
 const githubJodIDRegex = /"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/
 
@@ -165,13 +179,37 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
     // RUNNER_TEMP is typically: <runnerRoot>/_work/_temp
     const runnerRoot = upath.resolve(runnerTemp, '..', '..')
     dirs.push(upath.join(runnerRoot, 'cached', '_diag'))
+    // Version-namespaced layout deployed alongside runner v2.334.0.
+    dirs.push(`${runnerRoot}/cached/**/_diag`)
     dirs.push(upath.join(runnerRoot, '_diag'))
     // actions-runner variants
     dirs.push(upath.join(runnerRoot, 'actions-runner', 'cached', '_diag'))
+    dirs.push(`${runnerRoot}/actions-runner/cached/**/_diag`)
     dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
   }
 
   return uniq(dirs.filter(Boolean))
+}
+
+/**
+ * Expands a mixed list of literal directories and glob patterns into concrete
+ * directories. Literals pass through unchanged (existence is checked later).
+ */
+const expandDiagnosticDirCandidates = (candidates: string[]): string[] => {
+  const expanded: string[] = []
+  for (const candidate of candidates) {
+    if (hasMagic(candidate)) {
+      try {
+        expanded.push(...globSync(candidate))
+      } catch {
+        // If the glob walk fails for any reason (permissions, etc.), skip.
+      }
+    } else {
+      expanded.push(candidate)
+    }
+  }
+
+  return uniq(expanded)
 }
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
@@ -1164,9 +1202,17 @@ const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | und
   let foundDiagDir = ''
   let workerLogFiles: string[] = []
 
-  let wellKnownDirs = uniq([...getGithubDiagnosticDirsFromEnv(), ...githubWellKnownDiagnosticDirsUnix])
+  let wellKnownDirs = expandDiagnosticDirCandidates([
+    ...getGithubDiagnosticDirsFromEnv(),
+    ...githubWellKnownDiagnosticDirPatternsUnix,
+    ...githubWellKnownDiagnosticDirsUnix,
+  ])
   if (isGithubWindowsRunner()) {
-    wellKnownDirs = uniq([...getGithubDiagnosticDirsFromEnv(), ...githubWellKnownDiagnosticDirsWin])
+    wellKnownDirs = expandDiagnosticDirCandidates([
+      ...getGithubDiagnosticDirsFromEnv(),
+      ...githubWellKnownDiagnosticDirPatternsWin,
+      ...githubWellKnownDiagnosticDirsWin,
+    ])
   }
 
   // Iterate through well known directories to check for worker logs
