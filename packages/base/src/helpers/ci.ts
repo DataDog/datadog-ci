@@ -136,10 +136,7 @@ export const githubWellKnownDiagnosticDirPatternsUnix = [
   '/home/runner/actions-runner/*/_diag',
   '/home/runner/actions-runner/*/*/_diag',
 ]
-export const githubWellKnownDiagnosticDirPatternsWin = [
-  'C:/actions-runner/*/_diag',
-  'C:/actions-runner/*/*/_diag',
-]
+export const githubWellKnownDiagnosticDirPatternsWin = ['C:/actions-runner/*/_diag', 'C:/actions-runner/*/*/_diag']
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
 const githubJodIDRegex = /"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/
