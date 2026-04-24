@@ -126,12 +126,20 @@ export const githubWellKnownDiagnosticDirsWin = [
   'C:/actions-runner/_diag', // for self-hosted
 ]
 
-// Glob patterns covering the SaaS layout. With globstar, `**` matches zero or
-// more segments, so a single pattern covers both the pre-2.334.0 layout
-// (<runnerRoot>/cached/_diag) and the version-namespaced layout deployed on
-// GitHub-hosted runners alongside v2.334.0 (<runnerRoot>/cached/<version>/_diag).
-export const githubWellKnownDiagnosticDirPatternsUnix = ['/home/runner/actions-runner/cached/**/_diag']
-export const githubWellKnownDiagnosticDirPatternsWin = ['C:/actions-runner/cached/**/_diag']
+// Glob patterns covering layouts that namespace `_diag` under one or two
+// intermediate directories. This includes both observed SaaS layouts
+// (<runnerRoot>/cached/_diag pre-2.334.0, <runnerRoot>/cached/<version>/_diag
+// since v2.334.0) and hypothetical future layouts that follow the same shape
+// without a `cached` wrapper (e.g. <runnerRoot>/<version>/_diag). Depth is
+// bounded on purpose: `*` matches a single segment, so no filesystem walk.
+export const githubWellKnownDiagnosticDirPatternsUnix = [
+  '/home/runner/actions-runner/*/_diag',
+  '/home/runner/actions-runner/*/*/_diag',
+]
+export const githubWellKnownDiagnosticDirPatternsWin = [
+  'C:/actions-runner/*/_diag',
+  'C:/actions-runner/*/*/_diag',
+]
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
 const githubJodIDRegex = /"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/
@@ -170,11 +178,14 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
   if (runnerTemp) {
     // RUNNER_TEMP is typically: <runnerRoot>/_work/_temp
     const runnerRoot = upath.resolve(runnerTemp, '..', '..')
-    // `cached/**/_diag` matches both pre-2.334.0 (cached/_diag) and the
-    // version-namespaced layout (cached/<version>/_diag) via globstar.
-    dirs.push(`${runnerRoot}/cached/**/_diag`)
+    // Bounded-depth patterns cover every runner layout we've observed
+    // (including cached/<version>/_diag) without assuming a `cached` wrapper
+    // and without walking the whole tree.
+    dirs.push(`${runnerRoot}/*/_diag`)
+    dirs.push(`${runnerRoot}/*/*/_diag`)
     dirs.push(upath.join(runnerRoot, '_diag'))
-    dirs.push(`${runnerRoot}/actions-runner/cached/**/_diag`)
+    dirs.push(`${runnerRoot}/actions-runner/*/_diag`)
+    dirs.push(`${runnerRoot}/actions-runner/*/*/_diag`)
     dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
   }
 

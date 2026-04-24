@@ -749,12 +749,15 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       const derivedDiagDir = upath.join(runnerRoot, ...routeParts)
       const logContent = sampleLogContent(sampleJobDisplayName)
 
-      // The `cached/**/_diag` globs emitted by getGithubDiagnosticDirsFromEnv
-      // are the only way `cached` paths are reached now, so expand them to the
-      // test's target when the route includes `cached`.
+      // The bounded-depth globs emitted by getGithubDiagnosticDirsFromEnv are
+      // the only way paths with intermediate segments (e.g. cached/_diag) are
+      // reached now, so expand them to the test's target when the route
+      // contains an intermediate segment.
       const cachedPatterns = new Set([
-        `${runnerRoot}/cached/**/_diag`,
-        `${runnerRoot}/actions-runner/cached/**/_diag`,
+        `${runnerRoot}/*/_diag`,
+        `${runnerRoot}/*/*/_diag`,
+        `${runnerRoot}/actions-runner/*/_diag`,
+        `${runnerRoot}/actions-runner/*/*/_diag`,
         ...githubWellKnownDiagnosticDirPatternsUnix,
         ...githubWellKnownDiagnosticDirPatternsWin,
       ])
