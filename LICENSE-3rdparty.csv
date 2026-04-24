@@ -92,6 +92,8 @@ jest-diff,import,MIT,"Copyright (c) Meta Platforms, Inc. and other contributors"
 tsx,dev,MIT,Copyright (c) Hiroki Osame <hiroki.osame@gmail.com>
 typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contributors
 @stylistic/eslint-plugin,dev,MIT,Copyright (c) 2023-PRESENT ESLint Stylistic contributors
+@vitejs/devtools,dev,MIT,"Copyright (c) 2025-present, VoidZero Inc. and contributors"
 @yao-pkg/pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 syncpack,dev,MIT,Copyright (c) 2017-2023 Jamie Mason
 tsdown,dev,MIT,Copyright (c) 2025-present VoidZero Inc. & Contributors
+vite,dev,MIT,"Copyright (c) 2019-present, VoidZero Inc. and Vite contributors"

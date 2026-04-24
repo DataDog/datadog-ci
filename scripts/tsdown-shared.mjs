@@ -140,6 +140,8 @@ export const createPluginInjections = ({pluginCommandsByScope}) => {
   ]
 }
 
+export const isDevtoolsEnabled = () => process.env.DEVTOOLS === 'true'
+
 export const createOutExtensions = (jsExtension) => () => ({js: jsExtension})
 
 export const createOutputOptions = () => ({
@@ -151,8 +153,51 @@ export const createOutputOptions = () => ({
 
 export const formatBundleSizeMb = (totalBytes) => (totalBytes / 1024 / 1024).toFixed(2)
 
+export const formatModuleSize = (bytes) => {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+  }
+
+  return `${(bytes / 1024).toFixed(1)} kB`
+}
+
 const getBundledDependencyNames = (bundles) =>
   [...new Set(bundles.flatMap((bundle) => [...bundle.inlinedDeps.keys()]))].sort((a, b) => a.localeCompare(b))
+
+const getPackageNameFromModuleId = (moduleId) => {
+  const normalized = moduleId.replaceAll(path.sep, '/')
+  const nmIdx = normalized.lastIndexOf('/node_modules/')
+  if (nmIdx === -1) {
+    return
+  }
+  const afterNm = normalized.slice(nmIdx + '/node_modules/'.length)
+  const [first, second] = afterNm.split('/')
+
+  return first.startsWith('@') && second ? `${first}/${second}` : first
+}
+
+const getTopModulesBySize = (bundles, topN = 10) => {
+  const sizeByPackage = new Map()
+  for (const bundle of bundles) {
+    for (const chunk of bundle.chunks) {
+      if (!('modules' in chunk)) {
+        continue
+      }
+      for (const [moduleId, moduleInfo] of Object.entries(chunk.modules)) {
+        const packageName = getPackageNameFromModuleId(moduleId)
+        if (!packageName) {
+          continue
+        }
+        sizeByPackage.set(packageName, (sizeByPackage.get(packageName) ?? 0) + moduleInfo.renderedLength)
+      }
+    }
+  }
+
+  return [...sizeByPackage.entries()]
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, topN)
+    .map(([name, bytes]) => ({name, bytes}))
+}
 
 export const writeLegalFiles = async (outputPaths, bundles) => {
   const packageNames = getBundledDependencyNames(bundles)
@@ -180,5 +225,6 @@ export const summarizeBundle = (bundles) => {
   return {
     totalBytes,
     bundledDependencies: getBundledDependencyNames(bundles),
+    topModules: getTopModulesBySize(bundles),
   }
 }
