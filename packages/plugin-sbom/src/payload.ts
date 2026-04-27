@@ -42,6 +42,7 @@ import {
   PACKAGE_MANAGER_PROPERTY_KEY,
   REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
   TARGET_FRAMEWORK_KEY,
+  VERSION_CONSTRAINT_KEY,
 } from './constants'
 import {getLanguageFromComponent} from './language'
 
@@ -263,6 +264,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
   const targetFrameworks: string[] = []
   const reachableSymbolProperties: Property[] = []
   let opaque: boolean | undefined
+  let versionConstraint: boolean | undefined
 
   for (const property of component['properties'] ?? []) {
     const propertyName: string = property.name
@@ -286,7 +288,9 @@ const extractingDependency = (component: any): Dependency | undefined => {
     } else if (propertyName === TARGET_FRAMEWORK_KEY) {
       targetFrameworks.push(propertyValue)
     } else if (propertyName === OPAQUE_KEY) {
-      opaque = propertyValue.toLowerCase() === 'true' ? true : undefined
+      opaque = parseTrueOrUndefined(propertyValue)
+    } else if (propertyName === VERSION_CONSTRAINT_KEY) {
+      versionConstraint = parseTrueOrUndefined(propertyValue)
     } else if (
       propertyName.startsWith(LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX) ||
       propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)
@@ -326,6 +330,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     target_frameworks: targetFrameworks,
     exclusions: Array.from(exclusions),
     opaque,
+    version_constraint: versionConstraint,
   }
 
   return dependency
