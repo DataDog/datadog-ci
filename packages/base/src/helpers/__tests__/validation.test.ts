@@ -24,6 +24,9 @@ describe('validation', () => {
     expect(isValidDatadogSite('us5.datadoghq.com')).toBe(true)
     expect(isValidDatadogSite('US5.datadoghq.com')).toBe(true)
 
+    expect(isValidDatadogSite('us2.ddog-gov.com')).toBe(true)
+    expect(isValidDatadogSite('US2.ddog-gov.com')).toBe(true)
+
     process.env.DD_CI_BYPASS_SITE_VALIDATION = 'true'
 
     expect(isValidDatadogSite('')).toBe(true)
