@@ -1,0 +1,46 @@
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "version": 1,
+    "components": [
+        {
+            "bom-ref": "pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@11.0.21",
+            "type": "library",
+            "name": "org.apache.tomcat.embed:tomcat-embed-core",
+            "version": "11.0.21",
+            "purl": "pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@11.0.21",
+            "properties": [
+                {
+                    "name": "datadog:version-constraint",
+                    "value": "true"
+                },
+                {
+                    "name": "datadog:package-manager",
+                    "value": "Maven"
+                }
+            ],
+            "evidence": {
+                "occurrences": [
+                    {
+                        "location": "{\"block\":{\"file_name\":\"pom.xml\",\"line_start\":12,\"line_end\":17,\"column_start\":7,\"column_end\":22},\"name\":{\"file_name\":\"pom.xml\",\"line_start\":13,\"line_end\":14,\"column_start\":9,\"column_end\":50},\"version\":{\"file_name\":\"pom.xml\",\"line_start\":15,\"line_end\":15,\"column_start\":18,\"column_end\":25}}"
+                    }
+                ]
+            }
+        },
+        {
+            "bom-ref": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+            "type": "library",
+            "name": "com.fasterxml.jackson.core:jackson-databind",
+            "version": "2.9.10",
+            "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.9.10",
+            "properties": [
+                {
+                    "name": "datadog:package-manager",
+                    "value": "Maven"
+                }
+            ]
+        }
+    ],
+    "vulnerabilities": []
+}

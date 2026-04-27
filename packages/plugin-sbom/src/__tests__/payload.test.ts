@@ -586,6 +586,44 @@ describe('generation of payload', () => {
     expect(dependencies[1].opaque).toBeUndefined()
   })
 
+  test('should correctly set version_constraint flag and preserve locations from evidence.occurrences', async () => {
+    const sbomFile = './src/__tests__/fixtures/sbom-with-version-constraint.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(2)
+    const dependencies = payload!.dependencies
+
+    // First component has the version-constraint marker
+    expect(dependencies[0].name).toEqual('org.apache.tomcat.embed:tomcat-embed-core')
+    expect(dependencies[0].version).toEqual('11.0.21')
+    expect(dependencies[0].version_constraint).toStrictEqual(true)
+    expect(dependencies[0].package_manager).toEqual('Maven')
+
+    // Verify that evidence.occurrences location data is preserved
+    expect(dependencies[0].locations).toHaveLength(1)
+    expect(dependencies[0].locations![0].block!.file_name).toEqual('pom.xml')
+    expect(dependencies[0].locations![0].block!.start.line).toEqual(12)
+    expect(dependencies[0].locations![0].block!.start.col).toEqual(7)
+    expect(dependencies[0].locations![0].block!.end.line).toEqual(17)
+    expect(dependencies[0].locations![0].block!.end.col).toEqual(22)
+    expect(dependencies[0].locations![0].name!.file_name).toEqual('pom.xml')
+    expect(dependencies[0].locations![0].name!.start.line).toEqual(13)
+    expect(dependencies[0].locations![0].version!.file_name).toEqual('pom.xml')
+    expect(dependencies[0].locations![0].version!.start.line).toEqual(15)
+
+    // Second component does not have the version-constraint marker
+    expect(dependencies[1].name).toEqual('com.fasterxml.jackson.core:jackson-databind')
+    expect(dependencies[1].version_constraint).toBeUndefined()
+  })
+
   test('should fail to read git information', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
     const config: DatadogCiConfig = {

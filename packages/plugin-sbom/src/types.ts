@@ -101,6 +101,7 @@ export interface Dependency {
   exclusions: undefined | string[]
   target_frameworks: undefined | string[]
   opaque: undefined | boolean
+  version_constraint: undefined | boolean
 }
 
 export interface ReachableSymbolLocationValue extends LocationFromFile {

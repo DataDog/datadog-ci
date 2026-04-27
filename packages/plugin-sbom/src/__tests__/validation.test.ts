@@ -98,6 +98,7 @@ describe('validation of sbom file', () => {
         exclusions: undefined,
         target_frameworks: undefined,
         opaque: undefined,
+        version_constraint: undefined,
       })
     ).toBeFalsy()
     expect(
@@ -116,6 +117,7 @@ describe('validation of sbom file', () => {
         exclusions: undefined,
         target_frameworks: undefined,
         opaque: undefined,
+        version_constraint: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -134,6 +136,7 @@ describe('validation of sbom file', () => {
         exclusions: undefined,
         target_frameworks: undefined,
         opaque: undefined,
+        version_constraint: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -152,6 +155,7 @@ describe('validation of sbom file', () => {
         exclusions: undefined,
         target_frameworks: undefined,
         opaque: undefined,
+        version_constraint: undefined,
       })
     ).toBeTruthy()
   })
