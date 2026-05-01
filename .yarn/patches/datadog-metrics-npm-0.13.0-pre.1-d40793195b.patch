@@ -1,0 +1,41 @@
+diff --git a/lib/reporters.js b/lib/reporters.js
+index ebde40f910026af9503179a89ca29057310d88f7..0f093f78651d86532945915cfe799c1dc1c730f6 100644
+--- a/lib/reporters.js
++++ b/lib/reporters.js
+@@ -1,5 +1,5 @@
+ 'use strict';
+-const { fetch } = require('cross-fetch');
++const { fetch, EnvHttpProxyAgent } = require('undici');
+ const { AuthorizationError, DatadogMetricsError, HttpError } = require('./errors');
+ const { logDebug, logDeprecation } = require('./logging');
+ 
+@@ -34,6 +34,7 @@ class HttpApi {
+         this.maxRetries = options.maxRetries;
+         this.backoffBase = options.backoffBase;
+         this.backoffMultiplier = 2;
++        this.dispatcher = new EnvHttpProxyAgent();
+     }
+ 
+     async send(url, options) {
+@@ -42,7 +43,7 @@ class HttpApi {
+             let response, body, error;
+             try {
+                 logDebug(`Sending HTTP request to "${url}"`);
+-                response = await fetch(url, options);
++                response = await fetch(url, {...options, dispatcher: this.dispatcher});
+                 body = await response.json();
+             } catch (e) {
+                 error = e;
+diff --git a/package.json b/package.json
+index 4dc60548b5f86bf4cf7a3ed354a9768a8bc38da7..4b77c5e012cc583c122c0ff91821c5260ac1ce10 100644
+--- a/package.json
++++ b/package.json
+@@ -40,7 +40,7 @@
+     "typescript": "^4.8.4"
+   },
+   "dependencies": {
+-    "cross-fetch": "^4.0.0",
++    "undici": "7.24.6",
+     "debug": "^4.1.0"
+   },
+   "engines": {
