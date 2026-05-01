@@ -50,6 +50,6 @@
     "fast-xml-parser": "5.5.9",
     "form-data": "4.0.4",
     "upath": "2.0.1",
-    "uuid": "9.0.1"
+    "uuid": "14.0.0"
   }
 }
