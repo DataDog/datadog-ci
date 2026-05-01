@@ -10,7 +10,9 @@ import {
   REPO_ROOT,
   createOutExtensions,
   createOutputOptions,
+  isDevtoolsEnabled,
   formatBundleSizeMb,
+  formatModuleSize,
   summarizeBundle,
   writeLegalFiles,
 } from './tsdown-shared.mjs'
@@ -104,6 +106,7 @@ try {
     platform: 'node',
     clean: false,
     sourcemap: true,
+    devtools: isDevtoolsEnabled(),
     outExtensions: createOutExtensions('.js'),
     outputOptions: createOutputOptions(),
     deps: {
@@ -183,6 +186,10 @@ try {
   console.log(chalk.bold.green(`  ${pluginName} bundle(s) completed successfully`))
   console.log(`  Bundled dependencies: ${summary.bundledDependencies.length}`)
   console.log(`  Bundle size: ${formatBundleSizeMb(summary.totalBytes)} MB`)
+  console.log('  Top modules by size:')
+  for (const {name, bytes} of summary.topModules) {
+    console.log(`    ${name}: ${formatModuleSize(bytes)}`)
+  }
 } catch (error) {
   console.error(chalk.red(`Failed to bundle ${pluginName}:`), error)
   process.exit(1)
