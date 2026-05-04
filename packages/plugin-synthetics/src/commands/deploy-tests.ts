@@ -7,7 +7,6 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {LogLevel, Logger} from '@datadog/datadog-ci-base/helpers/logger'
 import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '@datadog/datadog-ci-base/helpers/utils'
 import deepExtend from 'deep-extend'
 
@@ -24,10 +23,6 @@ export class PluginCommand extends SyntheticsDeployTestsCommand {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
-
-  protected logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
 
   public static getDefaultConfig(): DeployTestsCommandConfig {
     return {
@@ -80,7 +75,7 @@ export class PluginCommand extends SyntheticsDeployTestsCommand {
     try {
       await deployTests(this.reporter, this.config)
     } catch (error) {
-      this.logger.error(`Error: ${error.message}`)
+      this.reporter.error(`Error: ${error.message}`)
 
       return 1
     }
