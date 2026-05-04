@@ -51,6 +51,16 @@
       "range": "~"
     },
     {
+      "label": "Pin jest-diff to patch-only in base package (30.3.0 causes EBADF crash on Node 24 Windows)",
+      "packages": [
+        "@datadog/datadog-ci-base"
+      ],
+      "dependencies": [
+        "jest-diff"
+      ],
+      "range": "~"
+    },
+    {
       "label": "Use ^ ranges for base package dependencies (published as library, users manage their own lockfiles)",
       "packages": [
         "@datadog/datadog-ci-base"
