@@ -21,7 +21,7 @@ import {
   renderSuccessfulRequest,
 } from '../renderer'
 
-const nonRetriableErrorCodes = [400, 403]
+const nonRetriableErrorCodes = [400, 401, 403]
 
 export class PluginCommand extends DoraDeploymentCommand {
   private config = {

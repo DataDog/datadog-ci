@@ -1,6 +1,6 @@
 import retry from 'async-retry'
 
-const errorCodesNoRetry = [400, 403, 413]
+const errorCodesNoRetry = [400, 401, 403, 413]
 
 export const retryRequest = async <T>(
   requestPerformer: (bail?: (e: Error) => void, attempt?: number) => Promise<T>,
