@@ -41,6 +41,16 @@
       "range": "^"
     },
     {
+      "label": "Pin simple-git to patch-only in base package (3.34+ introduced argv-parser with Windows subprocess issues)",
+      "packages": [
+        "@datadog/datadog-ci-base"
+      ],
+      "dependencies": [
+        "simple-git"
+      ],
+      "range": "~"
+    },
+    {
       "label": "Use ^ ranges for base package dependencies (published as library, users manage their own lockfiles)",
       "packages": [
         "@datadog/datadog-ci-base"
