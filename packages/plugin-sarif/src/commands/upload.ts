@@ -136,7 +136,9 @@ export class PluginCommand extends SarifUploadCommand {
         () => api.uploadSarifReport(sarifReport, this.context.stdout.write.bind(this.context.stdout)),
         {
           onRetry: (e, attempt) => {
-            this.context.stderr.write(renderRetriedUpload(sarifReport, e.message, attempt))
+            this.context.stderr.write(
+              renderRetriedUpload(sarifReport, e instanceof Error ? e.message : String(e), attempt)
+            )
           },
           retries: 5,
         }
