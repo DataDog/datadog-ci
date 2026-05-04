@@ -73,7 +73,7 @@ export const upload =
     opts.onUpload()
     try {
       await retryRequest(() => uploadMultipart(requestBuilder, payload, opts.useGzip ?? false), {
-        onRetry: opts.onRetry,
+        onRetry: opts.onRetry as ((e: unknown, attempt: number) => any) | undefined,
         retries: opts.retries,
       })
 

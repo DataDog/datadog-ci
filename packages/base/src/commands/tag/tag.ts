@@ -177,7 +177,9 @@ export class TagCommand extends BaseCommand {
         minTimeout: 5000,
         onRetry: (e, attempt) => {
           this.context.stderr.write(
-            chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${e.message}\n`)
+            chalk.yellow(
+              `[attempt ${attempt}] Could not send tags. Retrying...: ${e instanceof Error ? e.message : String(e)}\n`
+            )
           )
         },
         retries: 5,
