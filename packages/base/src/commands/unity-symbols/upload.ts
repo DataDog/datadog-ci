@@ -302,7 +302,7 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
             metricsLogger.logger.increment('failed', 1)
           },
           onRetry: (e, attempts) => {
-            this.context.stdout.write(renderRetriedUpload(soFileName, e.message, attempts))
+            this.context.stdout.write(renderRetriedUpload(soFileName, (e as Error).message, attempts))
             metricsLogger.logger.increment('retries', 1)
           },
           onUpload: () => {
@@ -375,7 +375,7 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
         metricsLogger.logger.increment('failed', 1)
       },
       onRetry: (e, attempts) => {
-        this.context.stdout.write(renderRetriedUpload(il2cppMappingPath, e.message, attempts))
+        this.context.stdout.write(renderRetriedUpload(il2cppMappingPath, (e as Error).message, attempts))
         metricsLogger.logger.increment('retries', 1)
       },
       onUpload: () => {

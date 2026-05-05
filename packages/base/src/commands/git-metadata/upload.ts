@@ -187,7 +187,7 @@ export class GitMetadataUploadCommand extends BaseCommand {
             opts.metricsLogger.logger.increment('sci.failed', 1)
           },
           onRetry: (e, attempt) => {
-            this.logger.warn(renderRetriedUpload(e.message, attempt))
+            this.logger.warn(renderRetriedUpload((e as Error).message, attempt))
             opts.metricsLogger.logger.increment('sci.retries', 1)
           },
           onUpload: () => {

@@ -50,7 +50,7 @@ export interface UploadOptions {
 
   /** Callback to execute before retries
    */
-  onRetry(error: Error, attempts: number): void
+  onRetry(error: unknown, attempts: number): void
 
   /** Callback to execute before upload.
    */
@@ -73,7 +73,7 @@ export const upload =
     opts.onUpload()
     try {
       await retryRequest(() => uploadMultipart(requestBuilder, payload, opts.useGzip ?? false), {
-        onRetry: opts.onRetry as ((e: unknown, attempt: number) => any) | undefined,
+        onRetry: opts.onRetry,
         retries: opts.retries,
       })
 

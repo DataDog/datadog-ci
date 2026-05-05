@@ -369,7 +369,7 @@ export class DsymsUploadCommand extends BaseCommand {
           metricsLogger.logger.increment('failed', 1)
         },
         onRetry: (e, attempts) => {
-          this.context.stdout.write(renderRetriedUpload(dsym, e.message, attempts))
+          this.context.stdout.write(renderRetriedUpload(dsym, (e as Error).message, attempts))
           metricsLogger.logger.increment('retries', 1)
         },
         onUpload: () => {
