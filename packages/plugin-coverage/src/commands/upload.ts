@@ -402,7 +402,7 @@ export class PluginCommand extends CoverageUploadCommand {
       this.logger.info(renderUpload(codeCoverageReport))
       await retryRequest(() => api.uploadCodeCoverageReport(codeCoverageReport), {
         onRetry: (e, attempt) => {
-          this.context.stderr.write(renderRetriedUpload(codeCoverageReport, e.message, attempt))
+          this.context.stderr.write(renderRetriedUpload(codeCoverageReport, (e as Error).message, attempt))
         },
         retries: 5,
       })

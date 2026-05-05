@@ -165,7 +165,7 @@ export class MeasureCommand extends BaseCommand {
       await retryRequest(doRequest, {
         onRetry: (e, attempt) => {
           this.context.stderr.write(
-            chalk.yellow(`[attempt ${attempt}] Could not send measures. Retrying...: ${e.message}\n`)
+            chalk.yellow(`[attempt ${attempt}] Could not send measures. Retrying...: ${(e as Error).message}\n`)
           )
         },
         retries: 5,

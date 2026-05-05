@@ -88,7 +88,7 @@ export const resolveConfigFromFileAndEnvironment = async <
   return deepExtend(configFromFile, removeUndefinedValues(environment))
 }
 
-export const resolveConfigFromFile = async <T>(
+export const resolveConfigFromFile = async <T extends object>(
   baseConfig: T,
   params: {configPath?: string; defaultConfigPaths?: string[]}
 ): Promise<T> => {
@@ -98,7 +98,7 @@ export const resolveConfigFromFile = async <T>(
   }
   const parsedConfig = await getConfig(resolvedConfigPath)
 
-  return deepExtend(baseConfig, parsedConfig)
+  return deepExtend(baseConfig, parsedConfig ?? {}) as unknown as T
 }
 
 type ProxyType =

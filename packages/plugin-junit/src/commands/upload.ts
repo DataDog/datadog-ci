@@ -310,7 +310,7 @@ export class PluginCommand extends JunitUploadCommand {
       this.logger.info(renderUpload(jUnitXML))
       await retryRequest(() => api.uploadJUnitXML(jUnitXML), {
         onRetry: (e, attempt) => {
-          this.context.stderr.write(renderRetriedUpload(jUnitXML, e.message, attempt))
+          this.context.stderr.write(renderRetriedUpload(jUnitXML, (e as Error).message, attempt))
         },
         retries: 5,
       })

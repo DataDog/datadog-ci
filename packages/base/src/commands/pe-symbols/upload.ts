@@ -458,7 +458,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
             metricsLogger.logger.increment('failed', 1)
           },
           onRetry: (e, attempts) => {
-            this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, e.message, attempts))
+            this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, (e as Error).message, attempts))
             metricsLogger.logger.increment('retries', 1)
           },
           onUpload: () => {

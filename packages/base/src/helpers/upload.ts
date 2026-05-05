@@ -50,7 +50,7 @@ export interface UploadOptions {
 
   /** Callback to execute before retries
    */
-  onRetry(error: Error, attempts: number): void
+  onRetry(error: unknown, attempts: number): void
 
   /** Callback to execute before upload.
    */

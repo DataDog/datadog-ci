@@ -440,7 +440,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
           metricsLogger.logger.increment('failed', 1)
         },
         onRetry: (e, attempts) => {
-          this.context.stdout.write(renderRetriedUpload(sourcemap, e.message, attempts))
+          this.context.stdout.write(renderRetriedUpload(sourcemap, (e as Error).message, attempts))
           metricsLogger.logger.increment('retries', 1)
         },
         onUpload: () => {
