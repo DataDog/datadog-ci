@@ -115,7 +115,7 @@ jobs:
         with:
           sparse-checkout: |
             e2e/
-            jest.config-e2e.mjs
+            jest.config-e2e.js
           sparse-checkout-cone-mode: false
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -157,6 +157,7 @@ jobs:
           }' > package.json
 
           yarn set version stable
+          yarn config set nodeLinker node-modules
           yarn install --no-immutable
       - name: Azure login (OIDC)
         if: needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true'
@@ -166,7 +167,7 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID_E2E }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
       - name: Run e2e tests
-        run: yarn jest --config jest.config-e2e.mjs --colors
+        run: yarn jest --config jest.config-e2e.js --colors
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
@@ -244,7 +245,7 @@ jobs:
         with:
           sparse-checkout: |
             e2e/
-            jest.config-e2e.mjs
+            jest.config-e2e.js
           sparse-checkout-cone-mode: false
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -286,9 +287,10 @@ jobs:
           }' > package.json
 
           yarn set version stable
+          yarn config set nodeLinker node-modules
           yarn install --no-immutable
       - name: Run e2e tests
-        run: yarn jest --config jest.config-e2e.mjs --colors
+        run: yarn jest --config jest.config-e2e.js --colors
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}

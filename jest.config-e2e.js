@@ -1,7 +1,7 @@
 // For a detailed explanation regarding each configuration property, visit:
 // https://jestjs.io/docs/en/configuration.html
 
-import {readFileSync} from 'node:fs'
+const {readFileSync} = require('node:fs')
 
 // Load e2e/.env.local if it exists (gitignored, for local overrides)
 try {
@@ -14,7 +14,7 @@ try {
 } catch {}
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-export default {
+module.exports = {
   preset: 'ts-jest',
   transform: {
     '^.+\\.tsx?$': [
