@@ -698,7 +698,7 @@
       "BITRISE_BUILD_SLUG": "bitrise-pipeline-id",
       "BITRISE_BUILD_URL": "https://bitrise-build-url.com//",
       "BITRISE_GIT_MESSAGE": "bitrise-git-commit-message",
-      "BITRISE_PULL_REQUEST": 42,
+      "BITRISE_PULL_REQUEST": "42",
       "BITRISE_TRIGGERED_WORKFLOW_ID": "bitrise-pipeline-name",
       "GIT_CLONE_COMMIT_HASH": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123"
     },

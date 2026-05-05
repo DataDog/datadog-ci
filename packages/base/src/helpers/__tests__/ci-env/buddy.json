@@ -494,7 +494,7 @@
       "BUDDY_PIPELINE_ID": "456",
       "BUDDY_PIPELINE_NAME": "Deploy to Production",
       "BUDDY_RUN_PR_BASE_BRANCH": "target-branch",
-      "BUDDY_RUN_PR_NO": 42,
+      "BUDDY_RUN_PR_NO": "42",
       "BUDDY_SCM_URL": "https://github.com/buddyworks/my-project.git"
     },
     {

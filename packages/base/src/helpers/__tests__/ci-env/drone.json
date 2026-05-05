@@ -44,7 +44,7 @@
       "DRONE_COMMIT_MESSAGE": "Updated README.md",
       "DRONE_COMMIT_SHA": "bcdd4bf0245c82c060407b3b24b9b87301d15ac1",
       "DRONE_GIT_HTTP_URL": "https://github.com/octocat/hello-world.git",
-      "DRONE_PULL_REQUEST": 42,
+      "DRONE_PULL_REQUEST": "42",
       "DRONE_STAGE_NAME": "build",
       "DRONE_STEP_NAME": "build_backend",
       "DRONE_TAG": "v1.0.0",

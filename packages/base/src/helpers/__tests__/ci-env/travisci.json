@@ -551,7 +551,7 @@
       "TRAVIS_COMMIT_MESSAGE": "travis-commit-message",
       "TRAVIS_EVENT_TYPE": "pull_request",
       "TRAVIS_JOB_WEB_URL": "https://travisci.com/job",
-      "TRAVIS_PULL_REQUEST": 42,
+      "TRAVIS_PULL_REQUEST": "42",
       "TRAVIS_PULL_REQUEST_BRANCH": "pr",
       "TRAVIS_PULL_REQUEST_SHA": "724faca55efebf66fc15bfccc34577c64c5480bd",
       "TRAVIS_REPO_SLUG": "user/repo"

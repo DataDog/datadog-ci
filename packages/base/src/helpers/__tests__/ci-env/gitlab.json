@@ -1081,7 +1081,7 @@
       "CI_JOB_STAGE": "gitlab-stage-name",
       "CI_JOB_URL": "https://gitlab.com/job",
       "CI_MERGE_REQUEST_DIFF_BASE_SHA": "bf6c156e8c1ec9cf43239162bca38cad22a3f4d2",
-      "CI_MERGE_REQUEST_IID": 42,
+      "CI_MERGE_REQUEST_IID": "42",
       "CI_MERGE_REQUEST_TARGET_BRANCH_NAME": "target-branch",
       "CI_MERGE_REQUEST_TARGET_BRANCH_SHA": "eb6dda23983998409db832ad675ec18ec32a8205",
       "CI_PIPELINE_ID": "gitlab-pipeline-id",
