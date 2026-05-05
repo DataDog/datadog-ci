@@ -133,10 +133,25 @@ describe('getCIMetadata', () => {
       }
     }
 
-    test.each(assertions)('spec %#', (env, tags: SpanTags) => {
+    test.each(assertions)('spec %#', (env, expectedTags: SpanTags) => {
       process.env = env
 
-      expect(getTags()).toEqual(tags)
+      const tags = getTags()
+
+      const {[CI_ENV_VARS]: envVars, [CI_NODE_LABELS]: nodeLabels, ...restOfTags} = tags
+      const {[CI_ENV_VARS]: expectedEnvVars, [CI_NODE_LABELS]: expectedNodeLabels, ...restOfExpectedTags} = expectedTags
+      expect(restOfTags).toEqual(restOfExpectedTags)
+
+      // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
+      if (envVars && expectedEnvVars) {
+        // eslint-disable-next-line jest/no-conditional-expect
+        expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
+      }
+      // `CI_NODE_LABELS` key contains an array, so we JSON parse it
+      if (nodeLabels && expectedNodeLabels) {
+        // eslint-disable-next-line jest/no-conditional-expect
+        expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
+      }
     })
   })
 

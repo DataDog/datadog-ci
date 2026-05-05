@@ -164,7 +164,7 @@
       "CF_BUILD_ID": "6410367cee516146a4c4c66e",
       "CF_BUILD_URL": "https://g.codefresh.io/build/6410367cee516146a4c4c66e",
       "CF_PIPELINE_NAME": "My simple project/Example Java Project Pipeline",
-      "CF_PULL_REQUEST_NUMBER": 42,
+      "CF_PULL_REQUEST_NUMBER": "42",
       "CF_PULL_REQUEST_TARGET": "target-branch",
       "CF_STEP_NAME": "mah-job-name"
     },

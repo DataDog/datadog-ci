@@ -906,7 +906,7 @@
       "BUILD_NUMBER": "jenkins-pipeline-number",
       "BUILD_TAG": "jenkins-pipeline-id",
       "BUILD_URL": "https://jenkins.com/pipeline",
-      "CHANGE_ID": 42,
+      "CHANGE_ID": "42",
       "CHANGE_TARGET": "target-branch",
       "DD_CUSTOM_TRACE_ID": "jenkins-custom-trace-id",
       "GIT_COMMIT": "b9f0fb3fdbb94c9d24b2c75b49663122a529e123",

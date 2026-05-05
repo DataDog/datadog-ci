@@ -447,6 +447,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       GITHUB_RUN_ATTEMPT,
       DD_GITHUB_JOB_NAME,
       GITHUB_BASE_REF,
+      JOB_CHECK_RUN_ID,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
@@ -456,12 +457,16 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       pipelineURL += `/attempts/${GITHUB_RUN_ATTEMPT}`
     }
 
+    // GitHub exposes the numeric job ID via JOB_CHECK_RUN_ID. Prefer it over the
+    // log-scraped fallback when available.
+    const githubJobID = JOB_CHECK_RUN_ID ?? fallbackGithubJobID
+
     tags = {
       [CI_JOB_NAME]: GITHUB_JOB,
-      [CI_JOB_ID]: fallbackGithubJobID ?? GITHUB_JOB,
+      [CI_JOB_ID]: githubJobID ?? GITHUB_JOB,
       [CI_JOB_URL]: filterSensitiveInfoFromRepository(
-        fallbackGithubJobID
-          ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/job/${fallbackGithubJobID}`
+        githubJobID
+          ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/job/${githubJobID}`
           : `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
       ),
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
