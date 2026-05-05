@@ -3,6 +3,7 @@ import type {DeploymentEvent} from '../interfaces'
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as gitFunctions from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 
+import * as apiModule from '../api'
 import {PluginCommand as DORADeploymentCommand} from '../commands/deployment'
 
 describe('deployment', () => {
@@ -144,6 +145,26 @@ describe('execute', () => {
       ])
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
+    })
+
+    test('exits non-zero and does not show success on 401', async () => {
+      const mockError = Object.assign(new Error('Request failed with status code 401'), {
+        isRequestError: true,
+        response: {status: 401, statusText: 'Unauthorized'},
+      })
+      const mockApi = {sendDeploymentEvent: jest.fn().mockRejectedValue(mockError)}
+      jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+      // prettier-ignore
+      const {context, code} = await runCLI([
+        '--service', 'test-service',
+        '--skip-git',
+        '--started-at', '1699960648',
+      ], {DATADOG_API_KEY: 'invalid'})
+
+      expect(code).not.toBe(0)
+      expect(context.stdout.toString()).not.toContain('Successfully')
+      expect(mockApi.sendDeploymentEvent).toHaveBeenCalledTimes(1)
     })
 
     test('started-at after finished-at is rejected', async () => {
