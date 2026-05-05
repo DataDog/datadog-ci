@@ -86,7 +86,7 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
         minTimeout: 5000,
         onRetry: (e, attempt) => {
           this.logger.warn(
-            `[attempt ${attempt}] Could not send correlation event. Retrying...: ${e instanceof Error ? e.message : String(e)}\n`
+            `[attempt ${attempt}] Could not send correlation event. Retrying...: ${(e as Error).message}\n`
           )
         },
         retries: 5,

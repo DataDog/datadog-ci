@@ -124,9 +124,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
       await retryRequest(() => api.reportCustomSpan(payload), {
         onRetry: (e, attempt) => {
           this.context.stderr.write(
-            chalk.yellow(
-              `[attempt ${attempt}] Could not report custom span. Retrying...: ${e instanceof Error ? e.message : String(e)}\n`
-            )
+            chalk.yellow(`[attempt ${attempt}] Could not report custom span. Retrying...: ${(e as Error).message}\n`)
           )
         },
         retries: 5,

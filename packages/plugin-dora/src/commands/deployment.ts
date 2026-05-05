@@ -131,7 +131,7 @@ export class PluginCommand extends DoraDeploymentCommand {
       this.logger.info(renderRequest(this.service))
       await retryRequest(() => api.sendDeploymentEvent(deployment), {
         onRetry: (e, attempt) => {
-          this.logger.warn(renderRetriedRequest(this.service, e instanceof Error ? e : new Error(String(e)), attempt))
+          this.logger.warn(renderRetriedRequest(this.service, e as Error, attempt))
         },
         retries: 5,
       })

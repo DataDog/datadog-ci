@@ -130,7 +130,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
         minTimeout: 5000,
         onRetry: (e, attempt) => {
           this.logger.warn(
-            `[attempt ${attempt}] Could not send deployment correlation data. Retrying...: ${e instanceof Error ? e.message : String(e)}\n`
+            `[attempt ${attempt}] Could not send deployment correlation data. Retrying...: ${(e as Error).message}\n`
           )
         },
         retries: 5,

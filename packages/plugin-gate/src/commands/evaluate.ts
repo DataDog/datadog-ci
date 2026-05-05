@@ -124,7 +124,7 @@ export class PluginCommand extends GateEvaluateCommand {
     return retryRequest((bail, attempt) => this.evaluateRulesWithWait(api, evaluateRequest, attempt, bail), {
       onRetry: (e, attempt) => {
         // render retry message if error is not wait
-        if (!(e instanceof Error) || e.message !== 'wait') {
+        if ((e as Error).message !== 'wait') {
           this.context.stderr.write(renderEvaluationRetry(attempt, e))
         }
       },

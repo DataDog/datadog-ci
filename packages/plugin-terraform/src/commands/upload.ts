@@ -155,7 +155,7 @@ export class PluginCommand extends TerraformUploadCommand {
       } else {
         await retryRequest(() => api.uploadTerraformArtifact(payload), {
           onRetry: (e, attempt) => {
-            this.logger.warn(`Retry attempt ${attempt} for ${filePath}: ${e instanceof Error ? e.message : String(e)}`)
+            this.logger.warn(`Retry attempt ${attempt} for ${filePath}: ${(e as Error).message}`)
           },
           retries: 5,
         })
