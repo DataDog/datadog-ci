@@ -3,19 +3,19 @@ import {createGzip} from 'zlib'
 
 import type {Payload} from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
+import type {v4 as UUIDv4} from 'uuid'
 
 import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 import upath from 'upath'
-import {v4 as uuidv4} from 'uuid'
 
 export const intakeUrl = getIntakeUrl('cireport-intake')
 export const apiUrl = getApiUrl()
 
 export const uploadJUnitXML =
-  (request: (args: RequestConfig) => Promise<RequestResponse>) => async (jUnitXML: Payload) => {
+  (request: (args: RequestConfig) => Promise<RequestResponse>, uuidv4: typeof UUIDv4) => async (jUnitXML: Payload) => {
     const form = new FormData()
 
     let fileName
@@ -62,10 +62,10 @@ export const uploadJUnitXML =
     })
   }
 
-export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
+export const apiConstructor = (baseIntakeUrl: string, apiKey: string, uuidv4: typeof UUIDv4) => {
   const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})
 
   return {
-    uploadJUnitXML: uploadJUnitXML(requestIntake),
+    uploadJUnitXML: uploadJUnitXML(requestIntake, uuidv4),
   }
 }

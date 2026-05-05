@@ -113,7 +113,7 @@ export class PluginCommand extends JunitUploadCommand {
       }
     }
 
-    const api = this.getApiHelper()
+    const api = await this.getApiHelper()
 
     // Normalizing the basePath to resolve .. and .
     this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
@@ -178,7 +178,9 @@ export class PluginCommand extends JunitUploadCommand {
     await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
   }
 
-  private getApiHelper(): APIHelper {
+  private async getApiHelper(): Promise<APIHelper> {
+    const {v4: uuidv4} = await import('uuid')
+
     if (!this.config.apiKey) {
       this.logger.error(
         `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.`
@@ -186,7 +188,7 @@ export class PluginCommand extends JunitUploadCommand {
       throw new Error('API key is missing')
     }
 
-    return apiConstructor(intakeUrl, this.config.apiKey)
+    return apiConstructor(intakeUrl, this.config.apiKey, uuidv4)
   }
 
   private parseXPathTags(rawXPathTags: string[]): Record<string, string> {
