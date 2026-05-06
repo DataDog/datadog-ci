@@ -146,12 +146,12 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@types/async-retry": "^1.4.8",
-    "@types/debug": "^4.1.12",
-    "@types/deep-extend": "^0.4.31",
-    "@types/inquirer": "^8.2.6",
-    "@types/js-yaml": "^4.0.9",
-    "@types/semver": "^7.7.1",
-    "@types/tiny-async-pool": "^2.0.3"
+    "@types/async-retry": "1.4.9",
+    "@types/debug": "4.1.12",
+    "@types/deep-extend": "0.4.31",
+    "@types/inquirer": "8.2.6",
+    "@types/js-yaml": "4.0.9",
+    "@types/semver": "7.7.1",
+    "@types/tiny-async-pool": "2.0.3"
   }
 }
