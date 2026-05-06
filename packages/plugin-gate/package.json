@@ -46,7 +46,6 @@
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
-    "@types/uuid": "11.0.0",
     "chalk": "3.0.0",
     "uuid": "14.0.0"
   }

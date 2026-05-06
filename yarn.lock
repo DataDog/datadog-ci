@@ -1708,7 +1708,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
-    "@types/uuid": "npm:11.0.0"
     chalk: "npm:3.0.0"
     uuid: "npm:14.0.0"
   languageName: unknown
@@ -1778,7 +1777,6 @@ __metadata:
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
-    "@types/uuid": "npm:11.0.0"
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
     chalk: "npm:3.0.0"
@@ -4439,15 +4437,6 @@ __metadata:
   version: 4.0.5
   resolution: "@types/tough-cookie@npm:4.0.5"
   checksum: 10/01fd82efc8202670865928629697b62fe9bf0c0dcbc5b1c115831caeb073a2c0abb871ff393d7df1ae94ea41e256cb87d2a5a91fd03cdb1b0b4384e08d4ee482
-  languageName: node
-  linkType: hard
-
-"@types/uuid@npm:11.0.0":
-  version: 11.0.0
-  resolution: "@types/uuid@npm:11.0.0"
-  dependencies:
-    uuid: "npm:*"
-  checksum: 10/9f94bd34e5d220c53cc58ea9f48a0061d3bc343e29bc33a17edc705f5e21fedda21553318151f2bc227c2b2b03727bbb536da2b82a61f84d2e1ca38abc5e5c3f
   languageName: node
   linkType: hard
 
@@ -11753,7 +11742,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:*, uuid@npm:14.0.0":
+"uuid@npm:14.0.0":
   version: 14.0.0
   resolution: "uuid@npm:14.0.0"
   bin:

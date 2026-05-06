@@ -47,7 +47,6 @@
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "@types/jest": "29.5.3",
-    "@types/uuid": "11.0.0",
     "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
     "chalk": "3.0.0",

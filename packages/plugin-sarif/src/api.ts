@@ -3,8 +3,8 @@ import {createGzip} from 'zlib'
 
 import type {Payload} from './interfaces'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
+import type {UUIDv4} from '@datadog/datadog-ci-base/helpers/types'
 import type {Writable} from 'stream'
-import type {v4 as UUIDv4} from 'uuid'
 
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -13,7 +13,7 @@ import FormData from 'form-data'
 import {renderUpload} from './renderer'
 
 export const uploadSarifReport =
-  (request: (args: RequestConfig) => Promise<RequestResponse>, uuidv4: typeof UUIDv4) =>
+  (request: (args: RequestConfig) => Promise<RequestResponse>, uuidv4: UUIDv4) =>
   async (sarifReport: Payload, write: Writable['write']) => {
     const form = new FormData()
     write(renderUpload(sarifReport))
@@ -40,7 +40,7 @@ export const uploadSarifReport =
     })
   }
 
-export const apiConstructor = (baseIntakeUrl: string, apiKey: string, uuidv4: typeof UUIDv4) => {
+export const apiConstructor = (baseIntakeUrl: string, apiKey: string, uuidv4: UUIDv4) => {
   const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})
 
   return {
