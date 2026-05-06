@@ -17,12 +17,12 @@ const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
   describe('getApiHelper', () => {
-    test('should throw an error if API key is undefined', () => {
+    test('should throw an error if API key is undefined', async () => {
       process.env = {}
       const write = jest.fn()
       const command = createCommand(JunitUploadCommand, {stdout: {write}})
 
-      expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
+      await expect(command['getApiHelper']()).rejects.toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
   })
