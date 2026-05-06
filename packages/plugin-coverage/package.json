@@ -49,7 +49,7 @@
     "chalk": "3.0.0",
     "fast-xml-parser": "5.5.12",
     "form-data": "4.0.4",
-    "simple-git": "3.33.0",
+    "simple-git": "3.36.0",
     "upath": "2.0.1"
   }
 }
