@@ -14,7 +14,6 @@ import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import chalk from 'chalk'
-import {v4 as uuidv4} from 'uuid'
 
 import {apiConstructor} from '../api'
 import {
@@ -69,6 +68,7 @@ export class PluginCommand extends GateEvaluateCommand {
 
     const userScope = this.userScope ? parseScope(this.userScope) : {}
 
+    const {v4: uuidv4} = await import('uuid')
     const startTimeMs = new Date().getTime()
     const payload = {
       requestId: uuidv4(),

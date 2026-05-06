@@ -87,7 +87,7 @@ export class PluginCommand extends SarifUploadCommand {
       this.config.env = this.env
     }
 
-    const api = this.getApiHelper()
+    const api = await this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
     this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
 
@@ -148,7 +148,9 @@ export class PluginCommand extends SarifUploadCommand {
     }
   }
 
-  private getApiHelper(): APIHelper {
+  private async getApiHelper(): Promise<APIHelper> {
+    const {v4: uuidv4} = await import('uuid')
+
     if (!this.config.apiKey) {
       this.context.stdout.write(
         `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
@@ -156,7 +158,7 @@ export class PluginCommand extends SarifUploadCommand {
       throw new Error('API key is missing')
     }
 
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey)
+    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey, uuidv4)
   }
 
   private async getMatchingSarifReports(spanTags: SpanTags): Promise<Payload[]> {
