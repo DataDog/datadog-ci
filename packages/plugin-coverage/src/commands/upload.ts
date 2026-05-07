@@ -182,8 +182,9 @@ export class PluginCommand extends CoverageUploadCommand {
   private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
     const flags = this.getFlags()
 
-    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS)
-    const codeowners = await this.getRepoFile(CODEOWNERS_PATHS)
+    const reportedCommit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS, reportedCommit)
+    const codeowners = await this.getRepoFile(CODEOWNERS_PATHS, reportedCommit)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
     const fileFixes = await this.getFileFixes()
@@ -237,19 +238,19 @@ export class PluginCommand extends CoverageUploadCommand {
     }
   }
 
-  private async getRepoFile(possiblePaths: string[]): Promise<RepoFile | undefined> {
-    if (!this.git) {
+  private async getRepoFile(possiblePaths: string[], ref: string | undefined): Promise<RepoFile | undefined> {
+    if (!this.git || !ref) {
       return undefined
     }
 
     for (const path of possiblePaths) {
       try {
-        const sha = await getGitFileHash(this.git, path)
+        const sha = await getGitFileHash(this.git, path, ref)
         if (sha) {
           return {path, sha}
         }
       } catch (e) {
-        this.logger.debug(`Error while trying to get repo file ${path} details: ${e}`)
+        this.logger.debug(`Error while trying to get repo file ${path} details at ${ref}: ${e}`)
       }
     }
 
