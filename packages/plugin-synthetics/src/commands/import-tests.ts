@@ -7,13 +7,14 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {LogLevel, Logger} from '@datadog/datadog-ci-base/helpers/logger'
 import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '@datadog/datadog-ci-base/helpers/utils'
 import deepExtend from 'deep-extend'
 
 import {CiError} from '../errors'
 import {importTests} from '../import-tests-lib'
+import {DefaultReporter} from '../reporters/default'
 import {getDefaultConfig} from '../utils/internal'
+import {getReporter} from '../utils/public'
 
 export class PluginCommand extends SyntheticsImportTestsCommand {
   protected reporter!: MainReporter
@@ -23,14 +24,10 @@ export class PluginCommand extends SyntheticsImportTestsCommand {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
-  protected logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
-
   public static getDefaultConfig(): ImportTestsCommandConfig {
     return {
       ...getDefaultConfig(),
-      files: [],
+      files: ['local-test-definitions.json'],
       publicIds: [],
       testSearchQuery: '',
     }
@@ -38,6 +35,9 @@ export class PluginCommand extends SyntheticsImportTestsCommand {
 
   protected async setup() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
+    // Bootstrap reporter
+    this.reporter = getReporter([new DefaultReporter(this)])
 
     // Load config
     await this.resolveConfig()
@@ -73,7 +73,7 @@ export class PluginCommand extends SyntheticsImportTestsCommand {
     try {
       await importTests(this.reporter, this.config)
     } catch (error) {
-      this.logger.error(`Error: ${(error as Error).message}`)
+      this.reporter.error(`Error: ${(error as Error).message}`)
 
       return 1
     }
