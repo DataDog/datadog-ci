@@ -184,7 +184,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `sourcemaps`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/sourcemaps) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/sourcemaps/README.md) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/)</sub>
 
 - `upload`: Upload JavaScript sourcemaps for Error Tracking.
 
