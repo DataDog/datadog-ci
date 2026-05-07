@@ -3,7 +3,7 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import path from 'upath'
 
-import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
+import {getCommitInfo, getGitFileHash, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
 interface MockConfig {
   hash?: string
@@ -142,6 +142,28 @@ describe('git', () => {
       jest.spyOn(mock, 'revparse').mockResolvedValue('1234')
 
       await expect(newSimpleGit()).resolves.not.toThrow()
+    })
+  })
+
+  describe('getGitFileHash', () => {
+    test('resolves the blob against HEAD by default', async () => {
+      const mock = createMockSimpleGit({hash: 'blob-sha'}) as any
+      const revparse = jest.spyOn(mock, 'revparse')
+
+      const sha = await getGitFileHash(mock, 'code-coverage.datadog.yml')
+
+      expect(sha).toBe('blob-sha')
+      expect(revparse).toHaveBeenCalledWith(['HEAD:code-coverage.datadog.yml'])
+    })
+
+    test('resolves the blob against the provided ref', async () => {
+      const mock = createMockSimpleGit({hash: 'blob-sha'}) as any
+      const revparse = jest.spyOn(mock, 'revparse')
+
+      const sha = await getGitFileHash(mock, 'code-coverage.datadog.yml', 'deadbeef')
+
+      expect(sha).toBe('blob-sha')
+      expect(revparse).toHaveBeenCalledWith(['deadbeef:code-coverage.datadog.yml'])
     })
   })
 })

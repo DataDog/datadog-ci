@@ -244,6 +244,57 @@ describe('upload', () => {
     })
   })
 
+  describe('getRepoFile', () => {
+    test('returns undefined when no git is available', async () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = undefined
+
+      const result = await command['getRepoFile'].call(command, ['code-coverage.datadog.yml'], 'deadbeef')
+
+      expect(result).toBeUndefined()
+    })
+
+    test('returns undefined when no commit ref is available', async () => {
+      // Without a commit ref, the (commit, path, file_sha) triple sent to the
+      // splitter cannot be made consistent, so we must not ship a blob sha.
+      const revparse = jest.fn()
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = {revparse} as any
+
+      const result = await command['getRepoFile'].call(command, ['code-coverage.datadog.yml'], undefined)
+
+      expect(result).toBeUndefined()
+      expect(revparse).not.toHaveBeenCalled()
+    })
+
+    test('resolves the blob sha against the provided ref', async () => {
+      const revparse = jest.fn().mockResolvedValue('blob-sha')
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = {revparse} as any
+
+      const result = await command['getRepoFile'].call(command, ['code-coverage.datadog.yml'], 'deadbeef')
+
+      expect(result).toEqual({path: 'code-coverage.datadog.yml', sha: 'blob-sha'})
+      expect(revparse).toHaveBeenCalledWith(['deadbeef:code-coverage.datadog.yml'])
+    })
+
+    test('falls through to the next path when the first does not exist at ref', async () => {
+      const revparse = jest.fn().mockRejectedValueOnce(new Error('does not exist')).mockResolvedValueOnce('blob-sha')
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = {revparse} as any
+
+      const result = await command['getRepoFile'].call(
+        command,
+        ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml'],
+        'deadbeef'
+      )
+
+      expect(result).toEqual({path: 'code-coverage.datadog.yaml', sha: 'blob-sha'})
+      expect(revparse).toHaveBeenNthCalledWith(1, ['deadbeef:code-coverage.datadog.yml'])
+      expect(revparse).toHaveBeenNthCalledWith(2, ['deadbeef:code-coverage.datadog.yaml'])
+    })
+  })
+
   describe('getFlags', () => {
     test('should return undefined when no flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
