@@ -64,6 +64,10 @@ const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datad
 
 const CODEOWNERS_PATHS = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
 
+// The head SHA the payload carries on the wire (api.ts spreads `...payload.spanTags`,
+// so this matches what the splitter reads as `coalesce(HeadSHA, SHA)`).
+const getReportedCommitSha = (spanTags: SpanTags): string | undefined => spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+
 export class PluginCommand extends CoverageUploadCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -182,7 +186,7 @@ export class PluginCommand extends CoverageUploadCommand {
   private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
     const flags = this.getFlags()
 
-    const reportedCommit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    const reportedCommit = getReportedCommitSha(spanTags)
     const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS, reportedCommit)
     const codeowners = await this.getRepoFile(CODEOWNERS_PATHS, reportedCommit)
     const commitDiff = await this.getCommitDiff(spanTags)
@@ -277,7 +281,7 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private async getHeadAndBase(spanTags: SpanTags): Promise<{headSha?: string; baseSha?: string}> {
-    const headSha = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    const headSha = getReportedCommitSha(spanTags)
     if (!headSha) {
       return {}
     }
@@ -311,7 +315,7 @@ export class PluginCommand extends CoverageUploadCommand {
       return undefined
     }
 
-    const commit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    const commit = getReportedCommitSha(spanTags)
     if (!commit) {
       return undefined
     }
