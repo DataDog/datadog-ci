@@ -3,7 +3,10 @@ import crypto from 'node:crypto'
 import {verifyInstrumented, verifyUninstrumented} from './helpers/container-app-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
-const describeOrSkip = process.env.SKIP_CONTAINER_APP_TESTS === 'true' ? describe.skip : describe
+const describeOrSkip =
+  process.env.SKIP_CONTAINER_APP_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true'
+    ? describe.skip
+    : describe
 
 describeOrSkip('container-app', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
