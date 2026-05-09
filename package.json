@@ -7,9 +7,9 @@
     "check-licenses": "node bin/check-licenses.js",
     "check-npm-packages": "bin/check-npm-packages.sh",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
-    "compare-binary-size": "FORCE_COLOR=1 node bin/compare-binary-size.js",
+    "compare-binary-size": "FORCE_COLOR=1 node scripts/compare-binary-size.mjs",
     "dev": "yarn tsc:build --watch",
-    "dist-standalone": "FORCE_COLOR=1 yarn bundle:sea && pkg --sea packages/datadog-ci/dist/bundle.js",
+    "dist-standalone": "FORCE_COLOR=1 yarn bundle:sea && node scripts/build-sea.mjs",
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
     "e2e:test": "jest --config ./jest.config-e2e.js --colors",
     "format": "yarn lint:all --fix",
@@ -48,7 +48,6 @@
     "@microsoft/eslint-formatter-sarif": "3.1.0",
     "@stylistic/eslint-plugin": "5.3.1",
     "@types/node": "20.19.37",
-    "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch",
     "chalk": "3.0.0",
     "dd-trace": "5.99.1",
     "eslint": "9.34.0",
@@ -85,9 +84,6 @@
   },
   "packageManager": "yarn@4.10.3",
   "private": true,
-  "resolutions": {
-    "@yao-pkg/pkg-fetch@npm:3.5.24": "patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch"
-  },
   "volta": {
     "node": "20.19.0",
     "yarn": "4.10.3"
