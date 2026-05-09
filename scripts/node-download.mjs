@@ -5,7 +5,7 @@ import {pipeline} from 'node:stream/promises'
 
 export const NODE_VERSION = 'v26.1.0'
 export const NODE_DOWNLOAD_BASE_URL = 'https://nodejs.org/dist'
-export const PKG_FETCH_RELEASE = 'https://github.com/Drarig29/pkg-fetch/releases/download/v1.3'
+export const PKG_FETCH_RELEASE = 'https://github.com/Drarig29/pkg-fetch/releases/download/v1.0'
 
 export const downloadToFile = async (url, destPath) => {
   const response = await fetch(url)
