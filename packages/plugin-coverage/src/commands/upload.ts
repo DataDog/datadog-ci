@@ -64,6 +64,10 @@ const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datad
 
 const CODEOWNERS_PATHS = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
 
+// The head SHA the payload carries on the wire (api.ts spreads `...payload.spanTags`,
+// so this matches what the splitter reads as `coalesce(HeadSHA, SHA)`).
+const getReportedCommitSha = (spanTags: SpanTags): string | undefined => spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+
 export class PluginCommand extends CoverageUploadCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -182,8 +186,9 @@ export class PluginCommand extends CoverageUploadCommand {
   private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
     const flags = this.getFlags()
 
-    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS)
-    const codeowners = await this.getRepoFile(CODEOWNERS_PATHS)
+    const reportedCommit = getReportedCommitSha(spanTags)
+    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS, reportedCommit)
+    const codeowners = await this.getRepoFile(CODEOWNERS_PATHS, reportedCommit)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
     const fileFixes = await this.getFileFixes()
@@ -237,19 +242,19 @@ export class PluginCommand extends CoverageUploadCommand {
     }
   }
 
-  private async getRepoFile(possiblePaths: string[]): Promise<RepoFile | undefined> {
-    if (!this.git) {
+  private async getRepoFile(possiblePaths: string[], ref: string | undefined): Promise<RepoFile | undefined> {
+    if (!this.git || !ref) {
       return undefined
     }
 
     for (const path of possiblePaths) {
       try {
-        const sha = await getGitFileHash(this.git, path)
+        const sha = await getGitFileHash(this.git, path, ref)
         if (sha) {
           return {path, sha}
         }
       } catch (e) {
-        this.logger.debug(`Error while trying to get repo file ${path} details: ${e}`)
+        this.logger.debug(`Error while trying to get repo file ${path} details at ${ref}: ${e}`)
       }
     }
 
@@ -276,7 +281,7 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private async getHeadAndBase(spanTags: SpanTags): Promise<{headSha?: string; baseSha?: string}> {
-    const headSha = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    const headSha = getReportedCommitSha(spanTags)
     if (!headSha) {
       return {}
     }
@@ -310,7 +315,7 @@ export class PluginCommand extends CoverageUploadCommand {
       return undefined
     }
 
-    const commit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    const commit = getReportedCommitSha(spanTags)
     if (!commit) {
       return undefined
     }
