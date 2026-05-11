@@ -511,12 +511,22 @@ jobs:
       - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node22-linux-x64 -o datadog-ci_linux-x64
-      - name: Remove src and dist folders to check that binary can stand alone
-        run: yarn rimraf --glob 'packages/*/{src,dist}'
-      - name: Test generated standalone binary
-        run: yarn dist-standalone:test
       - name: Compare binary sizes
         run: yarn compare-binary-size datadog-ci_linux-x64
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+      - name: E2E tests
+        run: yarn e2e:test
+        env:
+          DATADOG_CI_COMMAND: ./datadog-ci_linux-x64
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
 
   standalone-binary-test-ubuntu-arm:
     name: Test standalone binary in ARM ubuntu
@@ -535,12 +545,22 @@ jobs:
       - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node22-linux-arm64 -o datadog-ci_linux-arm64
-      - name: Remove src and dist folders to check that binary can stand alone
-        run: yarn rimraf --glob 'packages/*/{src,dist}'
-      - name: Test generated standalone binary
-        run: yarn dist-standalone:test
       - name: Compare binary sizes
         run: yarn compare-binary-size datadog-ci_linux-arm64
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+      - name: E2E tests
+        run: yarn e2e:test
+        env:
+          DATADOG_CI_COMMAND: ./datadog-ci_linux-arm64
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
 
   standalone-binary-test-windows:
     name: Test standalone binary in windows
@@ -555,12 +575,22 @@ jobs:
       - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node22-win-x64 -o datadog-ci_win-x64
-      - name: Remove src and dist folders to check that binary can stand alone
-        run: yarn rimraf --glob 'packages/*/{src,dist}'
-      - name: Test generated standalone binary
-        run: yarn dist-standalone:test
       - name: Compare binary sizes
         run: yarn compare-binary-size datadog-ci_win-x64.exe
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+      - name: E2E tests
+        run: yarn e2e:test
+        env:
+          DATADOG_CI_COMMAND: .\\datadog-ci_win-x64.exe
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
@@ -577,12 +607,22 @@ jobs:
       - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node22-macos-x64 -o datadog-ci_darwin-x64
-      - name: Remove src and dist folders to check that binary can stand alone
-        run: yarn rimraf --glob 'packages/*/{src,dist}'
-      - name: Test generated standalone binary
-        run: yarn dist-standalone:test
       - name: Compare binary sizes
         run: yarn compare-binary-size datadog-ci_darwin-x64
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+      - name: E2E tests
+        run: yarn e2e:test
+        env:
+          DATADOG_CI_COMMAND: ./datadog-ci_darwin-x64
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
 
   standalone-binary-test-macos-arm:
     name: Test standalone binary in ARM macOS
@@ -597,12 +637,22 @@ jobs:
       - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node22-macos-arm64 -o datadog-ci_darwin-arm64
-      - name: Remove src and dist folders to check that binary can stand alone
-        run: yarn rimraf --glob 'packages/*/{src,dist}'
-      - name: Test generated standalone binary
-        run: yarn dist-standalone:test
       - name: Compare binary sizes
         run: yarn compare-binary-size datadog-ci_darwin-arm64
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+      - name: E2E tests
+        run: yarn e2e:test
+        env:
+          DATADOG_CI_COMMAND: ./datadog-ci_darwin-arm64
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest

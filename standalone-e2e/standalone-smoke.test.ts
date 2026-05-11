@@ -2,26 +2,6 @@ import child_process from 'node:child_process'
 
 import {version} from '../packages/datadog-ci/package.json'
 
-const execPromise = async (command: string): Promise<{exitCode: number; stdout: string; stderr: string}> => {
-  return new Promise((resolve) => {
-    child_process.exec(command, (error, stdout, stderr) => {
-      if (error) {
-        resolve({
-          exitCode: error.code || 1,
-          stdout: stdout.trim(),
-          stderr: stderr.trim(),
-        })
-      } else {
-        resolve({
-          exitCode: 0,
-          stdout: stdout.trim(),
-          stderr: stderr.trim(),
-        })
-      }
-    })
-  })
-}
-
 const isWin = process.platform === 'win32'
 const os = isWin ? 'win' : process.platform === 'darwin' ? 'darwin' : 'linux'
 
@@ -29,7 +9,46 @@ const isARM = process.arch === 'arm64'
 const arch = isARM ? 'arm64' : 'x64'
 
 const STANDALONE_BINARY = `datadog-ci_${os}-${arch}`
-const STANDALONE_BINARY_PATH = isWin ? `.\\${STANDALONE_BINARY}.exe` : `./${STANDALONE_BINARY}`
+const STANDALONE_BINARY_PATH =
+  process.env.STANDALONE_BINARY_PATH ?? (isWin ? `.\\${STANDALONE_BINARY}.exe` : `./${STANDALONE_BINARY}`)
+
+const execBinary = async (
+  args: string[]
+): Promise<{exitCode?: number; error?: string; stdout: string; stderr: string}> => {
+  return new Promise((resolve) => {
+    child_process.execFile(STANDALONE_BINARY_PATH, args, (error, stdout, stderr) => {
+      const trimmedStdout = stdout.trim()
+      const trimmedStderr = stderr.trim()
+
+      if (error) {
+        if (error.signal) {
+          resolve({
+            error:
+              error.signal === 'SIGSEGV'
+                ? `The tested binary was terminated by a segmentation fault (${error.signal}).`
+                : `The tested binary was terminated by ${error.signal}`,
+            stdout: trimmedStdout,
+            stderr: trimmedStderr,
+          })
+
+          return
+        }
+
+        resolve({
+          exitCode: typeof error.code === 'number' ? error.code : 1,
+          stdout: trimmedStdout,
+          stderr: trimmedStderr,
+        })
+      } else {
+        resolve({
+          exitCode: 0,
+          stdout: trimmedStdout,
+          stderr: trimmedStderr,
+        })
+      }
+    })
+  })
+}
 
 const timeoutPerPlatform: Record<typeof os, number> = {
   // Some macOS agents sometimes run slower, making this test suite flaky on macOS only.
@@ -46,14 +65,14 @@ describe('standalone binary', () => {
 
   describe('version', () => {
     it('can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} version`)
+      const result = await execBinary(['version'])
       // .slice(1) to remove the "v"
       expect(result.stdout.slice(1)).toStrictEqual(version)
     })
   })
   describe('dsyms', () => {
     it('upload can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} dsyms upload --help`)
+      const result = await execBinary(['dsyms', 'upload', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci dsyms upload') as string,
@@ -63,7 +82,7 @@ describe('standalone binary', () => {
   })
   describe('git-metadata', () => {
     it('upload can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} git-metadata upload --help`)
+      const result = await execBinary(['git-metadata', 'upload', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci git-metadata upload') as string,
@@ -73,7 +92,7 @@ describe('standalone binary', () => {
   })
   describe('junit', () => {
     it('upload can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} junit upload --help`)
+      const result = await execBinary(['junit', 'upload', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci junit upload') as string,
@@ -83,7 +102,7 @@ describe('standalone binary', () => {
   })
   describe('lambda', () => {
     it('instrument can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} lambda instrument --help`)
+      const result = await execBinary(['lambda', 'instrument', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci lambda instrument') as string,
@@ -93,7 +112,7 @@ describe('standalone binary', () => {
   })
   describe('sourcemaps', () => {
     it('upload can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} sourcemaps upload --help`)
+      const result = await execBinary(['sourcemaps', 'upload', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci sourcemaps upload') as string,
@@ -103,7 +122,7 @@ describe('standalone binary', () => {
   })
   describe('stepfunctions', () => {
     it('instrument can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions instrument --help`)
+      const result = await execBinary(['stepfunctions', 'instrument', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci stepfunctions instrument') as string,
@@ -112,7 +131,7 @@ describe('standalone binary', () => {
     })
 
     it('uninstrument can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions uninstrument --help`)
+      const result = await execBinary(['stepfunctions', 'uninstrument', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci stepfunctions uninstrument') as string,
@@ -122,7 +141,7 @@ describe('standalone binary', () => {
   })
   describe('synthetics', () => {
     it('run-tests can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} synthetics run-tests --help`)
+      const result = await execBinary(['synthetics', 'run-tests', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci synthetics run-tests') as string,
@@ -131,7 +150,7 @@ describe('standalone binary', () => {
     })
 
     it('plugin can be loaded', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} plugin check synthetics run-tests`)
+      const result = await execBinary(['plugin', 'check', 'synthetics', 'run-tests'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('All plugins are already baked into the standalone binary.') as string,
@@ -141,7 +160,7 @@ describe('standalone binary', () => {
   })
   describe('trace', () => {
     it('can be called', async () => {
-      const result = await execPromise(`${STANDALONE_BINARY_PATH} trace --help`)
+      const result = await execBinary(['trace', '--help'])
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci trace') as string,

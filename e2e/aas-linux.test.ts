@@ -3,7 +3,8 @@ import crypto from 'node:crypto'
 import {verifyLinuxInstrumented, verifyLinuxUninstrumented} from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
-const describeOrSkip = process.env.SKIP_AAS_TESTS === 'true' ? describe.skip : describe
+const describeOrSkip =
+  process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
 
 describeOrSkip('aas (Linux)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
