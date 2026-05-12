@@ -108,13 +108,13 @@ The following `<scope>` and `<command>` values are available.
 
 #### `dsyms`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/dsyms) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/dsyms) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)</sub>
 
 - `upload`: Upload iOS dSYM files for Error Tracking (macOS only).
 
 #### `flutter-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/flutter-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/flutter-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)</sub>
 
 - `upload`: Upload Flutter symbols for Error Tracking.
 
@@ -138,7 +138,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `junit`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/junit) | **Documentation:** [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/junit) | **Documentation:** [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)</sub>
 
 - `upload`: Upload JUnit test reports for Test Visibility.
 
@@ -152,19 +152,19 @@ The following `<scope>` and `<command>` values are available.
 
 #### `measure`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/measure) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/measure) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)</sub>
 
 - Add measures to a CI Visibility pipeline trace or job span in Datadog.
 
 #### `pe-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/pe-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/pe-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
 
 - `upload`: Upload Windows PE debug info files for Profiling.
 
 #### `react-native`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/react-native) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/react-native) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)</sub>
 
 - `codepush`: Upload React Native CodePush sourcemaps for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
 - `upload`: Upload React Native sourcemaps for Error Tracking. 
@@ -184,7 +184,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `sourcemaps`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/sourcemaps) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/sourcemaps) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/)</sub>
 
 - `upload`: Upload JavaScript sourcemaps for Error Tracking.
 
@@ -216,13 +216,13 @@ The following `<scope>` and `<command>` values are available.
 
 #### `trace`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>
 
 - Add custom commands to a CI Visibility pipeline in Datadog.
 
 #### `unity-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/unity-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/unity/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/unity-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/unity/)</sub>
 
 - `upload`: Upload Unity symbols for Error Tracking.
 
@@ -241,7 +241,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 #### `elf-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
 
 - `upload`: Upload Elf debug info files for Profiling.
 
