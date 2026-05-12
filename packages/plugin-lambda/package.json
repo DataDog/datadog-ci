@@ -53,10 +53,10 @@
     "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
   "peerDependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.981.0",
-    "@aws-sdk/client-iam": "^3.981.0",
-    "@aws-sdk/client-lambda": "^3.981.0",
-    "@aws-sdk/credential-providers": "^3.981.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.1045.0",
+    "@aws-sdk/client-iam": "^3.1045.0",
+    "@aws-sdk/client-lambda": "^3.1045.0",
+    "@aws-sdk/credential-providers": "^3.1045.0",
     "@smithy/property-provider": "2.2.0",
     "@smithy/util-retry": "2.2.0"
   },
@@ -81,12 +81,12 @@
     }
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "3.981.0",
-    "@aws-sdk/client-iam": "3.981.0",
-    "@aws-sdk/client-lambda": "3.981.0",
-    "@aws-sdk/credential-provider-ini": "3.972.9",
-    "@aws-sdk/credential-providers": "3.981.0",
-    "@aws-sdk/types": "3.973.1",
+    "@aws-sdk/client-cloudwatch-logs": "3.1045.0",
+    "@aws-sdk/client-iam": "3.1045.0",
+    "@aws-sdk/client-lambda": "3.1045.0",
+    "@aws-sdk/credential-provider-ini": "3.972.38",
+    "@aws-sdk/credential-providers": "3.1045.0",
+    "@aws-sdk/types": "3.973.8",
     "@datadog/datadog-ci-base": "workspace:*",
     "@smithy/property-provider": "2.2.0",
     "@smithy/util-retry": "2.2.0",
