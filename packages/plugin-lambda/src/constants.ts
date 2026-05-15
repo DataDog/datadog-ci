@@ -40,6 +40,7 @@ export const LAYER_LOOKUP = {
   'ruby3.2': 'Datadog-Ruby3-2',
   'ruby3.3': 'Datadog-Ruby3-3',
   'ruby3.4': 'Datadog-Ruby3-4',
+  'ruby4.0': 'Datadog-Ruby4-0',
 } as const
 
 export enum RuntimeType {
@@ -78,6 +79,7 @@ export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   'ruby3.2': RuntimeType.RUBY,
   'ruby3.3': RuntimeType.RUBY,
   'ruby3.4': RuntimeType.RUBY,
+  'ruby4.0': RuntimeType.RUBY,
 }
 
 export type LayerKey = keyof typeof LAYER_LOOKUP
@@ -96,6 +98,7 @@ export const ARM_LAYERS = [
   'ruby3.2',
   'ruby3.3',
   'ruby3.4',
+  'ruby4.0',
 ]
 export const ARM64_ARCHITECTURE = 'arm64'
 export const ARM_LAYER_SUFFIX = '-ARM'
