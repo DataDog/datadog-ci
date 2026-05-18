@@ -16,7 +16,7 @@ const sea = require('@yao-pkg/pkg/lib-es5/sea').default
 export const PKG_FETCH_RELEASE = 'https://github.com/Drarig29/pkg-fetch/releases/download/v1.0'
 
 const NODE_VERSIONS = {
-  node22: 'v22.22.2',
+  node22: 'v22.19.0',
 }
 
 const downloadToFile = async (url, destPath) => {
