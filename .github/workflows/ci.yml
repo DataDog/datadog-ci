@@ -590,7 +590,7 @@ jobs:
       - name: Create standalone binary
         run: yarn dist-standalone -t node22-win-x64 -o datadog-ci_win-x64
       - name: Compare binary sizes
-        run: yarn compare-binary-size datadog-ci_win-x64
+        run: yarn compare-binary-size datadog-ci_win-x64.exe
       - name: Remove src and dist folders to check that binary can stand alone
         run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Smoke tests
@@ -598,7 +598,7 @@ jobs:
       - name: E2E tests
         run: yarn e2e:test
         env:
-          DATADOG_CI_COMMAND: .\\datadog-ci_win-x64
+          DATADOG_CI_COMMAND: .\\datadog-ci_win-x64.exe
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
@@ -610,7 +610,7 @@ jobs:
         if: always()
         with:
           name: standalone-binary-win-x64
-          path: .\datadog-ci_win-x64
+          path: ./datadog-ci_win-x64.exe
           if-no-files-found: error
 
   standalone-binary-test-macos:

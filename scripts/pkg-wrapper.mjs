@@ -133,5 +133,9 @@ if (!values.t || !values.o) {
 }
 
 console.log(chalk.bold.green(`\nRunning ${process.argv.join(' ')}`))
+if (values.t.includes('-win-')) {
+  console.log(chalk.bold.green(`Adding .exe extension to output path`))
+  values.o = `${values.o}.exe`
+}
 const trimmedNodePath = await downloadTrimmedNodeBinary(values.t)
 await runPkg(trimmedNodePath, values.t, values.o)
