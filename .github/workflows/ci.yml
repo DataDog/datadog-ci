@@ -14,9 +14,6 @@ on:
     tags-ignore:
       - '**'
 
-env:
-  STANDALONE_NODE_VERSION: 22.19.0
-
 jobs:
   build-and-test:
     strategy:
@@ -509,7 +506,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: ${{ env.STANDALONE_NODE_VERSION }}
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -528,13 +525,6 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           IS_STANDALONE_BINARY: true
-      - name: Upload standalone binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        if: always()
-        with:
-          name: standalone-binary-linux-x64
-          path: ./datadog-ci_linux-x64
-          if-no-files-found: error
 
   standalone-binary-test-ubuntu-arm:
     name: Test standalone binary in ARM ubuntu
@@ -546,7 +536,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: ${{ env.STANDALONE_NODE_VERSION }}
+          node-version: 22.19.0
       - run: npm install -g yarn
         name: Install Yarn # Yarn is not installed by default in this runner
       - run: yarn install --immutable
@@ -567,13 +557,6 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           IS_STANDALONE_BINARY: true
-      - name: Upload standalone binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        if: always()
-        with:
-          name: standalone-binary-linux-arm64
-          path: ./datadog-ci_linux-arm64
-          if-no-files-found: error
 
   standalone-binary-test-windows:
     name: Test standalone binary in windows
@@ -583,7 +566,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: ${{ env.STANDALONE_NODE_VERSION }}
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -602,13 +585,6 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           IS_STANDALONE_BINARY: true
-      - name: Upload standalone binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        if: always()
-        with:
-          name: standalone-binary-win-x64
-          path: ./datadog-ci_win-x64.exe
-          if-no-files-found: error
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
@@ -620,9 +596,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          # Must be aligned to avoid version skew with blob generated with `--experimental-sea-config`
-          # See https://github.com/yao-pkg/pkg/discussions/236
-          node-version: ${{ env.STANDALONE_NODE_VERSION }}
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -641,13 +615,6 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           IS_STANDALONE_BINARY: true
-      - name: Upload standalone binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        if: always()
-        with:
-          name: standalone-binary-darwin-x64
-          path: ./datadog-ci_darwin-x64
-          if-no-files-found: error
 
   standalone-binary-test-macos-arm:
     name: Test standalone binary in ARM macOS
@@ -657,7 +624,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: ${{ env.STANDALONE_NODE_VERSION }}
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -676,13 +643,6 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
           IS_STANDALONE_BINARY: true
-      - name: Upload standalone binary artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        if: always()
-        with:
-          name: standalone-binary-darwin-arm64
-          path: ./datadog-ci_darwin-arm64
-          if-no-files-found: error
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest
@@ -723,7 +683,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22
+          node-version: 22.19.0
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable
