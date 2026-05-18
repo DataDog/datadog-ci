@@ -14,6 +14,9 @@ on:
     tags-ignore:
       - '**'
 
+env:
+  STANDALONE_NODE_VERSION: 22.22.2
+
 jobs:
   build-and-test:
     strategy:
@@ -506,7 +509,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -545,7 +548,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - run: npm install -g yarn
         name: Install Yarn # Yarn is not installed by default in this runner
       - run: yarn install --immutable
@@ -584,7 +587,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -623,7 +626,9 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          # Must be aligned to avoid version skew with blob generated with `--experimental-sea-config`
+          # See https://github.com/yao-pkg/pkg/discussions/236
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -660,7 +665,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -728,7 +733,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: 22
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable

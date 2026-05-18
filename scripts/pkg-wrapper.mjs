@@ -15,6 +15,7 @@ const sea = require('@yao-pkg/pkg/lib-es5/sea').default
 // Contains Node.js binaries built using `--with-intl=none`. See https://github.com/Drarig29/pkg-fetch
 export const PKG_FETCH_RELEASE = 'https://github.com/Drarig29/pkg-fetch/releases/download/v1.0'
 
+// Should be aligned with `STANDALONE_NODE_VERSION` in CI
 const NODE_VERSIONS = {
   node22: 'v22.19.0',
 }
@@ -51,12 +52,13 @@ const adHocSign = async (filePath) => {
  * @param {string} target Same target as `pkg` command. Example: `node22-macos-x64`.
  */
 const downloadTrimmedNodeBinary = async (target) => {
-  const [nodeVersion, platform, arch] = target.split('-')
-  if (!NODE_VERSIONS[nodeVersion] || !platform || !arch) {
+  const [nodeRange, platform, arch] = target.split('-')
+  const nodeVersion = NODE_VERSIONS[nodeRange]
+  if (!nodeVersion || !platform || !arch) {
     throw new Error(`Unsupported target "${target}"`)
   }
 
-  const assetFileName = `node-${NODE_VERSIONS[nodeVersion]}-${platform}-${arch}` // e.g. node-v22.22.2-macos-x64
+  const assetFileName = `node-${nodeVersion}-${platform}-${arch}` // e.g. node-v22.22.2-macos-x64
   const checksumFileName = `${assetFileName}.sha256sum`
   const assetUrl = `${PKG_FETCH_RELEASE}/${assetFileName}`
   const checksumUrl = `${PKG_FETCH_RELEASE}/${checksumFileName}`
