@@ -98,10 +98,15 @@ const toNodeTarget = (target, output) => {
 
 const runPkg = async (nodePath, target, output) =>
   sea('packages/datadog-ci/dist/bundle.js', {
-    // nodePath,
-    useLocalNode: true,
     signature: true,
     targets: [toNodeTarget(target, output)],
+    ...(target.includes('linux-x64')
+      ? {
+          useLocalNode: true,
+        }
+      : {
+          nodePath,
+        }),
   })
 
 const runCommand = (command, args, options = {}) =>
