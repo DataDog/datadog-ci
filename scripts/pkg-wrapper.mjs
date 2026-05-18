@@ -17,7 +17,7 @@ export const PKG_FETCH_RELEASE = 'https://github.com/Drarig29/pkg-fetch/releases
 
 // Should be aligned with `STANDALONE_NODE_VERSION` in CI
 const NODE_VERSIONS = {
-  node22: 'v22.19.0',
+  node22: 'v22.22.2',
 }
 
 const downloadToFile = async (url, destPath) => {

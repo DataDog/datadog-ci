@@ -10,7 +10,7 @@ permissions:
   contents: write # Required for the draft release
 
 env:
-  STANDALONE_NODE_VERSION: 22.19.0
+  STANDALONE_NODE_VERSION: 22.22.2
 
 jobs:
   create-draft-release:

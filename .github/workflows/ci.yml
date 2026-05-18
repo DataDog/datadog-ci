@@ -15,7 +15,7 @@ on:
       - '**'
 
 env:
-  STANDALONE_NODE_VERSION: 22.19.0
+  STANDALONE_NODE_VERSION: 22.22.2
 
 jobs:
   build-and-test:
