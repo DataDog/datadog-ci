@@ -9,6 +9,9 @@ permissions:
   id-token: write # For OIDC publishing with provenance and to federate tokens
   contents: write # Required for the draft release
 
+env:
+  STANDALONE_NODE_VERSION: 22.19.0
+
 jobs:
   create-draft-release:
     runs-on: ubuntu-latest
@@ -61,7 +64,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -109,7 +112,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - run: npm install -g yarn
         name: Install Yarn # Yarn is not installed by default in this runner
       - name: Install project dependencies
@@ -157,7 +160,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -206,7 +209,9 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          # Must be aligned to avoid version skew with blob generated with `--experimental-sea-config`
+          # See https://github.com/yao-pkg/pkg/discussions/236
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -252,7 +257,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: ${{ env.STANDALONE_NODE_VERSION }}
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -332,7 +337,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22.19.0
+          node-version: 22
       - run: yarn install --immutable --mode=skip-build
       - name: Lint packages
         run: yarn lint:packages

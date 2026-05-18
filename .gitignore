@@ -104,6 +104,7 @@ packages/datadog-ci/src/commands/react-native/__tests__/fixtures/with-sources-co
 .jest-cache/
 
 # Standalone binary built locally
+.sea
 datadog-ci_linux-x64
 datadog-ci_linux-arm64
 datadog-ci_win-x64
