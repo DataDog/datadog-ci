@@ -628,7 +628,7 @@ jobs:
         with:
           # Must be aligned to avoid version skew with blob generated with `--experimental-sea-config`
           # See https://github.com/yao-pkg/pkg/discussions/236
-          node-version: ${{ env.STANDALONE_NODE_VERSION }}
+          node-version: v22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
