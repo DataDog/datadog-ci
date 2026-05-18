@@ -6,7 +6,6 @@ const require = createRequire(import.meta.url)
 
 export const REPO_ROOT = path.resolve(import.meta.dirname, '..')
 
-const PACKAGEURL_STRINGS_PATH = path.join(REPO_ROOT, 'node_modules', 'packageurl-js', 'src', 'strings.js')
 const LICENSE_FILENAMES = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'license', 'License']
 
 const normalizePath = (filePath) => filePath.replaceAll(path.sep, '/')
@@ -64,27 +63,6 @@ const createVirtualModulesPlugin = (modules) => ({
   },
 })
 
-const createPackageUrlLocaleComparePlugin = () => ({
-  name: 'datadog-packageurl-locale-compare',
-  transform: (code, id) => {
-    if (normalizePath(id) !== normalizePath(PACKAGEURL_STRINGS_PATH)) {
-      return undefined
-    }
-
-    // We disabled Intl support for SEA builds to have smaller standalone binaries.
-    // As a result, we need to replace `Intl.Collator#compare` with `String#localeCompare`,
-    // and we keep the same behavior in all bundles for consistency.
-    // See https://nodejs.org/api/intl.html
-    return {
-      code: code.replace(
-        'const { compare: localeCompare } = new Intl.Collator()',
-        'const localeCompare = (a, b) => String(a).localeCompare(b)'
-      ),
-      map: undefined,
-    }
-  },
-})
-
 const buildInjectedPluginSubmodulesSource = (pluginCommandsByScope) => {
   const lines = []
   const scopeEntries = []
@@ -136,7 +114,6 @@ export const createPluginInjections = ({pluginCommandsByScope}) => {
         return
       },
     },
-    createPackageUrlLocaleComparePlugin(),
   ]
 }
 
