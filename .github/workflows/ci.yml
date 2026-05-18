@@ -529,9 +529,11 @@ jobs:
           IS_STANDALONE_BINARY: true
       - name: Upload standalone binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
         with:
           name: standalone-binary-linux-x64
           path: ./datadog-ci_linux-x64
+          if-no-files-found: error
 
   standalone-binary-test-ubuntu-arm:
     name: Test standalone binary in ARM ubuntu
@@ -568,9 +570,11 @@ jobs:
           IS_STANDALONE_BINARY: true
       - name: Upload standalone binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
         with:
           name: standalone-binary-linux-arm64
           path: ./datadog-ci_linux-arm64
+          if-no-files-found: error
 
   standalone-binary-test-windows:
     name: Test standalone binary in windows
@@ -603,9 +607,11 @@ jobs:
           IS_STANDALONE_BINARY: true
       - name: Upload standalone binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
         with:
           name: standalone-binary-win-x64
           path: .\datadog-ci_win-x64
+          if-no-files-found: error
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
@@ -640,9 +646,11 @@ jobs:
           IS_STANDALONE_BINARY: true
       - name: Upload standalone binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
         with:
           name: standalone-binary-darwin-x64
           path: ./datadog-ci_darwin-x64
+          if-no-files-found: error
 
   standalone-binary-test-macos-arm:
     name: Test standalone binary in ARM macOS
@@ -675,9 +683,11 @@ jobs:
           IS_STANDALONE_BINARY: true
       - name: Upload standalone binary artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
         with:
           name: standalone-binary-darwin-arm64
           path: ./datadog-ci_darwin-arm64
+          if-no-files-found: error
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest
