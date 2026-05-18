@@ -17,7 +17,7 @@ export const PKG_FETCH_RELEASE = 'https://github.com/Drarig29/pkg-fetch/releases
 
 // Should be aligned with `STANDALONE_NODE_VERSION` in CI
 const NODE_VERSIONS = {
-  node22: 'v22.22.2',
+  node22: 'v22.19.0',
 }
 
 const downloadToFile = async (url, destPath) => {
@@ -100,7 +100,13 @@ const runPkg = async (nodePath, target, output) =>
   sea('packages/datadog-ci/dist/bundle.js', {
     signature: true,
     targets: [toNodeTarget(target, output)],
-    nodePath,
+    ...(target.includes('linux-x64')
+      ? {
+          useLocalNode: true,
+        }
+      : {
+          nodePath,
+        }),
   })
 
 const runCommand = (command, args, options = {}) =>
