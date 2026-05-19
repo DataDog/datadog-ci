@@ -1,7 +1,13 @@
-jest.mock('inquirer')
+jest.mock('@inquirer/prompts', () => ({
+  checkbox: jest.fn(),
+  input: jest.fn(),
+  password: jest.fn(),
+  select: jest.fn(),
+}))
+
 import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {prompt} from 'inquirer'
+import {checkbox, input, password, select} from '@inquirer/prompts'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -21,76 +27,57 @@ import {
 
 import {mockAwsAccessKeyId, mockAwsSecretAccessKey} from './fixtures'
 
+const mockCheckbox = checkbox as jest.Mock
+const mockInput = input as jest.Mock
+const mockPassword = password as jest.Mock
+const mockSelect = select as jest.Mock
+
 describe('prompt', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
   describe('datadogApiKeyTypeQuestion', () => {
-    test('returns question with message pointing to the correct given site', async () => {
+    test('returns question with message pointing to the correct given site', () => {
       const site = 'datadoghq.com'
       const question = datadogApiKeyTypeQuestion(site)
-      expect(await question.message).toBe(
+      expect(question.message).toBe(
         `Which type of Datadog API Key you want to set? \nLearn more at https://app.${site}/organization-settings/api-keys`
       )
     })
   })
 
   describe('datadogEnvVarsQuestions', () => {
-    test('returns correct message when user selects DATADOG_API_KEY', async () => {
-      const datadogApiKeyType = {
-        envVar: CI_API_KEY_ENV_VAR,
-        message: 'API Key:',
-      }
-      const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(await question.message).toBe('API Key:')
-      expect(question.name).toBe(CI_API_KEY_ENV_VAR)
+    test('returns correct message when user selects DATADOG_API_KEY', () => {
+      const question = datadogEnvVarsQuestions({envVar: CI_API_KEY_ENV_VAR, message: 'API Key:'})
+      expect(question.message).toBe('API Key:')
     })
 
     test('validates DATADOG_API_KEY correctly', () => {
-      const datadogApiKeyType = {
-        envVar: CI_API_KEY_ENV_VAR,
-        message: 'API Key:',
-      }
-      const question = datadogEnvVarsQuestions(datadogApiKeyType)
+      const question = datadogEnvVarsQuestions({envVar: CI_API_KEY_ENV_VAR, message: 'API Key:'})
       expect(question.validate).not.toBeUndefined()
-
-      expect(question.validate!('')).not.toBe(true)
-      expect(question.validate!('123abc')).not.toBe(true)
-
-      expect(question.validate!('1234567890abcdef1200791a6a0de187')).toBe(true)
+      expect(question.validate('')).not.toBe(true)
+      expect(question.validate('123abc')).not.toBe(true)
+      expect(question.validate('1234567890abcdef1200791a6a0de187')).toBe(true)
     })
 
-    test('returns correct message when user selects DATADOG_KMS_API_KEY', async () => {
-      const datadogApiKeyType = {
-        envVar: CI_KMS_API_KEY_ENV_VAR,
-        message: 'KMS API Key:',
-      }
-      const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(await question.message).toBe('KMS API Key:')
-      expect(question.name).toBe(CI_KMS_API_KEY_ENV_VAR)
+    test('returns correct message when user selects DATADOG_KMS_API_KEY', () => {
+      const question = datadogEnvVarsQuestions({envVar: CI_KMS_API_KEY_ENV_VAR, message: 'KMS API Key:'})
+      expect(question.message).toBe('KMS API Key:')
     })
 
-    test('returns correct message when user selects DATADOG_API_KEY_SECRET_ARN', async () => {
-      const datadogApiKeyType = {
-        envVar: CI_API_KEY_SECRET_ARN_ENV_VAR,
-        message: 'API Key Secret ARN:',
-      }
-      const question = datadogEnvVarsQuestions(datadogApiKeyType)
-      expect(await question.message).toBe('API Key Secret ARN:')
-      expect(question.name).toBe(CI_API_KEY_SECRET_ARN_ENV_VAR)
+    test('returns correct message when user selects DATADOG_API_KEY_SECRET_ARN', () => {
+      const question = datadogEnvVarsQuestions({envVar: CI_API_KEY_SECRET_ARN_ENV_VAR, message: 'API Key Secret ARN:'})
+      expect(question.message).toBe('API Key Secret ARN:')
     })
 
     test('validates DATADOG_API_KEY_SECRET_ARN correctly', () => {
-      const datadogApiKeyType = {
-        envVar: CI_API_KEY_SECRET_ARN_ENV_VAR,
-        message: 'API Key Secret ARN:',
-      }
-      const question = datadogEnvVarsQuestions(datadogApiKeyType)
-
+      const question = datadogEnvVarsQuestions({envVar: CI_API_KEY_SECRET_ARN_ENV_VAR, message: 'API Key Secret ARN:'})
       expect(question.validate).not.toBeUndefined()
-
-      expect(question.validate!('')).not.toBe(true)
-      expect(question.validate!('123abc')).not.toBe(true)
-      expect(question.validate!('1234567890abcdef1200791a6a0de187')).not.toBe(true)
-
-      expect(question.validate!('arn:aws:secretsmanager:sa-east-1:123456789012:secret:dd-api-key')).toBe(true)
+      expect(question.validate('')).not.toBe(true)
+      expect(question.validate('123abc')).not.toBe(true)
+      expect(question.validate('1234567890abcdef1200791a6a0de187')).not.toBe(true)
+      expect(question.validate('arn:aws:secretsmanager:sa-east-1:123456789012:secret:dd-api-key')).toBe(true)
     })
   })
 
@@ -98,7 +85,10 @@ describe('prompt', () => {
     test('returns question with the provided function names being its choices', () => {
       const functionNames = ['my-func', 'my-func-2', 'my-third-func']
       const question = functionSelectionQuestion(functionNames)
-      expect(question.choices).toBe(functionNames)
+      expect(question.choices).toEqual(functionNames)
+      expect(question.message).toBe('Select the functions to modify (Press <space> to select)')
+      expect(question.validate(['my-func'])).toBe(true)
+      expect(question.validate([])).toBe('You must choose at least one function.')
     })
   })
 
@@ -113,12 +103,8 @@ describe('prompt', () => {
     })
 
     test('sets the AWS credentials as environment variables', async () => {
-      ;(prompt as any).mockImplementation(() =>
-        Promise.resolve({
-          [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
-          [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
-        })
-      )
+      mockInput.mockResolvedValue(mockAwsAccessKeyId)
+      mockPassword.mockResolvedValueOnce(mockAwsSecretAccessKey).mockResolvedValueOnce(undefined)
 
       await requestAWSCredentials()
 
@@ -127,13 +113,8 @@ describe('prompt', () => {
     })
 
     test('sets the AWS credentials with session token as environment variables', async () => {
-      ;(prompt as any).mockImplementation(() =>
-        Promise.resolve({
-          [AWS_ACCESS_KEY_ID_ENV_VAR]: mockAwsAccessKeyId,
-          [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
-          [AWS_SESSION_TOKEN_ENV_VAR]: 'some-session-token',
-        })
-      )
+      mockInput.mockResolvedValue(mockAwsAccessKeyId)
+      mockPassword.mockResolvedValueOnce(mockAwsSecretAccessKey).mockResolvedValueOnce('some-session-token')
 
       await requestAWSCredentials()
 
@@ -143,16 +124,8 @@ describe('prompt', () => {
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
-      let error
-      try {
-        await requestAWSCredentials()
-      } catch (e) {
-        if (e instanceof Error) {
-          error = e
-        }
-      }
-      expect(error?.message).toBe("Couldn't set AWS Credentials. Unexpected error")
+      mockInput.mockRejectedValue(new Error('Unexpected error'))
+      await expect(requestAWSCredentials()).rejects.toThrow("Couldn't set AWS Credentials. Unexpected error")
     })
   })
 
@@ -168,26 +141,8 @@ describe('prompt', () => {
 
     test('sets the Datadog Environment Variables as provided/selected by user', async () => {
       const site = 'datadoghq.com'
-      ;(prompt as any).mockImplementation((question: any) => {
-        switch (question.name) {
-          case CI_API_KEY_ENV_VAR:
-            return Promise.resolve({
-              [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
-            })
-          case CI_SITE_ENV_VAR:
-            return Promise.resolve({
-              [CI_SITE_ENV_VAR]: 'datadoghq.com',
-            })
-          case 'type':
-            return Promise.resolve({
-              type: {
-                envVar: CI_API_KEY_ENV_VAR,
-                message: 'API Key:',
-              },
-            })
-          default:
-        }
-      })
+      mockSelect.mockResolvedValueOnce(site).mockResolvedValueOnce({envVar: CI_API_KEY_ENV_VAR, message: 'API Key:'})
+      mockInput.mockResolvedValue(MOCK_DATADOG_API_KEY)
 
       await requestDatadogEnvVars()
 
@@ -196,16 +151,10 @@ describe('prompt', () => {
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
-      let error
-      try {
-        await requestDatadogEnvVars()
-      } catch (e) {
-        if (e instanceof Error) {
-          error = e
-        }
-      }
-      expect(error?.message).toBe("Couldn't set Datadog Environment Variables. Unexpected error")
+      mockSelect.mockRejectedValue(new Error('Unexpected error'))
+      await expect(requestDatadogEnvVars()).rejects.toThrow(
+        "Couldn't set Datadog Environment Variables. Unexpected error"
+      )
     })
   })
 
@@ -213,23 +162,18 @@ describe('prompt', () => {
     const selectedFunctions = ['my-func', 'my-func-2', 'my-third-func']
 
     test('returns the selected functions', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.resolve({functions: selectedFunctions}))
+      mockCheckbox.mockResolvedValue(selectedFunctions)
 
       const functions = await requestFunctionSelection(selectedFunctions)
-      expect(functions).toBe(selectedFunctions)
+      expect(functions).toEqual(selectedFunctions)
+      expect(mockCheckbox).toHaveBeenCalledWith(expect.objectContaining({choices: selectedFunctions, pageSize: 10}))
     })
 
     test('throws error when something unexpected happens while prompting', async () => {
-      ;(prompt as any).mockImplementation(() => Promise.reject(new Error('Unexpected error')))
-      let error
-      try {
-        await requestFunctionSelection(selectedFunctions)
-      } catch (e) {
-        if (e instanceof Error) {
-          error = e
-        }
-      }
-      expect(error?.message).toBe("Couldn't receive selected functions. Unexpected error")
+      mockCheckbox.mockRejectedValue(new Error('Unexpected error'))
+      await expect(requestFunctionSelection(selectedFunctions)).rejects.toThrow(
+        "Couldn't receive selected functions. Unexpected error"
+      )
     })
   })
 })

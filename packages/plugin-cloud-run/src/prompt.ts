@@ -1,15 +1,10 @@
 import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
-import inquirer from 'inquirer'
+import {confirm, input, select} from '@inquirer/prompts'
 
-const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
-inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
-
-export const requestGCPProject = async (): Promise<string> => {
-  const answer = await inquirer.prompt({
+export const requestGCPProject = () =>
+  input({
     message: 'Enter GCP Project ID:',
-    name: 'project',
-    type: 'input',
-    validate: (value: string) => {
+    validate: (value) => {
       if (!value || value.trim().length === 0) {
         return 'Project ID is required.'
       }
@@ -18,16 +13,11 @@ export const requestGCPProject = async (): Promise<string> => {
     },
   })
 
-  return answer.project
-}
-
-export const requestGCPRegion = async (defaultRegion?: string): Promise<string> => {
-  const answer = await inquirer.prompt({
+export const requestGCPRegion = (defaultRegion?: string) =>
+  input({
     default: defaultRegion || 'us-central1',
     message: 'Enter GCP Region:',
-    name: 'region',
-    type: 'input',
-    validate: (value: string) => {
+    validate: (value) => {
       if (!value || value.trim().length === 0) {
         return 'Region is required.'
       }
@@ -36,15 +26,10 @@ export const requestGCPRegion = async (defaultRegion?: string): Promise<string> 
     },
   })
 
-  return answer.region
-}
-
-export const requestServiceName = async (): Promise<string> => {
-  const answer = await inquirer.prompt({
+export const requestServiceName = () =>
+  input({
     message: 'Enter Cloud Run service name:',
-    name: 'serviceName',
-    type: 'input',
-    validate: (value: string) => {
+    validate: (value) => {
       if (!value || value.trim().length === 0) {
         return 'Service name is required.'
       }
@@ -53,27 +38,6 @@ export const requestServiceName = async (): Promise<string> => {
     },
   })
 
-  return answer.serviceName
-}
+export const requestSite = () => select<string>({choices: DATADOG_SITES, message: 'Select a Datadog Site:'})
 
-export const requestSite = async (): Promise<string> => {
-  const answer = await inquirer.prompt({
-    choices: DATADOG_SITES,
-    message: 'Select a Datadog Site:',
-    name: 'site',
-    type: 'list',
-  })
-
-  return answer.site
-}
-
-export const requestConfirmation = async (message: string, defaultValue = true) => {
-  const confirmationAnswer = await inquirer.prompt({
-    message,
-    name: 'confirmation',
-    type: 'confirm',
-    default: defaultValue,
-  })
-
-  return confirmationAnswer.confirmation !== false
-}
+export const requestConfirmation = (message: string, defaultValue = true) => confirm({default: defaultValue, message})
