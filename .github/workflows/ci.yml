@@ -574,7 +574,7 @@ jobs:
           yarn build
         shell: alpine.sh {0}
       - name: Create standalone binary
-        run: yarn dist-standalone:legacy -t node22-alpine-x64 -o datadog-ci_alpine-x64
+        run: yarn dist-standalone:standard -t node22-alpine-x64 -o datadog-ci_alpine-x64
         shell: alpine.sh {0}
       - name: Remove src and dist folders to check that binary can stand alone
         run: yarn rimraf --glob 'packages/*/{src,dist}'
@@ -619,7 +619,7 @@ jobs:
           yarn build
         shell: alpine.sh {0}
       - name: Create standalone binary
-        run: yarn dist-standalone:legacy -t node22-alpine-arm64 -o datadog-ci_alpine-arm64
+        run: yarn dist-standalone:standard -t node22-alpine-arm64 -o datadog-ci_alpine-arm64
         shell: alpine.sh {0}
       - name: Remove src and dist folders to check that binary can stand alone
         run: yarn rimraf --glob 'packages/*/{src,dist}'
