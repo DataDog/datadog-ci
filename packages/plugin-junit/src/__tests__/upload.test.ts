@@ -115,6 +115,40 @@ describe('upload', () => {
       }
     })
 
+    test('should allow junit reports with very long attribute values', async () => {
+      const tempDir = fs.mkdtempSync(upath.join(os.tmpdir(), 'junit-upload-'))
+      const junitPath = upath.join(tempDir, 'junit-long-attribute-report.xml')
+      const longAttributeValue = 'x'.repeat(200000)
+      // Regression for fast-xml-parser 5.5.12, which overflows when parsing long tag expressions.
+      const junitXml = `<testsuite><testcase name="${longAttributeValue}" /></testsuite>`
+
+      fs.writeFileSync(junitPath, junitXml)
+
+      try {
+        const command = createCommand(JunitUploadCommand)
+        const files = await command['getMatchingJUnitXMLFiles'].call(
+          {
+            basePaths: [junitPath],
+            config: {},
+            context: command.context,
+            service: 'service',
+          },
+          {},
+          {},
+          {},
+          {},
+          {}
+        )
+
+        expect(files).toHaveLength(1)
+        expect(files[0]).toMatchObject({
+          xmlPath: junitPath,
+        })
+      } finally {
+        fs.rmSync(tempDir, {recursive: true, force: true})
+      }
+    })
+
     test('should not fail for invalid single files', async () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
