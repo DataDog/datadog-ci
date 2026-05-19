@@ -528,17 +528,13 @@ jobs:
 
   standalone-binary-test-ubuntu-arm:
     name: Test standalone binary in ARM ubuntu
-    runs-on:
-      group: ARM LINUX SHARED
-      labels: arm-4core-linux
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
-      - run: npm install -g yarn
-        name: Install Yarn # Yarn is not installed by default in this runner
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -551,6 +547,93 @@ jobs:
         run: yarn e2e:test
         env:
           DATADOG_CI_COMMAND: ./datadog-ci_linux-arm64
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
+
+  standalone-binary-test-alpine:
+    name: Test standalone binary in Alpine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Alpine
+        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
+        with:
+          shell-name: alpine.sh
+      - name: Install project dependencies (root)
+        run: |
+          apk add npm git
+          npm install -g corepack
+        shell: alpine.sh --root {0}
+      - name: Install project dependencies (workspace)
+        run: |
+          yarn install --immutable
+          yarn build
+        shell: alpine.sh {0}
+      - name: Create standalone binary
+        run: yarn dist-standalone:legacy -t node22-alpine-x64 -o datadog-ci_alpine-x64
+        shell: alpine.sh {0}
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+        shell: alpine.sh {0}
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+        shell: alpine.sh {0}
+        env:
+          STANDALONE_BINARY_PATH: ./datadog-ci_alpine-x64
+      - name: E2E tests
+        run: yarn e2e:test # Requires `git` to be installed
+        shell: alpine.sh {0}
+        env:
+          DATADOG_CI_COMMAND: ./datadog-ci_alpine-x64
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          GITHUB_SHA: ${{ github.sha }}
+          IS_STANDALONE_BINARY: true
+
+  standalone-binary-test-alpine-arm:
+    name: Test standalone binary in ARM Alpine
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Alpine
+        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
+        with:
+          arch: aarch64
+          shell-name: alpine.sh
+          # Taken from https://github.com/jirutka/setup-alpine/pull/22
+          apk-tools-url: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.10/aarch64/apk.static#!sha256!e471d35aa221d031abe9b6288aede12a8e9f1a398954e5a2e1d1bce1727b4ef4
+      - name: Install project dependencies (root)
+        run: |
+          apk add npm git
+          npm install -g corepack
+        shell: alpine.sh --root {0}
+      - name: Install project dependencies (workspace)
+        run: |
+          yarn install --immutable
+          yarn build
+        shell: alpine.sh {0}
+      - name: Create standalone binary
+        run: yarn dist-standalone:legacy -t node22-alpine-arm64 -o datadog-ci_alpine-arm64
+        shell: alpine.sh {0}
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+        shell: alpine.sh {0}
+      - name: Smoke tests
+        run: yarn dist-standalone:test
+        shell: alpine.sh {0}
+        env:
+          STANDALONE_BINARY_PATH: ./datadog-ci_alpine-arm64
+      - name: E2E tests
+        run: yarn e2e:test # Requires `git` to be installed
+        shell: alpine.sh {0}
+        env:
+          DATADOG_CI_COMMAND: ./datadog-ci_alpine-arm64
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
