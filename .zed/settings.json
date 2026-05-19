@@ -1,0 +1,35 @@
+{
+  // Prevents displaying warnings for formatting errors,
+  // since Prettier already takes care of the formatting.
+  "lsp": {
+    "eslint": {
+      "settings": {
+        "rulesCustomizations": [
+          {
+            "rule": "prettier/prettier",
+            "severity": "off"
+          }
+        ]
+      }
+    },
+    "typescript-language-server": {
+      "initialization_options": {
+        "tsdk": "node_modules/typescript/lib"
+      }
+    }
+  },
+  "languages": {
+    "Markdown": {
+      // Easier to read tables without word wrapping.
+      "soft_wrap": "none"
+    },
+    "JSON": {
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    }
+  }
+}
