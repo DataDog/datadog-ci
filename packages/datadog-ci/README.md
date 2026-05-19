@@ -8,7 +8,12 @@ See the [Usage section](#usage) for a list of available commands.
 
 ## How to install the CLI
 
-The package is under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) and can be installed through NPM or Yarn:
+The `datadog-ci` CLI can be installed in three ways:
+- [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) NPM package
+- [Standalone binary](#standalone-binary)
+- [Docker image](#container-image)
+
+To install the NPM package:
 
 ```sh
 # NPM
@@ -18,20 +23,25 @@ npm install --save-dev @datadog/datadog-ci
 yarn add --dev @datadog/datadog-ci
 ```
 
-If you need `datadog-ci` as a CLI tool instead of a package, you can run it with [`npx`](https://www.npmjs.com/package/npx) or install it globally:
+If you want to use `datadog-ci` without installing it in your project:
 
 ```sh
-# npx
-npx @datadog/datadog-ci@v4 [scope]
-
-# NPM install globally
+# Install globally with NPM
 npm install -g @datadog/datadog-ci
 
-# Yarn v1 add globally
+# ...or with Yarn 1 (Classic)
 yarn global add @datadog/datadog-ci
+
+# ...or run a one-shot install with NPM
+npx @datadog/datadog-ci@v5 [scope]
+
+# or with Yarn
+yarn dlx @datadog/datadog-ci@v5 [scope]
 ```
 
-For more ways to install the CLI, see [this section](#more-ways-to-install-the-cli).
+> [!WARNING]
+> Datadog recommends pinning an exact version of `datadog-ci` to avoid being impacted by breaking changes introduced in major versions of datadog-ci,
+> or being vulnerable to supply chain attacks.
 
 ## Installing a plugin
 
@@ -49,7 +59,10 @@ Use `datadog-ci plugin install` to install a plugin:
 datadog-ci plugin install <scope>
 ```
 
-By default, running a command that requires a plugin will automatically install the plugin if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed by default.
+
+> [!WARNING]
+> Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>`. To disable auto-installation, set `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
 ## Usage
 
@@ -95,13 +108,13 @@ The following `<scope>` and `<command>` values are available.
 
 #### `dsyms`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/dsyms) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/dsyms) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)</sub>
 
 - `upload`: Upload iOS dSYM files for Error Tracking (macOS only).
 
 #### `flutter-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/flutter-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/flutter-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)</sub>
 
 - `upload`: Upload Flutter symbols for Error Tracking.
 
@@ -125,7 +138,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `junit`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/junit) | **Documentation:** [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/junit) | **Documentation:** [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)</sub>
 
 - `upload`: Upload JUnit test reports for Test Visibility.
 
@@ -139,19 +152,19 @@ The following `<scope>` and `<command>` values are available.
 
 #### `measure`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/measure) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/measure) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)</sub>
 
 - Add measures to a CI Visibility pipeline trace or job span in Datadog.
 
 #### `pe-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/pe-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/pe-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
 
 - `upload`: Upload Windows PE debug info files for Profiling.
 
 #### `react-native`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/react-native) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/react-native) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)</sub>
 
 - `codepush`: Upload React Native CodePush sourcemaps for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
 - `upload`: Upload React Native sourcemaps for Error Tracking. 
@@ -171,7 +184,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `sourcemaps`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/sourcemaps) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/sourcemaps) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/)</sub>
 
 - `upload`: Upload JavaScript sourcemaps for Error Tracking.
 
@@ -195,15 +208,21 @@ The following `<scope>` and `<command>` values are available.
 
 - Add custom tags to a CI Visibility pipeline trace or job span in Datadog.
 
+#### `terraform`
+
+<sub>**README:** [📚](/packages/plugin-terraform) | **Plugin:** `@datadog/datadog-ci-plugin-terraform`</sub>
+
+- `upload`: Upload Terraform plan or state files to Datadog for enhanced cloud-to-code mapping and policy evaluation.
+
 #### `trace`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>
 
 - Add custom commands to a CI Visibility pipeline in Datadog.
 
 #### `unity-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/unity-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/unity/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/unity-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/unity/)</sub>
 
 - `upload`: Upload Unity symbols for Error Tracking.
 
@@ -222,7 +241,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 #### `elf-symbols`
 
-<sub>**README:** [📚](/packages/datadog-ci/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
 
 - `upload`: Upload Elf debug info files for Profiling.
 
