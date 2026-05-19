@@ -20,7 +20,7 @@ To release a new version of `datadog-ci`:
 8. Once all jobs are successful, merge the PR **with the "Create a merge commit" strategy**.
    - The "Create a merge commit" strategy is required for the GitHub Release to point to an existing commit once the PR is merged.
 9. Go to the draft GitHub Release, and publish it as **latest**.
-   - There should be 5 binaries available in the release's assets.
+   - There should be 7 binaries available in the release's assets.
 10. **Important**: Finally, release the Docker image from GitLab.
     - Go to the [**GitLab** pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual)
     - Find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
