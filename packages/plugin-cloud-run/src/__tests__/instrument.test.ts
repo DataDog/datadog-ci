@@ -3,8 +3,8 @@ import type {IContainer, IEnvVar, IVolumeMount} from '../types'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 import {API_KEY_ENV_VAR, SERVICE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
+import * as instrumentHelpers from '@datadog/datadog-ci-base-serverless/helpers/serverless/source-code-integration'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
@@ -16,7 +16,7 @@ jest.mock('../utils', () => ({
   checkAuthentication: jest.fn(),
 }))
 
-jest.mock('@datadog/datadog-ci-base/helpers/serverless/source-code-integration')
+jest.mock('@datadog/datadog-ci-base-serverless/helpers/serverless/source-code-integration')
 
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '0.0.0'}))
 

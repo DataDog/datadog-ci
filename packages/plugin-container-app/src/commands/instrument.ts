@@ -15,15 +15,15 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
+import {DEFAULT_HEALTH_CHECK_PORT, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
+import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {
   createInstrumentedTemplate,
   generateConfigDiff,
   sortedEqual,
-} from '@datadog/datadog-ci-base/helpers/serverless/common'
-import {DEFAULT_HEALTH_CHECK_PORT, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
-import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
+} from '@datadog/datadog-ci-base-serverless/helpers/serverless/common'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base-serverless/helpers/serverless/source-code-integration'
 import chalk from 'chalk'
 
 import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from '../common'

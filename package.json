@@ -38,7 +38,7 @@
     "test:debug": "node --experimental-vm-modules --inspect-brk node_modules/jest/bin/jest --colors --runInBand",
     "test:dsyms": "yarn test packages/datadog-ci/src/commands/dsyms",
     "test:helpers": "yarn test packages/datadog-ci/src/helpers",
-    "test:serverless": "yarn test packages/base/src/helpers/serverless packages/plugin-aas packages/plugin-container-app packages/plugin-lambda packages/plugin-cloud-run packages/plugin-stepfunctions",
+    "test:serverless": "yarn test packages/base-serverless packages/plugin-aas packages/plugin-container-app packages/plugin-lambda packages/plugin-cloud-run packages/plugin-stepfunctions",
     "test:windows": "yarn test --config ./jest.config-windows.mjs",
     "tsc:build": "tsc --build --verbose",
     "version:all": "yarn loop-packages version ${0} --immediate"

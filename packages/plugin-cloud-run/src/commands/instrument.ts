@@ -1,5 +1,5 @@
 import type {IContainer, IEnvVar, IService, IServiceTemplate} from '../types'
-import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base-serverless/helpers/serverless/common'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -8,11 +8,6 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {
-  generateConfigDiff,
-  createInstrumentedTemplate,
-  getBaseEnvVars,
-} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
@@ -26,10 +21,15 @@ import {
   DD_LLMOBS_ML_APP_ENV_VAR,
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
+import {
+  generateConfigDiff,
+  createInstrumentedTemplate,
+  getBaseEnvVars,
+} from '@datadog/datadog-ci-base-serverless/helpers/serverless/common'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base-serverless/helpers/serverless/source-code-integration'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 

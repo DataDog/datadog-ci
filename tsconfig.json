@@ -6,6 +6,7 @@
   // All plugins are listed here so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
   "references": [
     {"path": "./packages/base"},
+    {"path": "./packages/base-serverless"},
     {"path": "./packages/datadog-ci"},
     {"path": "./packages/plugin-aas"},
     {"path": "./packages/plugin-cloud-run"},

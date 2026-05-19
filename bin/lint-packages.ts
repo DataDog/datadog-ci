@@ -553,6 +553,7 @@ TO_APPLY.push(...exceptionScopes.concat(pluginPackages).map(formatBasePackageSco
 TO_APPLY.push(matchAndReplace('tsconfig.json')`
   "references": [
     {"path": "./packages/base"},
+    {"path": "./packages/base-serverless"},
     {"path": "./packages/datadog-ci"},
     ${pluginPackages.map((p) => `{"path": "./packages/plugin-${p.scope}"}`).join(',\n')}
   ],

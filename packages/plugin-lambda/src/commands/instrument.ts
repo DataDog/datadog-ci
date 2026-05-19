@@ -22,8 +22,8 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base-serverless/helpers/serverless/source-code-integration'
 import chalk from 'chalk'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from '../constants'

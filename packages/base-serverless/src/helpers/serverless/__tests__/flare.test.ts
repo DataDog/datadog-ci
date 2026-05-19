@@ -1,35 +1,36 @@
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
+
+const getLatestVersion = jest.fn()
+jest.mock('@datadog/datadog-ci-base/helpers/get-latest-version', () => ({
+  getLatestVersion,
+}))
+
+jest.mock('fs')
+jest.mock('jszip')
+
 import fs from 'fs'
 import process from 'process'
 
 import type {Writable} from 'stream'
 
-jest.mock('../../request', () => ({
-  ...jest.requireActual('../../request'),
-  httpRequest: jest.fn(),
-}))
-
+import {RequestError} from '@datadog/datadog-ci-base/helpers/request'
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import FormData from 'form-data'
 import upath from 'upath'
 
-import {MOCK_CWD} from '../../__tests__/testing-tools'
-import {RequestError} from '../../request'
-import * as requestModule from '../../request'
-
-const getLatestVersion = jest.fn()
-jest.mock('../../get-latest-version', () => ({
-  getLatestVersion,
-}))
-
-import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
 import {getProjectFiles, sendToDatadog, validateCliVersion, validateFilePath, validateStartEndFlags} from '../flare'
 import * as flareModule from '../flare'
 
+const MOCK_CWD = 'mock-folder'
+
 // Mocks
-jest.mock('fs')
 jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 fs.createReadStream = jest.fn().mockReturnValue('test data')
-jest.mock('jszip')
 
 describe('flare', () => {
   describe('sendToDatadog', () => {

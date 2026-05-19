@@ -16,15 +16,15 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {collectAsyncIterator, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
   SIDECAR_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {collectAsyncIterator, sortedEqual} from '@datadog/datadog-ci-base-serverless/helpers/serverless/common'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base-serverless/helpers/serverless/source-code-integration'
 import chalk from 'chalk'
 
 import {getWindowsRuntime, getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'

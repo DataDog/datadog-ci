@@ -88,6 +88,7 @@
     "@aws-sdk/credential-providers": "3.1045.0",
     "@aws-sdk/types": "3.973.8",
     "@datadog/datadog-ci-base": "workspace:*",
+    "@datadog/datadog-ci-base-serverless": "workspace:*",
     "@smithy/property-provider": "2.2.0",
     "@smithy/util-retry": "2.2.0",
     "aws-sdk-client-mock": "4.1.0",

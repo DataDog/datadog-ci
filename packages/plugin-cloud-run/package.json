@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
+    "@datadog/datadog-ci-base-serverless": "workspace:*",
     "@google-cloud/logging": "11.2.1",
     "@google-cloud/run": "3.0.0",
     "chalk": "3.0.0",

@@ -25,6 +25,8 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {
   getProjectFiles,
   getUniqueFileNames,
@@ -32,9 +34,7 @@ import {
   validateCliVersion,
   validateFilePath,
   validateStartEndFlags,
-} from '@datadog/datadog-ci-base/helpers/serverless/flare'
-import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+} from '@datadog/datadog-ci-base-serverless/helpers/serverless/flare'
 import {RevisionsClient, ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 import upath from 'upath'

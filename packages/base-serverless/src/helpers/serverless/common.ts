@@ -1,12 +1,7 @@
 import {isDeepStrictEqual} from 'node:util'
 
-import chalk from 'chalk'
-import {diff} from 'jest-diff'
-
-import {DATADOG_SITE_US1} from '../../constants'
-
-import {getDatadogSite} from '../api'
-
+import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {
   HEALTH_PORT_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
@@ -15,7 +10,9 @@ import {
   LOGS_PATH_ENV_VAR,
   ENV_VAR_REGEX,
   DEFAULT_HEALTH_CHECK_PORT,
-} from './constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import chalk from 'chalk'
+import {diff} from 'jest-diff'
 /**
  * Parses environment variables from array format (KEY=VALUE) to object format.
  * @param envVars - Array of environment variables in KEY=VALUE format

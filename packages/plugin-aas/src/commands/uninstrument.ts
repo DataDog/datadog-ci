@@ -8,9 +8,13 @@ import {getExtensionId, renderWebApp, resourceIdSegment} from '@datadog/datadog-
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
+import {
+  collectAsyncIterator,
+  parseEnvVars,
+  sortedEqual,
+} from '@datadog/datadog-ci-base-serverless/helpers/serverless/common'
 import chalk from 'chalk'
 
 import {AAS_DD_SETTING_NAMES, isDotnet, isWindows} from '../common'

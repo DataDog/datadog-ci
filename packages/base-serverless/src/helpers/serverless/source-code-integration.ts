@@ -1,12 +1,10 @@
 import type {BaseContext} from 'clipanion'
 
+import {getCommitInfo, newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import {GitMetadataUploadCommand} from '@datadog/datadog-ci-base/commands/git-metadata/upload'
+import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {filterAndFormatGithubRemote} from '@datadog/datadog-ci-base/helpers/utils'
 import {Cli} from 'clipanion'
-
-import {getCommitInfo, newSimpleGit} from '../../commands/git-metadata/git'
-import {GitMetadataUploadCommand} from '../../commands/git-metadata/upload'
-
-import {renderSoftWarning} from '../renderer'
-import {filterAndFormatGithubRemote} from '../utils'
 
 export const handleSourceCodeIntegration = async (
   context: BaseContext,

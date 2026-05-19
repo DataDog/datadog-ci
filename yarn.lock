@@ -1526,6 +1526,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@datadog/datadog-ci-base-serverless@workspace:*, @datadog/datadog-ci-base-serverless@workspace:packages/base-serverless":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-base-serverless@workspace:packages/base-serverless"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:3.2.1"
+    form-data: "npm:4.0.4"
+    jest-diff: "npm:30.2.0"
+    upath: "npm:2.0.1"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci-base@workspace:*, @datadog/datadog-ci-base@workspace:packages/base":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-base@workspace:packages/base"
@@ -1550,7 +1563,6 @@ __metadata:
     glob: "npm:^13.0.6"
     inquirer: "npm:^8.2.7"
     is-docker: "npm:^4.0.0"
-    jest-diff: "npm:^30.2.0"
     js-yaml: "npm:^4.1.1"
     jszip: "npm:^3.10.1"
     proxy-agent: "npm:^6.4.0"
@@ -1616,6 +1628,7 @@ __metadata:
     "@azure/arm-resources": "npm:6.1.0"
     "@azure/identity": "npm:4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-base-serverless": "workspace:*"
     chalk: "npm:3.0.0"
   languageName: unknown
   linkType: soft
@@ -1625,6 +1638,7 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-base-serverless": "workspace:*"
     "@google-cloud/logging": "npm:11.2.1"
     "@google-cloud/run": "npm:3.0.0"
     chalk: "npm:3.0.0"
@@ -1644,6 +1658,7 @@ __metadata:
     "@azure/arm-resources": "npm:6.1.0"
     "@azure/identity": "npm:4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-base-serverless": "workspace:*"
     chalk: "npm:3.0.0"
   languageName: unknown
   linkType: soft
@@ -1715,6 +1730,7 @@ __metadata:
     "@aws-sdk/credential-providers": "npm:3.1045.0"
     "@aws-sdk/types": "npm:3.973.8"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-base-serverless": "workspace:*"
     "@smithy/property-provider": "npm:2.2.0"
     "@smithy/util-retry": "npm:2.2.0"
     aws-sdk-client-mock: "npm:4.1.0"
@@ -2701,13 +2717,6 @@ __metadata:
   version: 30.0.1
   resolution: "@jest/diff-sequences@npm:30.0.1"
   checksum: 10/0ddb7c7ba92d6057a2ee51a9cfc2155b77cca707fe959167466ea02dcb0687018cc3c22b9622f25f3a417d6ad370e2d4dcfedf9f1410dc9c02954a7484423cc7
-  languageName: node
-  linkType: hard
-
-"@jest/diff-sequences@npm:30.3.0":
-  version: 30.3.0
-  resolution: "@jest/diff-sequences@npm:30.3.0"
-  checksum: 10/0d5b6e1599c5e0bb702f0804e7f93bbe4911b5929c40fd6a77c06105711eae24d709c8964e8d623cc70c34b7dc7262d76a115a6eb05f1576336cdb6c46593e7c
   languageName: node
   linkType: hard
 
@@ -8397,18 +8406,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-diff@npm:^30.2.0":
-  version: 30.3.0
-  resolution: "jest-diff@npm:30.3.0"
-  dependencies:
-    "@jest/diff-sequences": "npm:30.3.0"
-    "@jest/get-type": "npm:30.1.0"
-    chalk: "npm:^4.1.2"
-    pretty-format: "npm:30.3.0"
-  checksum: 10/9f566259085e6badd525dc48ee6de3792cfae080abd66e170ac230359cf32c4334d92f0f48b577a31ad2a6aed4aefde81f5f4366ab44a96f78bcde975e5cc26e
-  languageName: node
-  linkType: hard
-
 "jest-docblock@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest-docblock@npm:29.7.0"
@@ -10155,17 +10152,6 @@ __metadata:
     ansi-styles: "npm:^5.2.0"
     react-is: "npm:^18.3.1"
   checksum: 10/725890d648e3400575eebc99a334a4cd1498e0d36746313913706bbeea20ada27e17c184a3cd45c50f705c16111afa829f3450233fc0fda5eed293c69757e926
-  languageName: node
-  linkType: hard
-
-"pretty-format@npm:30.3.0":
-  version: 30.3.0
-  resolution: "pretty-format@npm:30.3.0"
-  dependencies:
-    "@jest/schemas": "npm:30.0.5"
-    ansi-styles: "npm:^5.2.0"
-    react-is: "npm:^18.3.1"
-  checksum: 10/b288db630841f2464554c5cfa7d7faf519ad7b5c05c3818e764c7cb486bcf59f240ea5576c748f8ca6625623c5856a8906642255bbe89d6cfa1a9090b0fbc6b9
   languageName: node
   linkType: hard
 

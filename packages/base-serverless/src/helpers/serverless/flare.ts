@@ -6,19 +6,17 @@ import fs from 'fs'
 
 import type {Writable} from 'stream'
 
+import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
+import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
+import {deleteFolder} from '@datadog/datadog-ci-base/helpers/fs'
+import {getLatestVersion} from '@datadog/datadog-ci-base/helpers/get-latest-version'
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {httpRequest, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
+import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
+import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import FormData from 'form-data'
 import upath from 'upath'
-
-import {DATADOG_SITES} from '../../constants'
-
-import {getDatadogSite} from '../api'
-import {getBaseUrl} from '../app'
-import {deleteFolder} from '../fs'
-import {getLatestVersion} from '../get-latest-version'
-import * as helpersRenderer from '../renderer'
-import {httpRequest, isRequestError} from '../request'
-import {datadogRoute} from '../request/datadog-route'
-import {isValidDatadogSite} from '../validation'
 
 /**
  * Send the zip file to Datadog support

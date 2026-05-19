@@ -40,6 +40,7 @@ packages/plugin-lambda                               @DataDog/datadog-ci-admins 
 packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/commands/stepfunctions             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base-serverless                             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/helpers/serverless                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/aas-linux.test.ts                                @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/aas-windows.test.ts                              @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement

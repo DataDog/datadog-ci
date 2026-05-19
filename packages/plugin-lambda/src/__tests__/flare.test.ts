@@ -15,7 +15,7 @@ import {
 import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/serverless/flare'
+import * as helpersFlareModule from '@datadog/datadog-ci-base-serverless/helpers/serverless/flare'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {
