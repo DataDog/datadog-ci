@@ -67,6 +67,8 @@ datadog-ci deployment correlate-image --commit-sha c9c4e93346652f426c91a2c413646
 - `--repository-url` (**required**): Repository URL for the commit SHA being correlated.
 - `--image` (**required**): Image to correlate with the commit SHA.
 
+The command also automatically collects CI environment variables from the CI job that built the image (when run inside a supported CI provider) and includes them in the request so Datadog can attribute the image to the pipeline and job that built it.
+
 ### `gate`
 
 The `gate` command evaluates a Deployment Gate and exits with code 0 if the gate passed or 1 if the gate failed. Refer to the [Deployment Gates documentation][4] for more details.
