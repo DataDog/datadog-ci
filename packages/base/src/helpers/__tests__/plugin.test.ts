@@ -9,6 +9,7 @@ import {
   installPlugin,
   listAllPlugins,
   executePluginCommand,
+  normalizePluginSubmodule,
   VERSION_OVERRIDE_REGEX,
 } from '../plugin'
 import {getUserAgent} from '../user-agent'
@@ -153,6 +154,22 @@ describe('executePluginCommand', () => {
     ).toHaveLength(1)
 
     consoleLogSpy.mockRestore()
+  })
+})
+
+describe('normalizePluginSubmodule', () => {
+  class PluginCommand {}
+
+  test('keeps ESM submodule shape', () => {
+    const submodule = {PluginCommand}
+
+    expect(normalizePluginSubmodule(submodule)).toBe(submodule)
+  })
+
+  test('unwraps CJS default export shape', () => {
+    const submodule = {PluginCommand}
+
+    expect(normalizePluginSubmodule({default: submodule})).toBe(submodule)
   })
 })
 

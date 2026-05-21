@@ -64,6 +64,21 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
   }
 }
 
+export const normalizePluginSubmodule = (submodule: unknown): PluginSubModule => {
+  if (isPluginSubmodule(submodule)) {
+    return submodule
+  }
+
+  if (typeof submodule === 'object' && submodule && 'default' in submodule) {
+    const defaultExport = submodule.default
+    if (isPluginSubmodule(defaultExport)) {
+      return defaultExport
+    }
+  }
+
+  return submodule as PluginSubModule
+}
+
 export const listAllPlugins = (): string[] => {
   return Object.keys(peerDependencies)
 }
@@ -346,7 +361,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
     const submodulePath = url.pathToFileURL(resolvedSubmodulePath).href
     debug('Importing submodule:', submodulePath)
 
-    return (await import(submodulePath)) as PluginSubModule
+    return normalizePluginSubmodule(await import(submodulePath))
   }
 
   const pluginPackage = `@datadog/datadog-ci-plugin-${scope}`
@@ -388,6 +403,15 @@ const patchModulePaths = (preferredPath?: string) => {
 
 const isValidScope = (scope: string): boolean => {
   return scopeToPackageName(scope) in peerDependencies
+}
+
+const isPluginSubmodule = (submodule: unknown): submodule is PluginSubModule => {
+  return (
+    typeof submodule === 'object' &&
+    !!submodule &&
+    'PluginCommand' in submodule &&
+    typeof submodule.PluginCommand === 'function'
+  )
 }
 
 /**
