@@ -34,6 +34,14 @@ yarn install
 yarn launch <scope> <command> ...
 ```
 
+`yarn launch` runs the CLI from TypeScript source with the `development` condition. It is the right command for
+day-to-day development because changes in `packages/base/src`, `packages/datadog-ci/src`, and plugin `src` files are
+picked up without rebuilding.
+
+`yarn launch:dist` runs the packaged CLI bundle from `packages/datadog-ci/dist/bundle.js`. Build it first with
+`yarn bundle:npm`. When testing changes to separately installable plugins, rebuild the plugin bundle too, for example
+with `yarn workspace @datadog/datadog-ci-plugin-lambda prepack`.
+
 ### Framework and libraries used
 
 - [clipanion](https://github.com/arcanis/clipanion): CLI library to handle the different commands.
