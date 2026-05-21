@@ -24,8 +24,8 @@ import {
 import {LAMBDA_LAYER_VERSIONS} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-versions'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
+import {input as promptInput} from '@inquirer/prompts'
 import {CredentialsProviderError} from '@smithy/property-provider'
-import inquirer from 'inquirer'
 
 import {
   ARM64_ARCHITECTURE,
@@ -163,11 +163,7 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
 
   // If provided profile is enforced by MFA and a session
   // token is not set we must request for the MFA token.
-  init.mfaCodeProvider = async (mfaSerial) => {
-    const answer = await inquirer.prompt(awsProfileQuestion(mfaSerial))
-
-    return answer.AWS_MFA
-  }
+  init.mfaCodeProvider = (mfaSerial) => promptInput(awsProfileQuestion(mfaSerial))
 
   return init
 }
