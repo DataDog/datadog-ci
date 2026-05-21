@@ -41,8 +41,10 @@ import {
   OPAQUE_KEY,
   PACKAGE_MANAGER_PROPERTY_KEY,
   REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
+  REQUIRES_TRANSITIVE_ENRICHMENT_KEY,
   TARGET_FRAMEWORK_KEY,
   VERSION_CONSTRAINT_KEY,
+  VERSION_RANGE_KEY,
 } from './constants'
 import {getLanguageFromComponent} from './language'
 
@@ -265,6 +267,8 @@ const extractingDependency = (component: any): Dependency | undefined => {
   const reachableSymbolProperties: Property[] = []
   let opaque: boolean | undefined
   let versionConstraint: boolean | undefined
+  let versionRange: string | undefined
+  let requiresTransitiveEnrichment: boolean | undefined
 
   for (const property of component['properties'] ?? []) {
     const propertyName: string = property.name
@@ -291,6 +295,10 @@ const extractingDependency = (component: any): Dependency | undefined => {
       opaque = parseTrueOrUndefined(propertyValue)
     } else if (propertyName === VERSION_CONSTRAINT_KEY) {
       versionConstraint = parseTrueOrUndefined(propertyValue)
+    } else if (propertyName === VERSION_RANGE_KEY) {
+      versionRange = propertyValue
+    } else if (propertyName === REQUIRES_TRANSITIVE_ENRICHMENT_KEY) {
+      requiresTransitiveEnrichment = parseTrueOrUndefined(propertyValue)
     } else if (
       propertyName.startsWith(LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX) ||
       propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)
@@ -331,6 +339,8 @@ const extractingDependency = (component: any): Dependency | undefined => {
     exclusions: Array.from(exclusions),
     opaque,
     version_constraint: versionConstraint,
+    version_range: versionRange,
+    requires_transitive_enrichment: requiresTransitiveEnrichment,
   }
 
   return dependency

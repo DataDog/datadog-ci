@@ -624,6 +624,40 @@ describe('generation of payload', () => {
     expect(dependencies[1].version_constraint).toBeUndefined()
   })
 
+  test('should pass through datadog:version-range and datadog:requires-transitive-enrichment properties', async () => {
+    const sbomFile = './src/__tests__/fixtures/sbom-with-manifest-metadata.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(3)
+    const dependencies = payload!.dependencies
+
+    // Ranged dep: empty version + datadog:version-range + requires-transitive-enrichment
+    expect(dependencies[0].name).toEqual('lodash')
+    expect(dependencies[0].version).toBeUndefined()
+    expect(dependencies[0].version_range).toEqual('^4.17.21')
+    expect(dependencies[0].requires_transitive_enrichment).toStrictEqual(true)
+
+    // Pinned dep with requires-transitive-enrichment but no version-range
+    expect(dependencies[1].name).toEqual('express')
+    expect(dependencies[1].version).toEqual('4.18.2')
+    expect(dependencies[1].version_range).toBeUndefined()
+    expect(dependencies[1].requires_transitive_enrichment).toStrictEqual(true)
+
+    // Pinned dep with neither manifest metadata property
+    expect(dependencies[2].name).toEqual('chalk')
+    expect(dependencies[2].version).toEqual('5.3.0')
+    expect(dependencies[2].version_range).toBeUndefined()
+    expect(dependencies[2].requires_transitive_enrichment).toBeUndefined()
+  })
+
   test('should fail to read git information', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
     const config: DatadogCiConfig = {

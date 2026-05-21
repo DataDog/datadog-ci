@@ -18,3 +18,5 @@ export const REACHABLE_SYMBOL_LOCATION_KEY_PREFIX = 'datadog:reachable-symbol-lo
 export const TARGET_FRAMEWORK_KEY = 'datadog:target-framework'
 export const OPAQUE_KEY = 'datadog:opaque'
 export const VERSION_CONSTRAINT_KEY = 'datadog:version-constraint'
+export const VERSION_RANGE_KEY = 'datadog:version-range'
+export const REQUIRES_TRANSITIVE_ENRICHMENT_KEY = 'datadog:requires-transitive-enrichment'
