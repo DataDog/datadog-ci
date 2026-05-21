@@ -328,9 +328,30 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   patchModulePaths()
   await handlePluginAutoInstall(scope)
 
+  // 2. Development/default submodule export.
+  // `yarn launch` passes `--conditions=development`, so this resolves to local source files.
+  // Published CLI/plugin usage resolves the same export to the dist command wrapper.
+  const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
+  debug('Resolving submodule:', submoduleName)
+  let submoduleResolveError: unknown
+  let resolvedSubmodulePath: string | undefined
+  try {
+    resolvedSubmodulePath = require.resolve(submoduleName)
+  } catch (error) {
+    debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
+    submoduleResolveError = error
+  }
+
+  if (resolvedSubmodulePath) {
+    const submodulePath = url.pathToFileURL(resolvedSubmodulePath).href
+    debug('Importing submodule:', submodulePath)
+
+    return (await import(submodulePath)) as PluginSubModule
+  }
+
   const pluginPackage = `@datadog/datadog-ci-plugin-${scope}`
 
-  // 2. Self-contained plugin bundle (published vendored bundles)
+  // 3. Self-contained plugin bundle fallback (published vendored bundles without submodule exports)
   try {
     const bundle = require(pluginPackage)
     const submodule = bundle.commands?.[command]
@@ -340,23 +361,10 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
       return submodule as PluginSubModule
     }
   } catch (error) {
-    debug('Plugin bundle load failed, trying submodule path:', error)
+    debug('Plugin bundle load failed:', error)
   }
 
-  // 3. Development mode: load individual command submodule.
-  const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
-  debug('Resolving submodule:', submoduleName)
-  let submodulePath = submoduleName
-  try {
-    const resolvedPath = require.resolve(submoduleName)
-    const absolutePath = url.pathToFileURL(resolvedPath).href
-    submodulePath = absolutePath
-  } catch (error) {
-    debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
-  }
-  debug('Importing submodule:', submodulePath)
-
-  return (await import(submodulePath)) as PluginSubModule
+  throw submoduleResolveError
 }
 
 export const scopeToPackageName = (scope: string): string => {
