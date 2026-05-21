@@ -11,9 +11,9 @@
       "version": "3.8.1",
       "purl": "pkg:maven/junit/junit@3.8.1",
       "properties": [
-        { "name": "osv-scanner:is-dev", "value": "true" },
-        { "name": "osv-scanner:is-direct", "value": "true" },
-        { "name": "osv-scanner:package-manager", "value": "Maven" }
+        { "name": "datadog:is-dev", "value": "true" },
+        { "name": "datadog:is-direct", "value": "true" },
+        { "name": "datadog:package-manager", "value": "Maven" }
       ],
       "evidence": {
         "occurrences": [
@@ -30,8 +30,8 @@
       "version": "5.3.30",
       "purl": "pkg:maven/org.springframework/spring-context@5.3.30",
       "properties": [
-        { "name": "osv-scanner:is-direct", "value": "true" },
-        { "name": "osv-scanner:package-manager", "value": "Maven" }
+        { "name": "datadog:is-direct", "value": "true" },
+        { "name": "datadog:package-manager", "value": "Maven" }
       ],
       "evidence": {
         "occurrences": [
@@ -48,10 +48,10 @@
       "version": "5.3.30",
       "purl": "pkg:maven/org.springframework/spring-web@5.3.30",
       "properties": [
-        { "name": "osv-scanner:is-direct", "value": "true" },
-        { "name": "osv-scanner:package-manager", "value": "Maven" },
+        { "name": "datadog:is-direct", "value": "true" },
+        { "name": "datadog:package-manager", "value": "Maven" },
         {
-          "name": "datadog-sbom-generator:reachable-symbol-location:GHSA-4wrc-f8pq-fpqp",
+          "name": "datadog:reachable-symbol-location:GHSA-4wrc-f8pq-fpqp",
           "value": "[{\"file_name\":\"src/main/java/com/example/InsecureDeserializationExample.java\",\"line_start\":41,\"line_end\":41,\"column_start\":58,\"column_end\":88,\"symbol\":\"CodebaseAwareObjectInputStream\"}]"
         }
       ],
@@ -69,7 +69,7 @@
       "name": "pom.xml",
       "properties": [
         {
-          "name": "osv-scanner:package",
+          "name": "datadog:package",
           "value": "pkg:maven/com.example/secure-deserialization@1.0-SNAPSHOT"
         }
       ]

@@ -20,11 +20,11 @@
                     "value": "net8.0"
                 },
                 {
-                    "name": "osv-scanner:is-direct",
+                    "name": "datadog:is-direct",
                     "value": "true"
                 },
                 {
-                    "name": "osv-scanner:package-manager",
+                    "name": "datadog:package-manager",
                     "value": "NuGet"
                 }
             ]

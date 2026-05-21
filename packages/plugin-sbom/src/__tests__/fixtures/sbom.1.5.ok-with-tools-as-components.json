@@ -28,7 +28,7 @@
       "name": "lib/lib1/pom.xml",
       "properties": [
         {
-          "name": "osv-scanner:package",
+          "name": "datadog:package",
           "value": "pkg:mvn/foo.bar/lib1@1.0-SNAPSHOT"
         }
       ]
@@ -39,7 +39,7 @@
       "name": "pom.xml",
       "properties": [
         {
-          "name": "osv-scanner:package",
+          "name": "datadog:package",
           "value": "pkg:mvn/foo.bar/service@1.0-SNAPSHOT"
         }
       ]
@@ -150,15 +150,15 @@
           "value": "npm"
         },
         {
-          "name": "osv-scanner:is-direct",
+          "name": "datadog:is-direct",
           "value": "true"
         },
         {
-          "name": "osv-scanner:package-manager",
+          "name": "datadog:package-manager",
           "value": "Npm"
         },
         {
-          "name": "osv-scanner:is-dev",
+          "name": "datadog:is-dev",
           "value": "true"
         }
       ]

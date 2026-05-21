@@ -33,11 +33,6 @@ import {
   EXCLUSION_KEY,
   IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
-  LEGACY_EXCLUSION_KEY,
-  LEGACY_IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
-  LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
-  LEGACY_PACKAGE_MANAGER_PROPERTY_KEY,
-  LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
   OPAQUE_KEY,
   PACKAGE_MANAGER_PROPERTY_KEY,
   REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
@@ -252,15 +247,9 @@ const extractingDependency = (component: any): Dependency | undefined => {
     }
   }
 
-  // values coming from legacy property names
-  let legacyPackageManager = ''
-  let legacyIsDirect
-  let legacyIsDev
-
-  // values coming from new canonical properties
   let packageManager = ''
-  let isDirect
-  let isDev
+  let isDirect: boolean | undefined
+  let isDev: boolean | undefined
 
   const exclusions: Set<string> = new Set<string>()
   const targetFrameworks: string[] = []
@@ -274,13 +263,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     const propertyName: string = property.name
     const propertyValue: string = property.value
 
-    if (propertyName === LEGACY_PACKAGE_MANAGER_PROPERTY_KEY) {
-      legacyPackageManager = propertyValue
-    } else if (propertyName === LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
-      legacyIsDirect = parseTrueOrUndefined(propertyValue)
-    } else if (propertyName === LEGACY_IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
-      legacyIsDev = parseTrueOrUndefined(propertyValue)
-    } else if (propertyName === LEGACY_EXCLUSION_KEY || propertyName === EXCLUSION_KEY) {
+    if (propertyName === EXCLUSION_KEY) {
       // here we merge everything using a set
       exclusions.add(propertyValue)
     } else if (propertyName === PACKAGE_MANAGER_PROPERTY_KEY) {
@@ -299,10 +282,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
       versionRange = propertyValue
     } else if (propertyName === REQUIRES_TRANSITIVE_ENRICHMENT_KEY) {
       requiresTransitiveEnrichment = parseTrueOrUndefined(propertyValue)
-    } else if (
-      propertyName.startsWith(LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX) ||
-      propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)
-    ) {
+    } else if (propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)) {
       // here we keep everything, deduplication will be managed downstream
       const missingKeys = validateReachableSymbolLocationValue(propertyValue)
       if (missingKeys.length > 0) {
@@ -318,10 +298,6 @@ const extractingDependency = (component: any): Dependency | undefined => {
       })
     }
   }
-
-  packageManager = packageManager !== '' ? packageManager : legacyPackageManager
-  isDev = isDev !== undefined ? isDev : legacyIsDev
-  isDirect = isDirect !== undefined ? isDirect : legacyIsDirect
 
   const dependency: Dependency = {
     name: component['name'],
