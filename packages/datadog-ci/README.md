@@ -280,6 +280,8 @@ If installing Node.js in the CI is an issue, standalone binaries are attached to
 Supported architectures:
 - `linux-x64`
 - `linux-arm64`
+- `alpine-x64`
+- `alpine-arm64`
 - `darwin-x64` (MacOS)
 - `darwin-arm64` (MacOS)
 - `win-x64` (Windows)
@@ -300,6 +302,16 @@ curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/d
 
 # Linux arm64
 curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-arm64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+```
+
+#### Alpine
+
+```sh
+# Alpine x64
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_alpine-x64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+
+# Alpine arm64
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_alpine-arm64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
 ```
 
 #### MacOS

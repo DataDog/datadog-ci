@@ -95,9 +95,7 @@ jobs:
             })
 
   build-binary-ubuntu-arm:
-    runs-on:
-      group: ARM LINUX SHARED
-      labels: arm-4core-linux
+    runs-on: ubuntu-24.04-arm
     needs: create-draft-release
     steps:
       - uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
@@ -142,6 +140,120 @@ jobs:
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_linux-arm64',
               data: await fs.readFile('./datadog-ci_linux-arm64'),
+            })
+
+  build-binary-alpine:
+    runs-on: ubuntu-latest
+    needs: create-draft-release
+    steps:
+      - uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        id: octo-sts
+        with:
+          scope: DataDog/datadog-ci
+          policy: self.create-release
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Alpine
+        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
+        with:
+          shell-name: alpine.sh
+      - name: Install project dependencies (root)
+        run: |
+          apk add npm
+          npm install -g corepack
+        shell: alpine.sh --root {0}
+      - name: Install project dependencies (workspace)
+        run: |
+          yarn install --immutable
+          yarn build
+        shell: alpine.sh {0}
+      - name: Create standalone binary
+        run: yarn dist-standalone:standard -t node22-alpine-x64 -o datadog-ci_alpine-x64
+        shell: alpine.sh {0}
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+        shell: alpine.sh {0}
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+        shell: alpine.sh {0}
+        env:
+          STANDALONE_BINARY_PATH: ./datadog-ci_alpine-x64
+      - name: Compute binary checksum
+        run: sha256sum ./datadog-ci_alpine-x64 | awk '{print $1 "  datadog-ci_alpine-x64"}' > checksum-alpine-x64.txt
+        shell: alpine.sh {0}
+      - name: Upload checksum artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: checksum-alpine-x64
+          path: checksum-alpine-x64.txt
+      - name: Upload release asset
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ steps.octo-sts.outputs.token }}
+          script: |
+            const fs = require("fs").promises
+
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_alpine-x64',
+              data: await fs.readFile('./datadog-ci_alpine-x64'),
+            })
+
+  build-binary-alpine-arm:
+    runs-on: ubuntu-24.04-arm
+    needs: create-draft-release
+    steps:
+      - uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        id: octo-sts
+        with:
+          scope: DataDog/datadog-ci
+          policy: self.create-release
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Alpine
+        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
+        with:
+          arch: aarch64
+          shell-name: alpine.sh
+          # Taken from https://github.com/jirutka/setup-alpine/pull/22
+          apk-tools-url: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.10/aarch64/apk.static#!sha256!e471d35aa221d031abe9b6288aede12a8e9f1a398954e5a2e1d1bce1727b4ef4
+      - name: Install project dependencies (root)
+        run: |
+          apk add npm
+          npm install -g corepack
+        shell: alpine.sh --root {0}
+      - name: Install project dependencies (workspace)
+        run: |
+          yarn install --immutable
+          yarn build
+        shell: alpine.sh {0}
+      - name: Create standalone binary
+        run: yarn dist-standalone:standard -t node22-alpine-arm64 -o datadog-ci_alpine-arm64
+        shell: alpine.sh {0}
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
+        shell: alpine.sh {0}
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+        shell: alpine.sh {0}
+        env:
+          STANDALONE_BINARY_PATH: ./datadog-ci_alpine-arm64
+      - name: Compute binary checksum
+        run: sha256sum ./datadog-ci_alpine-arm64 | awk '{print $1 "  datadog-ci_alpine-arm64"}' > checksum-alpine-arm64.txt
+        shell: alpine.sh {0}
+      - name: Upload release asset
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ steps.octo-sts.outputs.token }}
+          script: |
+            const fs = require("fs").promises
+
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_alpine-arm64',
+              data: await fs.readFile('./datadog-ci_alpine-arm64'),
             })
 
   build-binary-windows:
@@ -292,6 +404,8 @@ jobs:
       - create-draft-release
       - build-binary-ubuntu
       - build-binary-ubuntu-arm
+      - build-binary-alpine
+      - build-binary-alpine-arm
       - build-binary-windows
       - build-binary-macos
       - build-binary-macos-arm
@@ -350,6 +464,8 @@ jobs:
       - pre-approval-checks
       - build-binary-ubuntu
       - build-binary-ubuntu-arm
+      - build-binary-alpine
+      - build-binary-alpine-arm
       - build-binary-windows
       - build-binary-macos
       - build-binary-macos-arm
