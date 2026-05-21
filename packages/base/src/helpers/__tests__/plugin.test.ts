@@ -9,6 +9,7 @@ import {
   installPlugin,
   listAllPlugins,
   executePluginCommand,
+  normalizePluginSubmodule,
   VERSION_OVERRIDE_REGEX,
 } from '../plugin'
 import {getUserAgent} from '../user-agent'
@@ -21,6 +22,21 @@ jest.mock('../message-box')
 jest.mock('../../version', () => ({
   cliVersion: '1.0.0',
 }))
+
+const mockBundledPluginExecute = jest.fn()
+
+jest.mock('@datadog/datadog-ci-plugin-synthetics', () => ({
+  commands: {
+    'run-tests': {
+      PluginCommand: class {
+        public execute() {
+          return mockBundledPluginExecute()
+        }
+      },
+    },
+  },
+}))
+
 jest.mock('@datadog/datadog-ci-base/package.json', () => ({
   peerDependencies: {
     '@datadog/datadog-ci-plugin-test': '1.0.0',
@@ -97,6 +113,17 @@ describe('executePluginCommand', () => {
     expect(result).toBe(0)
   })
 
+  test('prefers command submodule over self-contained plugin bundle', async () => {
+    mockBundledPluginExecute.mockResolvedValue(42)
+    jest.spyOn(SyntheticsRunTestsPluginCommand, 'execute').mockResolvedValue(0)
+
+    const command = createCommand(SyntheticsRunTestsCommand)
+    const result = await executePluginCommand(command)
+
+    expect(result).toBe(0)
+    expect(mockBundledPluginExecute).not.toHaveBeenCalled()
+  })
+
   test('injects plugin identity into the user agent context during execution', async () => {
     let userAgent = ''
     jest.spyOn(SyntheticsRunTestsPluginCommand, 'execute').mockImplementation(async () => {
@@ -127,6 +154,22 @@ describe('executePluginCommand', () => {
     ).toHaveLength(1)
 
     consoleLogSpy.mockRestore()
+  })
+})
+
+describe('normalizePluginSubmodule', () => {
+  class PluginCommand {}
+
+  test('keeps ESM submodule shape', () => {
+    const submodule = {PluginCommand}
+
+    expect(normalizePluginSubmodule(submodule)).toBe(submodule)
+  })
+
+  test('unwraps CJS default export shape', () => {
+    const submodule = {PluginCommand}
+
+    expect(normalizePluginSubmodule({default: submodule})).toBe(submodule)
   })
 })
 
