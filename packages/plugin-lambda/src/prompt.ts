@@ -165,7 +165,7 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: DatadogApiKeyType) =>
 
 export const functionSelectionQuestion = (functionNames: string[]) => ({
   choices: functionNames,
-  message: 'Select the functions to modify (Press <space> to select)',
+  message: 'Select the functions to modify.',
   pageSize: 10,
   validate: (selected: readonly unknown[]) => {
     if (selected.length < 1) {
