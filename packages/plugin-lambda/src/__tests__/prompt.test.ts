@@ -86,7 +86,7 @@ describe('prompt', () => {
       const functionNames = ['my-func', 'my-func-2', 'my-third-func']
       const question = functionSelectionQuestion(functionNames)
       expect(question.choices).toEqual(functionNames)
-      expect(question.message).toBe('Select the functions to modify (Press <space> to select)')
+      expect(question.message).toBe('Select the functions to modify.')
       expect(question.validate(['my-func'])).toBe(true)
       expect(question.validate([])).toBe('You must choose at least one function.')
     })
