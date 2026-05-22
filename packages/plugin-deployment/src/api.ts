@@ -34,7 +34,7 @@ const requestGateEvaluation =
         'Content-Type': 'application/json',
       },
       method: 'POST',
-      url: datadogRoute('/api/unstable/deployments/gates/evaluation'),
+      url: datadogRoute('/api/v2/deployments/gates/evaluation'),
     })
   }
 
@@ -43,7 +43,7 @@ const getGateEvaluationResult =
   async (evaluationId: string) => {
     return request({
       method: 'GET',
-      url: datadogRoute('/api/unstable/deployments/gates/evaluation/:evaluationId', {evaluationId}),
+      url: datadogRoute('/api/v2/deployments/gates/evaluation/:evaluationId', {evaluationId}),
     })
   }
 
