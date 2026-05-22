@@ -1,7 +1,7 @@
 import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import {getCISpanTags, getGithubJobIDFromLogs, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
+import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
@@ -41,9 +41,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
     }
     this.cdProviderParam = this.cdProviderParam.toLowerCase()
 
-    const realGithubJobName = getGithubJobNameFromLogs(this.context)
-    const realGithubJobID = process.env.JOB_CHECK_RUN_ID ?? getGithubJobIDFromLogs(this.context)
-    const tags = getCISpanTags(realGithubJobName, realGithubJobID) || {}
+    const tags = getCISpanTags() || {}
 
     if (!this.validateTags(tags)) {
       return 1
