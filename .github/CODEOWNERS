@@ -46,10 +46,13 @@ e2e/aas-windows.test.ts                              @DataDog/datadog-ci-admins 
 e2e/helpers/aas-verifier.ts                          @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/cloud-run.test.ts                                @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/helpers/cloud-run-verifier.ts                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/lambda.test.ts                                   @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/helpers/lambda-verifier.ts                       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/container-app.test.ts                            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/helpers/container-app-verifier.ts                @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/fixtures/aas                                     @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 e2e/fixtures/container-app                           @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+e2e/fixtures/lambda                                  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 
 ## Source Code Integration (label: source-code-integration)
 packages/base/src/commands/git-metadata         @DataDog/datadog-ci-admins @DataDog/source-code-integration
