@@ -31,7 +31,7 @@ export const execPromise = async (command: string, env?: Record<string, string |
   })
 }
 
-// Transient Azure errors that are safe to retry
+// Transient cloud provider errors that are safe to retry
 const RETRYABLE_PATTERNS = [
   'GatewayTimeout',
   'RestError',
@@ -41,6 +41,12 @@ const RETRYABLE_PATTERNS = [
   "doesn't exist",
   'Conflict',
   'TooManyRequests',
+  'ABORTED',
+  'DEADLINE_EXCEEDED',
+  'INTERNAL',
+  'RESOURCE_EXHAUSTED',
+  'UNAVAILABLE',
+  'temporarily unavailable',
 ]
 
 const isRetryable = (result: ExecResult): boolean => {
