@@ -8,7 +8,14 @@ try {
   for (const line of readFileSync('e2e/.env.local', 'utf-8').split('\n')) {
     const match = line.match(/^\s*([^#=]+?)\s*=\s*(.*)$/)
     if (match && !process.env[match[1]]) {
-      process.env[match[1]] = match[2]
+      let value = match[2]
+      if (
+        (value.startsWith("'") && value.endsWith("'")) ||
+        (value.startsWith('"') && value.endsWith('"'))
+      ) {
+        value = value.slice(1, -1)
+      }
+      process.env[match[1]] = value
     }
   }
 } catch {}

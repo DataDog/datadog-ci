@@ -457,6 +457,102 @@ ${e2eTestDependencies}
   }
 }`
 
+const cloudRunChangesCondition = "needs.check-cloud-run-changes.outputs.should_run == 'true'"
+
+const gcpCloudRunAuthSteps = `      - name: Google Cloud auth (OIDC)
+        if: ${cloudRunChangesCondition}
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: \${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER_E2E }}
+          service_account: \${{ vars.GCP_SERVICE_ACCOUNT_E2E }}
+      - name: Set up Google Cloud CLI
+        if: ${cloudRunChangesCondition}
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+`
+
+const cloudRunE2eEnv = `          SKIP_CLOUD_RUN_TESTS: \${{ needs.check-cloud-run-changes.outputs.should_run != 'true' }}
+          GCP_PROJECT_ID: \${{ vars.GCP_PROJECT_ID_E2E }}
+          GCP_REGION: \${{ vars.GCP_REGION_E2E }}`
+
+const checkCloudRunChangesJob = `  check-cloud-run-changes:
+    name: Check cloud-run changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: \${{ steps.filter.outputs.cloud-run }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        id: filter
+        with:
+          filters: |
+            cloud-run:
+              - 'packages/plugin-cloud-run/**'
+              - 'packages/base/package.json'
+              - 'packages/base/src/commands/cloud-run/**'
+              - 'packages/base/src/helpers/serverless/common.ts'
+              - 'packages/base/src/helpers/serverless/constants.ts'
+              - 'packages/base/src/helpers/serverless/source-code-integration.ts'
+              - 'e2e/fixtures/cloud-run/**'
+              - 'e2e/cloud-run.test.ts'
+              - 'e2e/helpers/cloud-run-verifier.ts'
+              - '.github/workflows/ci.yml'
+`
+
+const windowsE2eSkipEnv = `          SKIP_CONTAINER_APP_TESTS: 'true'
+          SKIP_AAS_TESTS: 'true'
+          SKIP_CLOUD_RUN_TESTS: 'true'
+
+`
+
+const formatCiWorkflowCloudRunE2e = (): ApplyChanges => {
+  const file = '.github/workflows/ci.yml'
+  const originalContent = fs.readFileSync(file, 'utf8')
+  let newContent = originalContent
+
+  newContent = newContent.replace(
+    / {4}needs: \[build-and-test, check-container-app-changes, check-aas-changes(?:, check-cloud-run-changes)?\]\n/,
+    '    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes]\n'
+  )
+
+  const azureLoginStep = `      - name: Azure login (OIDC)
+        if: needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true'
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
+        with:
+          client-id: \${{ vars.AZURE_CLIENT_ID_E2E }}
+          tenant-id: \${{ vars.AZURE_TENANT_ID_E2E }}
+          subscription-id: \${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+`
+  newContent = newContent.replace(
+    / {6}- name: Azure login \(OIDC\)\n {8}if: needs\.check-container-app-changes\.outputs\.should_run == 'true' \|\| needs\.check-aas-changes\.outputs\.should_run == 'true'\n {8}uses: azure\/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3\n {8}with:\n {10}client-id: \$\{\{ vars\.AZURE_CLIENT_ID_E2E \}\}\n {10}tenant-id: \$\{\{ vars\.AZURE_TENANT_ID_E2E \}\}\n {10}subscription-id: \$\{\{ vars\.AZURE_SUBSCRIPTION_ID_E2E \}\}\n(?: {6}- name: Google Cloud auth \(OIDC\)\n {8}if: needs\.check-cloud-run-changes\.outputs\.should_run == 'true'\n {8}uses: google-github-actions\/auth@[^\n]+\n {8}with:\n {10}workload_identity_provider: \$\{\{ vars\.GCP_WORKLOAD_IDENTITY_PROVIDER_E2E \}\}\n {10}service_account: \$\{\{ vars\.GCP_SERVICE_ACCOUNT_E2E \}\}\n {6}- name: Set up Google Cloud CLI\n {8}if: needs\.check-cloud-run-changes\.outputs\.should_run == 'true'\n {8}uses: google-github-actions\/setup-gcloud@[^\n]+\n)? {6}- name: Run e2e tests\n/,
+    `${azureLoginStep}${gcpCloudRunAuthSteps}      - name: Run e2e tests\n`
+  )
+
+  newContent = newContent.replace(
+    / {10}SKIP_CONTAINER_APP_TESTS: \$\{\{ needs\.check-container-app-changes\.outputs\.should_run != 'true' \}\}\n {10}SKIP_AAS_TESTS: \$\{\{ needs\.check-aas-changes\.outputs\.should_run != 'true' \}\}\n(?: {10}SKIP_CLOUD_RUN_TESTS: \$\{\{ needs\.check-cloud-run-changes\.outputs\.should_run != 'true' \}\}\n {10}GCP_PROJECT_ID: \$\{\{ vars\.GCP_PROJECT_ID_E2E \}\}\n {10}GCP_REGION: \$\{\{ vars\.GCP_REGION_E2E \}\}\n)? {10}AZURE_SUBSCRIPTION_ID: \$\{\{ vars\.AZURE_SUBSCRIPTION_ID_E2E \}\}\n/,
+    `          SKIP_CONTAINER_APP_TESTS: \${{ needs.check-container-app-changes.outputs.should_run != 'true' }}
+          SKIP_AAS_TESTS: \${{ needs.check-aas-changes.outputs.should_run != 'true' }}
+${cloudRunE2eEnv}
+          AZURE_SUBSCRIPTION_ID: \${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+`
+  )
+
+  if (newContent.includes('  check-cloud-run-changes:')) {
+    newContent = newContent.replace(
+      / {2}check-cloud-run-changes:\n[\s\S]*?\n {2}check-aas-changes:/,
+      `${checkCloudRunChangesJob}\n  check-aas-changes:`
+    )
+  } else {
+    newContent = newContent.replace(/\n {2}check-aas-changes:/, `\n${checkCloudRunChangesJob}\n  check-aas-changes:`)
+  }
+
+  newContent = newContent.replace(
+    /( {2}e2e-test-windows:\n[\s\S]*? {10}GITHUB_SHA: \$\{\{ github\.sha \}\}\n)(?: {10}SKIP_CONTAINER_APP_TESTS: 'true'\n {10}SKIP_AAS_TESTS: 'true'\n(?: {10}SKIP_CLOUD_RUN_TESTS: 'true'\n)?\n*)/,
+    `$1${windowsE2eSkipEnv}`
+  )
+
+  return makeApplyChanges(file, originalContent, newContent)
+}
+
 const npxArguments = ['@datadog/datadog-ci', ...builtinPlugins.map((p) => p.packageJson.name)]
   .map((name) => `-p ./artifacts/${name.replace('/', '-')}-20.tgz \\`)
   .join('\n')
@@ -494,6 +590,8 @@ ${resolutionsNode20}
     "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz"
   }
 }`
+
+TO_APPLY.push(formatCiWorkflowCloudRunE2e())
 
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create e2e project
