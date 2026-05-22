@@ -235,7 +235,6 @@ jobs:
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
-              - 'e2e/fixtures/cloud-run/**'
               - 'e2e/cloud-run.test.ts'
               - 'e2e/helpers/cloud-run-verifier.ts'
               - '.github/workflows/ci.yml'
