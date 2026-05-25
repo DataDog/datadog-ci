@@ -6,8 +6,6 @@
 export const DATADOG_ROUTE_PATHS = [
   '/api/intake/ci/custom_spans',
   '/api/ui/support/serverless/flare',
-  '/api/unstable/deployments/gates/evaluation',
-  '/api/unstable/deployments/gates/evaluation/:evaluationId',
   '/api/v1/validate',
   '/api/v2/ci/deployments/correlate-image',
   '/api/v2/ci/deployments/correlate',
@@ -17,6 +15,8 @@ export const DATADOG_ROUTE_PATHS = [
   '/api/v2/cicovreprt',
   '/api/v2/ciiac',
   '/api/v2/cireport',
+  '/api/v2/deployments/gates/evaluation',
+  '/api/v2/deployments/gates/evaluation/:evaluationId',
   '/api/v2/dora/deployment',
   '/api/v2/git/repository/packfile',
   '/api/v2/git/repository/search_commits',
