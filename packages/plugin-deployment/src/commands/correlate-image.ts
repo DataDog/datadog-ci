@@ -1,12 +1,14 @@
 import {DeploymentCorrelateImageCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-image'
 import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
+import {getCISpanTags, getGithubJobIDFromLogs, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {CI_ENV_VARS} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
@@ -56,12 +58,26 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
     const baseAPIURL = `https://${getApiHostForSite(getDatadogSite())}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey, appKey: this.config.appKey})
 
+    const realGithubJobName = getGithubJobNameFromLogs(this.context)
+    const realGithubJobID = process.env.JOB_CHECK_RUN_ID ?? getGithubJobIDFromLogs(this.context)
+    const tags = getCISpanTags(realGithubJobName, realGithubJobID) || {}
+    let envVars: Record<string, string> = {}
+    if (tags[CI_ENV_VARS]) {
+      envVars = JSON.parse(tags[CI_ENV_VARS])
+      delete tags[CI_ENV_VARS]
+    }
+    const ciEnv: Record<string, string> = {
+      ...tags,
+      ...envVars,
+    }
+
     const correlateEvent = {
       type: 'ci_deployment_correlate_image',
       attributes: {
         commit_sha: this.commitSha,
         repository_url: this.repositoryUrl,
         image: this.image,
+        ci_env: ciEnv,
       },
     }
 
