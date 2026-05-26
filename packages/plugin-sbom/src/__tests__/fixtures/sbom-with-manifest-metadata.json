@@ -1,0 +1,58 @@
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "version": 1,
+    "components": [
+        {
+            "bom-ref": "pkg:npm/lodash",
+            "type": "library",
+            "name": "lodash",
+            "purl": "pkg:npm/lodash",
+            "properties": [
+                {
+                    "name": "datadog:package-manager",
+                    "value": "npm"
+                },
+                {
+                    "name": "datadog:version-range",
+                    "value": "^4.17.21"
+                },
+                {
+                    "name": "datadog:requires-transitive-enrichment",
+                    "value": "true"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/express@4.18.2",
+            "type": "library",
+            "name": "express",
+            "version": "4.18.2",
+            "purl": "pkg:npm/express@4.18.2",
+            "properties": [
+                {
+                    "name": "datadog:package-manager",
+                    "value": "npm"
+                },
+                {
+                    "name": "datadog:requires-transitive-enrichment",
+                    "value": "true"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/chalk@5.3.0",
+            "type": "library",
+            "name": "chalk",
+            "version": "5.3.0",
+            "purl": "pkg:npm/chalk@5.3.0",
+            "properties": [
+                {
+                    "name": "datadog:package-manager",
+                    "value": "npm"
+                }
+            ]
+        }
+    ]
+}

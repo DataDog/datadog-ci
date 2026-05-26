@@ -11,12 +11,12 @@
       "version": "3.11.5",
       "purl": "pkg:maven/com.datastax.cassandra/cassandra-driver-core@3.11.5",
       "properties": [
-        {"name": "datadog-sbom-generator:exclusion", "value": "com.github.jnr:jnr-ffi"},
-        {"name": "datadog-sbom-generator:exclusion", "value": "com.github.jnr:jnr-posix"},
-        {"name": "datadog-sbom-generator:exclusion", "value": "io.dropwizard.metrics:metrics-core"},
-        {"name": "datadog-sbom-generator:exclusion", "value": "io.netty:netty-handler"},
-        {"name": "osv-scanner:is-direct", "value": "true"},
-        {"name": "osv-scanner:package-manager", "value": "Maven"}
+        {"name": "datadog:exclusion", "value": "com.github.jnr:jnr-ffi"},
+        {"name": "datadog:exclusion", "value": "com.github.jnr:jnr-posix"},
+        {"name": "datadog:exclusion", "value": "io.dropwizard.metrics:metrics-core"},
+        {"name": "datadog:exclusion", "value": "io.netty:netty-handler"},
+        {"name": "datadog:is-direct", "value": "true"},
+        {"name": "datadog:package-manager", "value": "Maven"}
       ]
     },
     {
@@ -26,9 +26,9 @@
       "version": "2.7.1",
       "purl": "pkg:maven/org.apache.curator/curator-client@2.7.1",
       "properties": [
-        {"name": "datadog-sbom-generator:exclusion", "value": "org.apache.zookeeper:zookeeper"},
-        {"name": "osv-scanner:is-direct", "value": "true"},
-        {"name": "osv-scanner:package-manager", "value": "Maven"}
+        {"name": "datadog:exclusion", "value": "org.apache.zookeeper:zookeeper"},
+        {"name": "datadog:is-direct", "value": "true"},
+        {"name": "datadog:package-manager", "value": "Maven"}
       ]
     },
     {
@@ -36,7 +36,7 @@
       "type": "file",
       "name": "pom.xml",
       "properties": [
-        {"name": "osv-scanner:package", "value": "pkg:maven/com.example/secure-deserialization@1.0-SNAPSHOT"}
+        {"name": "datadog:package", "value": "pkg:maven/com.example/secure-deserialization@1.0-SNAPSHOT"}
       ]
     }
   ],
