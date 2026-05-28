@@ -103,7 +103,7 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
-    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes]
+    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes, check-version-bump-only]
     permissions:
       contents: read
       id-token: write
@@ -183,9 +183,9 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
-          SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' }}
-          SKIP_AAS_TESTS: ${{ needs.check-aas-changes.outputs.should_run != 'true' }}
-          SKIP_CLOUD_RUN_TESTS: ${{ needs.check-cloud-run-changes.outputs.should_run != 'true' }}
+          SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_AAS_TESTS: ${{ needs.check-aas-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_CLOUD_RUN_TESTS: ${{ needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
           GCP_REGION: ${{ vars.GCP_REGION_E2E }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
@@ -262,6 +262,32 @@ jobs:
               - 'e2e/aas-windows.test.ts'
               - 'e2e/helpers/aas-verifier.ts'
               - '.github/workflows/ci.yml'
+
+  check-version-bump-only:
+    name: Check if only version fields changed
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.check.outputs.result }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 2
+      - name: Detect version-bump-only commit
+        id: check
+        run: |
+          non_json=$(git diff --name-only HEAD^ HEAD | grep -v 'package\.json' || true)
+          if [ -n "$non_json" ]; then
+            echo "result=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          leftover=$(git diff HEAD^ HEAD \
+            | grep '^[+-]' \
+            | grep -v '^+++\|^---' \
+            | grep -vE '^[+-]\s*"version":\s*"[0-9]+\.[0-9]+\.[0-9]+"' \
+            | grep -v '^$' || true)
+          [ -z "$leftover" ] \
+            && echo "result=true" >> $GITHUB_OUTPUT \
+            || echo "result=false" >> $GITHUB_OUTPUT
 
   e2e-test-windows:
     strategy:
