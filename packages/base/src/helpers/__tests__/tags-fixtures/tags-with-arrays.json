@@ -1,0 +1,6 @@
+{
+  "team": ["backend", "platform"],
+  "single": "value",
+  "numeric_array": [1, 2, 3],
+  "mixed_array": ["a", 1, true]
+}

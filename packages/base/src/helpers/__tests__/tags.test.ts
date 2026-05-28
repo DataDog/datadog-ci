@@ -61,6 +61,30 @@ describe('parseTags', () => {
   test('should not include invalid key:value pairs', () => {
     expect(parseTags(['key1:value1', 'key2:value2', 'invalidkeyvalue'])).toEqual({key1: 'value1', key2: 'value2'})
   })
+
+  test('normalizes bracket-form array values to canonical JSON', () => {
+    expect(parseTags(['team:[backend,platform]'])).toEqual({team: '["backend","platform"]'})
+  })
+
+  test('normalizes JSON-array values to canonical JSON', () => {
+    expect(parseTags(['team:["backend","platform"]'])).toEqual({team: '["backend","platform"]'})
+  })
+
+  test('preserves quoted commas inside JSON-array elements', () => {
+    expect(parseTags(['names:["Smith, John","Doe, Jane"]'])).toEqual({names: '["Smith, John","Doe, Jane"]'})
+  })
+
+  test('trims whitespace inside legacy bracket-form elements', () => {
+    expect(parseTags(['team:[ backend , platform ]'])).toEqual({team: '["backend","platform"]'})
+  })
+
+  test('passes scalar values through unchanged', () => {
+    expect(parseTags(['team:backend', 'env:prod'])).toEqual({team: 'backend', env: 'prod'})
+  })
+
+  test('does not treat values without brackets as arrays', () => {
+    expect(parseTags(['note:hello, world'])).toEqual({note: 'hello, world'})
+  })
 })
 
 describe('parseTagsFile', () => {
@@ -90,6 +114,18 @@ describe('parseTagsFile', () => {
     expect(valid).toBe(true)
     expect(tags).toEqual({bar: 'world'})
     expect(context.stdout.toString()).toContain("[WARN] tag 'foo' had nested fields which will be ignored")
+  })
+
+  test('array values are JSON-encoded', () => {
+    const context = createMockContext()
+    const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-with-arrays.json`)
+    expect(valid).toBe(true)
+    expect(tags).toEqual({
+      team: '["backend","platform"]',
+      single: 'value',
+      numeric_array: '[1,2,3]',
+      mixed_array: '["a",1,true]',
+    })
   })
 
   test('empty file path', () => {
