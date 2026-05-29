@@ -380,6 +380,67 @@ describe('execute', () => {
   })
 })
 
+describe('execute global release', () => {
+  const runCLI = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--service',
+    'test-service',
+    '--minified-path-prefix',
+    'https://static.com/js',
+    '--dry-run',
+  ])
+
+  test('--global-release uploads with the sentinel version', async () => {
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/basic', '--global-release'])
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain('Version: __GLOBAL__ (global release)')
+  })
+
+  test('omitting --release-version uploads with the sentinel version', async () => {
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain('Version: __GLOBAL__ (global release)')
+  })
+
+  test('--release-version combined with --global-release is rejected', async () => {
+    const {context, code} = await runCLI([
+      './src/commands/sourcemaps/__tests__/fixtures/basic',
+      '--global-release',
+      '--release-version',
+      '1234',
+    ])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('Cannot use both --release-version and --global-release')
+  })
+})
+
+describe('execute with --exclude', () => {
+  const runCLI = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--release-version',
+    '1234',
+    '--service',
+    'test-service',
+    '--minified-path-prefix',
+    'https://static.com/js',
+    '--dry-run',
+  ])
+
+  test('skips files matching the exclude glob', async () => {
+    const {context, code} = await runCLI([
+      './src/commands/sourcemaps/__tests__/fixtures/exclude',
+      '--exclude',
+      '**/skip.min.js',
+    ])
+    const output = context.stdout.toString()
+    expect(code).toBe(0)
+    expect(output).toContain('keep.min.js')
+    expect(output).not.toContain('skip.min.js')
+  })
+})
+
 interface ExpectedOutput {
   basePath: string
   concurrency: number

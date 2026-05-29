@@ -32,7 +32,7 @@ The folder structure should match the structure of the served static files.
 
 * `--service` (required) should be set as the name of the service you're uploading sourcemaps for, and Datadog will use this service name to find the corresponding sourcemaps based on the `service` tag set on the RUM SDK.
 
-* `--release-version` (required) is similar and will be used to match the `version` tag set on the RUM SDK.
+* `--release-version` (required, unless uploading a global release) is similar and will be used to match the `version` tag set on the RUM SDK. See [Global (version-less) sourcemaps](#global-version-less-sourcemaps) to upload without a version.
 
 * `--minified-path-prefix` (required) should be a prefix common to all your JS source files, depending on the URL they are served from. The prefix can be a full URL or an absolute path.
 Example: if you're uploading `dist/file.js` to `https://example.com/static/file.js`, you can use `datadog-ci sourcemaps upload ./dist --minified-path-prefix https://example.com/static/` or `datadog-ci sourcemaps upload ./dist --minified-path-prefix /static/`.
@@ -47,6 +47,28 @@ In addition, some optional parameters are available:
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths. See details in the [dedicated section](#setting-the-project-path).
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL, for example, https://github.com/my-company/my-project. Can also be set via the `DD_GIT_REPOSITORY_URL` environment variable.
 * `--commit-sha` (default: empty): overrides the git commit SHA. Can also be set via the `DD_GIT_COMMIT_SHA` environment variable.
+* `--global-release` (default: false): uploads the sourcemaps without a version (see [Global (version-less) sourcemaps](#global-version-less-sourcemaps)). Cannot be combined with `--release-version`.
+* `--exclude` (default: empty): a glob expression, relative to the upload directory, of files to ignore. Matching files are not uploaded, which lets you upload them separately in another invocation (see [Global (version-less) sourcemaps](#global-version-less-sourcemaps)).
+
+### Global (version-less) sourcemaps
+
+Some applications (for example, micro-frontends, see [#829](https://github.com/DataDog/datadog-ci/issues/829)) cannot tie their sourcemaps to a single RUM `version`. When file names are content-hashed and therefore unique across builds, you can upload sourcemaps that are matched regardless of the `version` tag reported by the RUM SDK.
+
+To do so, either omit `--release-version` or pass `--global-release` explicitly:
+
+```bash
+datadog-ci sourcemaps upload ./build --service my-service --minified-path-prefix https://static.datadog.com --global-release
+```
+
+If a build mixes content-hashed file names with fixed ones (such as `main.js`), use `--exclude` to skip the fixed files from the global upload, then upload them separately with a `--release-version`:
+
+```bash
+# Upload the content-hashed files as a global release, skipping main.js
+datadog-ci sourcemaps upload ./build --service my-service --minified-path-prefix https://static.datadog.com --global-release --exclude "**/main.js"
+
+# Upload the non-hashed files with a version
+datadog-ci sourcemaps upload ./build/main.js.map --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234
+```
 
 ### Link errors with your source code
 

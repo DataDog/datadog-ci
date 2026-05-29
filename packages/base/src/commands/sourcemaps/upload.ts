@@ -49,6 +49,10 @@ import {
 import {getMinifiedFilePath, readLastLine} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
+// Sentinel version sent for version-less uploads. The backend recognizes this value
+// and stores the sourcemaps so they can be matched regardless of the RUM `version` tag.
+export const GLOBAL_VERSION = '__GLOBAL__'
+
 export class SourcemapsUploadCommand extends BaseCommand {
   public static paths = [['sourcemaps', 'upload']]
 
@@ -68,6 +72,10 @@ export class SourcemapsUploadCommand extends BaseCommand {
         'Upload all sourcemaps in /home/users/ci with 50 concurrent uploads',
         'datadog-ci sourcemaps upload /home/users/ci --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234 --max-concurrency 50',
       ],
+      [
+        'Upload version-less (global) sourcemaps, excluding non-hashed files',
+        'datadog-ci sourcemaps upload . --service my-service --minified-path-prefix https://static.datadog.com --global-release --exclude "**/main.js"',
+      ],
     ],
   })
 
@@ -75,6 +83,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private disableGit = Option.Boolean('--disable-git')
   private quiet = Option.Boolean('--quiet', false)
   private dryRun = Option.Boolean('--dry-run', false)
+  private exclude = Option.String('--exclude')
+  private globalRelease = Option.Boolean('--global-release', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private minifiedPathPrefix = Option.String('--minified-path-prefix')
   private projectPath = Option.String('--project-path')
@@ -100,10 +110,17 @@ export class SourcemapsUploadCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    if (!this.releaseVersion) {
-      this.context.stderr.write('Missing release version\n')
+    if (this.releaseVersion && this.globalRelease) {
+      this.context.stderr.write('Cannot use both --release-version and --global-release\n')
 
       return 1
+    }
+
+    // A version-less upload (either --global-release or no --release-version) is sent with a
+    // sentinel version that the backend recognizes as a global release.
+    const isGlobalRelease = this.globalRelease || !this.releaseVersion
+    if (!this.releaseVersion) {
+      this.releaseVersion = GLOBAL_VERSION
     }
 
     if (!this.service) {
@@ -134,7 +151,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
         this.releaseVersion,
         this.service,
         this.maxConcurrency,
-        this.dryRun
+        this.dryRun,
+        isGlobalRelease
       )
     )
     const metricsLogger = getMetricsLogger({
@@ -219,7 +237,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'))
+    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'), {ignore: this.getExcludePattern()})
 
     const sourcemaps = (
       await doWithMaxConcurrency(this.maxConcurrency, jsFiles, async (minifiedFilePath) => {
@@ -265,7 +283,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getLegacyMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
+    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'), {ignore: this.getExcludePattern()})
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
@@ -275,6 +293,12 @@ export class SourcemapsUploadCommand extends BaseCommand {
         return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
       })
     )
+  }
+
+  // Builds the glob pattern of files to ignore, resolving the user-provided --exclude
+  // expression relative to the base path so it can be matched against collected file paths.
+  private getExcludePattern(): string | undefined {
+    return this.exclude ? buildPath(this.basePath, this.exclude) : undefined
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {

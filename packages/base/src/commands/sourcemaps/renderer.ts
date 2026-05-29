@@ -113,7 +113,8 @@ export const renderCommandInfo = (
   releaseVersion: string,
   service: string,
   poolLimit: number,
-  dryRun: boolean
+  dryRun: boolean,
+  globalRelease: boolean
 ) => {
   let fullStr = ''
   if (dryRun) {
@@ -128,9 +129,12 @@ export const renderCommandInfo = (
   )
   fullStr += minifiedPathPrefixStr
 
+  const versionStr = globalRelease
+    ? `${chalk.green('Version:')} ${chalk.cyan(releaseVersion)} ${chalk.dim('(global release)')}`
+    : `${chalk.green('Version:')} ${chalk.cyan(releaseVersion)}`
   const serviceVersionProjectPathStr =
     [
-      `${chalk.green('Version:')} ${chalk.cyan(releaseVersion)}`,
+      versionStr,
       `${chalk.green('Service:')} ${chalk.cyan(service)}`,
       `${chalk.green('Project path:')} ${projectPath !== undefined ? chalk.cyan(projectPath) : chalk.dim('<empty>')}`,
     ].join(' · ') + '\n\n'
