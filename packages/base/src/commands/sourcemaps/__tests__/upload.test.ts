@@ -439,6 +439,20 @@ describe('execute with --exclude', () => {
     expect(output).toContain('keep.min.js')
     expect(output).not.toContain('skip.min.js')
   })
+
+  // The legacy discovery path globs *.js.map directly (no sourceMappingURL comment),
+  // so the exclude must still be matched against the minified file it resolves to.
+  test('skips files matching the exclude glob in the legacy path', async () => {
+    const {context, code} = await runCLI([
+      './src/commands/sourcemaps/__tests__/fixtures/exclude-legacy',
+      '--exclude',
+      '**/skip.min.js',
+    ])
+    const output = context.stdout.toString()
+    expect(code).toBe(0)
+    expect(output).toContain('keep.min.js')
+    expect(output).not.toContain('skip.min.js')
+  })
 })
 
 interface ExpectedOutput {

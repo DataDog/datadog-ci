@@ -237,7 +237,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'), {ignore: this.getExcludePattern()})
+    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'))
 
     const sourcemaps = (
       await doWithMaxConcurrency(this.maxConcurrency, jsFiles, async (minifiedFilePath) => {
@@ -283,7 +283,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getLegacyMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'), {ignore: this.getExcludePattern()})
+    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
@@ -295,10 +295,15 @@ export class SourcemapsUploadCommand extends BaseCommand {
     )
   }
 
-  // Builds the glob pattern of files to ignore, resolving the user-provided --exclude
-  // expression relative to the base path so it can be matched against collected file paths.
-  private getExcludePattern(): string | undefined {
-    return this.exclude ? buildPath(this.basePath, this.exclude) : undefined
+  // Resolves the user-provided --exclude glob (relative to the base path) to the set of
+  // minified file paths to skip, so they can be uploaded separately in another invocation.
+  // Matching is done on the minified file regardless of how the sourcemap was discovered.
+  private getExcludedMinifiedFiles(): Set<string> {
+    if (!this.exclude) {
+      return new Set()
+    }
+
+    return new Set(globSync(buildPath(this.basePath, this.exclude)))
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
@@ -308,7 +313,10 @@ export class SourcemapsUploadCommand extends BaseCommand {
   }
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
-    const payloads = await this.getMatchingSourcemapFiles()
+    const excludedMinifiedFiles = this.getExcludedMinifiedFiles()
+    const payloads = (await this.getMatchingSourcemapFiles()).filter(
+      (sourcemap) => !excludedMinifiedFiles.has(sourcemap.minifiedFilePath)
+    )
     if (!useGit) {
       return payloads
     }
