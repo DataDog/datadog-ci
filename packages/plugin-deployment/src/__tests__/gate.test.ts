@@ -233,13 +233,13 @@ describe('gate', () => {
               {
                 type: 'monitor',
                 name: 'error rate monitors',
-                dry_run: false,
+                dryRun: false,
                 options: {query: 'service:transaction-backend env:production', duration: 300},
               },
               {
                 type: 'faulty_deployment_detection',
                 name: 'apm faulty deployment',
-                dry_run: false,
+                dryRun: false,
                 options: {duration: 900, excluded_resources: ['GET /healthcheck']},
               },
             ],
@@ -655,7 +655,9 @@ describe('gate', () => {
       command['env'] = 'prod'
       command['gateConfiguration'] = {
         dryRun: false,
-        rules: [{type: 'monitor', name: 'error rate check', options: {query: 'service:foo', duration: 300}}],
+        rules: [
+          {type: 'monitor', name: 'error rate check', dryRun: false, options: {query: 'service:foo', duration: 300}},
+        ],
       }
 
       const request = command['buildEvaluationRequest']()
@@ -664,7 +666,9 @@ describe('gate', () => {
         env: 'prod',
         configuration: {
           dryRun: false,
-          rules: [{type: 'monitor', name: 'error rate check', options: {query: 'service:foo', duration: 300}}],
+          rules: [
+            {type: 'monitor', name: 'error rate check', dryRun: false, options: {query: 'service:foo', duration: 300}},
+          ],
         },
       })
     })

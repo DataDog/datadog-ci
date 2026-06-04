@@ -3,7 +3,7 @@ import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 export interface Rule {
   type: string
   name: string
-  dry_run?: boolean
+  dryRun?: boolean
   options?: Record<string, unknown>
 }
 
