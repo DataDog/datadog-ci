@@ -649,11 +649,11 @@ describe('gate', () => {
       })
     })
 
-    test('should include configuration when gateConfiguration is set', () => {
+    test('should include configuration when configuration is set', () => {
       const command = createCommand(DeploymentGateCommand)
       command['service'] = 'test-service'
       command['env'] = 'prod'
-      command['gateConfiguration'] = {
+      command['configuration'] = {
         dryRun: false,
         rules: [
           {type: 'monitor', name: 'error rate check', dryRun: false, options: {query: 'service:foo', duration: 300}},

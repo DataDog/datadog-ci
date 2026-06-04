@@ -30,7 +30,7 @@ export class PluginCommand extends DeploymentGateCommand {
   private evaluationRequestTimeout = 60000 // 1 minute
   private pollingInterval = 15000 // 15 seconds
   private startTime: number = Date.now()
-  private gateConfiguration: Configuration | undefined
+  private configuration: Configuration | undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -83,7 +83,7 @@ export class PluginCommand extends DeploymentGateCommand {
         return 1
       }
 
-      this.gateConfiguration = config
+      this.configuration = config
     }
 
     this.logger.info('Starting deployment gate evaluation with parameters:')
@@ -98,8 +98,8 @@ export class PluginCommand extends DeploymentGateCommand {
     if (this.apmPrimaryTag) {
       this.logger.info(`\tAPM Primary Tag: ${this.apmPrimaryTag}`)
     }
-    if (this.gateConfiguration) {
-      this.logger.info(`\tGate configuration: ${this.gateConfiguration.rules.length} rules`)
+    if (this.configuration) {
+      this.logger.info(`\tGate configuration: ${this.configuration.rules.length} rules`)
     }
     this.logger.info(`\tTimeout: ${timeoutSeconds} seconds`)
     this.logger.info(`\tFail on error: ${this.failOnError ? 'true' : 'false'}\n`)
@@ -157,8 +157,8 @@ export class PluginCommand extends DeploymentGateCommand {
       request.monitors_query_variable = this.monitorsQueryVariable
     }
 
-    if (this.gateConfiguration) {
-      request.configuration = this.gateConfiguration
+    if (this.configuration) {
+      request.configuration = this.configuration
     }
 
     return request
