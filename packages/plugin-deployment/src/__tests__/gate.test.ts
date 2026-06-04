@@ -102,7 +102,7 @@ describe('gate', () => {
           'test-service',
           '--env',
           'prod',
-          '--config-file',
+          '--config',
           '/nonexistent/path/gate-config.json',
         ])
         expect(code).toBe(1)
@@ -115,7 +115,7 @@ describe('gate', () => {
           'test-service',
           '--env',
           'prod',
-          '--config-file',
+          '--config',
           `${fixturesPath}/config-invalid-json.json`,
         ])
         expect(code).toBe(1)
@@ -128,7 +128,7 @@ describe('gate', () => {
           'test-service',
           '--env',
           'prod',
-          '--config-file',
+          '--config',
           `${fixturesPath}/config-empty-rules.json`,
         ])
         expect(code).toBe(1)
@@ -219,7 +219,7 @@ describe('gate', () => {
           'test-service',
           '--env',
           'prod',
-          '--config-file',
+          '--config',
           `${fixturesPath}/config-valid.json`,
         ])
 
@@ -228,7 +228,7 @@ describe('gate', () => {
           service: 'test-service',
           env: 'prod',
           configuration: {
-            dry_run: false,
+            dryRun: false,
             rules: [
               {
                 type: 'monitor',
@@ -654,7 +654,7 @@ describe('gate', () => {
       command['service'] = 'test-service'
       command['env'] = 'prod'
       command['gateConfiguration'] = {
-        dry_run: false,
+        dryRun: false,
         rules: [{type: 'monitor', name: 'error rate check', options: {query: 'service:foo', duration: 300}}],
       }
 
@@ -663,7 +663,7 @@ describe('gate', () => {
         service: 'test-service',
         env: 'prod',
         configuration: {
-          dry_run: false,
+          dryRun: false,
           rules: [{type: 'monitor', name: 'error rate check', options: {query: 'service:foo', duration: 300}}],
         },
       })

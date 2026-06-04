@@ -8,7 +8,7 @@ export interface Rule {
 }
 
 export interface Configuration {
-  dry_run?: boolean
+  dryRun?: boolean
   rules: Rule[]
 }
 

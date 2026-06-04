@@ -1,5 +1,5 @@
 {
-  "dry_run": false,
+  "dryRun": false,
   "rules": [
     {
       "type": "monitor",
