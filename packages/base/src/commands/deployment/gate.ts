@@ -27,7 +27,7 @@ export class DeploymentGateCommand extends BaseCommand {
       ],
       [
         'Evaluate a gate with inline rule definitions',
-        'datadog-ci deployment gate --service payments-backend --env prod --version 1.2.3 --config-file ./gate-config.json',
+        'datadog-ci deployment gate --service payments-backend --env prod --version 1.2.3 --config ./gate-config.json',
       ],
       [
         'Evaluate a deployment gate with custom timeout',
