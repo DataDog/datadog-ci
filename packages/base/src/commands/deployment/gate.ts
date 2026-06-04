@@ -75,8 +75,8 @@ export class DeploymentGateCommand extends BaseCommand {
     description:
       'When true, the script will consider the gate as failed when timeout is reached or unexpected errors occur calling the Datadog APIs',
   })
-  protected configFilePath = Option.String('--config-file', {
-    description: 'Path to a JSON file containing gate configuration',
+  protected configFilePath = Option.String('--config', {
+    description: 'Path to the configuration file',
     validator: t.isString(),
   })
   // monitorsQueryVariable is hidden because it's not available yet

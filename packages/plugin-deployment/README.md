@@ -88,7 +88,7 @@ datadog-ci deployment gate --service payments-backend --env prod
 - `--identifier` (default: `default`): Deployment Gate identifier. For example, `pre`.
 - `--version` (**required** if your gate has faulty deployment detection rules): Version that is being deployed. For example, `v1.0.3`.
 - `--apm-primary-tag`: APM primary tag (only for gates with faulty deployment detection rules). For example, `region:us-central-1`.
-- `--config-file`: Path to a JSON file containing gate configuration. When provided, rules are evaluated inline without requiring a pre-created gate in Datadog.
+- `--config`: Path to the configuration file. Use this file to define inline rules without requiring a pre-created gate in Datadog.
 - `--timeout` (default: 10800 = 3 hours): Maximum time to wait for the script execution in seconds. For example, `3600`.
 - `--fail-on-error` (default: `false`): When false, the script will consider the gate as passed and exit with code 0 when timeout is reached or unexpected errors occur. Otherwise it will consider the gate failed and exit with code 1.
 
