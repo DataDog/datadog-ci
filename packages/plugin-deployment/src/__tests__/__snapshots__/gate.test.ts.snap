@@ -9,6 +9,7 @@ exports[`gate execute evaluation errors on gate evaluation request should fail w
 
 Requesting gate evaluation...
 Request failed with error: 400 Bad Request
+invalid configuration: invalid rule at index 0: invalid rule type: moniyor
 Deployment gate evaluation failed due to a non-retryable error: Request failed with status code 400
 ❌ Request failed with client error, exiting with status 1
 "

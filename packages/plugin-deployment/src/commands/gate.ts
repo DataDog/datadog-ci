@@ -207,6 +207,10 @@ export class PluginCommand extends DeploymentGateCommand {
       } catch (error) {
         if (isRequestError(error) && error.response?.status) {
           this.logger.error(`Request failed with error: ${error.response.status} ${error.response.statusText}`)
+          const details: string[] = error.response.data?.errors?.map((e: {detail?: string}) => e.detail).filter(Boolean)
+          if (details?.length) {
+            details.forEach((detail) => this.logger.error(detail))
+          }
         } else {
           const errorMessage = error instanceof Error ? error.message : String(error)
           this.logger.error(`Could not start gate evaluation with unknown error: ${errorMessage}`)

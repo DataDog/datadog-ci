@@ -295,6 +295,15 @@ describe('gate', () => {
             response: {
               status: 400,
               statusText: 'Bad Request',
+              data: {
+                errors: [
+                  {
+                    status: '400',
+                    title: 'Bad Request',
+                    detail: 'invalid configuration: invalid rule at index 0: invalid rule type: moniyor',
+                  },
+                ],
+              },
             },
           })
           const mockApi = {
