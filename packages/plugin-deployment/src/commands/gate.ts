@@ -175,18 +175,14 @@ export class PluginCommand extends DeploymentGateCommand {
     try {
       parsedConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'))
     } catch {
-      this.logger.error(
-        chalk.red(`${ICONS.FAILED} Failed to parse config file as JSON: ${chalk.bold(configFilePath)}`)
-      )
+      this.logger.error(chalk.red(`${ICONS.FAILED} Failed to parse config file as JSON: ${chalk.bold(configFilePath)}`))
 
       return undefined
     }
 
     const config = parsedConfig as Configuration
     if (!Array.isArray(config.rules) || config.rules.length === 0) {
-      this.logger.error(
-        chalk.red(`${ICONS.FAILED} Config file must contain a non-empty ${chalk.bold('rules')} array`)
-      )
+      this.logger.error(chalk.red(`${ICONS.FAILED} Config file must contain a non-empty ${chalk.bold('rules')} array`))
 
       return undefined
     }
