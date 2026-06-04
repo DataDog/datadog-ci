@@ -3,6 +3,8 @@ import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__test
 import * as apiModule from '../api'
 import {PluginCommand as DeploymentGateCommand} from '../commands/gate'
 
+const fixturesPath = `${__dirname}/fixtures`
+
 const buildEvaluationRequestResponse = (evaluationId: string) => ({
   data: {
     data: {
@@ -93,6 +95,45 @@ describe('gate', () => {
         expect(code).toBe(1)
         expect(context.stdout.toString()).toContain('Invalid --timeout value. Must be a positive integer.')
       })
+
+      test('should fail if config file does not exist', async () => {
+        const {context, code} = await runCLI([
+          '--service',
+          'test-service',
+          '--env',
+          'prod',
+          '--config-file',
+          '/nonexistent/path/gate-config.json',
+        ])
+        expect(code).toBe(1)
+        expect(context.stdout.toString()).toContain('Config file not found')
+      })
+
+      test('should fail if config file contains invalid JSON', async () => {
+        const {context, code} = await runCLI([
+          '--service',
+          'test-service',
+          '--env',
+          'prod',
+          '--config-file',
+          `${fixturesPath}/config-invalid-json.json`,
+        ])
+        expect(code).toBe(1)
+        expect(context.stdout.toString()).toContain('Failed to parse config file as JSON')
+      })
+
+      test('should fail if config file has empty rules array', async () => {
+        const {context, code} = await runCLI([
+          '--service',
+          'test-service',
+          '--env',
+          'prod',
+          '--config-file',
+          `${fixturesPath}/config-empty-rules.json`,
+        ])
+        expect(code).toBe(1)
+        expect(context.stdout.toString()).toContain('Config file must contain a non-empty')
+      })
     })
 
     describe('successful evaluation', () => {
@@ -164,6 +205,46 @@ describe('gate', () => {
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledWith('test-evaluation-id')
+      })
+
+      test('should pass configuration to the API when config file is provided', async () => {
+        const mockApi = {
+          requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+          getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('pass')),
+        }
+        jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+        const {code} = await runCLI([
+          '--service',
+          'test-service',
+          '--env',
+          'prod',
+          '--config-file',
+          `${fixturesPath}/config-valid.json`,
+        ])
+
+        expect(code).toBe(0)
+        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({
+          service: 'test-service',
+          env: 'prod',
+          configuration: {
+            dry_run: false,
+            rules: [
+              {
+                type: 'monitor',
+                name: 'error rate monitors',
+                dry_run: false,
+                options: {query: 'service:transaction-backend env:production', duration: 300},
+              },
+              {
+                type: 'faulty_deployment_detection',
+                name: 'apm faulty deployment',
+                dry_run: false,
+                options: {duration: 900, excluded_resources: ['GET /healthcheck']},
+              },
+            ],
+          },
+        })
       })
 
       test('should succeed when requests fail but succeed on retry', async () => {
@@ -565,6 +646,26 @@ describe('gate', () => {
         version: '1.2.3',
         apm_primary_tag: 'team:backend',
         monitors_query_variable: 'test-monitors-query-variable',
+      })
+    })
+
+    test('should include configuration when gateConfiguration is set', () => {
+      const command = createCommand(DeploymentGateCommand)
+      command['service'] = 'test-service'
+      command['env'] = 'prod'
+      command['gateConfiguration'] = {
+        dry_run: false,
+        rules: [{type: 'monitor', name: 'error rate check', options: {query: 'service:foo', duration: 300}}],
+      }
+
+      const request = command['buildEvaluationRequest']()
+      expect(request).toEqual({
+        service: 'test-service',
+        env: 'prod',
+        configuration: {
+          dry_run: false,
+          rules: [{type: 'monitor', name: 'error rate check', options: {query: 'service:foo', duration: 300}}],
+        },
       })
     })
   })

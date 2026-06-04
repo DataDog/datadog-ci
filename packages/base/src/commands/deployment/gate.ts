@@ -26,6 +26,10 @@ export class DeploymentGateCommand extends BaseCommand {
         'datadog-ci deployment gate --service payments-backend --env prod',
       ],
       [
+        'Evaluate a gate with inline rule definitions',
+        'datadog-ci deployment gate --service payments-backend --env prod --version 1.2.3 --config-file ./gate-config.json',
+      ],
+      [
         'Evaluate a deployment gate with custom timeout',
         'datadog-ci deployment gate --service payments-backend --env prod --timeout 7200',
       ],
@@ -70,6 +74,10 @@ export class DeploymentGateCommand extends BaseCommand {
   protected failOnError = Option.Boolean('--fail-on-error', false, {
     description:
       'When true, the script will consider the gate as failed when timeout is reached or unexpected errors occur calling the Datadog APIs',
+  })
+  protected configFilePath = Option.String('--config-file', {
+    description: 'Path to a JSON file containing gate configuration',
+    validator: t.isString(),
   })
   // monitorsQueryVariable is hidden because it's not available yet
   protected monitorsQueryVariable = Option.String('--monitors-query-variable', '', {

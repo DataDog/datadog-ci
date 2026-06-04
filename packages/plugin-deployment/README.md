@@ -74,7 +74,7 @@ The command also automatically collects CI environment variables from the CI job
 The `gate` command evaluates a Deployment Gate and exits with code 0 if the gate passed or 1 if the gate failed. Refer to the [Deployment Gates documentation][4] for more details.
 
 ```bash
-datadog-ci deployment gate --service --env [--identifier] [--version] [--apm-primary-tag] [--timeout] [--fail-on-error]
+datadog-ci deployment gate --service --env [--identifier] [--version] [--apm-primary-tag] [--config-file] [--timeout] [--fail-on-error]
 ```
 
 For example:
@@ -88,6 +88,7 @@ datadog-ci deployment gate --service payments-backend --env prod
 - `--identifier` (default: `default`): Deployment Gate identifier. For example, `pre`.
 - `--version` (**required** if your gate has faulty deployment detection rules): Version that is being deployed. For example, `v1.0.3`.
 - `--apm-primary-tag`: APM primary tag (only for gates with faulty deployment detection rules). For example, `region:us-central-1`.
+- `--config-file`: Path to a JSON file containing gate configuration. When provided, rules are evaluated inline without requiring a pre-created gate in Datadog.
 - `--timeout` (default: 10800 = 3 hours): Maximum time to wait for the script execution in seconds. For example, `3600`.
 - `--fail-on-error` (default: `false`): When false, the script will consider the gate as passed and exit with code 0 when timeout is reached or unexpected errors occur. Otherwise it will consider the gate failed and exit with code 1.
 

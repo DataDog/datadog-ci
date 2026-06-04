@@ -24,6 +24,7 @@ const requestGateEvaluation =
           ...(evaluationRequest.monitors_query_variable && {
             monitors_query_variable: evaluationRequest.monitors_query_variable,
           }),
+          ...(evaluationRequest.configuration && {configuration: evaluationRequest.configuration}),
         },
       },
     }
