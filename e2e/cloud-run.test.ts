@@ -51,7 +51,7 @@ describeOrSkip('cloud-run', () => {
         ` --project "${project}"` +
         ` --region "${region}"` +
         ` --service "${serviceName}"` +
-        ` --tracing` +
+        ` --tracing true` +
         ` --no-source-code-integration`,
       {
         DD_API_KEY: process.env.DD_API_KEY,
