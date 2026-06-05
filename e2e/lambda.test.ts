@@ -65,7 +65,7 @@ describeOrSkip('lambda', () => {
         ` --memory-size 128` +
         ` --architectures x86_64` +
         ` --region "${region}"` +
-        ` --output none`
+        ` --output text`
     )
     expectCommandToSucceed('Creating Lambda function', createResult)
     functionCreated = true
@@ -77,7 +77,7 @@ describeOrSkip('lambda', () => {
     if (functionCreated) {
       await execPromise(`aws lambda wait function-updated-v2 --function-name "${functionName}" --region "${region}"`)
       const deleteResult = await execPromise(
-        `aws lambda delete-function --function-name "${functionName}" --region "${region}" --output none`
+        `aws lambda delete-function --function-name "${functionName}" --region "${region}" --output text`
       )
       if (deleteResult.exitCode !== 0 && !deleteResult.stderr.includes('ResourceNotFoundException')) {
         console.error(
