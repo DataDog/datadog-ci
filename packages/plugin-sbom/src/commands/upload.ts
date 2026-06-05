@@ -22,6 +22,7 @@ import {getApiHelper} from '../api'
 import {generatePayload} from '../payload'
 import {
   renderDuplicateUpload,
+  renderEnvFlagDeprecationWarning,
   renderFailedUpload,
   renderInvalidFile,
   renderInvalidPayload,
@@ -93,6 +94,10 @@ export class PluginCommand extends SbomUploadCommand {
     }
 
     const service = 'datadog-ci'
+
+    if (this.env !== 'ci') {
+      this.context.stderr.write(renderEnvFlagDeprecationWarning())
+    }
 
     const environment = this.env
 

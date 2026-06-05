@@ -106,6 +106,11 @@ export const renderSuccessfulCommand = (duration: number) => {
   return fullStr
 }
 
+export const renderEnvFlagDeprecationWarning = (): string =>
+  chalk.yellow(
+    `${ICONS.WARNING} The --env flag is not used for SBOM uploads and will be ignored. The environment is automatically set to "ci".\n`
+  )
+
 export const renderPayloadWarning = (dependencies: Dependency[]): string => {
   let ret = ''
 
