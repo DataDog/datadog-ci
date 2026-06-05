@@ -105,6 +105,7 @@ Creating sidecar container datadog-sidecar on my-web-app (slot: staging)
 Updating Application Settings for my-web-app (slot: staging)
 Updating tags for my-web-app (slot: staging)
 Restarting Web App my-web-app (slot: staging)
+Registering DD_ENV as sticky slot setting(s) on my-web-app
 🐶 Instrumentation completed successfully!
 "
 `;

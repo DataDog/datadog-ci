@@ -11,7 +11,6 @@ import {
   WINDOWS_RUNTIME_EXTENSIONS,
 } from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasInstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
@@ -27,7 +26,43 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
-import {getWindowsRuntime, getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
+import {
+  aggregateStickyBySite,
+  getWindowsRuntime,
+  getEnvVars,
+  isDotnet,
+  isLinuxContainer,
+  isWindows,
+  registerStickySlotSettings,
+  type StickySlotSettings,
+} from '../common'
+
+interface ProcessResult {
+  success: boolean
+  // Sticky slot settings this resource needs registered on its parent site.
+  // Aggregated per-site and written once, since slotConfigNames is site-level.
+  sticky?: StickySlotSettings
+}
+
+/**
+ * Sticky slot settings a resource needs registered on its parent site. Includes
+ * DD_ENV when --env is set. Undefined when not targeting a slot.
+ */
+const stickySettingsFor = (
+  resourceGroup: string,
+  webApp: WebApp,
+  config: AasConfigOptions
+): StickySlotSettings | undefined => {
+  if (!webApp.slot) {
+    return undefined
+  }
+  const names: string[] = []
+  if (config.environment) {
+    names.push('DD_ENV')
+  }
+
+  return names.length ? {resourceGroup, webAppName: webApp.name, names} : undefined
+}
 
 export class PluginCommand extends AasInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -106,7 +141,19 @@ export class PluginCommand extends AasInstrumentCommand {
       )
     )
 
-    return results.every((result) => result)
+    // Register sticky settings once per site (slotConfigNames is site-level) to avoid
+    // concurrent read-modify-writes racing when multiple slots of one app are instrumented.
+    await Promise.all(
+      aggregateStickyBySite(results.map((result) => result.sticky)).map(({resourceGroup, webAppName, names}) =>
+        registerStickySlotSettings(aasClient, resourceGroup, webAppName, names, {
+          dryRun: this.dryRun,
+          dryRunPrefix: this.dryRunPrefix,
+          log: (message) => this.context.stdout.write(message),
+        })
+      )
+    )
+
+    return results.every((result) => result.success)
   }
 
   /**
@@ -118,9 +165,12 @@ export class PluginCommand extends AasInstrumentCommand {
     config: AasConfigOptions,
     resourceGroup: string,
     webApp: WebApp
-  ): Promise<boolean> {
+  ): Promise<ProcessResult> {
     // make config a copy with the default service added
     config = {...config, service: config.service ?? webApp.name}
+    // Sticky slot settings this resource needs on its parent site (none unless a
+    // slot). Reported back so processSubscription can register them once per site.
+    const sticky = stickySettingsFor(resourceGroup, webApp, config)
     try {
       const [site, envVarDictionary] = await Promise.all(
         webApp.slot
@@ -146,12 +196,13 @@ export class PluginCommand extends AasInstrumentCommand {
             )
           )
 
-          return false
+          return {success: false}
         }
         await this.instrumentExtension(aasClient, config, resourceGroup, webApp, runtime, existingEnvVars)
+        // we explicitly tag after instrumentation so we don't get a positive telemetry signal until it succeeds
         await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
-        return true
+        return {success: true, sticky}
       }
 
       // Linux instrumentation via sidecar
@@ -167,11 +218,12 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       config.isDotnet ||= isDotnet(site)
       config.isMusl &&= config.isDotnet && isContainer
       await this.instrumentSidecar(aasClient, config, resourceGroup, webApp, isContainer, existingEnvVars)
+      // we explicitly tag after instrumentation so we don't get a positive telemetry signal until it succeeds
       await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
 
-      return false
+      return {success: false}
     }
 
     if (!config.shouldNotRestart) {
@@ -184,12 +236,12 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         } catch (error) {
           this.context.stdout.write(renderError(`Failed to restart Web App ${renderWebApp(webApp)}: ${error}`))
 
-          return false
+          return {success: false}
         }
       }
     }
 
-    return true
+    return {success: true, sticky}
   }
 
   public async addTags(
