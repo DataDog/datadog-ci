@@ -54,7 +54,7 @@ describeOrSkip('cloud-run', () => {
         ` --tracing true` +
         ` --no-source-code-integration`,
       {
-        DD_API_KEY: process.env.DD_API_KEY,
+        DD_API_KEY: process.env.DATADOG_API_KEY,
       }
     )
     expect(result.exitCode).toBe(0)
