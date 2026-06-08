@@ -22,6 +22,7 @@ import {getApiHelper} from '../api'
 import {generatePayload} from '../payload'
 import {
   renderDuplicateUpload,
+  renderEnvFlagDeprecationWarning,
   renderFailedUpload,
   renderInvalidFile,
   renderInvalidPayload,
@@ -94,7 +95,11 @@ export class PluginCommand extends SbomUploadCommand {
 
     const service = 'datadog-ci'
 
-    const environment = this.env
+    if (this.env !== 'ci') {
+      this.context.stdout.write(renderEnvFlagDeprecationWarning())
+    }
+
+    const environment = 'ci'
 
     if (!this.basePath || !this.basePath.length) {
       this.context.stderr.write('Missing basePath\n')
