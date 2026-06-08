@@ -96,10 +96,10 @@ export class PluginCommand extends SbomUploadCommand {
     const service = 'datadog-ci'
 
     if (this.env !== 'ci') {
-      this.context.stderr.write(renderEnvFlagDeprecationWarning())
+      this.context.stdout.write(renderEnvFlagDeprecationWarning())
     }
 
-    const environment = this.env
+    const environment = 'ci'
 
     if (!this.basePath || !this.basePath.length) {
       this.context.stderr.write('Missing basePath\n')
