@@ -98,7 +98,7 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +             "value": "true"
 +           }
 +         ],
-+         "image": "gcr.io/datadoghq/serverless-init:latest",
++         "image": "registry.datadoghq.com/serverless-init:latest",
 +         "name": "datadog-sidecar",
 +         "resources": {
 +           "limits": {
@@ -255,7 +255,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "value": "1.0.0"
 +           }
 +         ],
-+         "image": "gcr.io/datadoghq/serverless-init:latest",
++         "image": "registry.datadoghq.com/serverless-init:latest",
 +         "name": "datadog-sidecar",
 +         "resources": {
 +           "limits": {

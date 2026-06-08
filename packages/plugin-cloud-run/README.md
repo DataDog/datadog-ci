@@ -14,7 +14,7 @@ datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name
 datadog-ci cloud-run instrument -i
 
 # Instrument a service with a pinned or custom sidecar image
-datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --sidecarImage gcr.io/datadoghq/serverless-init@sha256:<sha256>
+datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --sidecarImage registry.datadoghq.com/serverless-init@sha256:<sha256>
 
 # Dry run of all updates
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> -d
@@ -75,7 +75,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--llmobs` |  | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. |  |
-| `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `gcr.io/datadoghq/serverless-init:latest` |
+| `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `registry.datadoghq.com/serverless-init:latest` |
 | `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `datadog-sidecar` |
 | `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
 | `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |

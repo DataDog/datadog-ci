@@ -111,7 +111,7 @@ describe('UninstrumentCommand', () => {
           },
           {
             name: 'datadog-sidecar',
-            image: 'gcr.io/datadoghq/serverless-init:latest',
+            image: 'registry.datadoghq.com/serverless-init:latest',
             env: [{name: API_KEY_ENV_VAR, value: 'test-api-key'}],
             volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
           },

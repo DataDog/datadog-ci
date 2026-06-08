@@ -28,7 +28,7 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
 -             "value": "test-api-key"
 -           }
 -         ],
--         "image": "gcr.io/datadoghq/serverless-init:latest",
+-         "image": "registry.datadoghq.com/serverless-init:latest",
 -         "name": "datadog-sidecar",
 -         "volumeMounts": [
 -           {
@@ -105,7 +105,7 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
 -             "value": "test-api-key"
 -           }
 -         ],
--         "image": "gcr.io/datadoghq/serverless-init:latest",
+-         "image": "registry.datadoghq.com/serverless-init:latest",
 -         "name": "datadog-sidecar",
 -         "volumeMounts": [
 -           {

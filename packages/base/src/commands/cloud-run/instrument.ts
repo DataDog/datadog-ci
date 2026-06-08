@@ -10,7 +10,7 @@ import {
 
 import {BaseCommand} from '../..'
 
-const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
+const DEFAULT_SIDECAR_IMAGE = 'registry.datadoghq.com/serverless-init:latest'
 
 export class CloudRunInstrumentCommand extends BaseCommand {
   public static paths = [['cloud-run', 'instrument']]
