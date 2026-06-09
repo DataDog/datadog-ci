@@ -10,8 +10,6 @@ const SKIP_HELPERS = new Set([
   path.join(ROOT, 'packages/base/src/helpers/upload.ts'),
 ])
 
-const FLARE_HELPER = path.join(ROOT, 'packages/base/src/helpers/serverless/flare.ts')
-
 type Row = {scope: string; route: string; method: string}
 
 const collectTsFiles = (dir: string): string[] => {
@@ -43,7 +41,7 @@ const extractRoutes = (filePath: string): {route: string; method: string}[] => {
   const results: {route: string; method: string}[] = []
 
   const routeRegex = /datadogRoute\('([^']+)'/g
-  const methodRegex = /method:\s*(?:'(GET|POST|PUT|DELETE|PATCH)'|METHOD_(GET|POST|PUT|DELETE|PATCH))/i
+  const methodRegex = /method:\s*(?:'(GET|POST|PUT|DELETE|PATCH)')/
 
   let match: RegExpExecArray | undefined
   while ((match = routeRegex.exec(content) ?? undefined) !== undefined) {
@@ -63,7 +61,7 @@ const extractRoutes = (filePath: string): {route: string; method: string}[] => {
     for (const i of searchLines) {
       const m = methodRegex.exec(lines[i])
       if (m) {
-        method = (m[1] ?? m[2]).toUpperCase()
+        method = m[1].toUpperCase()
         break
       }
     }
@@ -101,12 +99,15 @@ const collectScopeEntries = (): Map<string, string[]> => {
   return scopes
 }
 
-const findFlareScopeImporters = (scopes: Map<string, string[]>): Set<string> => {
+// For a helper file, find all scopes that import it
+const findHelperImporters = (scopes: Map<string, string[]>, helperFile: string): Set<string> => {
   const importers = new Set<string>()
+  const srcDir = path.join(ROOT, 'packages/base/src')
+  const relPath = path.relative(srcDir, helperFile).replace(/\.ts$/, '').replace(/\\/g, '/')
   for (const [scope, files] of scopes) {
     for (const f of files) {
       const content = fs.readFileSync(f, 'utf8')
-      if (content.includes('helpers/serverless/flare')) {
+      if (content.includes(relPath)) {
         importers.add(scope)
         break
       }
@@ -118,53 +119,50 @@ const findFlareScopeImporters = (scopes: Map<string, string[]>): Set<string> => 
 
 const main = () => {
   const scopes = collectScopeEntries()
+  const rowMap = new Map<string, Row>()
 
-  // Determine which scopes import the shared flare helper
-  const flareImporters = findFlareScopeImporters(scopes)
-  const flareRoutes = extractRoutes(FLARE_HELPER)
-
-  const rows: Row[] = []
+  const addRow = (scope: string, route: string, method: string) => {
+    rowMap.set(`${scope}|${route}|${method}`, {scope, route, method})
+  }
 
   for (const [scope, files] of scopes) {
     for (const f of files) {
       for (const {route, method} of extractRoutes(f)) {
-        rows.push({scope, route, method})
-      }
-    }
-    // Attribute flare routes to any scope that imports the helper
-    if (flareImporters.has(scope)) {
-      for (const {route, method} of flareRoutes) {
-        rows.push({scope, route, method})
+        addRow(scope, route, method)
       }
     }
   }
 
-  // Deduplicate
-  const seen = new Set<string>()
-  const unique = rows.filter(({scope, route, method}) => {
-    const key = `${scope}|${route}|${method}`
-    if (seen.has(key)) {
-      return false
+  // Attribute shared helper routes to all scopes that import them
+  const helpersDir = path.join(ROOT, 'packages/base/src/helpers')
+  for (const helperFile of collectTsFiles(helpersDir)) {
+    if (SKIP_HELPERS.has(helperFile)) {
+      continue
     }
-    seen.add(key)
-
-    return true
-  })
+    const helperRoutes = extractRoutes(helperFile)
+    if (helperRoutes.length === 0) {
+      continue
+    }
+    const importers = findHelperImporters(scopes, helperFile)
+    for (const scope of importers) {
+      for (const {route, method} of helperRoutes) {
+        addRow(scope, route, method)
+      }
+    }
+  }
 
   // Sort by scope then route
-  unique.sort((a, b) => {
+  const rows = [...rowMap.values()].sort((a, b) => {
     const s = a.scope.localeCompare(b.scope)
 
     return s !== 0 ? s : a.route.localeCompare(b.route)
   })
 
-  const csv = ['scope,route,method', ...unique.map(({scope, route, method}) => `${scope},${route},${method}`)].join(
-    '\n'
-  )
+  const csv = ['scope,route,method', ...rows.map(({scope, route, method}) => `${scope},${route},${method}`)].join('\n')
 
   const outPath = path.join(ROOT, 'endpoints.csv')
   fs.writeFileSync(outPath, csv + '\n')
-  console.log(`Wrote ${unique.length} rows to ${outPath}`)
+  console.log(`Wrote ${rows.length} rows to ${outPath}`)
 }
 
 main()
