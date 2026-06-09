@@ -4,6 +4,7 @@
     "build": "yarn tsc:build",
     "bundle:npm": "cd packages/datadog-ci && node ../../scripts/tsdown-cli-npm.mjs",
     "bundle:sea": "cd packages/datadog-ci && node ../../scripts/tsdown-cli-sea.mjs",
+    "catalog-endpoints": "tsx --conditions=development bin/catalog-endpoints.ts",
     "check-licenses": "node bin/check-licenses.js",
     "check-npm-packages": "bin/check-npm-packages.sh",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
