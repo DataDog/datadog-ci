@@ -188,6 +188,7 @@ jobs:
           SKIP_CLOUD_RUN_TESTS: ${{ needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
           GCP_REGION: ${{ vars.GCP_REGION_E2E }}
+          GCP_CLOUD_RUN_APP_IMAGE_E2E: ${{ vars.GCP_CLOUD_RUN_APP_IMAGE_E2E }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
           AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
@@ -237,6 +238,7 @@ jobs:
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'e2e/cloud-run.test.ts'
               - 'e2e/helpers/cloud-run-verifier.ts'
+              - 'e2e/helpers/cloud-run-telemetry-checker.ts'
               - '.github/workflows/ci.yml'
 
   check-aas-changes:

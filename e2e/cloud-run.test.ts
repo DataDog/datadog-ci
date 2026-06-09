@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 
+import {checkTelemetryFlowing} from './helpers/cloud-run-telemetry-checker'
 import {verifyInstrumented, verifyUninstrumented} from './helpers/cloud-run-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
@@ -17,8 +18,8 @@ describeOrSkip('cloud-run', () => {
         ` --project "${project}"` +
         ` --region "${region}"` +
         ` --platform managed` +
-        ` --image us-docker.pkg.dev/cloudrun/container/hello` +
-        ` --no-allow-unauthenticated` +
+        ` --image ${process.env.GCP_CLOUD_RUN_APP_IMAGE_E2E}` +
+        ` --allow-unauthenticated` +
         ` --min-instances 0` +
         ` --max-instances 1` +
         ` --quiet` +
@@ -50,14 +51,26 @@ describeOrSkip('cloud-run', () => {
         ` --project "${project}"` +
         ` --region "${region}"` +
         ` --service "${serviceName}"` +
+        ` --tracing true` +
         ` --no-source-code-integration`,
       {
-        DD_API_KEY: process.env.DD_API_KEY,
+        DD_API_KEY: process.env.DATADOG_API_KEY,
       }
     )
     expect(result.exitCode).toBe(0)
 
     verifyInstrumented(serviceName, project, region)
+  }, 600_000)
+
+  it('telemetry flows', async () => {
+    const urlResult = await execPromise(
+      `gcloud run services describe "${serviceName}" --project "${project}" --region "${region}" --format="value(status.url)"`
+    )
+    const serviceUrl = urlResult.stdout.trim()
+
+    await fetch(serviceUrl)
+
+    await checkTelemetryFlowing(serviceName)
   }, 600_000)
 
   it('uninstrument and verify', async () => {
