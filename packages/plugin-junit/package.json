@@ -9,6 +9,9 @@
     "plugin"
   ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-junit",
+  "bugs": {
+    "url": "https://github.com/DataDog/datadog-ci/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/DataDog/datadog-ci.git",

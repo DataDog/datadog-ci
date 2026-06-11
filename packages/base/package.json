@@ -8,6 +8,9 @@
     "datadog-ci"
   ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/base",
+  "bugs": {
+    "url": "https://github.com/DataDog/datadog-ci/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/DataDog/datadog-ci.git",
