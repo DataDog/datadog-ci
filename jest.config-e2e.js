@@ -22,10 +22,14 @@ try {
   }
 } catch {}
 
+if (process.argv.some((arg) => arg.includes('jest')) && !process.env.DD_API_KEY && !process.env.DATADOG_API_KEY) {
+  console.error('Missing DD_API_KEY / DATADOG_API_KEY. Run e2e tests via: dd-auth --domain <your-org-domain> -- yarn test:e2e')
+  process.exit(1)
+}
+
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
-  globalSetup: './e2e/helpers/global-setup.js',
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
