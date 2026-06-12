@@ -1,6 +1,7 @@
 stages:
   - build
   - release
+  - catalog
 
 build-docker-image:
   stage: build
@@ -30,3 +31,23 @@ publish-docker-image:
     IMG_SOURCES: registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
     IMG_DESTINATIONS: ci:${CI_COMMIT_TAG},ci:latest
     IMG_SIGNING: 'false'
+
+catalog-endpoints:
+  stage: catalog
+  only: ['master']
+  tags: ['runner:docker']
+  image: node:22
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+  variables:
+    CI_IDENTITIES_CLIENT_VERSION: v0.6.4
+  before_script:
+    - apt-get update -qq && apt-get install -y awscli
+    - aws s3 cp "s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/${CI_IDENTITIES_CLIENT_VERSION}/ci-identities-gitlab-job-client-linux-amd64" /usr/local/bin/ci-identities-gitlab-job-client
+    - chmod +x /usr/local/bin/ci-identities-gitlab-job-client
+  script:
+    - yarn install --immutable
+    - yarn catalog-endpoints
+    - ci-identities-gitlab-job-client assume-role
+    - aws s3 cp endpoints.csv s3://dd-datadog-ci/endpoints.csv
