@@ -52,6 +52,8 @@ catalog-endpoints-upload:
   stage: catalog
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
+    - when: manual
+      allow_failure: true
   needs: ['catalog-endpoints-generate']
   tags: ['arch:amd64']
   image: registry.ddbuild.io/images/aws-cli:2.33.12
