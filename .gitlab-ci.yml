@@ -36,7 +36,7 @@ catalog-endpoints-generate:
   stage: catalog
   only: ['master']
   tags: ['arch:amd64']
-  image: node:22
+  image: registry.ddbuild.io/images/mirror/node:22
   script:
     - yarn install --immutable
     - yarn catalog-endpoints
