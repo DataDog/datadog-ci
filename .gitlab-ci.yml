@@ -50,7 +50,7 @@ catalog-endpoints-upload:
   only: ['master']
   needs: ['catalog-endpoints-generate']
   tags: ['arch:amd64']
-  image: registry.ddbuild.io/images/aws-cli:2.28.10
+  image: registry.ddbuild.io/images/aws-cli:2.33.12
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
