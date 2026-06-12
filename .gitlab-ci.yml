@@ -57,8 +57,8 @@ catalog-endpoints-upload:
   variables:
     CI_IDENTITIES_CLIENT_VERSION: v0.6.4
   before_script:
-    - aws s3 cp "s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/${CI_IDENTITIES_CLIENT_VERSION}/ci-identities-gitlab-job-client-linux-amd64" /usr/local/bin/ci-identities-gitlab-job-client
-    - chmod +x /usr/local/bin/ci-identities-gitlab-job-client
+    - aws s3 cp "s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/${CI_IDENTITIES_CLIENT_VERSION}/ci-identities-gitlab-job-client-linux-amd64" "${CI_PROJECT_DIR}/ci-identities-gitlab-job-client"
+    - chmod +x "${CI_PROJECT_DIR}/ci-identities-gitlab-job-client"
   script:
-    - ci-identities-gitlab-job-client assume-role
+    - "${CI_PROJECT_DIR}/ci-identities-gitlab-job-client" assume-role
     - aws s3 cp endpoints.csv s3://dd-datadog-ci/endpoints.csv
