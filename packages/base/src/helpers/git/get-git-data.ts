@@ -1,8 +1,23 @@
+import {execFileSync} from 'child_process'
 import {URL} from 'url'
 
 import type {GitAuthorAndCommitterMetadata} from '../interfaces'
 import type * as simpleGit from 'simple-git'
 import type {BranchSummary} from 'simple-git'
+
+export const gitRawSync = (args: string[], cwd?: string): string | undefined => {
+  try {
+    return execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      env: {...process.env, GIT_TERMINAL_PROMPT: '0'},
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000,
+    }).trim()
+  } catch {
+    return undefined
+  }
+}
 
 // Returns the remote of the current repository.
 export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {

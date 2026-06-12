@@ -13,6 +13,14 @@ jest.mock('../glob', () => {
     globSync: jest.fn<string[], [string]>(() => []),
   }
 })
+jest.mock('../git/get-git-data', () => {
+  const actual = jest.requireActual('../git/get-git-data')
+
+  return {
+    ...actual,
+    gitRawSync: jest.fn(),
+  }
+})
 
 import {
   getCIEnv,
@@ -28,6 +36,7 @@ import {
   isInteractive,
   shouldGetGithubJobDisplayName,
 } from '../ci'
+import {gitRawSync} from '../git/get-git-data'
 import {globSync} from '../glob'
 import {
   CI_ENV_VARS,
@@ -37,6 +46,7 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_SHA,
   PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
@@ -44,6 +54,7 @@ import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 import {createMockContext} from './testing-tools'
 
 const mockedGlobSync = globSync as jest.MockedFunction<typeof globSync>
+const mockedGitRawSync = gitRawSync as jest.MockedFunction<typeof gitRawSync>
 
 // Synthetic hosted-runner diag dirs used to exercise the glob-expansion path.
 // The real patterns live in githubWellKnownDiagnosticDirPatternsUnix/Win; these
@@ -214,6 +225,175 @@ describe('ci spec', () => {
       ...getUserGitSpanTags(),
     }
     expect(tags).toEqual({})
+  })
+
+  describe('bitbucket pull request head sha', () => {
+    const syntheticMergeSha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    const sourceBranchSha = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+    const destinationBranchSha = 'cccccccccccccccccccccccccccccccccccccccc'
+    const sourceMergeCommitSha = 'dddddddddddddddddddddddddddddddddddddddd'
+
+    const setBitbucketPullRequestEnv = () => {
+      process.env = {
+        BITBUCKET_BRANCH: 'feature/one',
+        BITBUCKET_BUILD_NUMBER: 'bitbucket-build-num',
+        BITBUCKET_CLONE_DIR: '/foo/bar',
+        BITBUCKET_COMMIT: syntheticMergeSha,
+        BITBUCKET_GIT_HTTP_ORIGIN: 'https://bitbucket-repo-url.com/repo.git',
+        BITBUCKET_PIPELINE_UUID: '{bitbucket-uuid}',
+        BITBUCKET_PR_DESTINATION_BRANCH: 'main',
+        BITBUCKET_PR_ID: '42',
+        BITBUCKET_REPO_FULL_NAME: 'bitbucket-repo',
+      }
+    }
+
+    beforeEach(() => {
+      mockedGitRawSync.mockReset()
+      mockedGitRawSync.mockReturnValue(undefined)
+      setBitbucketPullRequestEnv()
+    })
+
+    afterEach(() => {
+      mockedGitRawSync.mockReset()
+    })
+
+    it('keeps BITBUCKET_COMMIT when it is the pull request source branch head', () => {
+      process.env.BITBUCKET_COMMIT = sourceMergeCommitSha
+      mockedGitRawSync.mockImplementation((gitArgs) => {
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'HEAD^{commit}') {
+          return sourceMergeCommitSha
+        }
+        if (gitArgs[0] === 'rev-list') {
+          return `${sourceMergeCommitSha} ${sourceBranchSha} ${destinationBranchSha}`
+        }
+        if (gitArgs[0] === 'ls-remote' && gitArgs[2] === 'refs/heads/feature/one') {
+          return `${sourceMergeCommitSha}\trefs/heads/feature/one`
+        }
+
+        return undefined
+      })
+
+      const tags = getCISpanTags() as SpanTags
+
+      expect(tags[GIT_SHA]).toBe(sourceMergeCommitSha)
+      expect(tags[GIT_HEAD_SHA]).toBe(sourceMergeCommitSha)
+    })
+
+    it('uses the first parent of a verified synthetic merge commit', () => {
+      mockedGitRawSync.mockImplementation((gitArgs) => {
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'HEAD^{commit}') {
+          return syntheticMergeSha
+        }
+        if (gitArgs[0] === 'rev-list') {
+          return `${syntheticMergeSha} ${sourceBranchSha} ${destinationBranchSha}`
+        }
+        if (gitArgs[2] === 'refs/remotes/origin/feature/one^{commit}') {
+          return sourceBranchSha
+        }
+        if (gitArgs[2] === 'refs/remotes/origin/main^{commit}') {
+          return destinationBranchSha
+        }
+
+        return undefined
+      })
+
+      const tags = getCISpanTags() as SpanTags
+
+      expect(tags[GIT_HEAD_SHA]).toBe(sourceBranchSha)
+    })
+
+    it('falls back to remote branch refs when local refs are unavailable', () => {
+      mockedGitRawSync.mockImplementation((gitArgs) => {
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'HEAD^{commit}') {
+          return syntheticMergeSha
+        }
+        if (gitArgs[0] === 'rev-list') {
+          return `${syntheticMergeSha} ${sourceBranchSha} ${destinationBranchSha}`
+        }
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'refs/remotes/origin/feature/one^{commit}') {
+          return undefined
+        }
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'refs/heads/feature/one^{commit}') {
+          return undefined
+        }
+        if (gitArgs[0] === 'ls-remote' && gitArgs[2] === 'refs/heads/main') {
+          return `${destinationBranchSha}\trefs/heads/main`
+        }
+        if (gitArgs[0] === 'ls-remote' && gitArgs[2] === 'refs/heads/feature/one') {
+          return `${sourceBranchSha}\trefs/heads/feature/one`
+        }
+
+        return undefined
+      })
+
+      const tags = getCISpanTags() as SpanTags
+
+      expect(tags[GIT_HEAD_SHA]).toBe(sourceBranchSha)
+    })
+
+    it('does not infer from merge parents when the destination parent cannot be verified', () => {
+      mockedGitRawSync.mockImplementation((gitArgs) => {
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'HEAD^{commit}') {
+          return syntheticMergeSha
+        }
+        if (gitArgs[0] === 'rev-list') {
+          return `${syntheticMergeSha} ${sourceBranchSha} ${destinationBranchSha}`
+        }
+        if (gitArgs[2] === 'refs/remotes/origin/feature/one^{commit}') {
+          return sourceBranchSha
+        }
+
+        return undefined
+      })
+
+      const tags = getCISpanTags() as SpanTags
+
+      expect(tags[GIT_HEAD_SHA]).toBeUndefined()
+    })
+
+    it('does not use a source branch ref that no longer matches the checked-out commit graph', () => {
+      const newerSourceBranchSha = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      mockedGitRawSync.mockImplementation((gitArgs) => {
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'HEAD^{commit}') {
+          return syntheticMergeSha
+        }
+        if (gitArgs[0] === 'rev-list') {
+          return `${syntheticMergeSha} ${sourceBranchSha} ${destinationBranchSha}`
+        }
+        if (gitArgs[0] === 'ls-remote' && gitArgs[2] === 'refs/heads/feature/one') {
+          return `${newerSourceBranchSha}\trefs/heads/feature/one`
+        }
+        if (gitArgs[2] === 'refs/remotes/origin/main^{commit}') {
+          return destinationBranchSha
+        }
+
+        return undefined
+      })
+
+      const tags = getCISpanTags() as SpanTags
+
+      expect(tags[GIT_HEAD_SHA]).toBeUndefined()
+    })
+
+    it('does not infer from merge parents when the source branch head cannot be verified', () => {
+      mockedGitRawSync.mockImplementation((gitArgs) => {
+        if (gitArgs[0] === 'rev-parse' && gitArgs[2] === 'HEAD^{commit}') {
+          return syntheticMergeSha
+        }
+        if (gitArgs[0] === 'rev-list') {
+          return `${syntheticMergeSha} ${sourceBranchSha} ${destinationBranchSha}`
+        }
+        if (gitArgs[2] === 'refs/remotes/origin/main^{commit}') {
+          return destinationBranchSha
+        }
+
+        return undefined
+      })
+
+      const tags = getCISpanTags() as SpanTags
+
+      expect(tags[GIT_HEAD_SHA]).toBeUndefined()
+    })
   })
 
   CI_PROVIDERS.forEach((ciProvider) => {
