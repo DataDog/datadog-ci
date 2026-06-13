@@ -93,5 +93,8 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/DataDog/datadog-ci/issues"
+  }
 }
