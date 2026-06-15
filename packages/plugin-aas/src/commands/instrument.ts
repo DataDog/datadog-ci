@@ -1,4 +1,4 @@
-import type {SiteContainer, StringDictionary} from '@azure/arm-appservice'
+import type {Site, SiteContainer, StringDictionary} from '@azure/arm-appservice'
 import type {AasConfigOptions, WebApp, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {WebSiteManagementClient} from '@azure/arm-appservice'
@@ -30,39 +30,24 @@ import {
   aggregateStickyBySite,
   getWindowsRuntime,
   getEnvVars,
+  isConsumptionPlan,
   isDotnet,
+  isFunctionApp,
   isLinuxContainer,
   isWindows,
-  registerStickySlotSettings,
-  type StickySlotSettings,
+  mutateStickySlotSettings,
+  stickySlotSettings,
+  WEBSITE_PRIVATE_EXTENSIONS,
+  type ProcessResult,
+  AZURE_FUNCTIONS_DOCS_URL,
+  AZURE_WINDOWS_FUNCTIONS_DOCS_URL,
 } from '../common'
 
-interface ProcessResult {
-  success: boolean
-  // Sticky slot settings this resource needs registered on its parent site.
-  // Aggregated per-site and written once, since slotConfigNames is site-level.
-  sticky?: StickySlotSettings
-}
-
-/**
- * Sticky slot settings a resource needs registered on its parent site. Includes
- * DD_ENV when --env is set. Undefined when not targeting a slot.
- */
-const stickySettingsFor = (
-  resourceGroup: string,
-  webApp: WebApp,
-  config: AasConfigOptions
-): StickySlotSettings | undefined => {
-  if (!webApp.slot) {
-    return undefined
-  }
-  const names: string[] = []
-  if (config.environment) {
-    names.push('DD_ENV')
-  }
-
-  return names.length ? {resourceGroup, webAppName: webApp.name, names} : undefined
-}
+// Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
+const stickyNames = (config: AasConfigOptions, additional: string[] = []): string[] => [
+  ...additional,
+  ...(config.environment ? ['DD_ENV'] : []),
+]
 
 export class PluginCommand extends AasInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -145,7 +130,7 @@ export class PluginCommand extends AasInstrumentCommand {
     // concurrent read-modify-writes racing when multiple slots of one app are instrumented.
     await Promise.all(
       aggregateStickyBySite(results.map((result) => result.sticky)).map(({resourceGroup, webAppName, names}) =>
-        registerStickySlotSettings(aasClient, resourceGroup, webAppName, names, {
+        mutateStickySlotSettings(aasClient, resourceGroup, webAppName, names, 'add', {
           dryRun: this.dryRun,
           dryRunPrefix: this.dryRunPrefix,
           log: (message) => this.context.stdout.write(message),
@@ -168,9 +153,7 @@ export class PluginCommand extends AasInstrumentCommand {
   ): Promise<ProcessResult> {
     // make config a copy with the default service added
     config = {...config, service: config.service ?? webApp.name}
-    // Sticky slot settings this resource needs on its parent site (none unless a
-    // slot). Reported back so processSubscription can register them once per site.
-    const sticky = stickySettingsFor(resourceGroup, webApp, config)
+    const sticky = stickySlotSettings(resourceGroup, webApp, stickyNames(config))
     try {
       const [site, envVarDictionary] = await Promise.all(
         webApp.slot
@@ -186,9 +169,48 @@ export class PluginCommand extends AasInstrumentCommand {
       const existingEnvVars = envVarDictionary.properties ?? {}
 
       // Determine instrumentation method based on platform
+      if (isFunctionApp(site) && !isWindows(site)) {
+        this.context.stdout.write(
+          renderError(`Linux Function Apps are not supported by this command. See ${AZURE_FUNCTIONS_DOCS_URL}`)
+        )
+
+        return {success: false}
+      }
+
       if (isWindows(site)) {
         // Windows instrumentation via extension
         const runtime = config.windowsRuntime ?? getWindowsRuntime(site, existingEnvVars)
+
+        if (isFunctionApp(site)) {
+          if (isConsumptionPlan(site)) {
+            this.context.stdout.write(
+              renderError(
+                `Windows Function Apps require a Dedicated (App Service) or Premium plan. See ${AZURE_WINDOWS_FUNCTIONS_DOCS_URL}`
+              )
+            )
+
+            return {success: false}
+          }
+          if (runtime !== 'dotnet') {
+            this.context.stdout.write(
+              renderError(
+                `Windows Function Apps with the ${runtime ?? 'unknown'} runtime are not supported by this command. See ${AZURE_FUNCTIONS_DOCS_URL}`
+              )
+            )
+
+            return {success: false}
+          }
+          // Slots need WEBSITE_PRIVATE_EXTENSIONS=0 pinned sticky so it survives a swap.
+          await this.instrumentExtension(aasClient, config, resourceGroup, webApp, 'dotnet', existingEnvVars, site)
+          // tag only after instrumentation succeeds (avoids false telemetry)
+          await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
+
+          return {
+            success: true,
+            sticky: stickySlotSettings(resourceGroup, webApp, stickyNames(config, [WEBSITE_PRIVATE_EXTENSIONS])),
+          }
+        }
+
         if (!runtime) {
           this.context.stdout.write(
             renderSoftWarning(
@@ -198,8 +220,8 @@ export class PluginCommand extends AasInstrumentCommand {
 
           return {success: false}
         }
-        await this.instrumentExtension(aasClient, config, resourceGroup, webApp, runtime, existingEnvVars)
-        // we explicitly tag after instrumentation so we don't get a positive telemetry signal until it succeeds
+        await this.instrumentExtension(aasClient, config, resourceGroup, webApp, runtime, existingEnvVars, site)
+        // tag only after instrumentation succeeds (avoids false telemetry)
         await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
         return {success: true, sticky}
@@ -217,8 +239,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       }
       config.isDotnet ||= isDotnet(site)
       config.isMusl &&= config.isDotnet && isContainer
-      await this.instrumentSidecar(aasClient, config, resourceGroup, webApp, isContainer, existingEnvVars)
-      // we explicitly tag after instrumentation so we don't get a positive telemetry signal until it succeeds
+      await this.instrumentSidecar(aasClient, config, resourceGroup, webApp, existingEnvVars, site)
+      // tag only after instrumentation succeeds (avoids false telemetry)
       await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
@@ -285,7 +307,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     resourceGroup: string,
     webApp: WebApp,
     runtime: WindowsRuntime,
-    existingEnvVars: Record<string, string>
+    existingEnvVars: Record<string, string>,
+    site: Site
   ) {
     const extensionId = WINDOWS_RUNTIME_EXTENSIONS[runtime]
 
@@ -298,7 +321,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     const extensionInstalled = existingExtensions.some(
       (ext) => ext.name && getExtensionId(ext.name).toLowerCase() === extensionId.toLowerCase()
     )
-    const envVars = getEnvVars(config, false)
+    const envVars = getEnvVars(config, site, webApp)
 
     if (extensionInstalled) {
       this.context.stdout.write(
@@ -309,7 +332,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       return
     }
 
-    const envVarsPromise = this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars)
+    // Apply app settings before installing the extension (commits WEBSITE_PRIVATE_EXTENSIONS=0 for slots).
+    await this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars)
 
     this.context.stdout.write(`${this.dryRunPrefix}Stopping Web App ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
@@ -329,7 +353,6 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         {}
       )
     }
-    await envVarsPromise
 
     this.context.stdout.write(`${this.dryRunPrefix}Starting Web App ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
@@ -344,8 +367,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     config: AasConfigOptions,
     resourceGroup: string,
     webApp: WebApp,
-    isContainer: boolean,
-    existingEnvVars: Record<string, string>
+    existingEnvVars: Record<string, string>,
+    site: Site
   ) {
     const siteContainers = await collectAsyncIterator(
       webApp.slot
@@ -353,7 +376,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         : client.webApps.listSiteContainers(resourceGroup, webApp.name)
     )
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = getEnvVars(config, isContainer)
+    const envVars = getEnvVars(config, site, webApp)
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)

@@ -1,5 +1,5 @@
 import type {Site, SlotConfigNamesResource, WebSiteManagementClient} from '@azure/arm-appservice'
-import type {AasConfigOptions, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
+import type {AasConfigOptions, WebApp, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import chalk from 'chalk'
@@ -34,6 +34,10 @@ export const AAS_DD_SETTING_NAMES = [
   'WEBSITES_ENABLE_APP_SERVICE_STORAGE',
 ] as const
 
+// Disabling private site extensions releases the Functions runtime's locks on the SiteExtensions
+// directory before the extension install (datadog-aas-extension#457).
+export const WEBSITE_PRIVATE_EXTENSIONS = 'WEBSITE_PRIVATE_EXTENSIONS'
+
 /**
  * Detects the runtime of a Windows-based Web App
  * @param site The web app or slot
@@ -57,12 +61,17 @@ export const getWindowsRuntime = (site: Site, envVars: Record<string, string>): 
   return undefined
 }
 
-export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Record<string, string> => {
+export const getEnvVars = (config: AasConfigOptions, site: Site, webApp: WebApp): Record<string, string> => {
+  const isContainer = isLinuxContainer(site)
+  // Function App slots need private extensions disabled before the extension install.
+  const includePrivateExtensions = isWindowsFunctionApp(site) && !!webApp.slot
+
   // Get base environment variables
   let envVars = getBaseEnvVars(config)
   envVars = {
     WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
+    ...(includePrivateExtensions ? {[WEBSITE_PRIVATE_EXTENSIONS]: '0'} : {}),
     ...envVars,
   }
 
@@ -82,6 +91,13 @@ export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Reco
   return envVars
 }
 
+export const AZURE_FUNCTIONS_DOCS_URL = 'https://docs.datadoghq.com/serverless/azure_functions'
+export const AZURE_WINDOWS_FUNCTIONS_DOCS_URL = 'https://docs.datadoghq.com/serverless/azure_functions/dotnet_extension'
+
+export const isFunctionApp = (site: Site): boolean => {
+  return !!site.kind?.includes('functionapp')
+}
+
 export const isWindows = (site: Site): boolean => {
   if (!site.kind) {
     // search for windowsFxVersion in siteConfig if there is no kind
@@ -97,6 +113,15 @@ export const isDotnet = (site: Site): boolean => {
     (!!site.siteConfig?.windowsFxVersion && site.siteConfig.windowsFxVersion.toLowerCase().startsWith('dotnet'))
   )
 }
+
+export const isWindowsFunctionApp = (site: Site): boolean => isWindows(site) && isFunctionApp(site)
+
+// The .NET site extension only injects its profiler on Dedicated (App Service) and Elastic
+// Premium plans. On Consumption / Flex Consumption the extension installs but the profiler is
+// never attached to the worker, so no telemetry flows. site.sku carries the plan tier name.
+const UNSUPPORTED_FUNCTION_APP_SKUS = ['Dynamic', 'FlexConsumption']
+export const isConsumptionPlan = (site: Site): boolean =>
+  !!site.sku && UNSUPPORTED_FUNCTION_APP_SKUS.some((sku) => sku.toLowerCase() === site.sku!.toLowerCase())
 
 export const isLinuxContainer = (site: Site): boolean => {
   if (!site.siteConfig?.linuxFxVersion) {
@@ -116,6 +141,20 @@ export interface StickySlotSettings {
   names: string[]
 }
 
+export interface ProcessResult {
+  success: boolean
+  // Sticky settings to add/remove on the parent site, aggregated and written once per site.
+  sticky?: StickySlotSettings
+}
+
+/** Build a sticky-settings entry, or undefined when this isn't a slot or there's nothing to pin. */
+export const stickySlotSettings = (
+  resourceGroup: string,
+  webApp: WebApp,
+  names: string[]
+): StickySlotSettings | undefined =>
+  webApp.slot && names.length ? {resourceGroup, webAppName: webApp.name, names} : undefined
+
 /**
  * Collapse per-resource sticky settings into one entry per site, unioning their names.
  * slotConfigNames is a single site-level resource shared by all of a site's slots, so
@@ -127,6 +166,7 @@ export const aggregateStickyBySite = (entries: (StickySlotSettings | undefined)[
     if (!entry?.names.length) {
       continue
     }
+    // Web App names are globally unique, so the name alone identifies the site.
     const key = entry.webAppName
     const merged = bySite.get(key) ?? {resourceGroup: entry.resourceGroup, webAppName: entry.webAppName, names: []}
     merged.names = [...new Set([...merged.names, ...entry.names])]
@@ -137,29 +177,30 @@ export const aggregateStickyBySite = (entries: (StickySlotSettings | undefined)[
 }
 
 /**
- * Register the given app settings as sticky (in slotConfigNames) so they stay with their
- * slot across a swap, with a single read-modify-write. No-op when nothing changes.
+ * Add or remove sticky slot settings on a site's slotConfigNames with a single
+ * read-modify-write. No-op when nothing changes.
  */
-export const registerStickySlotSettings = async (
+export const mutateStickySlotSettings = async (
   client: WebSiteManagementClient,
   resourceGroup: string,
   webAppName: string,
   names: string[],
+  mode: 'add' | 'remove',
   opts: {dryRun: boolean; dryRunPrefix: string; log: (message: string) => void}
 ): Promise<void> => {
   const existing: SlotConfigNamesResource = await client.webApps.listSlotConfigurationNames(resourceGroup, webAppName)
   const current = existing.appSettingNames ?? []
-  const toAdd = names.filter((name) => !current.includes(name))
-  if (toAdd.length === 0) {
+  const changed = mode === 'add' ? names.filter((n) => !current.includes(n)) : names.filter((n) => current.includes(n))
+  if (changed.length === 0) {
     return
   }
+  const appSettingNames = mode === 'add' ? [...current, ...changed] : current.filter((n) => !changed.includes(n))
   opts.log(
-    `${opts.dryRunPrefix}Registering ${toAdd.join(', ')} as sticky slot setting(s) on ${chalk.bold(webAppName)}\n`
+    mode === 'add'
+      ? `${opts.dryRunPrefix}Registering ${changed.join(', ')} as sticky slot setting(s) on ${chalk.bold(webAppName)}\n`
+      : `${opts.dryRunPrefix}Removing sticky slot setting(s) ${changed.join(', ')} from ${chalk.bold(webAppName)}\n`
   )
   if (!opts.dryRun) {
-    await client.webApps.updateSlotConfigurationNames(resourceGroup, webAppName, {
-      ...existing,
-      appSettingNames: [...current, ...toAdd],
-    })
+    await client.webApps.updateSlotConfigurationNames(resourceGroup, webAppName, {...existing, appSettingNames})
   }
 }
