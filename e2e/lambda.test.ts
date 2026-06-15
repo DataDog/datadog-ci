@@ -22,9 +22,13 @@ const expectCommandToSucceed = (description: string, result: ExecResult): void =
 describeOrSkip('lambda', () => {
   const region = process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION ?? 'eu-central-1'
   const executionRoleArn = process.env.AWS_LAMBDA_EXECUTION_ROLE_ARN
-  const functionName = `dd-ci-lambda-${crypto.randomBytes(4).toString('hex')}`
+  const functionName = `dd-e2e-ci-lambda-${crypto.randomBytes(4).toString('hex')}`
   const functionZipPath = path.join(os.tmpdir(), `${functionName}.zip`)
-  const handlerPath = path.join(process.cwd(), 'e2e', 'fixtures', 'lambda', 'index.js')
+  const handlerPath = path.join(os.tmpdir(), `${functionName}-index.js`)
+  const handlerSource = `exports.handler = async () => {
+  console.log(JSON.stringify({message: 'Lambda e2e test invoked'}))
+  return {statusCode: 200, body: JSON.stringify({ok: true})}
+}`
   const expectedTags = {
     environment: 'e2e',
     service: 'datadog-ci-lambda-e2e',
@@ -66,9 +70,11 @@ describeOrSkip('lambda', () => {
       throw new Error('AWS_LAMBDA_EXECUTION_ROLE_ARN must be set to run Lambda e2e tests')
     }
 
+    fs.writeFileSync(handlerPath, handlerSource)
     const zipResult = await execPromise(`zip -j -q "${functionZipPath}" "${handlerPath}"`)
     expectCommandToSucceed('Creating Lambda fixture zip', zipResult)
 
+    const createdAt = Math.floor(Date.now() / 1000).toString()
     const createResult = await execPromiseWithRetries(
       `aws lambda create-function` +
         ` --function-name "${functionName}"` +
@@ -79,6 +85,7 @@ describeOrSkip('lambda', () => {
         ` --timeout 30` +
         ` --memory-size 128` +
         ` --architectures x86_64` +
+        ` --tags "dd_e2e_created=${createdAt}"` +
         ` --region "${region}"` +
         ` --output text`
     )
@@ -101,12 +108,14 @@ describeOrSkip('lambda', () => {
       }
     }
 
-    try {
-      if (fs.existsSync(functionZipPath)) {
-        fs.unlinkSync(functionZipPath)
+    for (const tempFile of [functionZipPath, handlerPath]) {
+      try {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile)
+        }
+      } catch (error) {
+        console.error(`Failed to delete temp file ${tempFile}:`, error)
       }
-    } catch (error) {
-      console.error('Failed to delete Lambda fixture zip:', error)
     }
   })
 
