@@ -9,7 +9,8 @@ const describeOrSkip =
 describeOrSkip('aas (Windows)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
-  const windowsAppName = `dd-ci-aas-win-${crypto.randomBytes(4).toString('hex')}`
+  const runId = crypto.randomBytes(4).toString('hex')
+  const windowsAppName = `one-e2e-ci-aas-win-${runId}`
   const windowsPlan = process.env.AZURE_AAS_WINDOWS_PLAN!
 
   beforeAll(async () => {
@@ -23,6 +24,7 @@ describeOrSkip('aas (Windows)', () => {
         ` --plan "${windowsPlan}"` +
         ` --runtime "NODE:22LTS"` +
         ` --https-only true` +
+        ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
         ` --output none`
     )
     if (result.exitCode !== 0) {
