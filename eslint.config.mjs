@@ -115,7 +115,7 @@ export default defineConfig(
     'packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml',
   ]),
   eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
   prettierRecommended,
