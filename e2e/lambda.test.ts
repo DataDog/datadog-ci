@@ -22,7 +22,8 @@ const expectCommandToSucceed = (description: string, result: ExecResult): void =
 describeOrSkip('lambda', () => {
   const region = process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION ?? 'eu-central-1'
   const executionRoleArn = process.env.AWS_LAMBDA_EXECUTION_ROLE_ARN
-  const functionName = `dd-e2e-ci-lambda-${crypto.randomBytes(4).toString('hex')}`
+  const runId = crypto.randomBytes(4).toString('hex')
+  const functionName = `one-e2e-ci-lambda-${runId}`
   const functionZipPath = path.join(os.tmpdir(), `${functionName}.zip`)
   const handlerPath = path.join(os.tmpdir(), `${functionName}-index.js`)
   const handlerSource = `exports.handler = async () => {
@@ -85,7 +86,7 @@ describeOrSkip('lambda', () => {
         ` --timeout 30` +
         ` --memory-size 128` +
         ` --architectures x86_64` +
-        ` --tags "dd_e2e_created=${createdAt}"` +
+        ` --tags "one_e2e_created=${createdAt}"` +
         ` --region "${region}"` +
         ` --output text`
     )
