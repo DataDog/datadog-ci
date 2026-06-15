@@ -115,11 +115,7 @@ export default defineConfig(
     'packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml',
   ]),
   eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked.map((config) =>
-    config.files
-      ? config
-      : {...config, files: tsFiles}
-  ),
+  ...tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
   prettierRecommended,
@@ -421,6 +417,7 @@ export default defineConfig(
   ...yml.configs['flat/standard'],
   {
     files: yamlFiles,
+    extends: [tseslint.configs.disableTypeChecked],
     rules: {
       'prettier/prettier': 'off',
       'yml/plain-scalar': 'off',
