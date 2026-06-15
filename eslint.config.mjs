@@ -11,6 +11,9 @@ import preferArrow from 'eslint-plugin-prefer-arrow'
 import prettierRecommended from 'eslint-plugin-prettier/recommended'
 import tseslint from 'typescript-eslint'
 
+const tsFiles = ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.cts', '**/*.mts', '**/*.js']
+const yamlFiles = ['**/*.yml', '**/*.yaml']
+
 const restrictedImports = [
   {
     // forbid using named imports for chalk
@@ -112,13 +115,17 @@ export default defineConfig(
     'packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml',
   ]),
   eslint.configs.recommended,
-  tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.recommendedTypeChecked.map((config) =>
+    config.files
+      ? config
+      : {...config, files: tsFiles}
+  ),
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
   prettierRecommended,
   jest.configs['flat/recommended'],
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.cts', '**/*.mts', '**/*.js'],
+    files: tsFiles,
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -411,13 +418,9 @@ export default defineConfig(
       'no-restricted-imports': ['error', {paths: restrictedImports}],
     },
   },
-  {
-    files: ['**/*.yml', '**/*.yaml'],
-    extends: [tseslint.configs.disableTypeChecked],
-  },
   ...yml.configs['flat/standard'],
   {
-    files: ['**/*.yml', '**/*.yaml'],
+    files: yamlFiles,
     rules: {
       'prettier/prettier': 'off',
       'yml/plain-scalar': 'off',
