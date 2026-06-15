@@ -11,7 +11,7 @@ describeOrSkip('cloud-run', () => {
   const project = process.env.GCP_PROJECT_ID!
   const region = process.env.GCP_REGION!
   const runId = crypto.randomBytes(4).toString('hex')
-  const serviceName = `dd-e2e-ci-cloud-run-${runId}`
+  const serviceName = `one-e2e-ci-cloud-run-${runId}`
 
   beforeAll(async () => {
     const result = await execPromiseWithRetries(
@@ -25,7 +25,7 @@ describeOrSkip('cloud-run', () => {
         ` --max-instances 1` +
         ` --quiet` +
         ` --format=none` +
-        ` --labels dd_e2e=true,dd_e2e_tool=ci-cloud-run,dd_e2e_run=${runId},dd_e2e_created=${Math.floor(Date.now() / 1000)}`
+        ` --labels one_e2e_created=${Math.floor(Date.now() / 1000)}`
     )
     if (result.exitCode !== 0) {
       throw new Error(`Failed to deploy Cloud Run service (exit code ${result.exitCode}): ${result.stderr}`)

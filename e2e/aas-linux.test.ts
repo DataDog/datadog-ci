@@ -10,7 +10,7 @@ describeOrSkip('aas (Linux)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
   const runId = crypto.randomBytes(4).toString('hex')
-  const linuxAppName = `dd-e2e-ci-aas-linux-${runId}`
+  const linuxAppName = `one-e2e-ci-aas-linux-${runId}`
   const linuxPlan = process.env.AZURE_AAS_LINUX_PLAN!
 
   beforeAll(async () => {
@@ -21,7 +21,7 @@ describeOrSkip('aas (Linux)', () => {
         ` --plan "${linuxPlan}"` +
         ` --runtime "NODE:22-lts"` +
         ` --https-only true` +
-        ` --tags dd_e2e=true dd_e2e_tool=ci-aas-linux dd_e2e_run=${runId} dd_e2e_created=${Math.floor(Date.now() / 1000)}` +
+        ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
         ` --output none`
     )
     if (result.exitCode !== 0) {
