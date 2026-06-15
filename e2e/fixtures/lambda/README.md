@@ -25,7 +25,7 @@ yarn jest --config jest.config-e2e.js e2e/lambda.test.ts --runInBand
 
 ## AWS Roles
 
-The Lambda execution role set in `AWS_LAMBDA_EXECUTION_ROLE_ARN` needs a trust policy for `lambda.amazonaws.com`. Attach `AWSLambdaBasicExecutionRole` if the function will be invoked manually.
+The Lambda execution role set in `AWS_LAMBDA_EXECUTION_ROLE_ARN` needs a trust policy for `lambda.amazonaws.com`. Attach `AWSLambdaBasicExecutionRole` if the function is invoked manually.
 
 The GitHub Actions OIDC role set in `AWS_ROLE_ARN_E2E` needs these permissions:
 
@@ -46,9 +46,9 @@ The GitHub Actions OIDC role set in `AWS_ROLE_ARN_E2E` needs these permissions:
 }
 ```
 
-It also needs `iam:PassRole` on the Lambda execution role.
+The GitHub Actions OIDC role also needs `iam:PassRole` on the Lambda execution role.
 
-## GitHub Actions Variables
+## GitHub Actions variables
 
 | Variable | Value |
 |----------|-------|

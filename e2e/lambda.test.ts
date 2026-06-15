@@ -6,7 +6,7 @@ import path from 'node:path'
 import type {ExecResult} from './helpers/exec'
 
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
-import {verifyLambdaInstrumented, verifyLambdaUninstrumented} from './helpers/lambda-verifier'
+import {checkTelemetryFlowing, verifyLambdaInstrumented, verifyLambdaUninstrumented} from './helpers/lambda-verifier'
 
 const describeOrSkip =
   process.env.SKIP_LAMBDA_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -31,6 +31,21 @@ describeOrSkip('lambda', () => {
     version: (process.env.GITHUB_SHA ?? 'local').slice(0, 40),
   }
   let functionCreated = false
+
+  const instrumentCommand =
+    `${DATADOG_CI_COMMAND} lambda instrument` +
+    ` -f "${functionName}"` +
+    ` -r "${region}"` +
+    ` --service "${expectedTags.service}"` +
+    ` --env "${expectedTags.environment}"` +
+    ` --version "${expectedTags.version}"` +
+    ` --no-source-code-integration`
+
+  const instrumentEnv = {
+    DATADOG_API_KEY: process.env.DATADOG_API_KEY,
+    DATADOG_SITE: process.env.DATADOG_SITE,
+    DD_API_KEY: process.env.DD_API_KEY,
+  }
 
   const waitForFunctionActive = async (): Promise<void> => {
     const result = await execPromiseWithRetries(
@@ -96,21 +111,26 @@ describeOrSkip('lambda', () => {
   })
 
   it('instrument and verify', async () => {
-    const result = await execPromiseWithRetries(
-      `${DATADOG_CI_COMMAND} lambda instrument` +
-        ` -f "${functionName}"` +
-        ` -r "${region}"` +
-        ` --service "${expectedTags.service}"` +
-        ` --env "${expectedTags.environment}"` +
-        ` --version "${expectedTags.version}"` +
-        ` --no-source-code-integration`,
-      {
-        DATADOG_API_KEY: process.env.DATADOG_API_KEY,
-        DATADOG_SITE: process.env.DATADOG_SITE,
-        DD_API_KEY: process.env.DD_API_KEY,
-      }
-    )
+    const result = await execPromiseWithRetries(instrumentCommand, instrumentEnv)
     expectCommandToSucceed('Instrumenting Lambda function', result)
+
+    await waitForFunctionUpdated()
+    verifyLambdaInstrumented(functionName, region, expectedTags)
+  }, 600_000)
+
+  it('invoke and verify telemetry', async () => {
+    const invokeOutputPath = path.join(os.tmpdir(), `${functionName}-invoke.json`)
+    const invokeResult = await execPromise(
+      `aws lambda invoke --function-name "${functionName}" --region "${region}" "${invokeOutputPath}"`
+    )
+    expectCommandToSucceed('Invoking Lambda function', invokeResult)
+
+    await checkTelemetryFlowing(expectedTags.service)
+  }, 600_000)
+
+  it('idempotent reinstrument', async () => {
+    const result = await execPromiseWithRetries(instrumentCommand, instrumentEnv)
+    expectCommandToSucceed('Re-instrumenting Lambda function', result)
 
     await waitForFunctionUpdated()
     verifyLambdaInstrumented(functionName, region, expectedTags)
