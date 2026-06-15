@@ -11,7 +11,8 @@ const describeOrSkip =
 describeOrSkip('container-app', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
-  const appName = `dd-ci-capp-${crypto.randomBytes(4).toString('hex')}`
+  const runId = crypto.randomBytes(4).toString('hex')
+  const appName = `dd-e2e-ci-capp-${runId}`
 
   beforeAll(async () => {
     const result = await execPromiseWithRetries(
@@ -23,6 +24,7 @@ describeOrSkip('container-app', () => {
         ` --cpu 0.25 --memory 0.5Gi` +
         ` --min-replicas 0 --max-replicas 1` +
         ` --ingress external --target-port 80` +
+        ` --tags dd_e2e=true dd_e2e_tool=ci-capp dd_e2e_run=${runId} dd_e2e_created=${Math.floor(Date.now() / 1000)}` +
         ` --output none`
     )
     if (result.exitCode !== 0) {
