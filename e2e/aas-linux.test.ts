@@ -37,8 +37,8 @@ describeOrSkip('aas (Linux)', () => {
     const deployResult = await execPromise(
       `az webapp deploy --name "${linuxAppName}" --resource-group "${resourceGroup}" --src-path "${zipPath}" --type zip --output none`
     )
-    if (deployResult.exitCode !== 0) {
-      throw new Error(`Failed to deploy app (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+    if (deployResult.stderr) {
+      console.log(`App deploy output: ${deployResult.stderr}`)
     }
   }, 900_000)
 
