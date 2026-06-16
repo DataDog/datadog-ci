@@ -1,4 +1,5 @@
 import eslint from '@eslint/js'
+import yml from 'eslint-plugin-yml'
 import globals from 'globals'
 import stylistic from '@stylistic/eslint-plugin'
 import {defineConfig, globalIgnores} from 'eslint/config'
@@ -9,6 +10,9 @@ import noNull from 'eslint-plugin-no-null'
 import preferArrow from 'eslint-plugin-prefer-arrow'
 import prettierRecommended from 'eslint-plugin-prettier/recommended'
 import tseslint from 'typescript-eslint'
+
+const tsFiles = ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.cts', '**/*.mts', '**/*.js']
+const yamlFiles = ['**/*.yml', '**/*.yaml']
 
 const restrictedImports = [
   {
@@ -106,6 +110,9 @@ export default defineConfig(
     'packages/datadog-ci/shims/injected-plugin-submodules.js',
     'packages/datadog-ci/shims/intl-collator.js',
     'bin/*.js',
+    '.github/dependabot.yml',
+    'packages/base/src/commands/flutter-symbols/__tests__/fixtures/pubspecs/invalidPubspec.yaml',
+    'packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml',
   ]),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
@@ -114,6 +121,7 @@ export default defineConfig(
   prettierRecommended,
   jest.configs['flat/recommended'],
   {
+    files: tsFiles,
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -405,5 +413,16 @@ export default defineConfig(
     rules: {
       'no-restricted-imports': ['error', {paths: restrictedImports}],
     },
-  }
+  },
+  ...yml.configs['flat/standard'],
+  {
+    files: yamlFiles,
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      'prettier/prettier': 'off',
+      'yml/plain-scalar': 'off',
+      'yml/quotes': 'off',
+      'yml/no-empty-mapping-value': 'off',
+    },
+  },
 )
