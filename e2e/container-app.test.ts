@@ -11,6 +11,7 @@ const describeOrSkip =
 describeOrSkip('container-app', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
+  const appImage = process.env.AZURE_CONTAINER_APP_IMAGE!
   const runId = crypto.randomBytes(4).toString('hex')
   const appName = `one-e2e-ci-capp-${runId}`
 
@@ -20,7 +21,7 @@ describeOrSkip('container-app', () => {
         ` --name "${appName}"` +
         ` --resource-group "${resourceGroup}"` +
         ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
-        ` --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest` +
+        ` --image "${appImage}"` +
         ` --cpu 0.25 --memory 0.5Gi` +
         ` --min-replicas 0 --max-replicas 1` +
         ` --ingress external --target-port 80` +
