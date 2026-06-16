@@ -35,13 +35,12 @@ describeOrSkip('aas (Windows)', () => {
       throw new Error(`Failed to create Windows web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
     }
 
-    const zipPath = `/tmp/aas-node-extension-${runId}.zip`
-    await execPromise(`curl -fsSL "${NODE_EXTENSION_APP_URL}" -o "${zipPath}"`)
-    const deployResult = await execPromise(
-      `az webapp deploy --name "${windowsAppName}" --resource-group "${resourceGroup}" --src-path "${zipPath}" --type zip --output none`
+    // WEBSITE_RUN_FROM_PACKAGE mounts the zip as wwwroot via ARM (no Kudu/SCM permissions needed)
+    const packageResult = await execPromise(
+      `az webapp config appsettings set --name "${windowsAppName}" --resource-group "${resourceGroup}" --settings WEBSITE_RUN_FROM_PACKAGE="${NODE_EXTENSION_APP_URL}" --output none`
     )
-    if (deployResult.stderr) {
-      console.log(`App deploy output: ${deployResult.stderr}`)
+    if (packageResult.exitCode !== 0) {
+      throw new Error(`Failed to configure app package (exit code ${packageResult.exitCode}): ${packageResult.stderr}`)
     }
   }, 900_000)
 
