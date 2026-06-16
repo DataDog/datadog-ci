@@ -7,6 +7,9 @@ import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
 
+// Pre-built Node.js app with dd-trace + winston, node_modules included
+const NODE_SIDECAR_APP_URL = 'https://selfmonitoringprod.blob.core.windows.net/code/node-sidecar.zip'
+
 describeOrSkip('aas (Linux)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
@@ -15,7 +18,7 @@ describeOrSkip('aas (Linux)', () => {
   const linuxPlan = process.env.AZURE_AAS_LINUX_PLAN!
 
   beforeAll(async () => {
-    const result = await execPromiseWithRetries(
+    const createResult = await execPromiseWithRetries(
       `az webapp create` +
         ` --name "${linuxAppName}"` +
         ` --resource-group "${resourceGroup}"` +
@@ -25,10 +28,19 @@ describeOrSkip('aas (Linux)', () => {
         ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
         ` --output none`
     )
-    if (result.exitCode !== 0) {
-      throw new Error(`Failed to create Linux web app (exit code ${result.exitCode}): ${result.stderr}`)
+    if (createResult.exitCode !== 0) {
+      throw new Error(`Failed to create Linux web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
     }
-  }, 600_000)
+
+    const zipPath = `/tmp/aas-node-sidecar-${runId}.zip`
+    await execPromise(`curl -fsSL "${NODE_SIDECAR_APP_URL}" -o "${zipPath}"`)
+    const deployResult = await execPromise(
+      `az webapp deploy --name "${linuxAppName}" --resource-group "${resourceGroup}" --src-path "${zipPath}" --type zip --output none`
+    )
+    if (deployResult.exitCode !== 0) {
+      throw new Error(`Failed to deploy app (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+    }
+  }, 900_000)
 
   afterAll(async () => {
     try {

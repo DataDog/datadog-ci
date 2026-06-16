@@ -7,6 +7,9 @@ import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
 
+// Pre-built Node.js app with dd-trace + winston, node_modules included
+const NODE_EXTENSION_APP_URL = 'https://selfmonitoringprod.blob.core.windows.net/code/node-extension.zip'
+
 describeOrSkip('aas (Windows)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
@@ -18,7 +21,7 @@ describeOrSkip('aas (Windows)', () => {
     // Stagger parallel matrix runs to avoid Azure extension install conflicts
     await new Promise((resolve) => setTimeout(resolve, Math.random() * 60_000))
 
-    const result = await execPromiseWithRetries(
+    const createResult = await execPromiseWithRetries(
       `az webapp create` +
         ` --name "${windowsAppName}"` +
         ` --resource-group "${resourceGroup}"` +
@@ -28,10 +31,19 @@ describeOrSkip('aas (Windows)', () => {
         ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
         ` --output none`
     )
-    if (result.exitCode !== 0) {
-      throw new Error(`Failed to create Windows web app (exit code ${result.exitCode}): ${result.stderr}`)
+    if (createResult.exitCode !== 0) {
+      throw new Error(`Failed to create Windows web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
     }
-  }, 600_000)
+
+    const zipPath = `/tmp/aas-node-extension-${runId}.zip`
+    await execPromise(`curl -fsSL "${NODE_EXTENSION_APP_URL}" -o "${zipPath}"`)
+    const deployResult = await execPromise(
+      `az webapp deploy --name "${windowsAppName}" --resource-group "${resourceGroup}" --src-path "${zipPath}" --type zip --output none`
+    )
+    if (deployResult.exitCode !== 0) {
+      throw new Error(`Failed to deploy app (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+    }
+  }, 900_000)
 
   afterAll(async () => {
     try {
