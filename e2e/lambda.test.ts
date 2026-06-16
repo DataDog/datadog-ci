@@ -30,9 +30,11 @@ describeOrSkip('lambda', () => {
   console.log(JSON.stringify({message: 'Lambda e2e test invoked'}))
   return {statusCode: 200, body: JSON.stringify({ok: true})}
 }`
+  // Use the unique per-run function name as the service so telemetry is filtered
+  // by run id -- this asserts THIS run's traces/logs flowed, not mere existence.
   const expectedTags = {
     environment: 'e2e',
-    service: 'datadog-ci-lambda-e2e',
+    service: functionName,
     version: (process.env.GITHUB_SHA ?? 'local').slice(0, 40),
   }
   let functionCreated = false

@@ -42,6 +42,9 @@ const getLayerArns = (config: LambdaFunctionConfiguration): string[] =>
 const hasLayer = (layerArns: string[], layerName: string): boolean =>
   layerArns.some((layerArn) => layerArn.includes(`:layer:${layerName}:`))
 
+const countLayers = (layerArns: string[], layerName: string): number =>
+  layerArns.filter((layerArn) => layerArn.includes(`:layer:${layerName}:`)).length
+
 export const verifyLambdaInstrumented = (
   functionName: string,
   region: string,
@@ -55,13 +58,15 @@ export const verifyLambdaInstrumented = (
   const layerArns = getLayerArns(config)
   const tags = getTags(config.FunctionArn, region)
 
-  expect(hasLayer(layerArns, NODE_LAYER_NAME)).toBe(true)
-  expect(hasLayer(layerArns, EXTENSION_LAYER_NAME)).toBe(true)
+  // Exactly one of each DD layer -- re-instrument must not duplicate layers (idempotent).
+  expect(countLayers(layerArns, NODE_LAYER_NAME)).toBe(1)
+  expect(countLayers(layerArns, EXTENSION_LAYER_NAME)).toBe(1)
   expect(config.Handler).toBe(DATADOG_NODE_HANDLER)
   expect(env.DD_LAMBDA_HANDLER).toBe(ORIGINAL_HANDLER)
   expect(env.DD_SERVICE).toBe(expectedTags.service)
   expect(env.DD_ENV).toBe(expectedTags.environment)
   expect(env.DD_VERSION).toBe(expectedTags.version)
+  expect(env.DD_TRACE_ENABLED).toBe('true')
   expect(env.DD_API_KEY).toBeDefined()
   expect(env.DD_SITE).toBeDefined()
   expect(Object.keys(tags)).toContain(SERVERLESS_CI_TAG)

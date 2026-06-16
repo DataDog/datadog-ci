@@ -293,7 +293,6 @@ jobs:
               - 'packages/base/src/commands/lambda/**'
               - 'packages/base/src/helpers/serverless/**'
               - 'packages/base/src/helpers/tags.ts'
-              - 'e2e/fixtures/lambda/**'
               - 'e2e/lambda.test.ts'
               - 'e2e/helpers/lambda-verifier.ts'
               - 'jest.config-e2e.js'
