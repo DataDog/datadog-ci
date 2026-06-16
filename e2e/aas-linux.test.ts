@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 
+import {checkTelemetryFlowing} from './helpers/aas-telemetry-checker'
 import {verifyLinuxInstrumented, verifyLinuxUninstrumented} from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 
@@ -50,6 +51,15 @@ describeOrSkip('aas (Linux)', () => {
 
     verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
   })
+
+  it('telemetry flows', async () => {
+    const hostnameResult = await execPromise(
+      `az webapp show --name "${linuxAppName}" --resource-group "${resourceGroup}" --query "defaultHostName" --output tsv`
+    )
+    const appUrl = `https://${hostnameResult.stdout.trim()}`
+    await fetch(appUrl)
+    await checkTelemetryFlowing(linuxAppName)
+  }, 600_000)
 
   it('uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(
