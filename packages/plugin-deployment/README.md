@@ -129,4 +129,4 @@ Additional helpful documentation, links, and articles:
 [2]: https://docs.datadoghq.com/continuous_delivery/
 [3]: https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines
 [4]: https://docs.datadoghq.com/deployment_gates/
-[5]: https://docs.datadoghq.com/deployment_gates/setup
+[5]: https://docs.datadoghq.com/api/latest/deployment-gates/trigger-a-deployment-gate-evaluation/
