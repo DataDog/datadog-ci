@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 import {checkTelemetryFlowing} from './helpers/cloud-run-telemetry-checker'
 import {verifyInstrumented, verifyUninstrumented} from './helpers/cloud-run-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
+import {triggerTraffic} from './helpers/traffic'
 
 const describeOrSkip =
   process.env.SKIP_CLOUD_RUN_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -70,7 +71,7 @@ describeOrSkip('cloud-run', () => {
     )
     const serviceUrl = urlResult.stdout.trim()
 
-    await fetch(serviceUrl)
+    await triggerTraffic(serviceUrl)
 
     await checkTelemetryFlowing(serviceName)
   }, 600_000)
