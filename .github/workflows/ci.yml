@@ -295,6 +295,7 @@ jobs:
               - 'packages/base/src/helpers/tags.ts'
               - 'e2e/lambda.test.ts'
               - 'e2e/helpers/lambda-verifier.ts'
+              - 'e2e/helpers/telemetry-checker.ts'
               - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
 

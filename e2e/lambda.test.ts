@@ -6,7 +6,8 @@ import path from 'node:path'
 import type {ExecResult} from './helpers/exec'
 
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
-import {checkTelemetryFlowing, verifyLambdaInstrumented, verifyLambdaUninstrumented} from './helpers/lambda-verifier'
+import {verifyLambdaInstrumented, verifyLambdaUninstrumented} from './helpers/lambda-verifier'
+import {checkTelemetryFlowing} from './helpers/telemetry-checker'
 
 const describeOrSkip =
   process.env.SKIP_LAMBDA_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -137,7 +138,11 @@ describeOrSkip('lambda', () => {
     )
     expectCommandToSucceed('Invoking Lambda function', invokeResult)
 
-    await checkTelemetryFlowing(expectedTags.service)
+    await checkTelemetryFlowing({
+      serviceName: expectedTags.service,
+      env: expectedTags.environment,
+      version: expectedTags.version,
+    })
   }, 600_000)
 
   it('idempotent reinstrument', async () => {
