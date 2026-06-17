@@ -224,8 +224,7 @@ jobs:
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'e2e/serverless/container-app/**'
-              - 'e2e/serverless/helpers/telemetry-checker.ts'
-              - 'e2e/serverless/helpers/traffic.ts'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-cloud-run-changes:
@@ -247,8 +246,7 @@ jobs:
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'e2e/serverless/cloud-run/**'
-              - 'e2e/serverless/helpers/telemetry-checker.ts'
-              - 'e2e/serverless/helpers/traffic.ts'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-aas-changes:
@@ -271,8 +269,7 @@ jobs:
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'packages/base/src/commands/aas/**'
               - 'e2e/serverless/aas/**'
-              - 'e2e/serverless/helpers/traffic.ts'
-              - 'e2e/serverless/helpers/telemetry-checker.ts'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-lambda-changes:
@@ -293,7 +290,7 @@ jobs:
               - 'packages/base/src/helpers/serverless/**'
               - 'packages/base/src/helpers/tags.ts'
               - 'e2e/serverless/lambda/**'
-              - 'e2e/serverless/helpers/telemetry-checker.ts'
+              - 'e2e/serverless/helpers/**'
               - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
 
