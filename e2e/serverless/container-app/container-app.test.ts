@@ -1,10 +1,11 @@
 import crypto from 'node:crypto'
 
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
 
-import {getContainerAppUrl, verifyInstrumented, verifyUninstrumented} from './helpers/container-app-verifier'
-import {checkTelemetryFlowing} from './helpers/telemetry-checker'
-import {triggerTraffic} from './helpers/traffic'
+import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
+import {triggerTraffic} from '../helpers/traffic'
+
+import {getContainerAppUrl, verifyInstrumented, verifyUninstrumented} from './container-app-verifier'
 
 const describeOrSkip =
   process.env.SKIP_CONTAINER_APP_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true'

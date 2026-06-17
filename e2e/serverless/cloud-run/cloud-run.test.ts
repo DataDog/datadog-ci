@@ -1,10 +1,11 @@
 import crypto from 'node:crypto'
 
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
 
-import {verifyInstrumented, verifyUninstrumented} from './helpers/cloud-run-verifier'
-import {checkTelemetryFlowing} from './helpers/telemetry-checker'
-import {triggerTraffic} from './helpers/traffic'
+import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
+import {triggerTraffic} from '../helpers/traffic'
+
+import {verifyInstrumented, verifyUninstrumented} from './cloud-run-verifier'
 
 const describeOrSkip =
   process.env.SKIP_CLOUD_RUN_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
