@@ -1,8 +1,9 @@
 import crypto from 'node:crypto'
 import os from 'node:os'
 
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../helpers/exec'
+
 import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './helpers/aas-verifier'
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 import {checkTelemetryFlowing} from './helpers/telemetry-checker'
 import {triggerTraffic} from './helpers/traffic'
 

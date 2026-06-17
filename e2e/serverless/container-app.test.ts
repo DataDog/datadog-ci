@@ -1,7 +1,8 @@
 import crypto from 'node:crypto'
 
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../helpers/exec'
+
 import {getContainerAppUrl, verifyInstrumented, verifyUninstrumented} from './helpers/container-app-verifier'
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 import {checkTelemetryFlowing} from './helpers/telemetry-checker'
 import {triggerTraffic} from './helpers/traffic'
 

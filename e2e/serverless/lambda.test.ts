@@ -3,9 +3,10 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import type {ExecResult} from './helpers/exec'
+import type {ExecResult} from '../helpers/exec'
 
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../helpers/exec'
+
 import {
   getLambdaSnapshot,
   verifyLambdaExtensionOnly,
