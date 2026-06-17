@@ -1,3 +1,4 @@
+import {createHash} from 'crypto'
 import fs from 'fs'
 // eslint-disable-next-line no-restricted-imports
 import path from 'path'
@@ -159,8 +160,12 @@ const main = () => {
   })
 
   const csv = [
-    'resource_name,scope,route,method',
-    ...rows.map(({scope, route, method}) => `${method} ${route},${scope},${route},${method}`),
+    'id,resource_name,scope,route,method',
+    ...rows.map(({scope, route, method}) => {
+      const id = createHash('sha256').update(`${method},${route},${scope}`).digest('hex').slice(0, 16)
+
+      return `${id},${method} ${route},${scope},${route},${method}`
+    }),
   ].join('\n')
 
   const outPath = path.join(ROOT, 'endpoints.csv')
