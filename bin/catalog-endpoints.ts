@@ -118,6 +118,16 @@ const findHelperImporters = (scopes: Map<string, string[]>, helperFile: string):
   return importers
 }
 
+const buildCsv = (rows: Row[]): string =>
+  [
+    'id,resource_name,scope,route,method',
+    ...rows.map(({scope, route, method}) => {
+      const id = createHash('sha256').update(`${method},${route},${scope}`).digest('hex').slice(0, 16)
+
+      return `${id},${method} ${route},${scope},${route},${method}`
+    }),
+  ].join('\n')
+
 const main = () => {
   const scopes = collectScopeEntries()
   const rowMap = new Map<string, Row>()
@@ -159,17 +169,8 @@ const main = () => {
     return s !== 0 ? s : a.route.localeCompare(b.route)
   })
 
-  const csv = [
-    'id,resource_name,scope,route,method',
-    ...rows.map(({scope, route, method}) => {
-      const id = createHash('sha256').update(`${method},${route},${scope}`).digest('hex').slice(0, 16)
-
-      return `${id},${method} ${route},${scope},${route},${method}`
-    }),
-  ].join('\n')
-
   const outPath = path.join(ROOT, 'endpoints.csv')
-  fs.writeFileSync(outPath, csv + '\n')
+  fs.writeFileSync(outPath, buildCsv(rows) + '\n')
   console.log(`Wrote ${rows.length} rows to ${outPath}`)
 }
 
