@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 import {verifyLinuxInstrumented, verifyLinuxUninstrumented} from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 import {checkTelemetryFlowing} from './helpers/telemetry-checker'
+import {triggerTraffic} from './helpers/traffic'
 
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -16,6 +17,19 @@ describeOrSkip('aas (Linux)', () => {
   const runId = crypto.randomBytes(4).toString('hex')
   const linuxAppName = `one-e2e-ci-aas-linux-${runId}`
   const linuxPlan = process.env.AZURE_AAS_LINUX_PLAN!
+
+  // Tie telemetry to this run via service/env/version/run-id so the checker asserts
+  // identity, not mere existence.
+  const instrumentCommand =
+    `${DATADOG_CI_COMMAND} aas instrument` +
+    ` -s "${subscriptionId}"` +
+    ` -g "${resourceGroup}"` +
+    ` -n "${linuxAppName}"` +
+    ` --service "${linuxAppName}"` +
+    ` --env e2e` +
+    ` --version "${runId}"` +
+    ` --extra-tags "one_e2e_run_id:${runId}"` +
+    ` --no-source-code-integration`
 
   beforeAll(async () => {
     const createResult = await execPromiseWithRetries(
@@ -52,12 +66,9 @@ describeOrSkip('aas (Linux)', () => {
   })
 
   it('instrument and verify', async () => {
-    const result = await execPromiseWithRetries(
-      `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${linuxAppName}" --no-source-code-integration`,
-      {
-        DD_API_KEY: process.env.DD_API_KEY,
-      }
-    )
+    const result = await execPromiseWithRetries(instrumentCommand, {
+      DD_API_KEY: process.env.DD_API_KEY,
+    })
     expect(result.exitCode).toBe(0)
 
     verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
@@ -68,9 +79,25 @@ describeOrSkip('aas (Linux)', () => {
       `az webapp show --name "${linuxAppName}" --resource-group "${resourceGroup}" --query "defaultHostName" --output tsv`
     )
     const appUrl = `https://${hostnameResult.stdout.trim()}`
-    await fetch(appUrl)
-    await checkTelemetryFlowing({serviceName: linuxAppName})
+    await triggerTraffic(appUrl)
+
+    await checkTelemetryFlowing({
+      serviceName: linuxAppName,
+      env: 'e2e',
+      version: runId,
+      tags: [`one_e2e_run_id:${runId}`],
+    })
   }, 600_000)
+
+  it('instrument is idempotent', async () => {
+    const result = await execPromiseWithRetries(instrumentCommand, {
+      DD_API_KEY: process.env.DD_API_KEY,
+    })
+    expect(result.exitCode).toBe(0)
+
+    // Re-instrumenting must not duplicate config -- the sidecar and settings stay singular.
+    verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
+  })
 
   it('uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(

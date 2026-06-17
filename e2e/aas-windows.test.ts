@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 import {checkTelemetryFlowing} from './helpers/telemetry-checker'
+import {triggerTraffic} from './helpers/traffic'
 
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -16,6 +17,20 @@ describeOrSkip('aas (Windows)', () => {
   const runId = crypto.randomBytes(4).toString('hex')
   const windowsAppName = `one-e2e-ci-aas-win-${runId}`
   const windowsPlan = process.env.AZURE_AAS_WINDOWS_PLAN!
+
+  // Tie telemetry to this run via service/env/version/run-id so the checker asserts
+  // identity, not mere existence.
+  const instrumentCommand =
+    `${DATADOG_CI_COMMAND} aas instrument` +
+    ` -s "${subscriptionId}"` +
+    ` -g "${resourceGroup}"` +
+    ` -n "${windowsAppName}"` +
+    ` --service "${windowsAppName}"` +
+    ` --env e2e` +
+    ` --version "${runId}"` +
+    ` --extra-tags "one_e2e_run_id:${runId}"` +
+    ` --windows-runtime node` +
+    ` --no-source-code-integration`
 
   beforeAll(async () => {
     // Stagger parallel matrix runs to avoid Azure extension install conflicts
@@ -57,7 +72,7 @@ describeOrSkip('aas (Windows)', () => {
   // Windows site extension installs are slow (~4min) and may need retries
   it('instrument and verify', async () => {
     const result = await execPromiseWithRetries(
-      `${DATADOG_CI_COMMAND} aas instrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}" --windows-runtime node --no-source-code-integration`,
+      instrumentCommand,
       {
         DD_API_KEY: process.env.DD_API_KEY,
       },
@@ -73,9 +88,29 @@ describeOrSkip('aas (Windows)', () => {
       `az webapp show --name "${windowsAppName}" --resource-group "${resourceGroup}" --query "defaultHostName" --output tsv`
     )
     const appUrl = `https://${hostnameResult.stdout.trim()}`
-    await fetch(appUrl)
-    await checkTelemetryFlowing({serviceName: windowsAppName})
+    await triggerTraffic(appUrl)
+
+    await checkTelemetryFlowing({
+      serviceName: windowsAppName,
+      env: 'e2e',
+      version: runId,
+      tags: [`one_e2e_run_id:${runId}`],
+    })
   }, 600_000)
+
+  it('instrument is idempotent', async () => {
+    const result = await execPromiseWithRetries(
+      instrumentCommand,
+      {
+        DD_API_KEY: process.env.DD_API_KEY,
+      },
+      {maxAttempts: 5, delaySeconds: 30}
+    )
+    expect(result.exitCode).toBe(0)
+
+    // Re-instrumenting must not duplicate config -- the site extension and settings stay singular.
+    verifyWindowsInstrumented(windowsAppName, resourceGroup, subscriptionId)
+  }, 900_000)
 
   it('uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(

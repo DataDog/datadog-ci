@@ -277,6 +277,8 @@ jobs:
               - 'e2e/aas-linux.test.ts'
               - 'e2e/aas-windows.test.ts'
               - 'e2e/helpers/aas-verifier.ts'
+              - 'e2e/helpers/traffic.ts'
+              - 'e2e/helpers/telemetry-checker.ts'
               - '.github/workflows/ci.yml'
 
   check-lambda-changes:
