@@ -223,24 +223,9 @@ export const createInstrumentedTemplate = (
   }
 
   const containers = template.containers || []
-  const hasSidecarContainer = containers.some((c) => c.name === baseSidecar.name)
-  const newSidecarContainer = {
-    ...baseSidecar,
-    env: Object.values({
-      ...DEFAULT_ENV_VARS_BY_NAME,
-      ...byName(baseSidecar.env ?? []),
-      ...envVarsByName,
-    }) as EnvVar[],
-    volumeMounts: [sharedVolumeMount],
-  } as Container
-
-  // Update all app containers to add volume mounts and env vars if they don't have them
-  const updatedContainers = containers.map((container) => {
-    if (container.name === baseSidecar.name) {
-      return newSidecarContainer
-    }
-
-    const existingVolumeMounts = container.volumeMounts || []
+  const existingSidecarContainer = containers.find((c) => c.name === baseSidecar.name)
+  const ensureSharedVolumeMount = (volumeMounts: FullyOptional<VolumeMount>[] | null | undefined): VolumeMount[] => {
+    const existingVolumeMounts = volumeMounts || []
     const hasSharedVolumeMount = existingVolumeMounts.some(
       (mount) => mount[sharedVolumeOptions.volumeMountNameKey] === sharedVolumeOptions.name
     )
@@ -251,9 +236,36 @@ export const createInstrumentedTemplate = (
       updatedVolumeMounts.push(sharedVolumeMount)
     }
 
+    return updatedVolumeMounts as VolumeMount[]
+  }
+  const existingSidecarResources =
+    existingSidecarContainer && 'resources' in existingSidecarContainer ? existingSidecarContainer.resources : undefined
+  const baseSidecarResources = baseSidecar && 'resources' in baseSidecar ? baseSidecar.resources : undefined
+  const newSidecarContainer = {
+    ...existingSidecarContainer,
+    ...baseSidecar,
+    resources:
+      existingSidecarResources || baseSidecarResources
+        ? {...(existingSidecarResources ?? {}), ...(baseSidecarResources ?? {})}
+        : undefined,
+    env: Object.values({
+      ...DEFAULT_ENV_VARS_BY_NAME,
+      ...byName(existingSidecarContainer?.env ?? []),
+      ...byName(baseSidecar.env ?? []),
+      ...envVarsByName,
+    }) as EnvVar[],
+    volumeMounts: ensureSharedVolumeMount(existingSidecarContainer?.volumeMounts ?? baseSidecar.volumeMounts),
+  } as Container
+
+  // Update all app containers to add volume mounts and env vars if they don't have them
+  const updatedContainers = containers.map((container) => {
+    if (container.name === baseSidecar.name) {
+      return newSidecarContainer
+    }
+
     return {
       ...container,
-      volumeMounts: updatedVolumeMounts,
+      volumeMounts: ensureSharedVolumeMount(container.volumeMounts),
       env: Object.values({
         ...DEFAULT_ENV_VARS_BY_NAME, // Add default vars which can be overridden
         ...byName(container.env ?? []), // Then add existing env vars
@@ -263,7 +275,7 @@ export const createInstrumentedTemplate = (
   }) as Container[]
 
   // Add sidecar if it doesn't exist
-  if (!hasSidecarContainer) {
+  if (!existingSidecarContainer) {
     updatedContainers.push(newSidecarContainer)
   }
 

@@ -25,10 +25,14 @@ Updating configuration for my-container-app:
 +             "secretRef": "dd-api-key"
 +           },
 +           {
++             "name": "DD_APM_ENABLED",
++             "value": "true"
++           },
++           {
 +             "name": "DD_AZURE_RESOURCE_GROUP",
 +             "value": "my-resource-group"
 +           },
-+           {
+            {
 +             "name": "DD_AZURE_SUBSCRIPTION_ID",
 +             "value": "00000000-0000-0000-0000-000000000000"
 +           },
@@ -40,7 +44,7 @@ Updating configuration for my-container-app:
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
-            {
++           {
 +             "name": "DD_SERVERLESS_LOG_PATH",
 +             "value": "/shared-volume/logs/*.log"
 +           },
@@ -80,6 +84,10 @@ Updating configuration for my-container-app:
 +           {
 +             "name": "DD_API_KEY",
 +             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_APM_ENABLED",
++             "value": "true"
 +           },
 +           {
 +             "name": "DD_AZURE_RESOURCE_GROUP",
@@ -184,6 +192,10 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +             "secretRef": "dd-api-key"
 +           },
 +           {
++             "name": "DD_APM_ENABLED",
++             "value": "true"
++           },
++           {
 +             "name": "DD_AZURE_RESOURCE_GROUP",
 +             "value": "my-resource-group"
 +           },
@@ -191,7 +203,7 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +             "name": "DD_AZURE_SUBSCRIPTION_ID",
 +             "value": "00000000-0000-0000-0000-000000000000"
 +           },
-            {
++           {
 +             "name": "DD_ENV",
 +             "value": "staging"
 +           },
@@ -203,7 +215,7 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
-+           {
+            {
 +             "name": "DD_SERVERLESS_LOG_PATH",
 +             "value": "/shared-volume/logs/*.log"
 +           },
@@ -251,6 +263,10 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +           {
 +             "name": "DD_API_KEY",
 +             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_APM_ENABLED",
++             "value": "true"
 +           },
 +           {
 +             "name": "DD_AZURE_RESOURCE_GROUP",
