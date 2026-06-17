@@ -3,8 +3,7 @@ import crypto from 'node:crypto'
 import {getContainerAppUrl, verifyInstrumented, verifyUninstrumented} from './helpers/container-app-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
 import {checkTelemetryFlowing} from './helpers/telemetry-checker'
-
-const waitFor = (seconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
+import {triggerTraffic} from './helpers/traffic'
 
 const describeOrSkip =
   process.env.SKIP_CONTAINER_APP_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true'
@@ -17,34 +16,6 @@ describeOrSkip('container-app', () => {
   const appImage = process.env.AZURE_CONTAINER_APP_IMAGE_E2E!
   const runId = crypto.randomBytes(4).toString('hex')
   const appName = `one-e2e-ci-capp-${runId}`
-
-  const triggerTraffic = async (appUrl: string): Promise<void> => {
-    let successfulRequests = 0
-    let lastError = ''
-
-    for (let attempt = 1; attempt <= 12; attempt++) {
-      try {
-        const response = await fetch(appUrl, {signal: AbortSignal.timeout(30_000)})
-        const body = await response.text()
-        console.log(`[traffic] attempt ${attempt}/12 returned ${response.status}`)
-        if (response.ok) {
-          successfulRequests++
-          if (successfulRequests >= 3) {
-            return
-          }
-        } else {
-          lastError = `${response.status}: ${body.slice(0, 200)}`
-        }
-      } catch (error) {
-        lastError = String(error)
-        console.log(`[traffic] attempt ${attempt}/12 failed: ${lastError}`)
-      }
-
-      await waitFor(10)
-    }
-
-    throw new Error(`Failed to trigger container app traffic: ${lastError}`)
-  }
 
   beforeAll(async () => {
     const result = await execPromiseWithRetries(
