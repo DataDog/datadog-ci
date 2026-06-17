@@ -1,5 +1,6 @@
 import type {
   APIHelper,
+  Configuration,
   GateEvaluationRequest,
   GateEvaluationRequestResponse,
   GateEvaluationStatusResponse,
@@ -8,6 +9,16 @@ import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/help
 
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+
+const toApiConfiguration = (config: Configuration) => ({
+  ...(config.dryRun !== undefined && {dry_run: config.dryRun}),
+  rules: config.rules.map((rule) => ({
+    type: rule.type,
+    name: rule.name,
+    ...(rule.dryRun !== undefined && {dry_run: rule.dryRun}),
+    ...(rule.options && {options: rule.options}),
+  })),
+})
 
 const requestGateEvaluation =
   (request: (args: RequestConfig) => Promise<RequestResponse<GateEvaluationRequestResponse>>) =>
@@ -24,6 +35,7 @@ const requestGateEvaluation =
           ...(evaluationRequest.monitors_query_variable && {
             monitors_query_variable: evaluationRequest.monitors_query_variable,
           }),
+          ...(evaluationRequest.configuration && {configuration: toApiConfiguration(evaluationRequest.configuration)}),
         },
       },
     }
