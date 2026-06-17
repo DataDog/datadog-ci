@@ -1,8 +1,8 @@
 import crypto from 'node:crypto'
 
-import {checkTelemetryFlowing} from './helpers/aas-telemetry-checker'
 import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
+import {checkTelemetryFlowing} from './helpers/telemetry-checker'
 
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -74,7 +74,7 @@ describeOrSkip('aas (Windows)', () => {
     )
     const appUrl = `https://${hostnameResult.stdout.trim()}`
     await fetch(appUrl)
-    await checkTelemetryFlowing(windowsAppName)
+    await checkTelemetryFlowing({serviceName: windowsAppName})
   }, 600_000)
 
   it('uninstrument and verify', async () => {
