@@ -6,8 +6,12 @@ interface TriggerTrafficOptions {
   intervalSeconds?: number
 }
 
-// Poll an HTTP endpoint until it serves successful responses, giving a freshly
-// deployed app time to cold-start before we assert that telemetry flowed.
+// Poll an HTTP endpoint until it serves several successful responses. This does two things before
+// we assert that telemetry flowed: it confirms the app is reliably up (cold starts return
+// intermittent failures interleaved with the occasional 200, so a single success can be a fluke),
+// and it drives sustained load -- the trace/log pipeline warms up a beat after the app starts
+// serving, so the earliest requests' telemetry can be dropped, and we keep hitting the app so it
+// actually reaches Datadog.
 export const triggerTraffic = async (
   url: string,
   {attempts = 12, requiredSuccesses = 3, intervalSeconds = 10}: TriggerTrafficOptions = {}
