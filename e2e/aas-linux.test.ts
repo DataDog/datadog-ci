@@ -29,6 +29,8 @@ describeOrSkip('aas (Linux)', () => {
     ` --env e2e` +
     ` --version "${runId}"` +
     ` --extra-tags "one_e2e_run_id:${runId}"` +
+    // Enable instance log collection so the sidecar forwards the app's stdout logs, not just traces.
+    ` --instance-logging` +
     ` --no-source-code-integration`
 
   beforeAll(async () => {
@@ -79,7 +81,10 @@ describeOrSkip('aas (Linux)', () => {
       `az webapp show --name "${linuxAppName}" --resource-group "${resourceGroup}" --query "defaultHostName" --output tsv`
     )
     const appUrl = `https://${hostnameResult.stdout.trim()}`
-    await triggerTraffic(appUrl)
+    // Drive sustained traffic: the sidecar's trace/log pipeline needs a beat to warm up after a
+    // cold start, so a few early requests aren't enough to reliably land telemetry. Keep hitting
+    // the app so spans and logs flow once it's fully ready.
+    await triggerTraffic(appUrl, {attempts: 20, requiredSuccesses: 10})
 
     await checkTelemetryFlowing({
       serviceName: linuxAppName,

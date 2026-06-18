@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import os from 'node:os'
 
 import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './helpers/aas-verifier'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
@@ -50,12 +51,33 @@ describeOrSkip('aas (Windows)', () => {
       throw new Error(`Failed to create Windows web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
     }
 
-    // WEBSITE_RUN_FROM_PACKAGE mounts the zip as wwwroot via ARM (no Kudu/SCM permissions needed)
-    const packageResult = await execPromise(
-      `az webapp config appsettings set --name "${windowsAppName}" --resource-group "${resourceGroup}" --settings WEBSITE_RUN_FROM_PACKAGE="${NODE_EXTENSION_APP_URL}" --output none`
+    // On Windows, App Service serves Node behind IIS via iisnode, which needs a web.config to
+    // route requests to the app. WEBSITE_RUN_FROM_PACKAGE mounts the package read-only and skips
+    // the Oryx build that generates that web.config, so the app returns a 403. Deploy via zipdeploy
+    // with SCM_DO_BUILD_DURING_DEPLOYMENT so Oryx builds and writes the web.config (same path prod
+    // uses). Auth is the az-login AAD token -- basic-auth publishing is disabled by policy.
+    const buildResult = await execPromise(
+      `az webapp config appsettings set --name "${windowsAppName}" --resource-group "${resourceGroup}" --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true WEBSITE_NODE_DEFAULT_VERSION="~22" --output none`
     )
-    if (packageResult.exitCode !== 0) {
-      throw new Error(`Failed to configure app package (exit code ${packageResult.exitCode}): ${packageResult.stderr}`)
+    if (buildResult.exitCode !== 0) {
+      throw new Error(`Failed to configure build settings (exit code ${buildResult.exitCode}): ${buildResult.stderr}`)
+    }
+
+    const zipPath = `${os.tmpdir()}/${windowsAppName}.zip`
+    const downloadResult = await execPromise(`curl -fsSL -o "${zipPath}" "${NODE_EXTENSION_APP_URL}"`)
+    if (downloadResult.exitCode !== 0) {
+      throw new Error(`Failed to download app package (exit code ${downloadResult.exitCode}): ${downloadResult.stderr}`)
+    }
+
+    // The SCM site can 502 on the first deploy while it is still cold; execPromiseWithRetries
+    // retries on that gateway error.
+    const deployResult = await execPromiseWithRetries(
+      `az webapp deploy --resource-group "${resourceGroup}" --name "${windowsAppName}" --src-path "${zipPath}" --type zip --output none`,
+      undefined,
+      {maxAttempts: 5, delaySeconds: 20}
+    )
+    if (deployResult.exitCode !== 0) {
+      throw new Error(`Failed to deploy app package (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
     }
   }, 900_000)
 
@@ -88,14 +110,21 @@ describeOrSkip('aas (Windows)', () => {
       `az webapp show --name "${windowsAppName}" --resource-group "${resourceGroup}" --query "defaultHostName" --output tsv`
     )
     const appUrl = `https://${hostnameResult.stdout.trim()}`
-    await triggerTraffic(appUrl)
+    // Drive sustained traffic: the extension's trace pipeline needs a beat to warm up after a cold
+    // start, so a few early requests aren't enough to reliably land telemetry. Keep hitting the app
+    // so spans flow once it's fully ready.
+    await triggerTraffic(appUrl, {attempts: 20, requiredSuccesses: 10})
 
-    await checkTelemetryFlowing({
-      serviceName: windowsAppName,
-      env: 'e2e',
-      version: runId,
-      tags: [`one_e2e_run_id:${runId}`],
-    })
+    // Windows App Service doesn't support Datadog log collection, so assert traces only.
+    await checkTelemetryFlowing(
+      {
+        serviceName: windowsAppName,
+        env: 'e2e',
+        version: runId,
+        tags: [`one_e2e_run_id:${runId}`],
+      },
+      {checkLogs: false}
+    )
   }, 600_000)
 
   it('instrument is idempotent', async () => {
