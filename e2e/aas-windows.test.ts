@@ -96,7 +96,7 @@ describeOrSkip('aas (Windows)', () => {
     const result = await execPromiseWithRetries(
       instrumentCommand,
       {
-        DD_API_KEY: process.env.DD_API_KEY,
+        DD_API_KEY: process.env.DATADOG_API_KEY,
       },
       {maxAttempts: 5, delaySeconds: 30}
     )
@@ -131,7 +131,7 @@ describeOrSkip('aas (Windows)', () => {
     const result = await execPromiseWithRetries(
       instrumentCommand,
       {
-        DD_API_KEY: process.env.DD_API_KEY,
+        DD_API_KEY: process.env.DATADOG_API_KEY,
       },
       {maxAttempts: 5, delaySeconds: 30}
     )
@@ -145,7 +145,7 @@ describeOrSkip('aas (Windows)', () => {
     const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${windowsAppName}"`,
       {
-        DD_API_KEY: process.env.DD_API_KEY,
+        DD_API_KEY: process.env.DATADOG_API_KEY,
       }
     )
     expect(result.exitCode).toBe(0)

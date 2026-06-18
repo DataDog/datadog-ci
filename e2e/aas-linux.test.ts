@@ -69,7 +69,7 @@ describeOrSkip('aas (Linux)', () => {
 
   it('instrument and verify', async () => {
     const result = await execPromiseWithRetries(instrumentCommand, {
-      DD_API_KEY: process.env.DD_API_KEY,
+      DD_API_KEY: process.env.DATADOG_API_KEY,
     })
     expect(result.exitCode).toBe(0)
 
@@ -96,7 +96,7 @@ describeOrSkip('aas (Linux)', () => {
 
   it('instrument is idempotent', async () => {
     const result = await execPromiseWithRetries(instrumentCommand, {
-      DD_API_KEY: process.env.DD_API_KEY,
+      DD_API_KEY: process.env.DATADOG_API_KEY,
     })
     expect(result.exitCode).toBe(0)
 
@@ -108,7 +108,7 @@ describeOrSkip('aas (Linux)', () => {
     const result = await execPromiseWithRetries(
       `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${linuxAppName}"`,
       {
-        DD_API_KEY: process.env.DD_API_KEY,
+        DD_API_KEY: process.env.DATADOG_API_KEY,
       }
     )
     expect(result.exitCode).toBe(0)
