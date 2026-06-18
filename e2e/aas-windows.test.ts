@@ -69,6 +69,19 @@ describeOrSkip('aas (Windows)', () => {
       throw new Error(`Failed to download app package (exit code ${downloadResult.exitCode}): ${downloadResult.stderr}`)
     }
 
+    // Basic-auth publishing is disabled by policy, and the CI principal's AAD token is rejected by
+    // the Kudu/SCM site, so enable basic auth on this ephemeral app and let zipdeploy use it.
+    const basicAuthResult = await execPromise(
+      `az resource update --resource-group "${resourceGroup}" --name scm --namespace Microsoft.Web` +
+        ` --resource-type basicPublishingCredentialsPolicies --parent "sites/${windowsAppName}"` +
+        ` --set properties.allow=true --output none`
+    )
+    if (basicAuthResult.exitCode !== 0) {
+      throw new Error(
+        `Failed to enable basic publishing auth (exit code ${basicAuthResult.exitCode}): ${basicAuthResult.stderr}`
+      )
+    }
+
     // The SCM site can 502 on the first deploy while it is still cold; execPromiseWithRetries
     // retries on that gateway error.
     const deployResult = await execPromiseWithRetries(
