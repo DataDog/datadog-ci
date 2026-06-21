@@ -14,6 +14,38 @@ import tseslint from 'typescript-eslint'
 const tsFiles = ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.cts', '**/*.mts', '**/*.js']
 const yamlFiles = ['**/*.yml', '**/*.yaml']
 
+// Commands must log through `this.logger` (BaseCommand) so that `--log-format json`
+// is honoured everywhere. Writing to stdout/stderr directly bypasses it. This list
+// grows as commands are migrated onto the shared logger; the rule becomes repo-wide
+// once the migration is complete.
+const noDirectStreamWriteFiles = ['packages/base/src/index.ts']
+
+// Restricted-syntax selectors applied to all TS files.
+const baseRestrictedSyntax = [
+  {
+    selector: "Literal[value='/dev/null']",
+    message: "Please use `os.devNull` instead of `'/dev/null'`.",
+  },
+  {
+    // imported as `import os from 'os'`
+    selector: "MemberExpression[object.name='os'][property.name='EOL']",
+    message: 'Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines.',
+  },
+]
+
+// Selectors forbidding direct `this.context.stdout/stderr` and `process.stdout/stderr` access.
+const restrictedStreamSyntax = [
+  {
+    selector:
+      "MemberExpression[object.object.type='ThisExpression'][object.property.name='context'][property.name=/^(stdout|stderr)$/]",
+    message: 'Log through `this.logger` instead of writing to `this.context.stdout`/`this.context.stderr` directly.',
+  },
+  {
+    selector: "MemberExpression[object.name='process'][property.name=/^(stdout|stderr)$/]",
+    message: 'Log through `this.logger` instead of writing to `process.stdout`/`process.stderr` directly.',
+  },
+]
+
 const restrictedImports = [
   {
     // forbid using named imports for chalk
@@ -390,18 +422,7 @@ export default defineConfig(
       'jest/padding-around-test-blocks': 'error',
       'no-prototype-builtins': 'off',
       'no-restricted-imports': ['error', {paths: restrictedImports}],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "Literal[value='/dev/null']",
-          message: "Please use `os.devNull` instead of `'/dev/null'`.",
-        },
-        {
-          // imported as `import os from 'os'`
-          selector: "MemberExpression[object.name='os'][property.name='EOL']",
-          message: 'Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines.',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...baseRestrictedSyntax],
     },
   },
   {
@@ -412,6 +433,12 @@ export default defineConfig(
     files: ['**/*.test.ts'],
     rules: {
       'no-restricted-imports': ['error', {paths: restrictedImports}],
+    },
+  },
+  {
+    files: noDirectStreamWriteFiles,
+    rules: {
+      'no-restricted-syntax': ['error', ...baseRestrictedSyntax, ...restrictedStreamSyntax],
     },
   },
   ...yml.configs['flat/standard'],

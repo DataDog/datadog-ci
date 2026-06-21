@@ -8,7 +8,6 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
@@ -26,7 +25,6 @@ export class PluginCommand extends DeploymentGateCommand {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
   private evaluationRequestTimeout = 60000 // 1 minute
   private pollingInterval = 15000 // 15 seconds
   private startTime: number = Date.now()
