@@ -11,9 +11,12 @@ export const cliVersion = version
  * logger so it respects `--log-format` (a JSON line in JSON mode, dim text otherwise).
  */
 export const printVersion = (logger: Logger) => {
-  const isVersionCommand = process.argv.at(-1) === '--version' || process.argv.at(-1) === 'version'
-  if (!isVersionCommand) {
-    const banner = `datadog-ci v${cliVersion}`
-    logger.info(logger.isJsonOutput() ? banner : chalk.dim(banner))
+  const lastArg = process.argv.at(-1)
+  const skipVersion = lastArg === '--version' || lastArg === 'version' || lastArg === '--help'
+  if (skipVersion) {
+    return
   }
+
+  const banner = `datadog-ci v${cliVersion}`
+  logger.info(logger.isJsonOutput() ? banner : chalk.dim(banner))
 }

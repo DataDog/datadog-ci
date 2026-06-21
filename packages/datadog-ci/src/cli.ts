@@ -78,11 +78,11 @@ if (require.main === module) {
     // Parse error: defer to cli.run below for clipanion's error rendering.
   }
 
-  // Route the banner through the resolved command's logger so it respects
-  // `--log-format` (a JSON line in JSON mode). Builtins/parse errors fall back to
-  // a default text logger.
+  // Route the banner through the resolved command's logger so it respects `--log-format`.
+  // Builtin commands (e.g. --help) and command line parse errors fall back to a default text logger.
   const versionLogger =
     command instanceof BaseCommand ? command.logger : new Logger((s) => context.stdout.write(s), LogLevel.INFO)
+
   printVersion(versionLogger)
 
   void cli.runExit(command ?? process.argv.slice(2), context)
