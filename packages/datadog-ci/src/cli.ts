@@ -3,7 +3,9 @@
 import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
 
@@ -62,14 +64,28 @@ const builtinPlugins =
     : Object.keys(packageJson.devDependencies).filter((plugin) => plugin.startsWith('@datadog/datadog-ci-plugin-'))
 
 if (require.main === module) {
-  printVersion()
-
-  void cli.runExit(process.argv.slice(2), {
+  const context = {
     stderr: process.stderr,
     stdin: process.stdin,
     stdout: process.stdout,
     builtinPlugins,
-  })
+  }
+
+  let command
+  try {
+    command = cli.process(process.argv.slice(2), context)
+  } catch {
+    // Parse error: defer to cli.run below for clipanion's error rendering.
+  }
+
+  // Route the banner through the resolved command's logger so it respects
+  // `--log-format` (a JSON line in JSON mode). Builtins/parse errors fall back to
+  // a default text logger.
+  const versionLogger =
+    command instanceof BaseCommand ? command.logger : new Logger((s) => context.stdout.write(s), LogLevel.INFO)
+  printVersion(versionLogger)
+
+  void cli.runExit(command ?? process.argv.slice(2), context)
 }
 
 export {cli}

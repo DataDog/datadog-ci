@@ -26,7 +26,7 @@ export abstract class BaseCommand extends Command<CommandContext> {
 
   private _logger?: Logger
 
-  protected get logger(): Logger {
+  public get logger(): Logger {
     if (!this._logger) {
       // The sanctioned sink: this is the single place allowed to write to the raw stream.
       // eslint-disable-next-line no-restricted-syntax
