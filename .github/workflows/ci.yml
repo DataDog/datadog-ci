@@ -199,6 +199,7 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
           AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
+          AZURE_CONTAINER_APP_IMAGE_E2E: ${{ vars.AZURE_CONTAINER_APP_IMAGE_E2E }}
           AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
           AWS_REGION: eu-central-1
@@ -225,6 +226,8 @@ jobs:
               - 'e2e/fixtures/container-app/**'
               - 'e2e/container-app.test.ts'
               - 'e2e/helpers/container-app-verifier.ts'
+              - 'e2e/helpers/telemetry-checker.ts'
+              - 'e2e/helpers/traffic.ts'
               - '.github/workflows/ci.yml'
 
   check-cloud-run-changes:
