@@ -47,6 +47,8 @@ const RETRYABLE_PATTERNS = [
   'RESOURCE_EXHAUSTED',
   'UNAVAILABLE',
   'temporarily unavailable',
+  // The Kudu/SCM site returns a 502 gateway error on the first deploy while it is still cold
+  'acting as a gateway or proxy',
 ]
 
 const isRetryable = (result: ExecResult): boolean => {

@@ -87,6 +87,8 @@ export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptio
   for (const name of requiredSettings) {
     expect(settings[name]).toBeDefined()
   }
+  // Logs only flow when instance logging is enabled (--instance-logging).
+  expect(settings['DD_AAS_INSTANCE_LOGGING_ENABLED']).toBe('true')
 
   const containers = getSiteContainers(appName, rg, subscriptionId)
   const sidecar = containers.find((c) => c.name === 'datadog-sidecar')

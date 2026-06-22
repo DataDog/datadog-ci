@@ -93,15 +93,21 @@ const queryLogs = async (configuration: client.Configuration, identity: Telemetr
   return response.data ?? []
 }
 
-export const checkTelemetryFlowing = async (identity: TelemetryIdentity): Promise<void> => {
+export const checkTelemetryFlowing = async (
+  identity: TelemetryIdentity,
+  // Some platforms (e.g. Windows App Service) don't support log collection, so callers can
+  // assert traces only.
+  {checkLogs = true}: {checkLogs?: boolean} = {}
+): Promise<void> => {
   const configuration = client.createConfiguration({
     authMethods: {
       apiKeyAuth: process.env.DATADOG_API_KEY,
       appKeyAuth: process.env.DATADOG_APP_KEY,
     },
   })
-  await Promise.all([
-    pollUntilFound('spans', () => querySpans(configuration, identity)),
-    pollUntilFound('logs', () => queryLogs(configuration, identity)),
-  ])
+  const checks = [pollUntilFound('spans', () => querySpans(configuration, identity))]
+  if (checkLogs) {
+    checks.push(pollUntilFound('logs', () => queryLogs(configuration, identity)))
+  }
+  await Promise.all(checks)
 }
