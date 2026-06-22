@@ -1,4 +1,4 @@
-import {execSync} from './exec'
+import {execSync} from '../../helpers/exec'
 
 // Hard-coded because e2e tests run against built artifacts, can't import from source
 const AAS_DD_SETTING_NAMES = [

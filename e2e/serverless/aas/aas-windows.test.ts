@@ -1,10 +1,12 @@
 import crypto from 'node:crypto'
 import os from 'node:os'
 
-import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './helpers/aas-verifier'
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
-import {checkTelemetryFlowing} from './helpers/telemetry-checker'
-import {triggerTraffic} from './helpers/traffic'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
+
+import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
+import {triggerTraffic} from '../helpers/traffic'
+
+import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './aas-verifier'
 
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe

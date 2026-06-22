@@ -223,11 +223,8 @@ jobs:
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
-              - 'e2e/fixtures/container-app/**'
-              - 'e2e/container-app.test.ts'
-              - 'e2e/helpers/container-app-verifier.ts'
-              - 'e2e/helpers/telemetry-checker.ts'
-              - 'e2e/helpers/traffic.ts'
+              - 'e2e/serverless/container-app/**'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-cloud-run-changes:
@@ -248,11 +245,8 @@ jobs:
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
-              - 'e2e/cloud-run.test.ts'
-              - 'e2e/helpers/cloud-run-verifier.ts'
-              - 'e2e/helpers/cloud-run-telemetry-checker.ts'
-              - 'e2e/helpers/telemetry-checker.ts'
-              - 'e2e/helpers/traffic.ts'
+              - 'e2e/serverless/cloud-run/**'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-aas-changes:
@@ -274,11 +268,8 @@ jobs:
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'packages/base/src/commands/aas/**'
-              - 'e2e/aas-linux.test.ts'
-              - 'e2e/aas-windows.test.ts'
-              - 'e2e/helpers/aas-verifier.ts'
-              - 'e2e/helpers/traffic.ts'
-              - 'e2e/helpers/telemetry-checker.ts'
+              - 'e2e/serverless/aas/**'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-lambda-changes:
@@ -298,9 +289,8 @@ jobs:
               - 'packages/base/src/commands/lambda/**'
               - 'packages/base/src/helpers/serverless/**'
               - 'packages/base/src/helpers/tags.ts'
-              - 'e2e/lambda.test.ts'
-              - 'e2e/helpers/lambda-verifier.ts'
-              - 'e2e/helpers/telemetry-checker.ts'
+              - 'e2e/serverless/lambda/**'
+              - 'e2e/serverless/helpers/**'
               - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
 

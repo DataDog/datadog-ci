@@ -3,16 +3,17 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import type {ExecResult} from './helpers/exec'
+import type {ExecResult} from '../../helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
 
-import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from './helpers/exec'
+import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
+
 import {
   getLambdaSnapshot,
   verifyLambdaExtensionOnly,
   verifyLambdaInstrumented,
   verifyLambdaUninstrumented,
-} from './helpers/lambda-verifier'
-import {checkTelemetryFlowing} from './helpers/telemetry-checker'
+} from './lambda-verifier'
 
 const describeOrSkip =
   process.env.SKIP_LAMBDA_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
