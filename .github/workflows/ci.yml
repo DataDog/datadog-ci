@@ -239,6 +239,8 @@ jobs:
               - 'e2e/cloud-run.test.ts'
               - 'e2e/helpers/cloud-run-verifier.ts'
               - 'e2e/helpers/cloud-run-telemetry-checker.ts'
+              - 'e2e/helpers/telemetry-checker.ts'
+              - 'e2e/helpers/traffic.ts'
               - '.github/workflows/ci.yml'
 
   check-aas-changes:
