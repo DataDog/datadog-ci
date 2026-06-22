@@ -6,14 +6,14 @@ import path from 'node:path'
 import type {ExecResult} from '../../helpers/exec'
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
 
+import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
+
 import {
   getLambdaSnapshot,
   verifyLambdaExtensionOnly,
   verifyLambdaInstrumented,
   verifyLambdaUninstrumented,
 } from './lambda-verifier'
-
-import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 
 const describeOrSkip =
   process.env.SKIP_LAMBDA_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
