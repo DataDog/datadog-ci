@@ -55,7 +55,7 @@ catalog-endpoints-upload:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
   variables:
-    CI_IDENTITIES_CLIENT_VERSION: v0.6.4
+    CI_IDENTITIES_CLIENT_VERSION: v0.6.6
   before_script:
     - aws s3 cp "s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/${CI_IDENTITIES_CLIENT_VERSION}/ci-identities-gitlab-job-client-linux-amd64" "${CI_PROJECT_DIR}/ci-identities-gitlab-job-client"
     - chmod +x "${CI_PROJECT_DIR}/ci-identities-gitlab-job-client"
