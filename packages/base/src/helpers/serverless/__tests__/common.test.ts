@@ -1,5 +1,10 @@
 /* eslint-disable no-null/no-null */
-import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
+  createInstrumentedTemplate,
+  generateConfigDiff,
+  parseEnvVars,
+  sortedEqual,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 describe('generateConfigDiff', () => {
   test('should generate correct diffs for various config changes', () => {
@@ -173,5 +178,59 @@ describe('parseEnvVars', () => {
     const envVars = ['KEY=first', 'KEY=second']
     const result = parseEnvVars(envVars)
     expect(result).toEqual({KEY: 'second'})
+  })
+})
+
+describe('createInstrumentedTemplate', () => {
+  test('preserves provider-populated sidecar resource fields', () => {
+    const template = {
+      containers: [
+        {
+          name: 'app',
+          env: [],
+          volumeMounts: [],
+        },
+        {
+          name: 'datadog-sidecar',
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          env: [{name: 'DD_SERVICE', value: 'app'}],
+          resources: {
+            cpu: 0.5,
+            memory: '1Gi',
+            ephemeralStorage: '2Gi',
+          },
+          volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+        },
+      ],
+      volumes: [{name: 'shared-volume'}],
+    } as unknown as Parameters<typeof createInstrumentedTemplate>[0]
+    const baseSidecar = {
+      name: 'datadog-sidecar',
+      image: 'index.docker.io/datadog/serverless-init:latest',
+      env: [],
+      resources: {
+        cpu: 0.5,
+        memory: '1Gi',
+      },
+      volumeMounts: [],
+    } as unknown as Parameters<typeof createInstrumentedTemplate>[1]
+
+    const result = createInstrumentedTemplate(
+      template,
+      baseSidecar,
+      {
+        name: 'shared-volume',
+        mountPath: '/shared-volume',
+        mountOptions: {storageType: 'EmptyDir'},
+        volumeMountNameKey: 'volumeName',
+      },
+      {
+        DD_SERVICE: {name: 'DD_SERVICE', value: 'app'},
+      }
+    )
+
+    const sidecar = result.containers.find((container) => container.name === 'datadog-sidecar')
+    expect(sidecar).toBeDefined()
+    expect((sidecar as {resources?: {ephemeralStorage?: string}}).resources?.ephemeralStorage).toBe('2Gi')
   })
 })
