@@ -88,7 +88,7 @@ export const verifyLambdaInstrumented = (
   // Exactly one of each DD layer -- re-instrument must not duplicate layers (idempotent).
   expect(countLayers(layerArns, NODE_LAYER_NAME)).toBe(1)
   expect(countLayers(layerArns, EXTENSION_LAYER_NAME)).toBe(1)
-  // The deployed layer versions must match the versions the CLI resolved for 'latest'.
+  // The deployed layer versions must match what the instrument command requested.
   expect(getLayerVersion(layerArns, NODE_LAYER_NAME)).toBe(expectedLayerVersions.node)
   expect(getLayerVersion(layerArns, EXTENSION_LAYER_NAME)).toBe(expectedLayerVersions.extension)
   expect(config.Handler).toBe(DATADOG_NODE_HANDLER)
