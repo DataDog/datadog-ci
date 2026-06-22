@@ -1,13 +1,109 @@
+import type {CommandContext} from '@datadog/datadog-ci-base'
+import type {MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
+
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {SourcemapsUploadCommand} from '../upload'
 
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())
+
+describe('Sourcemap.asMultipartPayload', () => {
+  describe('extractDebugId', () => {
+    test('includes debug_id in event metadata when bundle contains _ddDebugIds snippet', () => {
+      const sourcemap = new Sourcemap(
+        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js',
+        'https://static.example.com/common.min.js',
+        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map',
+        'common.min.js',
+        'https://static.example.com'
+      )
+      const context = createMockContext() as CommandContext
+
+      const payload = sourcemap.asMultipartPayload({
+        cliVersion: '1.0.0',
+        debugId: true,
+        context,
+      })
+      const event = payload.content.get('event') as MultipartStringValue
+      const eventValue = JSON.parse(event['value']) as {debug_id: string}
+
+      expect(eventValue['debug_id']).toBe('2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91')
+    })
+
+    test('omits debug_id and writes to stderr when bundle has no snippet', () => {
+      const sourcemap = new Sourcemap(
+        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
+        'https://static.example.com/common.min.js',
+        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+        'common.min.js',
+        'https://static.example.com'
+      )
+      const context = createMockContext() as CommandContext
+
+      const payload = sourcemap.asMultipartPayload({
+        cliVersion: '1.0.0',
+        debugId: true,
+        context,
+      })
+      const event = payload.content.get('event') as MultipartStringValue
+      const eventValue = JSON.parse(event['value']) as Record<string, unknown>
+
+      expect(eventValue['debug_id']).toBeUndefined()
+      expect(context.stderr.toString()).toContain('Debug ID not found')
+    })
+
+    test('omits debug_id and writes to stderr when bundle file cannot be read', () => {
+      const sourcemap = new Sourcemap(
+        'nonexistent/path/bundle.js',
+        'https://static.example.com/bundle.js',
+        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+        'bundle.js',
+        'https://static.example.com'
+      )
+      const context = createMockContext() as CommandContext
+
+      const payload = sourcemap.asMultipartPayload({
+        cliVersion: '1.0.0',
+        debugId: true,
+        context,
+      })
+      const event = payload.content.get('event') as MultipartStringValue
+      const eventValue = JSON.parse(event['value']) as Record<string, unknown>
+
+      expect(eventValue['debug_id']).toBeUndefined()
+      expect(context.stderr.toString()).toContain('Cannot extract Debug ID')
+    })
+
+    test('omits debug_id without error when --debug-id flag is not set', () => {
+      const sourcemap = new Sourcemap(
+        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js',
+        'https://static.example.com/common.min.js',
+        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map',
+        'common.min.js',
+        'https://static.example.com'
+      )
+      const context = createMockContext() as CommandContext
+
+      const payload = sourcemap.asMultipartPayload({
+        cliVersion: '1.0.0',
+        service: 'my-service',
+        version: '1.2.3',
+        debugId: false,
+        context,
+      })
+      const event = payload.content.get('event') as MultipartStringValue
+      const eventValue = JSON.parse(event['value']) as Record<string, unknown>
+
+      expect(eventValue['debug_id']).toBeUndefined()
+      expect(context.stderr.toString()).toBe('')
+    })
+  })
+})
 
 describe('upload', () => {
   describe('getMinifiedURL', () => {

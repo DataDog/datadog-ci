@@ -1,3 +1,6 @@
+import fs from 'fs'
+
+import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 export class Sourcemap {
@@ -26,14 +29,9 @@ export class Sourcemap {
     this.gitData = gitData
   }
 
-  public asMultipartPayload(
-    cliVersion: string,
-    service: string,
-    version: string,
-    projectPath: string
-  ): MultipartPayload {
+  public asMultipartPayload(options: SourcemapUploadOptions): MultipartPayload {
     const content = new Map<string, MultipartValue>([
-      ['event', this.getMetadataPayload(cliVersion, service, version, projectPath)],
+      ['event', this.getMetadataPayload(options)],
       ['source_map', {type: 'file', path: this.sourcemapPath, options: {filename: 'source_map'}}],
       ['minified_file', {type: 'file', path: this.minifiedFilePath, options: {filename: 'minified_file'}}],
     ])
@@ -53,20 +51,44 @@ export class Sourcemap {
     }
   }
 
-  private getMetadataPayload(
-    cliVersion: string,
-    service: string,
-    version: string,
-    projectPath: string
-  ): MultipartValue {
+  private extractDebugId(context: CommandContext): string | undefined {
+    try {
+      const source = fs.readFileSync(this.minifiedFilePath, 'utf-8')
+      const match = source.match(/"ddDebugId":"([^"]+)"/)
+      if (match) {
+        return match[1]
+      }
+      context.stderr.write(`Debug ID not found in ${this.minifiedFilePath}\n`)
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      context.stderr.write(`Cannot extract Debug ID from ${this.minifiedFilePath}: ${errorMsg}\n`)
+    }
+
+    return undefined
+  }
+
+  private getMetadataPayload({
+    cliVersion,
+    service,
+    version,
+    projectPath,
+    debugId,
+    context,
+  }: SourcemapUploadOptions): MultipartValue {
     const metadata: {[k: string]: any} = {
       cli_version: cliVersion,
-      minified_url: this.minifiedUrl,
       project_path: projectPath,
-      service,
       type: 'js_sourcemap',
-      version,
     }
+
+    if (debugId) {
+      metadata.debug_id = this.extractDebugId(context)
+    } else {
+      metadata.service = service
+      metadata.version = version
+      metadata.minified_url = this.minifiedUrl
+    }
+
     if (this.gitData !== undefined) {
       metadata.git_repository_url = this.gitData.gitRepositoryURL
       metadata.git_commit_sha = this.gitData.gitCommitSha
@@ -81,6 +103,15 @@ export class Sourcemap {
       value: JSON.stringify(metadata),
     }
   }
+}
+
+export interface SourcemapUploadOptions {
+  cliVersion: string
+  context: CommandContext
+  debugId: boolean
+  projectPath?: string
+  service?: string
+  version?: string
 }
 
 export interface GitData {

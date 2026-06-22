@@ -81,6 +81,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private releaseVersion = Option.String('--release-version')
   private repositoryURL = Option.String('--repository-url')
   private commitSha = Option.String('--commit-sha')
+  private debugId = Option.Boolean('--debug-id', false)
   private service = Option.String('--service')
 
   private cliVersion = cliVersion
@@ -100,28 +101,9 @@ export class SourcemapsUploadCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    if (!this.releaseVersion) {
-      this.context.stderr.write('Missing release version\n')
-
-      return 1
-    }
-
-    if (!this.service) {
-      this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
-
-    if (!this.minifiedPathPrefix) {
-      this.context.stderr.write('Missing minified path prefix\n')
-
-      return 1
-    }
-
-    if (!this.isMinifiedPathPrefixValid()) {
-      this.context.stdout.write(renderInvalidPrefix)
-
-      return 1
+    const validationError = this.validateOptions()
+    if (validationError) {
+      return validationError
     }
 
     // Normalizing the basePath to resolve .. and .
@@ -133,13 +115,19 @@ export class SourcemapsUploadCommand extends BaseCommand {
         this.projectPath,
         this.releaseVersion,
         this.service,
+        this.debugId,
         this.maxConcurrency,
         this.dryRun
       )
     )
+    const loggerTags = [`cli_version:${this.cliVersion}`]
+    if (!this.debugId) {
+      loggerTags.push(`version:${this.releaseVersion}`)
+      loggerTags.push(`service:${this.service}`)
+    }
     const metricsLogger = getMetricsLogger({
       datadogSite: getDatadogSiteFromEnv(),
-      defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
+      defaultTags: loggerTags,
       prefix: 'datadog.ci.sourcemaps.',
     })
     const apiKeyValidator = newApiKeyValidator({
@@ -280,7 +268,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
     const relativePath = upath.relative(this.basePath, minifiedFilePath)
 
-    return [buildPath(this.minifiedPathPrefix!, relativePath), relativePath]
+    return [buildPath(this.minifiedPathPrefix ?? '', relativePath), relativePath]
   }
 
   private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
@@ -380,6 +368,36 @@ export class SourcemapsUploadCommand extends BaseCommand {
     })
   }
 
+  private validateOptions(): 1 | undefined {
+    if (this.debugId) {
+      return undefined
+    }
+
+    if (!this.releaseVersion) {
+      this.context.stderr.write('Missing release version\n')
+
+      return 1
+    }
+
+    if (!this.service) {
+      this.context.stderr.write('Missing service\n')
+
+      return 1
+    }
+
+    if (!this.minifiedPathPrefix) {
+      this.context.stderr.write('Missing minified path prefix\n')
+
+      return 1
+    }
+
+    if (!this.isMinifiedPathPrefixValid()) {
+      this.context.stdout.write(renderInvalidPrefix)
+
+      return 1
+    }
+  }
+
   private isMinifiedPathPrefixValid(): boolean {
     let host
     try {
@@ -421,12 +439,14 @@ export class SourcemapsUploadCommand extends BaseCommand {
         return UploadStatus.Skipped
       }
 
-      const payload = sourcemap.asMultipartPayload(
-        this.cliVersion,
-        this.service!,
-        this.releaseVersion!,
-        this.projectPath ?? ''
-      )
+      const payload = sourcemap.asMultipartPayload({
+        cliVersion: this.cliVersion,
+        service: this.service,
+        version: this.releaseVersion,
+        projectPath: this.projectPath,
+        debugId: this.debugId,
+        context: this.context,
+      })
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
 
