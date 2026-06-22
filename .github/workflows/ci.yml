@@ -103,7 +103,7 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
-    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes, check-version-bump-only]
+    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes, check-version-bump-only, check-lambda-changes]
     permissions:
       contents: read
       id-token: write
@@ -175,6 +175,12 @@ jobs:
       - name: Set up Google Cloud CLI
         if: needs.check-cloud-run-changes.outputs.should_run == 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Configure AWS credentials (OIDC)
+        if: needs.check-lambda-changes.outputs.should_run == 'true'
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN_E2E }}
+          aws-region: eu-central-1
       - name: Run e2e tests
         run: yarn jest --config jest.config-e2e.js --colors
         env:
@@ -186,6 +192,7 @@ jobs:
           SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           SKIP_AAS_TESTS: ${{ needs.check-aas-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           SKIP_CLOUD_RUN_TESTS: ${{ needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_LAMBDA_TESTS: ${{ needs.check-lambda-changes.outputs.should_run != 'true' }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
           GCP_REGION: ${{ vars.GCP_REGION_E2E }}
           GCP_CLOUD_RUN_APP_IMAGE_E2E: ${{ vars.GCP_CLOUD_RUN_APP_IMAGE_E2E }}
@@ -194,6 +201,8 @@ jobs:
           AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
           AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
+          AWS_REGION: eu-central-1
+          AWS_LAMBDA_EXECUTION_ROLE_ARN: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN_E2E }}
 
   check-container-app-changes:
     name: Check container-app changes
@@ -265,6 +274,29 @@ jobs:
               - 'e2e/aas-linux.test.ts'
               - 'e2e/aas-windows.test.ts'
               - 'e2e/helpers/aas-verifier.ts'
+              - '.github/workflows/ci.yml'
+
+  check-lambda-changes:
+    name: Check lambda changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.lambda }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        id: filter
+        with:
+          filters: |
+            lambda:
+              - 'packages/plugin-lambda/**'
+              - 'packages/base/package.json'
+              - 'packages/base/src/commands/lambda/**'
+              - 'packages/base/src/helpers/serverless/**'
+              - 'packages/base/src/helpers/tags.ts'
+              - 'e2e/lambda.test.ts'
+              - 'e2e/helpers/lambda-verifier.ts'
+              - 'e2e/helpers/telemetry-checker.ts'
+              - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
 
   check-version-bump-only:
@@ -364,6 +396,7 @@ jobs:
           SKIP_CONTAINER_APP_TESTS: 'true'
           SKIP_AAS_TESTS: 'true'
           SKIP_CLOUD_RUN_TESTS: 'true'
+          SKIP_LAMBDA_TESTS: 'true'
 
   # We only test with a single plugin and a single Node.js version.
   test-plugin-auto-install-during-npx:
