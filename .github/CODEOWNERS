@@ -82,3 +82,6 @@ packages/base/src/helpers/**tests**/user-provided-git.test.ts  @DataDog/datadog-
 # Claude Code config (no docs review needed)
 CLAUDE.md       @DataDog/datadog-ci-admins
 .claude/        @DataDog/datadog-ci-admins
+
+# Agent-generated plans (no docs review needed)
+plans/          @DataDog/datadog-ci-admins

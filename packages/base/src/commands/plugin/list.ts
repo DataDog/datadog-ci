@@ -1,7 +1,6 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {LogLevel, Logger} from '../../helpers/logger'
 import {listAllPlugins} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -24,10 +23,6 @@ export class PluginListCommand extends BaseCommand {
   // Positional
   public json = Option.Boolean('--json', {required: false})
   public all = Option.Boolean('-a,--all', {required: false})
-
-  private logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
 
   public async execute() {
     const allPlugins = listAllPlugins()

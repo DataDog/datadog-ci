@@ -17,7 +17,7 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseTags, parseMetrics} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
@@ -88,7 +88,6 @@ export class PluginCommand extends JunitUploadCommand {
   }
 
   private xpathTags?: Record<string, string>
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)

@@ -59,6 +59,10 @@ export class Logger {
     this.jsonOutput = newJsonOutput
   }
 
+  public isJsonOutput(): boolean {
+    return this.jsonOutput
+  }
+
   public error(s: string) {
     if (this.loglevel <= LogLevel.ERROR) {
       this.emit(LogLevel.ERROR, s, chalk.red)

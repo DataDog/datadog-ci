@@ -22,6 +22,8 @@ export const DATADOG_SITES: string[] = [
 export const FIPS_ENV_VAR = 'DATADOG_FIPS'
 export const FIPS_IGNORE_ERROR_ENV_VAR = 'DATADOG_FIPS_IGNORE_ERROR'
 
+export const LOG_FORMAT_ENV_VAR = 'DD_LOG_FORMAT'
+
 export const CONTENT_TYPE_HEADER = 'Content-Type'
 export const CONTENT_TYPE_VALUE_PROTOBUF = 'application/x-protobuf'
 export const CONTENT_TYPE_VALUE_JSON = 'application/json'
