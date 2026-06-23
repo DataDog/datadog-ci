@@ -140,5 +140,8 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderUpload = (sourcemap: Sourcemap): string =>
-  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`
+export const renderUpload = (sourcemap: Sourcemap, debugId?: string): string => {
+  const debugIdSuffix = debugId ? ` (debug ID: ${debugId})` : ''
+
+  return `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}${debugIdSuffix}\n`
+}

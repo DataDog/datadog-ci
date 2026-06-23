@@ -32,6 +32,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {extractDebugId} from './debugId'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -101,9 +102,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    const validationError = this.validateOptions()
-    if (validationError) {
-      return validationError
+    if (!this.validateOptions()) {
+      return 1
     }
 
     // Normalizing the basePath to resolve .. and .
@@ -368,34 +368,36 @@ export class SourcemapsUploadCommand extends BaseCommand {
     })
   }
 
-  private validateOptions(): 1 | undefined {
+  private validateOptions(): boolean {
     if (this.debugId) {
-      return undefined
+      return true
     }
 
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
 
-      return 1
+      return false
     }
 
     if (!this.service) {
       this.context.stderr.write('Missing service\n')
 
-      return 1
+      return false
     }
 
     if (!this.minifiedPathPrefix) {
       this.context.stderr.write('Missing minified path prefix\n')
 
-      return 1
+      return false
     }
 
     if (!this.isMinifiedPathPrefixValid()) {
       this.context.stdout.write(renderInvalidPrefix)
 
-      return 1
+      return false
     }
+
+    return true
   }
 
   private isMinifiedPathPrefixValid(): boolean {
@@ -439,16 +441,17 @@ export class SourcemapsUploadCommand extends BaseCommand {
         return UploadStatus.Skipped
       }
 
+      const debugId = this.debugId ? extractDebugId(sourcemap.minifiedFilePath, this.context) : undefined
       const payload = sourcemap.asMultipartPayload({
         cliVersion: this.cliVersion,
         service: this.service,
         version: this.releaseVersion,
         projectPath: this.projectPath,
-        debugId: this.debugId,
+        debugId,
         context: this.context,
       })
       if (this.dryRun) {
-        this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
+        this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap, debugId)}`)
 
         return UploadStatus.Success
       }
@@ -467,7 +470,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
           if (this.quiet) {
             return
           }
-          this.context.stdout.write(renderUpload(sourcemap))
+          this.context.stdout.write(renderUpload(sourcemap, debugId))
         },
         retries: 5,
         useGzip: true,

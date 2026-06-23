@@ -1,109 +1,13 @@
-import type {CommandContext} from '@datadog/datadog-ci-base'
-import type {MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
-
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {SourcemapsUploadCommand} from '../upload'
 
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())
-
-describe('Sourcemap.asMultipartPayload', () => {
-  describe('extractDebugId', () => {
-    test('includes debug_id in event metadata when bundle contains _ddDebugIds snippet', () => {
-      const sourcemap = new Sourcemap(
-        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js',
-        'https://static.example.com/common.min.js',
-        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map',
-        'common.min.js',
-        'https://static.example.com'
-      )
-      const context = createMockContext() as CommandContext
-
-      const payload = sourcemap.asMultipartPayload({
-        cliVersion: '1.0.0',
-        debugId: true,
-        context,
-      })
-      const event = payload.content.get('event') as MultipartStringValue
-      const eventValue = JSON.parse(event['value']) as {debug_id: string}
-
-      expect(eventValue['debug_id']).toBe('2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91')
-    })
-
-    test('omits debug_id and writes to stderr when bundle has no snippet', () => {
-      const sourcemap = new Sourcemap(
-        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
-        'https://static.example.com/common.min.js',
-        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
-        'common.min.js',
-        'https://static.example.com'
-      )
-      const context = createMockContext() as CommandContext
-
-      const payload = sourcemap.asMultipartPayload({
-        cliVersion: '1.0.0',
-        debugId: true,
-        context,
-      })
-      const event = payload.content.get('event') as MultipartStringValue
-      const eventValue = JSON.parse(event['value']) as Record<string, unknown>
-
-      expect(eventValue['debug_id']).toBeUndefined()
-      expect(context.stderr.toString()).toContain('Debug ID not found')
-    })
-
-    test('omits debug_id and writes to stderr when bundle file cannot be read', () => {
-      const sourcemap = new Sourcemap(
-        'nonexistent/path/bundle.js',
-        'https://static.example.com/bundle.js',
-        'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
-        'bundle.js',
-        'https://static.example.com'
-      )
-      const context = createMockContext() as CommandContext
-
-      const payload = sourcemap.asMultipartPayload({
-        cliVersion: '1.0.0',
-        debugId: true,
-        context,
-      })
-      const event = payload.content.get('event') as MultipartStringValue
-      const eventValue = JSON.parse(event['value']) as Record<string, unknown>
-
-      expect(eventValue['debug_id']).toBeUndefined()
-      expect(context.stderr.toString()).toContain('Cannot extract Debug ID')
-    })
-
-    test('omits debug_id without error when --debug-id flag is not set', () => {
-      const sourcemap = new Sourcemap(
-        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js',
-        'https://static.example.com/common.min.js',
-        'src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map',
-        'common.min.js',
-        'https://static.example.com'
-      )
-      const context = createMockContext() as CommandContext
-
-      const payload = sourcemap.asMultipartPayload({
-        cliVersion: '1.0.0',
-        service: 'my-service',
-        version: '1.2.3',
-        debugId: false,
-        context,
-      })
-      const event = payload.content.get('event') as MultipartStringValue
-      const eventValue = JSON.parse(event['value']) as Record<string, unknown>
-
-      expect(eventValue['debug_id']).toBeUndefined()
-      expect(context.stderr.toString()).toBe('')
-    })
-  })
-})
 
 describe('upload', () => {
   describe('getMinifiedURL', () => {
@@ -206,6 +110,54 @@ describe('upload', () => {
       command['minifiedPathPrefix'] = 'info: undesired log line\nhttps://example.com/static/js/'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
+    })
+  })
+
+  describe('validateOptions', () => {
+    test('returns true when --debug-id is set (skips all other checks)', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['debugId'] = true
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
+    })
+
+    test('returns false when release version is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing release version')
+    })
+
+    test('returns false when service is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing service')
+    })
+
+    test('returns false when minified path prefix is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing minified path prefix')
+    })
+
+    test('returns false when minified path prefix is invalid', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      command['minifiedPathPrefix'] = 'not-a-valid-prefix'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stdout.toString()).toContain('prefix')
+    })
+
+    test('returns true when all required options are valid', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      command['minifiedPathPrefix'] = 'https://static.example.com/js'
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
     })
   })
 
@@ -329,6 +281,25 @@ describe('execute', () => {
     'https://static.com/js',
     '--dry-run',
   ])
+
+  const runCLIWithDebugId = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--debug-id',
+    '--minified-path-prefix',
+    'https://static.com/js',
+    '--dry-run',
+  ])
+
+  test('debug id', async () => {
+    const {context, code} = await runCLIWithDebugId([
+      './src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id',
+    ])
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain(
+      '[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map for JS file available at https://static.com/js/common.min.js (debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)'
+    )
+  })
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])

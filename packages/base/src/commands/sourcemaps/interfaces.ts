@@ -1,5 +1,3 @@
-import fs from 'fs'
-
 import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
@@ -51,42 +49,21 @@ export class Sourcemap {
     }
   }
 
-  private extractDebugId(context: CommandContext): string | undefined {
-    try {
-      const source = fs.readFileSync(this.minifiedFilePath, 'utf-8')
-      const match = source.match(/"ddDebugId":"([^"]+)"/)
-      if (match) {
-        return match[1]
-      }
-      context.stderr.write(`Debug ID not found in ${this.minifiedFilePath}\n`)
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err)
-      context.stderr.write(`Cannot extract Debug ID from ${this.minifiedFilePath}: ${errorMsg}\n`)
-    }
-
-    return undefined
-  }
-
   private getMetadataPayload({
     cliVersion,
     service,
     version,
     projectPath,
     debugId,
-    context,
   }: SourcemapUploadOptions): MultipartValue {
     const metadata: {[k: string]: any} = {
       cli_version: cliVersion,
       project_path: projectPath,
       type: 'js_sourcemap',
-    }
-
-    if (debugId) {
-      metadata.debug_id = this.extractDebugId(context)
-    } else {
-      metadata.service = service
-      metadata.version = version
-      metadata.minified_url = this.minifiedUrl
+      service,
+      version,
+      minified_url: this.minifiedUrl,
+      debug_id: debugId,
     }
 
     if (this.gitData !== undefined) {
@@ -108,7 +85,7 @@ export class Sourcemap {
 export interface SourcemapUploadOptions {
   cliVersion: string
   context: CommandContext
-  debugId: boolean
+  debugId?: string
   projectPath?: string
   service?: string
   version?: string
