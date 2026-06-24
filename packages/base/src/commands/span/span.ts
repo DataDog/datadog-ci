@@ -45,7 +45,7 @@ export class SpanCommand extends CustomSpanCommand {
     this.tryEnableFips()
 
     if (!this.name) {
-      this.context.stdout.write(`The span name must be provided.\n`)
+      this.context.stderr.write(`The span name must be provided.\n`)
 
       return 1
     }
@@ -55,7 +55,7 @@ export class SpanCommand extends CustomSpanCommand {
       (!this.startTimeInMs && this.endTimeInMs) ||
       (this.durationInMs && (this.startTimeInMs || this.endTimeInMs))
     ) {
-      this.context.stdout.write(`Either duration or start and end time must be provided.\n`)
+      this.context.stderr.write(`Either duration or start and end time must be provided.\n`)
 
       return 1
     }
@@ -65,13 +65,13 @@ export class SpanCommand extends CustomSpanCommand {
     }
 
     if (!this.durationInMs) {
-      this.context.stdout.write(`The span duration must be provided or start-time and end-time.\n`)
+      this.context.stderr.write(`The span duration must be provided or start-time and end-time.\n`)
 
       return 1
     }
 
     if (this.durationInMs < 0) {
-      this.context.stdout.write(`The span duration must be positive / end time must be after start time.\n`)
+      this.context.stderr.write(`The span duration must be positive / end time must be after start time.\n`)
 
       return 1
     }

@@ -55,7 +55,10 @@ export class TraceCommand extends CustomSpanCommand {
       stdio: ['inherit', 'inherit', 'pipe'],
     })
     const chunks: Buffer[] = []
-    childProcess.stderr.pipe(this.context.stderr)
+    // `{end: false}`: don't end `context.stderr` when the child closes, so the post-child
+    // `--no-fail` diagnostic below can still be written without a "write after end" error
+    // on regular Writable streams (`process.stderr` tolerates it, but others don't).
+    childProcess.stderr.pipe(this.context.stderr, {end: false})
     const stderrCatcher: Promise<string> = new Promise((resolve, reject) => {
       childProcess.stderr.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
       childProcess.stderr.on('error', (err) => reject(err))
@@ -85,7 +88,7 @@ export class TraceCommand extends CustomSpanCommand {
 
     if (res !== 0) {
       if (this.noFail) {
-        console.log('note: Not failing since --no-fail provided')
+        this.context.stderr.write('note: Not failing since --no-fail provided\n')
 
         return exitCode
       }

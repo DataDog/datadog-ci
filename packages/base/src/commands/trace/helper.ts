@@ -57,7 +57,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
   ): Promise<number> {
     const provider = getCIProvider()
     if (!SUPPORTED_PROVIDERS.includes(provider)) {
-      this.context.stdout.write(
+      this.context.stderr.write(
         `Unsupported CI provider "${provider}". Supported providers are: ${SUPPORTED_PROVIDERS.join(', ')}\n`
       )
 
@@ -100,7 +100,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
 
   private getApiHelper(): APIHelper {
     if (!this.config.apiKey) {
-      this.context.stdout.write(
+      this.context.stderr.write(
         `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
       )
       throw new Error('API key is missing')
