@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import {promises as fs} from 'node:fs'
 import os from 'node:os'
 
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
@@ -11,8 +12,44 @@ import {verifyWindowsInstrumented, verifyWindowsUninstrumented} from './aas-veri
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
 
-// Pre-built Node.js app with dd-trace + winston, node_modules included
-const NODE_EXTENSION_APP_URL = 'https://selfmonitoringprod.blob.core.windows.net/code/node-extension.zip'
+// A self-contained test app deployed to the Windows web app. It's a zero-dependency Node HTTP
+// server (no node_modules, no build) -- the `aas instrument` site extension injects dd-trace, which
+// auto-instruments the built-in `http` module, so requests produce spans without the app bundling
+// anything. Owning the app here keeps the test self-contained instead of depending on an external
+// prebuilt package.
+const APP_JS = `const http = require('http')
+
+const port = process.env.PORT || 3000
+http
+  .createServer((_req, res) => {
+    res.writeHead(200, {'Content-Type': 'text/plain'})
+    res.end('Hello from the datadog-ci AAS Windows e2e app\\n')
+  })
+  .listen(port)
+`
+
+// On Windows, App Service serves Node behind IIS via iisnode, which needs a web.config to hand
+// requests to the app -- without one IIS denies directory browsing and returns 403. (The Kudu build
+// is supposed to generate it, but for `az webapp deploy` on Windows it does not do so reliably.)
+// Route every request to app.js.
+const WEB_CONFIG = `<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <handlers>
+      <add name="iisnode" path="app.js" verb="*" modules="iisnode" />
+    </handlers>
+    <rewrite>
+      <rules>
+        <rule name="DynamicContent">
+          <match url="/*" />
+          <action type="Rewrite" url="app.js" />
+        </rule>
+      </rules>
+    </rewrite>
+    <httpErrors existingResponse="PassThrough" />
+  </system.webServer>
+</configuration>
+`
 
 describeOrSkip('aas (Windows)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
@@ -53,33 +90,36 @@ describeOrSkip('aas (Windows)', () => {
       throw new Error(`Failed to create Windows web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
     }
 
-    // On Windows, App Service serves Node behind IIS via iisnode, which needs a web.config to
-    // route requests to the app. WEBSITE_RUN_FROM_PACKAGE mounts the package read-only and skips
-    // the Oryx build that generates that web.config, so the app returns a 403. Deploy via zipdeploy
-    // with SCM_DO_BUILD_DURING_DEPLOYMENT so Oryx builds and writes the web.config (same path prod
-    // uses). Auth is the az-login AAD token -- basic-auth publishing is disabled by policy.
-    const buildResult = await execPromise(
-      `az webapp config appsettings set --name "${windowsAppName}" --resource-group "${resourceGroup}" --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true WEBSITE_NODE_DEFAULT_VERSION="~22" --output none`
+    const settingsResult = await execPromise(
+      `az webapp config appsettings set --name "${windowsAppName}" --resource-group "${resourceGroup}" --settings WEBSITE_NODE_DEFAULT_VERSION="~22" --output none`
     )
-    if (buildResult.exitCode !== 0) {
-      throw new Error(`Failed to configure build settings (exit code ${buildResult.exitCode}): ${buildResult.stderr}`)
+    if (settingsResult.exitCode !== 0) {
+      throw new Error(
+        `Failed to configure app settings (exit code ${settingsResult.exitCode}): ${settingsResult.stderr}`
+      )
     }
 
-    const zipPath = `${os.tmpdir()}/${windowsAppName}.zip`
-    const downloadResult = await execPromise(`curl -fsSL -o "${zipPath}" "${NODE_EXTENSION_APP_URL}"`)
-    if (downloadResult.exitCode !== 0) {
-      throw new Error(`Failed to download app package (exit code ${downloadResult.exitCode}): ${downloadResult.stderr}`)
-    }
+    // Deploy app.js and web.config as individual files into wwwroot (`--type static`). No build or
+    // package is involved -- the app is zero-dependency, so the files just need to land. Deploy them
+    // sequentially (static deploys don't clean wwwroot, so both files accumulate). The retries cover
+    // the 502 the SCM site returns while it is still cold on the first deploy.
+    const appJsPath = `${os.tmpdir()}/${windowsAppName}-app.js`
+    const webConfigPath = `${os.tmpdir()}/${windowsAppName}-web.config`
+    await fs.writeFile(appJsPath, APP_JS)
+    await fs.writeFile(webConfigPath, WEB_CONFIG)
 
-    // The SCM site can 502 on the first deploy while it is still cold; execPromiseWithRetries
-    // retries on that gateway error.
-    const deployResult = await execPromiseWithRetries(
-      `az webapp deploy --resource-group "${resourceGroup}" --name "${windowsAppName}" --src-path "${zipPath}" --type zip --output none`,
-      undefined,
-      {maxAttempts: 5, delaySeconds: 20}
-    )
-    if (deployResult.exitCode !== 0) {
-      throw new Error(`Failed to deploy app package (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+    for (const [label, srcPath, targetPath] of [
+      ['app.js', appJsPath, '/home/site/wwwroot/app.js'],
+      ['web.config', webConfigPath, '/home/site/wwwroot/web.config'],
+    ]) {
+      const deployResult = await execPromiseWithRetries(
+        `az webapp deploy --resource-group "${resourceGroup}" --name "${windowsAppName}" --src-path "${srcPath}" --type static --target-path "${targetPath}" --output none`,
+        undefined,
+        {maxAttempts: 5, delaySeconds: 20}
+      )
+      if (deployResult.exitCode !== 0) {
+        throw new Error(`Failed to deploy ${label} (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+      }
     }
   }, 900_000)
 
