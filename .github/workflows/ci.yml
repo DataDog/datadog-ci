@@ -694,6 +694,16 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      # setup-alpine downloads apk.static with a single 10s-timeout curl, and the gitlab mirror
+      # is unreliable from arm64 runners. Pre-fetch it with retries into the path setup-alpine
+      # caches ($RUNNER_TEMP/apk); the action then skips its own flaky download.
+      - name: Pre-fetch aarch64 apk.static (work around flaky gitlab mirror)
+        run: |
+          mkdir -p "$RUNNER_TEMP"
+          curl -4 -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 180 \
+            -o "$RUNNER_TEMP/apk" \
+            https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.10/aarch64/apk.static
+          echo "e471d35aa221d031abe9b6288aede12a8e9f1a398954e5a2e1d1bce1727b4ef4  $RUNNER_TEMP/apk" | sha256sum -c
       - name: Setup Alpine
         uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
         with:

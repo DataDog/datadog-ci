@@ -1,4 +1,8 @@
-import {client, v2} from '@datadog/datadog-api-client'
+import type {client} from '@datadog/datadog-api-client'
+
+import {v2} from '@datadog/datadog-api-client'
+
+import {createE2EConfiguration} from '../../helpers/api-client'
 
 const POLL_INTERVAL_SECONDS = 15
 const MAX_ATTEMPTS = 20
@@ -99,11 +103,9 @@ export const checkTelemetryFlowing = async (
   // assert traces only.
   {checkLogs = true}: {checkLogs?: boolean} = {}
 ): Promise<void> => {
-  const configuration = client.createConfiguration({
-    authMethods: {
-      apiKeyAuth: process.env.DATADOG_API_KEY,
-      appKeyAuth: process.env.DATADOG_APP_KEY,
-    },
+  const configuration = createE2EConfiguration({
+    apiKeyAuth: process.env.DATADOG_API_KEY,
+    appKeyAuth: process.env.DATADOG_APP_KEY,
   })
   const checks = [pollUntilFound('spans', () => querySpans(configuration, identity))]
   if (checkLogs) {
