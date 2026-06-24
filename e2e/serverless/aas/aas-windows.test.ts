@@ -90,15 +90,6 @@ describeOrSkip('aas (Windows)', () => {
       throw new Error(`Failed to create Windows web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
     }
 
-    const settingsResult = await execPromise(
-      `az webapp config appsettings set --name "${windowsAppName}" --resource-group "${resourceGroup}" --settings WEBSITE_NODE_DEFAULT_VERSION="~22" --output none`
-    )
-    if (settingsResult.exitCode !== 0) {
-      throw new Error(
-        `Failed to configure app settings (exit code ${settingsResult.exitCode}): ${settingsResult.stderr}`
-      )
-    }
-
     // Deploy app.js and web.config as individual files into wwwroot (`--type static`). No build or
     // package is involved -- the app is zero-dependency, so the files just need to land. Deploy them
     // sequentially (static deploys don't clean wwwroot, so both files accumulate). The retries cover
