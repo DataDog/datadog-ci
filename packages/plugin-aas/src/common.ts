@@ -1,7 +1,8 @@
-import type {Site} from '@azure/arm-appservice'
+import type {Site, SlotConfigNamesResource, WebSiteManagementClient} from '@azure/arm-appservice'
 import type {AasConfigOptions, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import chalk from 'chalk'
 
 // Path to tracing libraries, copied within the Docker file
 const DD_DOTNET_TRACER_HOME_CODE = '/home/site/wwwroot/datadog'
@@ -106,4 +107,59 @@ export const isLinuxContainer = (site: Site): boolean => {
   return (
     linuxFxVersion === 'sitecontainers' || linuxFxVersion.startsWith('docker|') || linuxFxVersion.startsWith('compose|')
   )
+}
+
+/** Sticky slot settings (in slotConfigNames) to apply to a site. */
+export interface StickySlotSettings {
+  resourceGroup: string
+  webAppName: string
+  names: string[]
+}
+
+/**
+ * Collapse per-resource sticky settings into one entry per site, unioning their names.
+ * slotConfigNames is a single site-level resource shared by all of a site's slots, so
+ * each site must be touched with a single read-modify-write rather than once per slot.
+ */
+export const aggregateStickyBySite = (entries: (StickySlotSettings | undefined)[]): StickySlotSettings[] => {
+  const bySite = new Map<string, StickySlotSettings>()
+  for (const entry of entries) {
+    if (!entry?.names.length) {
+      continue
+    }
+    const key = entry.webAppName
+    const merged = bySite.get(key) ?? {resourceGroup: entry.resourceGroup, webAppName: entry.webAppName, names: []}
+    merged.names = [...new Set([...merged.names, ...entry.names])]
+    bySite.set(key, merged)
+  }
+
+  return [...bySite.values()]
+}
+
+/**
+ * Register the given app settings as sticky (in slotConfigNames) so they stay with their
+ * slot across a swap, with a single read-modify-write. No-op when nothing changes.
+ */
+export const registerStickySlotSettings = async (
+  client: WebSiteManagementClient,
+  resourceGroup: string,
+  webAppName: string,
+  names: string[],
+  opts: {dryRun: boolean; dryRunPrefix: string; log: (message: string) => void}
+): Promise<void> => {
+  const existing: SlotConfigNamesResource = await client.webApps.listSlotConfigurationNames(resourceGroup, webAppName)
+  const current = existing.appSettingNames ?? []
+  const toAdd = names.filter((name) => !current.includes(name))
+  if (toAdd.length === 0) {
+    return
+  }
+  opts.log(
+    `${opts.dryRunPrefix}Registering ${toAdd.join(', ')} as sticky slot setting(s) on ${chalk.bold(webAppName)}\n`
+  )
+  if (!opts.dryRun) {
+    await client.webApps.updateSlotConfigurationNames(resourceGroup, webAppName, {
+      ...existing,
+      appSettingNames: [...current, ...toAdd],
+    })
+  }
 }
