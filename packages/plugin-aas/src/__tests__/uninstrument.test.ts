@@ -26,6 +26,8 @@ const webAppsOperations = {
   listApplicationSettingsSlot: jest.fn(),
   updateApplicationSettingsSlot: jest.fn(),
   listSiteExtensionsSlot: jest.fn(),
+  listSlotConfigurationNames: jest.fn(),
+  updateSlotConfigurationNames: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -45,6 +47,7 @@ import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import {
   CONTAINER_WEB_APP,
   WINDOWS_DOTNET_WEB_APP,
+  WINDOWS_DOTNET_FUNCTION_APP,
   WINDOWS_NODE_WEB_APP,
   WINDOWS_JAVA_WEB_APP,
   DEFAULT_ARGS,
@@ -92,6 +95,8 @@ describe('aas instrument', () => {
       webAppsOperations.listApplicationSettingsSlot.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettingsSlot.mockReset().mockResolvedValue(undefined)
       webAppsOperations.listSiteExtensionsSlot.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.listSlotConfigurationNames.mockReset().mockResolvedValue({appSettingNames: []})
+      webAppsOperations.updateSlotConfigurationNames.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
     })
@@ -628,6 +633,79 @@ describe('aas instrument', () => {
           }),
         })
       )
+    })
+
+    test('Removes WEBSITE_PRIVATE_EXTENSIONS setting and sticky entry from a Function App slot', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_FUNCTION_APP,
+        tags: {service: WINDOWS_DOTNET_FUNCTION_APP.name},
+      })
+      webAppsOperations.getConfigurationSlot.mockClear().mockResolvedValue(WINDOWS_DOTNET_FUNCTION_APP.siteConfig)
+      webAppsOperations.listSiteExtensionsSlot
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
+      webAppsOperations.listApplicationSettingsSlot.mockClear().mockResolvedValue({
+        properties: {WEBSITE_PRIVATE_EXTENSIONS: '0', DD_API_KEY: 'test-key', hello: 'world'},
+      })
+      // DD_ENV is left sticky on purpose; only WEBSITE_PRIVATE_EXTENSIONS is our teardown concern
+      webAppsOperations.listSlotConfigurationNames
+        .mockClear()
+        .mockResolvedValue({appSettingNames: ['WEBSITE_PRIVATE_EXTENSIONS', 'DD_ENV']})
+
+      const {code} = await runCLI(SLOT_ARGS)
+      expect(code).toEqual(0)
+
+      // WEBSITE_PRIVATE_EXTENSIONS (and DD settings) removed from app settings, user settings kept
+      expect(webAppsOperations.updateApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging',
+        {properties: {hello: 'world'}}
+      )
+      // sticky entry removed for WEBSITE_PRIVATE_EXTENSIONS, DD_ENV left in place
+      expect(webAppsOperations.listSlotConfigurationNames).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        appSettingNames: ['DD_ENV'],
+      })
+    })
+
+    test('Does not touch slot config names when uninstrumenting a non-Function-App slot', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_WEB_APP,
+        tags: {service: WINDOWS_DOTNET_WEB_APP.name},
+      })
+      webAppsOperations.getConfigurationSlot.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensionsSlot
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
+
+      const {code} = await runCLI(SLOT_ARGS)
+      expect(code).toEqual(0)
+      expect(webAppsOperations.listSlotConfigurationNames).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateSlotConfigurationNames).not.toHaveBeenCalled()
+    })
+
+    test('Removes WEBSITE_PRIVATE_EXTENSIONS sticky once across multiple Function App slots', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_FUNCTION_APP,
+        tags: {service: WINDOWS_DOTNET_FUNCTION_APP.name},
+      })
+      webAppsOperations.getConfigurationSlot.mockClear().mockResolvedValue(WINDOWS_DOTNET_FUNCTION_APP.siteConfig)
+      webAppsOperations.listSiteExtensionsSlot
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
+      webAppsOperations.listSlotConfigurationNames
+        .mockClear()
+        .mockResolvedValue({appSettingNames: ['WEBSITE_PRIVATE_EXTENSIONS']})
+
+      const {code} = await runCLI(['-r', WEB_APP_SLOT_ID, '-r', WEB_APP_ID + '/slots/staging2'])
+      expect(code).toEqual(0)
+      // site-level resource touched once, not once per slot
+      expect(webAppsOperations.listSlotConfigurationNames).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        appSettingNames: [],
+      })
     })
   })
 })
