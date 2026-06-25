@@ -270,6 +270,12 @@ Ignore Node.js errors if FIPS cannot be enabled on the host system.
 - ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
 - CLI param: `--fips-ignore-error`
 
+### Version banner
+
+Every invocation prints a `datadog-ci v<version>` banner to `stderr`. To silence it — for example to keep CI logs quiet when the CLI runs many times — set:
+
+- ENV variable: `DD_CI_SKIP_VERSION_BANNER=true`
+
 
 ## More ways to install the CLI
 

@@ -154,7 +154,8 @@ describe('standalone binary', () => {
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('All plugins are already baked into the standalone binary.') as string,
-        stderr: '',
+        // The version banner is written to stderr on every non-`version`/`--help` invocation.
+        stderr: `datadog-ci v${version}`,
       })
     })
   })

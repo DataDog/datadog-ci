@@ -24,6 +24,9 @@ export const FIPS_IGNORE_ERROR_ENV_VAR = 'DATADOG_FIPS_IGNORE_ERROR'
 
 export const LOG_FORMAT_ENV_VAR = 'DD_LOG_FORMAT'
 
+// When set to `1`/`true`, suppresses the `datadog-ci v<version>` banner entirely.
+export const SKIP_VERSION_BANNER_ENV_VAR = 'DD_CI_SKIP_VERSION_BANNER'
+
 export const CONTENT_TYPE_HEADER = 'Content-Type'
 export const CONTENT_TYPE_VALUE_PROTOBUF = 'application/x-protobuf'
 export const CONTENT_TYPE_VALUE_JSON = 'application/json'
