@@ -1425,7 +1425,7 @@ __metadata:
     debug: "npm:^4.4.1"
     deep-extend: "npm:^0.6.0"
     fast-xml-parser: "npm:^5.7.2"
-    form-data: "npm:^4.0.4"
+    form-data: "npm:^4.0.6"
     glob: "npm:^13.0.6"
     inquirer: "npm:^8.2.7"
     is-docker: "npm:^4.0.0"
@@ -1533,7 +1533,7 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.7.2"
-    form-data: "npm:4.0.4"
+    form-data: "npm:4.0.6"
     simple-git: "npm:3.36.0"
     upath: "npm:2.0.1"
   languageName: unknown
@@ -1576,7 +1576,7 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
     fast-xml-parser: "npm:5.7.2"
-    form-data: "npm:4.0.4"
+    form-data: "npm:4.0.6"
     upath: "npm:2.0.1"
     uuid: "npm:14.0.0"
   languageName: unknown
@@ -1634,7 +1634,7 @@ __metadata:
     ajv: "npm:8.18.0"
     ajv-formats: "npm:3.0.1"
     chalk: "npm:3.0.0"
-    form-data: "npm:4.0.4"
+    form-data: "npm:4.0.6"
     simple-git: "npm:3.36.0"
     upath: "npm:2.0.1"
     uuid: "npm:14.0.0"
@@ -1703,7 +1703,7 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
     chalk: "npm:3.0.0"
-    form-data: "npm:4.0.4"
+    form-data: "npm:4.0.6"
     simple-git: "npm:3.36.0"
     upath: "npm:2.0.1"
   languageName: unknown
@@ -7369,16 +7369,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"form-data@npm:4.0.4, form-data@npm:^4.0.4":
-  version: 4.0.4
-  resolution: "form-data@npm:4.0.4"
+"form-data@npm:4.0.6, form-data@npm:^4.0.4, form-data@npm:^4.0.6":
+  version: 4.0.6
+  resolution: "form-data@npm:4.0.6"
   dependencies:
     asynckit: "npm:^0.4.0"
     combined-stream: "npm:^1.0.8"
     es-set-tostringtag: "npm:^2.1.0"
-    hasown: "npm:^2.0.2"
-    mime-types: "npm:^2.1.12"
-  checksum: 10/a4b62e21932f48702bc468cc26fb276d186e6b07b557e3dd7cc455872bdbb82db7db066844a64ad3cf40eaf3a753c830538183570462d3649fdfd705601cbcfb
+    hasown: "npm:^2.0.4"
+    mime-types: "npm:^2.1.35"
+  checksum: 10/de6614c8537c92fa5fa3ee7e827758f98f5a9c033f348b7de81855ef36e5cb867e75d9f405d9483ab8d724a4a20d4e79926a299fa8dbba38f530eb659f0884e4
   languageName: node
   linkType: hard
 
@@ -7851,12 +7851,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hasown@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "hasown@npm:2.0.2"
+"hasown@npm:^2.0.2, hasown@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "hasown@npm:2.0.4"
   dependencies:
     function-bind: "npm:^1.1.2"
-  checksum: 10/7898a9c1788b2862cf0f9c345a6bec77ba4a0c0983c7f19d610c382343d4f98fa260686b225dfb1f88393a66679d2ec58ee310c1d6868c081eda7918f32cc70a
+  checksum: 10/13823863ae48161068b4c51606a3128451c66f14545a5169d667fe9fca168dcd38c27570c7a299e32ef844b8da3d55def7fe88602f8970d4311fb543ee88001a
   languageName: node
   linkType: hard
 
@@ -9336,7 +9336,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mime-types@npm:^2.1.12, mime-types@npm:^2.1.35":
+"mime-types@npm:^2.1.35":
   version: 2.1.35
   resolution: "mime-types@npm:2.1.35"
   dependencies:
