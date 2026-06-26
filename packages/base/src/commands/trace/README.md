@@ -5,7 +5,7 @@ Trace a command with a custom span and report it to Datadog.
 ## Usage
 
 ```bash
-datadog-ci trace [--name <name>] [--tags] [--measures] [--no-fail] [--dry-run] -- <command>
+datadog-ci trace [--name <name>] [--tags] [--measures] [--no-fail] [--no-capture] [--dry-run] -- <command>
 ```
 
 For example:
@@ -21,6 +21,7 @@ datadog-ci trace --name "Say Hello" -- echo "Hello World"
 - `--measures` is an array of key-value pairs with the format `key:value`. These measures are added to the custom span.
     The `value` must be a number.
 - `--no-fail` (default: `false`) will prevent the trace command from failing even when not run in a supported CI Provider. In this case, the command will be launched and nothing will be reported to Datadog.
+- `--no-capture` (default: `false`) reports only the executable name instead of the full command line, so potentially sensitive arguments (tokens, secrets, etc.) are not sent to Datadog. The command is still launched with all of its arguments; only the reported span is trimmed. When `--name` is not provided, the span name also defaults to the executable name.
 - `--dry-run` (default: `false`) runs the command without sending the custom span. All other checks are performed.
 
 #### Environment variables

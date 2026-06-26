@@ -70,5 +70,43 @@ describe('trace', () => {
     })
   })
 
+  describe('no-capture', () => {
+    // Runs `trace` (in --dry-run) with a full command line including arguments, and returns the
+    // custom span payload that would have been reported (emitted to stdout by --dry-run).
+    const runWithCommand = async (extraArgs: string[], command: string[]) => {
+      const cli = new Cli()
+      cli.register(TraceCommand)
+
+      process.env = {...getEnvVarPlaceholders(), CIRCLECI: 'true'}
+      const context = createMockContext({env: process.env})
+      context.stderr = new PassThrough()
+      const code = await cli.run(['trace', '--dry-run', ...extraArgs, '--', ...command], context)
+
+      const stdout = context.stdout.toString()
+      const match = stdout.match(/Reporting custom span: (\{.*\})/)
+      const payload = match ? JSON.parse(match[1]) : undefined
+
+      return {code, payload}
+    }
+
+    test('captures the full command line by default', async () => {
+      const {payload} = await runWithCommand([], ['echo', '--token', 'secret'])
+      expect(payload.command).toBe('echo --token secret')
+      expect(payload.name).toBe('echo --token secret')
+    })
+
+    test('reports only the executable name with --no-capture', async () => {
+      const {payload} = await runWithCommand(['--no-capture'], ['echo', '--token', 'secret'])
+      expect(payload.command).toBe('echo')
+      expect(payload.name).toBe('echo')
+    })
+
+    test('still honors an explicit --name with --no-capture', async () => {
+      const {payload} = await runWithCommand(['--no-capture', '--name', 'Deploy'], ['echo', '--token', 'secret'])
+      expect(payload.command).toBe('echo')
+      expect(payload.name).toBe('Deploy')
+    })
+  })
+
   makeCIProviderTests(runCLI, [])
 })
