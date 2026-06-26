@@ -1,4 +1,4 @@
-import {execSync} from './exec'
+import {execSync} from '../../helpers/exec'
 
 // Hard-coded because e2e tests run against built artifacts, can't import from source
 const AAS_DD_SETTING_NAMES = [
@@ -87,6 +87,8 @@ export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptio
   for (const name of requiredSettings) {
     expect(settings[name]).toBeDefined()
   }
+  // Logs only flow when instance logging is enabled (--instance-logging).
+  expect(settings['DD_AAS_INSTANCE_LOGGING_ENABLED']).toBe('true')
 
   const containers = getSiteContainers(appName, rg, subscriptionId)
   const sidecar = containers.find((c) => c.name === 'datadog-sidecar')

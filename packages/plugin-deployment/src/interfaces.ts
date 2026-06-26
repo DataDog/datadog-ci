@@ -1,5 +1,17 @@
 import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
+export interface Rule {
+  type: string
+  name: string
+  dryRun?: boolean
+  options?: Record<string, unknown>
+}
+
+export interface Configuration {
+  dryRun?: boolean
+  rules: Rule[]
+}
+
 export interface GateEvaluationRequest {
   service: string
   env: string
@@ -7,6 +19,7 @@ export interface GateEvaluationRequest {
   version?: string
   apm_primary_tag?: string
   monitors_query_variable?: string
+  configuration?: Configuration
 }
 
 export interface GateEvaluationRequestResponse {

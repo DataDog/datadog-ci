@@ -7,8 +7,8 @@ export interface ExecResult {
 }
 
 // In CI the synthetic project installs @datadog/datadog-ci from artifact
-// tarballs, so `yarn datadog-ci` works. Locally, create an e2e/.env.local
-// file with DATADOG_CI_COMMAND='yarn launch' to run from source via tsx.
+// tarballs, so `yarn datadog-ci` works. Locally, set DATADOG_CI_COMMAND='yarn launch'
+// in e2e/.env.local (gitignored) to run from source via tsx.
 export const DATADOG_CI_COMMAND = process.env.DATADOG_CI_COMMAND ?? 'yarn datadog-ci'
 
 export const execPromise = async (command: string, env?: Record<string, string | undefined>): Promise<ExecResult> => {
@@ -47,6 +47,8 @@ const RETRYABLE_PATTERNS = [
   'RESOURCE_EXHAUSTED',
   'UNAVAILABLE',
   'temporarily unavailable',
+  // The Kudu/SCM site returns a 502 gateway error on the first deploy while it is still cold
+  'acting as a gateway or proxy',
 ]
 
 const isRetryable = (result: ExecResult): boolean => {

@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-junit",
-  "version": "5.18.0",
+  "version": "5.19.0",
   "description": "Datadog CI plugin for `junit` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -51,7 +51,7 @@
     "@datadog/datadog-ci-base": "workspace:*",
     "chalk": "3.0.0",
     "fast-xml-parser": "5.7.2",
-    "form-data": "4.0.4",
+    "form-data": "4.0.6",
     "upath": "2.0.1",
     "uuid": "14.0.0"
   }

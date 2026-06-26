@@ -39,7 +39,9 @@ export const createMockContext = (opts?: MockContextOptions): MockCommandContext
   let err = ''
 
   return {
-    env: opts?.env,
+    // Default to a defined (but empty) env so clipanion options using `{env: ...}` don't
+    // crash on `context.env[...]`, while keeping tests deterministic (no shell-env leakage).
+    env: opts?.env ?? {},
     stdout: {
       toString: () => out,
       write: (chunk: string) => {

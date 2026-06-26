@@ -1,0 +1,23 @@
+{
+  "dryRun": false,
+  "rules": [
+    {
+      "type": "monitor",
+      "name": "error rate monitors",
+      "dryRun": false,
+      "options": {
+        "query": "service:transaction-backend env:production",
+        "duration": 300
+      }
+    },
+    {
+      "type": "faulty_deployment_detection",
+      "name": "apm faulty deployment",
+      "dryRun": false,
+      "options": {
+        "duration": 900,
+        "excluded_resources": ["GET /healthcheck"]
+      }
+    }
+  ]
+}

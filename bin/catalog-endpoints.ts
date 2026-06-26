@@ -158,7 +158,10 @@ const main = () => {
     return s !== 0 ? s : a.route.localeCompare(b.route)
   })
 
-  const csv = ['scope,route,method', ...rows.map(({scope, route, method}) => `${scope},${route},${method}`)].join('\n')
+  const csv = [
+    'resource_name,scope,route,method',
+    ...rows.map(({scope, route, method}) => `${method} ${route},${scope},${route},${method}`),
+  ].join('\n')
 
   const outPath = path.join(ROOT, 'endpoints.csv')
   fs.writeFileSync(outPath, csv + '\n')

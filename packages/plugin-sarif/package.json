@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-sarif",
-  "version": "5.18.0",
+  "version": "5.19.0",
   "description": "Datadog CI plugin for `sarif` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -53,7 +53,7 @@
     "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
     "chalk": "3.0.0",
-    "form-data": "4.0.4",
+    "form-data": "4.0.6",
     "simple-git": "3.36.0",
     "upath": "2.0.1",
     "uuid": "14.0.0"

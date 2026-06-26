@@ -11,7 +11,7 @@ import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
 import {ICONS} from '../../helpers/formatting'
 import type {RequestBuilder} from '../../helpers/interfaces'
-import {Logger, LogLevel} from '../../helpers/logger'
+import {LogLevel} from '../../helpers/logger'
 import type {MetricsLogger} from '../../helpers/metrics'
 import {getMetricsLogger} from '../../helpers/metrics'
 import {datadogRoute} from '../../helpers/request/datadog-route'
@@ -64,19 +64,13 @@ export class GitMetadataUploadCommand extends BaseCommand {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
-  private logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
-
   public async execute() {
     const initialTime = Date.now()
 
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
     if (this.verbose) {
-      this.logger = new Logger((s: string) => {
-        this.context.stdout.write(s)
-      }, LogLevel.DEBUG)
+      this.logger.setLogLevel(LogLevel.DEBUG)
     }
     if (this.dryRun) {
       this.logger.warn(renderDryRunWarning())

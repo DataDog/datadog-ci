@@ -1,4 +1,5 @@
 import eslint from '@eslint/js'
+import yml from 'eslint-plugin-yml'
 import globals from 'globals'
 import stylistic from '@stylistic/eslint-plugin'
 import {defineConfig, globalIgnores} from 'eslint/config'
@@ -9,6 +10,41 @@ import noNull from 'eslint-plugin-no-null'
 import preferArrow from 'eslint-plugin-prefer-arrow'
 import prettierRecommended from 'eslint-plugin-prettier/recommended'
 import tseslint from 'typescript-eslint'
+
+const tsFiles = ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.cts', '**/*.mts', '**/*.js']
+const yamlFiles = ['**/*.yml', '**/*.yaml']
+
+// Commands must log through `this.logger` (BaseCommand) so that `--log-format json`
+// is honoured everywhere. Writing to stdout/stderr directly bypasses it. This list
+// grows as commands are migrated onto the shared logger; the rule becomes repo-wide
+// once the migration is complete.
+const noDirectStreamWriteFiles = ['packages/base/src/index.ts']
+
+// Restricted-syntax selectors applied to all TS files.
+const baseRestrictedSyntax = [
+  {
+    selector: "Literal[value='/dev/null']",
+    message: "Please use `os.devNull` instead of `'/dev/null'`.",
+  },
+  {
+    // imported as `import os from 'os'`
+    selector: "MemberExpression[object.name='os'][property.name='EOL']",
+    message: 'Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines.',
+  },
+]
+
+// Selectors forbidding direct `this.context.stdout/stderr` and `process.stdout/stderr` access.
+const restrictedStreamSyntax = [
+  {
+    selector:
+      "MemberExpression[object.object.type='ThisExpression'][object.property.name='context'][property.name=/^(stdout|stderr)$/]",
+    message: 'Log through `this.logger` instead of writing to `this.context.stdout`/`this.context.stderr` directly.',
+  },
+  {
+    selector: "MemberExpression[object.name='process'][property.name=/^(stdout|stderr)$/]",
+    message: 'Log through `this.logger` instead of writing to `process.stdout`/`process.stderr` directly.',
+  },
+]
 
 const restrictedImports = [
   {
@@ -106,6 +142,9 @@ export default defineConfig(
     'packages/datadog-ci/shims/injected-plugin-submodules.js',
     'packages/datadog-ci/shims/intl-collator.js',
     'bin/*.js',
+    '.github/dependabot.yml',
+    'packages/base/src/commands/flutter-symbols/__tests__/fixtures/pubspecs/invalidPubspec.yaml',
+    'packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml',
   ]),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
@@ -114,6 +153,7 @@ export default defineConfig(
   prettierRecommended,
   jest.configs['flat/recommended'],
   {
+    files: tsFiles,
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -382,18 +422,7 @@ export default defineConfig(
       'jest/padding-around-test-blocks': 'error',
       'no-prototype-builtins': 'off',
       'no-restricted-imports': ['error', {paths: restrictedImports}],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "Literal[value='/dev/null']",
-          message: "Please use `os.devNull` instead of `'/dev/null'`.",
-        },
-        {
-          // imported as `import os from 'os'`
-          selector: "MemberExpression[object.name='os'][property.name='EOL']",
-          message: 'Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines.',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...baseRestrictedSyntax],
     },
   },
   {
@@ -405,5 +434,22 @@ export default defineConfig(
     rules: {
       'no-restricted-imports': ['error', {paths: restrictedImports}],
     },
-  }
+  },
+  {
+    files: noDirectStreamWriteFiles,
+    rules: {
+      'no-restricted-syntax': ['error', ...baseRestrictedSyntax, ...restrictedStreamSyntax],
+    },
+  },
+  ...yml.configs['flat/standard'],
+  {
+    files: yamlFiles,
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      'prettier/prettier': 'off',
+      'yml/plain-scalar': 'off',
+      'yml/quotes': 'off',
+      'yml/no-empty-mapping-value': 'off',
+    },
+  },
 )

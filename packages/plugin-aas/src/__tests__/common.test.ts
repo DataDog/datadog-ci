@@ -1,7 +1,11 @@
 import type {Site} from '@azure/arm-appservice'
-import type {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import type {AasConfigOptions, WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {getWindowsRuntime, getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
+
+const WEB_APP: WebApp = {name: 'my-web-app'}
+const NON_CONTAINER_SITE: Site = {kind: 'app,linux', location: 'East US', siteConfig: {}}
+const CONTAINER_SITE: Site = {kind: 'app,linux', location: 'East US', siteConfig: {linuxFxVersion: 'sitecontainers'}}
 
 const DEFAULT_CONFIG: AasConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',
@@ -36,7 +40,7 @@ describe('aas common', () => {
     })
 
     test('returns required env vars with default DD_SITE', () => {
-      const envVars = getEnvVars(DEFAULT_CONFIG, false)
+      const envVars = getEnvVars(DEFAULT_CONFIG, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars).toEqual({
         DD_API_KEY: 'test-api-key',
         DD_SITE: 'datadoghq.com',
@@ -51,7 +55,7 @@ describe('aas common', () => {
         ...DEFAULT_CONFIG,
         isInstanceLoggingEnabled: true,
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars.DD_SITE).toEqual('datadoghq.eu')
       expect(envVars.DD_AAS_INSTANCE_LOGGING_ENABLED).toEqual('true')
     })
@@ -61,7 +65,7 @@ describe('aas common', () => {
         ...DEFAULT_CONFIG,
         service: 'my-service',
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars.DD_SERVICE).toEqual('my-service')
     })
 
@@ -71,7 +75,7 @@ describe('aas common', () => {
         isInstanceLoggingEnabled: false,
         environment: 'prod',
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars.DD_ENV).toEqual('prod')
     })
 
@@ -81,7 +85,7 @@ describe('aas common', () => {
         isInstanceLoggingEnabled: false,
         logPath: '/tmp/logs',
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars.DD_SERVERLESS_LOG_PATH).toEqual('/tmp/logs')
     })
 
@@ -93,7 +97,7 @@ describe('aas common', () => {
         environment: 'dev',
         logPath: '/var/log',
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars).toMatchObject({
         DD_SERVICE: 'svc',
         DD_ENV: 'dev',
@@ -152,7 +156,7 @@ describe('aas common', () => {
     })
 
     test('includes .NET specific env vars when isDotnet is true', () => {
-      const envVars = getEnvVars({...DEFAULT_CONFIG, isDotnet: true}, false)
+      const envVars = getEnvVars({...DEFAULT_CONFIG, isDotnet: true}, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars).toMatchObject({
         DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
         DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
@@ -171,7 +175,7 @@ describe('aas common', () => {
         logPath: '/dotnet/logs',
         isInstanceLoggingEnabled: true,
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars).toMatchObject({
         DD_SERVICE: 'svc',
         DD_ENV: 'qa',
@@ -195,7 +199,7 @@ describe('aas common', () => {
         logPath: '/dotnet/logs',
         isInstanceLoggingEnabled: true,
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars).toMatchObject({
         DD_SERVICE: 'svc',
         DD_ENV: 'qa',
@@ -218,7 +222,7 @@ describe('aas common', () => {
         logPath: '/dotnet/logs',
         isInstanceLoggingEnabled: true,
       }
-      const envVars = getEnvVars(config, true)
+      const envVars = getEnvVars(config, CONTAINER_SITE, WEB_APP)
       expect(envVars).toMatchObject({
         DD_SERVICE: 'svc',
         DD_ENV: 'qa',
@@ -242,7 +246,7 @@ describe('aas common', () => {
         logPath: '/dotnet/logs',
         isInstanceLoggingEnabled: true,
       }
-      const envVars = getEnvVars(config, true)
+      const envVars = getEnvVars(config, CONTAINER_SITE, WEB_APP)
       expect(envVars).toMatchObject({
         DD_SERVICE: 'svc',
         DD_ENV: 'qa',
@@ -261,12 +265,12 @@ describe('aas common', () => {
         ...DEFAULT_CONFIG,
         extraTags: 'custom:tag,another:value',
       }
-      const envVars = getEnvVars(config, false)
+      const envVars = getEnvVars(config, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars.DD_TAGS).toEqual('custom:tag,another:value')
     })
 
     test('does not include DD_TAGS when extraTags is not provided', () => {
-      const envVars = getEnvVars(DEFAULT_CONFIG, false)
+      const envVars = getEnvVars(DEFAULT_CONFIG, NON_CONTAINER_SITE, WEB_APP)
       expect(envVars.DD_TAGS).toBeUndefined()
     })
   })

@@ -23,7 +23,7 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {
   GIT_HEAD_SHA,
@@ -75,8 +75,6 @@ export class PluginCommand extends CoverageUploadCommand {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
-
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   private git: simpleGit.SimpleGit | undefined = undefined
 

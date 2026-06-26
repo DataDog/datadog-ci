@@ -6,7 +6,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitHash} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import chalk from 'chalk'
 import simpleGit from 'simple-git'
@@ -29,8 +29,6 @@ export class PluginCommand extends DoraDeploymentCommand {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
-
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   private service!: string
   private gitInfo?: GitInfo

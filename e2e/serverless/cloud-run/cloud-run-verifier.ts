@@ -1,4 +1,4 @@
-import {execSync} from './exec'
+import {execSync} from '../../helpers/exec'
 
 interface EnvVar {
   name: string

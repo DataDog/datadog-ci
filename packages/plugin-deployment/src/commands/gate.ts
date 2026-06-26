@@ -1,4 +1,6 @@
-import type {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from '../interfaces'
+import fs from 'fs'
+
+import type {APIHelper, Configuration, GateEvaluationRequest, GateEvaluationStatusResponse} from '../interfaces'
 
 import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -6,7 +8,6 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
@@ -24,10 +25,10 @@ export class PluginCommand extends DeploymentGateCommand {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
   private evaluationRequestTimeout = 60000 // 1 minute
   private pollingInterval = 15000 // 15 seconds
   private startTime: number = Date.now()
+  private configuration: Configuration | undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -74,6 +75,15 @@ export class PluginCommand extends DeploymentGateCommand {
       return 1
     }
 
+    if (this.configFilePath) {
+      const config = this.loadGateConfiguration(this.configFilePath)
+      if (!config) {
+        return 1
+      }
+
+      this.configuration = config
+    }
+
     this.logger.info('Starting deployment gate evaluation with parameters:')
     this.logger.info(`\tService: ${this.service}`)
     this.logger.info(`\tEnvironment: ${this.env}`)
@@ -85,6 +95,9 @@ export class PluginCommand extends DeploymentGateCommand {
     }
     if (this.apmPrimaryTag) {
       this.logger.info(`\tAPM Primary Tag: ${this.apmPrimaryTag}`)
+    }
+    if (this.configuration) {
+      this.logger.info(`\tGate configuration: ${this.configuration.rules.length} rules`)
     }
     this.logger.info(`\tTimeout: ${timeoutSeconds} seconds`)
     this.logger.info(`\tFail on error: ${this.failOnError ? 'true' : 'false'}\n`)
@@ -142,7 +155,37 @@ export class PluginCommand extends DeploymentGateCommand {
       request.monitors_query_variable = this.monitorsQueryVariable
     }
 
+    if (this.configuration) {
+      request.configuration = this.configuration
+    }
+
     return request
+  }
+
+  private loadGateConfiguration(configFilePath: string): Configuration | undefined {
+    if (!fs.existsSync(configFilePath)) {
+      this.logger.error(chalk.red(`${ICONS.FAILED} Config file not found: ${chalk.bold(configFilePath)}`))
+
+      return undefined
+    }
+
+    let parsedConfig: unknown
+    try {
+      parsedConfig = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'))
+    } catch {
+      this.logger.error(chalk.red(`${ICONS.FAILED} Failed to parse config file as JSON: ${chalk.bold(configFilePath)}`))
+
+      return undefined
+    }
+
+    const config = parsedConfig as Configuration
+    if (!Array.isArray(config.rules) || config.rules.length === 0) {
+      this.logger.error(chalk.red(`${ICONS.FAILED} Config file must contain a non-empty ${chalk.bold('rules')} array`))
+
+      return undefined
+    }
+
+    return config
   }
 
   private async requestGateEvaluation(
@@ -162,6 +205,10 @@ export class PluginCommand extends DeploymentGateCommand {
       } catch (error) {
         if (isRequestError(error) && error.response?.status) {
           this.logger.error(`Request failed with error: ${error.response.status} ${error.response.statusText}`)
+          const details: string[] = error.response.data?.errors?.map((e: {detail?: string}) => e.detail).filter(Boolean)
+          if (details?.length) {
+            details.forEach((detail) => this.logger.error(detail))
+          }
         } else {
           const errorMessage = error instanceof Error ? error.message : String(error)
           this.logger.error(`Could not start gate evaluation with unknown error: ${errorMessage}`)

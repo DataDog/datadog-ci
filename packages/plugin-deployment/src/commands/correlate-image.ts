@@ -4,7 +4,6 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {getCISpanTags, getGithubJobIDFromLogs, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -13,8 +12,6 @@ import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/hel
 import chalk from 'chalk'
 
 export class PluginCommand extends DeploymentCorrelateImageCommand {
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
-
   private config = {
     apiKey: process.env.DD_API_KEY,
     appKey: process.env.DD_APP_KEY,

@@ -9,7 +9,6 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
@@ -29,8 +28,6 @@ export class PluginCommand extends GateEvaluateCommand {
   private initialRetryMs = 1000
   private maxRetries = 5
   private defaultTimeout = 600 // 10 min
-
-  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   private config = {
     apiKey: process.env.DD_API_KEY,

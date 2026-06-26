@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -79,7 +79,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -103,7 +103,7 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
-    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes, check-version-bump-only]
+    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes, check-version-bump-only, check-lambda-changes]
     permissions:
       contents: read
       id-token: write
@@ -111,7 +111,7 @@ jobs:
       FORCE_COLOR: 1
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           sparse-checkout: |
             e2e/
@@ -175,6 +175,12 @@ jobs:
       - name: Set up Google Cloud CLI
         if: needs.check-cloud-run-changes.outputs.should_run == 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Configure AWS credentials (OIDC)
+        if: needs.check-lambda-changes.outputs.should_run == 'true'
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN_E2E }}
+          aws-region: eu-central-1
       - name: Run e2e tests
         run: yarn jest --config jest.config-e2e.js --colors
         env:
@@ -186,14 +192,18 @@ jobs:
           SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           SKIP_AAS_TESTS: ${{ needs.check-aas-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           SKIP_CLOUD_RUN_TESTS: ${{ needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_LAMBDA_TESTS: ${{ needs.check-lambda-changes.outputs.should_run != 'true' }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
           GCP_REGION: ${{ vars.GCP_REGION_E2E }}
           GCP_CLOUD_RUN_APP_IMAGE_E2E: ${{ vars.GCP_CLOUD_RUN_APP_IMAGE_E2E }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
           AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
           AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
+          AZURE_CONTAINER_APP_IMAGE_E2E: ${{ vars.AZURE_CONTAINER_APP_IMAGE_E2E }}
           AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
+          AWS_REGION: eu-central-1
+          AWS_LAMBDA_EXECUTION_ROLE_ARN: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN_E2E }}
 
   check-container-app-changes:
     name: Check container-app changes
@@ -201,7 +211,7 @@ jobs:
     outputs:
       should_run: ${{ steps.filter.outputs.container-app }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -213,9 +223,8 @@ jobs:
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
-              - 'e2e/fixtures/container-app/**'
-              - 'e2e/container-app.test.ts'
-              - 'e2e/helpers/container-app-verifier.ts'
+              - 'e2e/serverless/container-app/**'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-cloud-run-changes:
@@ -224,7 +233,7 @@ jobs:
     outputs:
       should_run: ${{ steps.filter.outputs.cloud-run }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -236,9 +245,8 @@ jobs:
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
-              - 'e2e/cloud-run.test.ts'
-              - 'e2e/helpers/cloud-run-verifier.ts'
-              - 'e2e/helpers/cloud-run-telemetry-checker.ts'
+              - 'e2e/serverless/cloud-run/**'
+              - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
 
   check-aas-changes:
@@ -247,7 +255,7 @@ jobs:
     outputs:
       should_run: ${{ steps.filter.outputs.aas }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -260,9 +268,30 @@ jobs:
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
               - 'packages/base/src/commands/aas/**'
-              - 'e2e/aas-linux.test.ts'
-              - 'e2e/aas-windows.test.ts'
-              - 'e2e/helpers/aas-verifier.ts'
+              - 'e2e/serverless/aas/**'
+              - 'e2e/serverless/helpers/**'
+              - '.github/workflows/ci.yml'
+
+  check-lambda-changes:
+    name: Check lambda changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.lambda }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        id: filter
+        with:
+          filters: |
+            lambda:
+              - 'packages/plugin-lambda/**'
+              - 'packages/base/package.json'
+              - 'packages/base/src/commands/lambda/**'
+              - 'packages/base/src/helpers/serverless/**'
+              - 'packages/base/src/helpers/tags.ts'
+              - 'e2e/serverless/lambda/**'
+              - 'e2e/serverless/helpers/**'
+              - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
 
   check-version-bump-only:
@@ -271,7 +300,7 @@ jobs:
     outputs:
       result: ${{ steps.check.outputs.result }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 2
       - name: Detect version-bump-only commit
@@ -303,7 +332,7 @@ jobs:
       FORCE_COLOR: 1
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           sparse-checkout: |
             e2e/
@@ -362,6 +391,7 @@ jobs:
           SKIP_CONTAINER_APP_TESTS: 'true'
           SKIP_AAS_TESTS: 'true'
           SKIP_CLOUD_RUN_TESTS: 'true'
+          SKIP_LAMBDA_TESTS: 'true'
 
   # We only test with a single plugin and a single Node.js version.
   test-plugin-auto-install-during-npx:
@@ -565,7 +595,7 @@ jobs:
     name: Test standalone binary in ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -593,7 +623,7 @@ jobs:
     name: Test standalone binary in ARM ubuntu
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -621,7 +651,7 @@ jobs:
     name: Test standalone binary in Alpine
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Setup Alpine
         uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
         with:
@@ -663,7 +693,17 @@ jobs:
     name: Test standalone binary in ARM Alpine
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      # setup-alpine downloads apk.static with a single 10s-timeout curl, and the gitlab mirror
+      # is unreliable from arm64 runners. Pre-fetch it with retries into the path setup-alpine
+      # caches ($RUNNER_TEMP/apk); the action then skips its own flaky download.
+      - name: Pre-fetch aarch64 apk.static (work around flaky gitlab mirror)
+        run: |
+          mkdir -p "$RUNNER_TEMP"
+          curl -4 -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 180 \
+            -o "$RUNNER_TEMP/apk" \
+            https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.10/aarch64/apk.static
+          echo "e471d35aa221d031abe9b6288aede12a8e9f1a398954e5a2e1d1bce1727b4ef4  $RUNNER_TEMP/apk" | sha256sum -c
       - name: Setup Alpine
         uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
         with:
@@ -708,7 +748,7 @@ jobs:
     name: Test standalone binary in windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -738,7 +778,7 @@ jobs:
     # https://github.com/actions/runner-images#available-images
     runs-on: macos-latest-large
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -766,7 +806,7 @@ jobs:
     name: Test standalone binary in ARM macOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -795,7 +835,7 @@ jobs:
     name: Static Analyzer - Diff Aware
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Run Datadog static analyzer
         id: datadog-static-analysis
         uses: DataDog/datadog-static-analyzer-github-action@8340f18875fcefca86844b5f947ce2431387e552 # v3.0.0
@@ -810,7 +850,7 @@ jobs:
     name: Static Analyzer - Non Diff Aware
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Run Datadog static analyzer
         id: datadog-static-analysis
         uses: DataDog/datadog-static-analyzer-github-action@8340f18875fcefca86844b5f947ce2431387e552 # v3.0.0
@@ -820,12 +860,24 @@ jobs:
           cpu_count: 2
           diff_aware: false
 
+  lint-yaml:
+    name: Lint YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Install node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22.19.0
+      - run: yarn install --immutable
+      - run: yarn lint:yaml
+
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install node
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:

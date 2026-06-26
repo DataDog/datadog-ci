@@ -1,4 +1,6 @@
-import {client, v2} from '@datadog/datadog-api-client'
+import {v2} from '@datadog/datadog-api-client'
+
+import {createE2EConfiguration} from './api-client'
 
 const CHECK_INTERVAL_SECONDS = 10
 const MAX_NUM_ATTEMPTS = 10
@@ -17,7 +19,7 @@ const waitFor = (waitSeconds: number): Promise<void> => {
 export const checkJunitUpload = async (options: CheckJunitUploadOptions): Promise<void> => {
   const {service, commitSha, testLevel, extraFilter} = options
 
-  const configuration = client.createConfiguration()
+  const configuration = createE2EConfiguration()
   const apiInstance = new v2.CIVisibilityTestsApi(configuration)
 
   const baseFilterQuery = `@test.service:${service} @git.commit.sha:${commitSha}`
