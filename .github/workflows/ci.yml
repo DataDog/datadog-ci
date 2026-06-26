@@ -652,10 +652,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      # setup-alpine downloads apk.static with a single 10s-timeout curl, and the gitlab mirror
+      # is unreliable from CI runners. Pre-fetch it with retries into the path setup-alpine
+      # caches ($RUNNER_TEMP/apk); the action then skips its own flaky download.
+      - name: Pre-fetch x86_64 apk.static (work around flaky gitlab mirror)
+        run: |
+          mkdir -p "$RUNNER_TEMP"
+          curl -4 -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 180 \
+            -o "$RUNNER_TEMP/apk" \
+            https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.10/x86_64/apk.static
+          echo "34bb1a96f0258982377a289392d4ea9f3f4b767a4bb5806b1b87179b79ad8a1c  $RUNNER_TEMP/apk" | sha256sum -c
       - name: Setup Alpine
         uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
         with:
           shell-name: alpine.sh
+          apk-tools-url: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.10/x86_64/apk.static#!sha256!34bb1a96f0258982377a289392d4ea9f3f4b767a4bb5806b1b87179b79ad8a1c
       - name: Install project dependencies (root)
         run: |
           apk add npm git
