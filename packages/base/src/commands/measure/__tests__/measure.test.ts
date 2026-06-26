@@ -224,6 +224,150 @@ describe('execute', () => {
     expect(result.context.stdout.toString()).toContain('[DRYRUN] Measure request')
   })
 
+  test('sends one request per level for additive --level', async () => {
+    const result = await runCLI(
+      'pipeline,job',
+      ['key:12345'],
+      {
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('"ci_level": 0')
+    expect(out).toContain('"ci_level": 1')
+    // one request per level
+    expect(out.match(/\[DRYRUN\] Measure request/g)).toHaveLength(2)
+    // the same measures are included in each request
+    expect(out.match(/"key": 12345/g)).toHaveLength(2)
+  })
+
+  test('dedupes repeated levels into a single request', async () => {
+    const result = await runCLI(
+      'pipeline,pipeline',
+      ['key:12345'],
+      {
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    expect(result.context.stdout.toString().match(/\[DRYRUN\] Measure request/g)).toHaveLength(1)
+  })
+
+  test('fails fast if any level is invalid', async () => {
+    const {context, code} = await runCLI('pipeline,bogus', ['key:1'], {
+      BUILDKITE: 'true',
+      BUILDKITE_BUILD_ID: 'id',
+    })
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('Level must be one of [pipeline, job, stage, step]')
+  })
+
+  test('fails fast if any level is unsupported for the provider and sends nothing', async () => {
+    const {context, code} = await runCLI(
+      'pipeline,stage',
+      ['key:1'],
+      {
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+      },
+      ['--dry-run']
+    )
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain("Level 'stage' is only supported for providers")
+    expect(context.stdout.toString()).not.toContain('[DRYRUN] Measure request')
+  })
+
+  test('enriches each level independently for github (job,step)', async () => {
+    jest.spyOn(fs, 'readdirSync').mockReturnValue([
+      {
+        name: 'Worker_1.log' as any,
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        parentPath: '',
+        path: '',
+      },
+    ])
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(
+      `[2025-09-15 10:14:00Z INFO Worker] Job message:\n${JSON.stringify({
+        jobDisplayName: 'real job name',
+        steps: [{contextName: '__checkout'}, {contextName: '__run'}],
+      })}`
+    )
+    const result = await runCLI(
+      'job,step',
+      ['key:12345'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'build',
+        GITHUB_ACTION: '__run',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('"ci_level": 1')
+    expect(out).toContain('"ci_level": 3')
+    expect(out).toContain('"DD_GITHUB_STEP_INDEX": "1"')
+    expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
+    jest.restoreAllMocks()
+  })
+
+  test('earlier levels are still sent before a fatal level aborts the rest', async () => {
+    const result = await runCLI(
+      'pipeline,step',
+      ['key:12345'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'build',
+        GITHUB_ACTION: '__run',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(1)
+    expect(result.context.stdout.toString()).toContain('"ci_level": 0')
+    expect(result.context.stderr.toString()).toContain("level 'step'")
+  })
+
+  test('a fatal setup error exits non-zero even with --no-fail', async () => {
+    const result = await runCLI(
+      'pipeline,step',
+      ['key:12345'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'build',
+        GITHUB_ACTION: '__run',
+      },
+      ['--dry-run', '--no-fail']
+    )
+    expect(result.code).toBe(1)
+    expect(result.context.stderr.toString()).toContain("level 'step'")
+  })
+
   test('should try to determine github job display name', async () => {
     jest.spyOn(fs, 'readdirSync').mockReturnValue([
       {

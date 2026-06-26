@@ -118,6 +118,34 @@ export const validateLevel = (level: string | undefined): string | undefined => 
   return undefined
 }
 
+/**
+ * Parses an additive, comma-separated `--level` value (e.g. "pipeline,stage").
+ * Trims each member, drops empties, dedupes, sorts by span depth, and validates
+ * every member (known value + provider support). Returns the parsed levels or,
+ * if anything is invalid or empty, a single aggregated error message.
+ */
+export const parseLevels = (input: string | undefined): {levels: CILevel[]; error?: string} => {
+  const parts = (input ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0)
+
+  const unique = uniq(parts)
+
+  if (unique.length === 0) {
+    return {levels: [], error: `Level must be one of [${VALID_LEVELS.join(', ')}]`}
+  }
+
+  const errors = uniq(unique.map((p) => validateLevel(p)).filter((e): e is string => Boolean(e)))
+  if (errors.length > 0) {
+    return {levels: [], error: errors.join('; ')}
+  }
+
+  const levels = (unique as CILevel[]).sort((a, b) => LEVEL_TO_NUMBER[a] - LEVEL_TO_NUMBER[b])
+
+  return {levels}
+}
+
 export const githubWellKnownDiagnosticDirsUnix = [
   '/home/runner/actions-runner/_diag', // for self-hosted
   '/opt/actions-runner/_diag', // self-hosted in some cases
@@ -1205,7 +1233,59 @@ export const isGithubWindowsRunner = (): boolean => {
   return os.toLowerCase() === 'windows'
 }
 
-const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | undefined => {
+/**
+ * Per-execution cache for GitHub diagnostic-log reads. Locating the Worker log
+ * dir, selecting the target log file(s), and reading the (~26KB) contents is
+ * shared by the job and step enrichment paths; when several levels are requested
+ * in a single command (e.g. `--level job,step`) this avoids re-globbing,
+ * re-selecting and re-reading the same files once per level. The cache is created
+ * per command execution (see `processLevels`), never module-global, so it cannot
+ * leak state across commands or tests.
+ */
+export interface GithubLogCache {
+  workerLogFilesResolved: boolean
+  workerLogFiles: [string, string[]] | undefined
+  targetLogFilesResolved: boolean
+  targetLogFiles: string[]
+  fileContents: Map<string, string>
+}
+
+export const createGithubLogCache = (): GithubLogCache => ({
+  workerLogFilesResolved: false,
+  workerLogFiles: undefined,
+  targetLogFilesResolved: false,
+  targetLogFiles: [],
+  fileContents: new Map(),
+})
+
+/** Reads a diagnostic log file, serving from (and populating) `cache` when provided. */
+const readLogFile = (filePath: string, cache?: GithubLogCache): string => {
+  const cached = cache?.fileContents.get(filePath)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8')
+  cache?.fileContents.set(filePath, content)
+
+  return content
+}
+
+const getGithubWorkerLogFiles = (context: BaseContext, cache?: GithubLogCache): [string, string[]] | undefined => {
+  if (cache?.workerLogFilesResolved) {
+    return cache.workerLogFiles
+  }
+
+  const result = computeGithubWorkerLogFiles(context)
+  if (cache) {
+    cache.workerLogFilesResolved = true
+    cache.workerLogFiles = result
+  }
+
+  return result
+}
+
+const computeGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | undefined => {
   let foundDiagDir = ''
   let workerLogFiles: string[] = []
 
@@ -1288,7 +1368,31 @@ const getGithubWorkerLogFiles = (context: BaseContext): [string, string[]] | und
  *   which on a single-job runner is immediate, and on a multi-runner is the current
  *   job's (most recent) log.
  */
-const getTargetWorkerLogFiles = (context: BaseContext, foundDiagDir: string, workerLogFiles: string[]): string[] => {
+const getTargetWorkerLogFiles = (
+  context: BaseContext,
+  foundDiagDir: string,
+  workerLogFiles: string[],
+  cache?: GithubLogCache
+): string[] => {
+  if (cache?.targetLogFilesResolved) {
+    return cache.targetLogFiles
+  }
+
+  const result = computeTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles, cache)
+  if (cache) {
+    cache.targetLogFilesResolved = true
+    cache.targetLogFiles = result
+  }
+
+  return result
+}
+
+const computeTargetWorkerLogFiles = (
+  context: BaseContext,
+  foundDiagDir: string,
+  workerLogFiles: string[],
+  cache?: GithubLogCache
+): string[] => {
   // Always sort newest-first so the fallback iteration is in the right order.
   const sortedNewestFirst = [...workerLogFiles].sort().reverse()
 
@@ -1296,7 +1400,7 @@ const getTargetWorkerLogFiles = (context: BaseContext, foundDiagDir: string, wor
   if (orchestrationId) {
     for (const logFile of sortedNewestFirst) {
       const filePath = upath.join(foundDiagDir, logFile)
-      const content = fs.readFileSync(filePath, 'utf-8')
+      const content = readLogFile(filePath, cache)
 
       if (content.includes('"system.orchestrationId":') && content.includes(`"${orchestrationId}"`)) {
         context.stdout.write(`Found Worker log via system.orchestrationId for ${orchestrationId}: ${logFile}\n`)
@@ -1317,13 +1421,14 @@ const getGithubJobAttributeFromLogFiles = (
   context: BaseContext,
   foundDiagDir: string,
   workerLogFiles: string[],
-  jobAttributeRegex: RegExp
+  jobAttributeRegex: RegExp,
+  cache?: GithubLogCache
 ): string | undefined => {
-  const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles)
+  const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles, cache)
 
   for (const logFile of logsToCheck) {
     const filePath = upath.join(foundDiagDir, logFile)
-    const content = fs.readFileSync(filePath, 'utf-8')
+    const content = readLogFile(filePath, cache)
 
     const match = content.match(jobAttributeRegex)
 
@@ -1353,13 +1458,13 @@ const getGithubJobAttributeFromLogFiles = (
  *
  * @returns The job display name, or undefined if not found
  */
-export const getGithubJobNameFromLogs = (context: BaseContext): string | undefined => {
+export const getGithubJobNameFromLogs = (context: BaseContext, cache?: GithubLogCache): string | undefined => {
   if (!shouldGetGithubJobDisplayName()) {
     return
   }
   context.stdout.write('Determining GitHub job name\n')
 
-  const result = getGithubWorkerLogFiles(context)
+  const result = getGithubWorkerLogFiles(context, cache)
   if (!result) {
     return
   }
@@ -1369,7 +1474,8 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     context,
     foundDiagDir,
     workerLogFiles,
-    githubJobDisplayNameRegex
+    githubJobDisplayNameRegex,
+    cache
   )
 
   if (!jobDisplayName) {
@@ -1392,11 +1498,12 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
 export const enrichCIEnvFromGithubLogs = (
   context: BaseContext,
   level: CILevel,
-  ciEnv: Record<string, string>
+  ciEnv: Record<string, string>,
+  cache?: GithubLogCache
 ): void => {
   switch (level) {
     case CI_LEVELS.STEP: {
-      const stepInfo = getGithubStepInfoFromLogs(context)
+      const stepInfo = getGithubStepInfoFromLogs(context, cache)
       if (!ciEnv[envDDGithubJobName]) {
         ciEnv[envDDGithubJobName] = stepInfo.jobDisplayName
       }
@@ -1404,7 +1511,7 @@ export const enrichCIEnvFromGithubLogs = (
       break
     }
     case CI_LEVELS.JOB: {
-      const jobName = getGithubJobNameFromLogs(context)
+      const jobName = getGithubJobNameFromLogs(context, cache)
       if (jobName) {
         ciEnv[envDDGithubJobName] = jobName
       }
@@ -1416,6 +1523,60 @@ export const enrichCIEnvFromGithubLogs = (
 }
 
 /**
+ * Sends the same payload to each requested CI level, one request per level.
+ *
+ * Shared by the `tag` and `measure` commands. Each level is enriched on its own
+ * copy of `ciEnv` (so e.g. the step index never leaks into the job request).
+ *
+ * Failure handling mirrors the original single-level behavior:
+ * - A setup/config error — a missing API key, or GitHub diagnostic logs that
+ *   cannot be located — is thrown and propagates to the caller's outer catch,
+ *   making it fatal regardless of `--no-fail`. The thrown error is annotated
+ *   with the failing level so the report says which one broke.
+ * - A request that completes but reports a non-zero status sets the returned
+ *   flag and the loop continues; the caller decides whether `--no-fail` turns
+ *   it into a success.
+ *
+ * A single `GithubLogCache` lives for the duration of the loop so the GitHub
+ * diagnostic logs are located and read at most once even when several levels
+ * need them (e.g. `--level job,step`).
+ *
+ * Returns `true` if any level reported a non-zero status. Callers own the
+ * `--no-fail`/success messaging and exit code based on this flag.
+ */
+export const processLevels = async (
+  context: BaseContext,
+  levels: CILevel[],
+  ciEnv: Record<string, string>,
+  sendForLevel: (levelEnv: Record<string, string>, levelNumber: number) => Promise<number>
+): Promise<boolean> => {
+  const cache = createGithubLogCache()
+  let anyFailed = false
+
+  for (const level of levels) {
+    let exitStatus: number
+    try {
+      const levelEnv = {...ciEnv}
+      enrichCIEnvFromGithubLogs(context, level, levelEnv, cache)
+
+      exitStatus = await sendForLevel(levelEnv, LEVEL_TO_NUMBER[level])
+    } catch (error) {
+      // Re-throw annotated with the level. The command's outer catch reports it
+      // and returns a non-zero exit code even under --no-fail, matching the
+      // original single-level behavior where setup/config throws were fatal.
+      throw new Error(`level '${level}': ${(error as Error).message}`)
+    }
+
+    if (exitStatus !== 0) {
+      anyFailed = true
+      context.stderr.write(`${chalk.red.bold('[ERROR]')} failed to send for level '${level}'\n`)
+    }
+  }
+
+  return anyFailed
+}
+
+/**
  * Extracts the job display name and step index from GitHub Actions diagnostic logs.
  *
  * To avoid parsing the full Job message JSON (~26KB), we:
@@ -1423,7 +1584,10 @@ export const enrichCIEnvFromGithubLogs = (
  * 2. Extract only the `"steps": [...]` array from the Job message via bracket-depth tracking
  * 3. Parse just that array and match `contextName` against `GITHUB_ACTION`
  */
-export const getGithubStepInfoFromLogs = (context: BaseContext): {jobDisplayName: string; stepIndex: number} => {
+export const getGithubStepInfoFromLogs = (
+  context: BaseContext,
+  cache?: GithubLogCache
+): {jobDisplayName: string; stepIndex: number} => {
   if (getCIProvider() !== CI_ENGINES.GITHUB) {
     throw new Error('Step level is only supported for GitHub Actions')
   }
@@ -1435,16 +1599,16 @@ export const getGithubStepInfoFromLogs = (context: BaseContext): {jobDisplayName
 
   context.stdout.write('Determining GitHub step info from diagnostic logs\n')
 
-  const result = getGithubWorkerLogFiles(context)
+  const result = getGithubWorkerLogFiles(context, cache)
   if (!result) {
     throw new Error('Could not find GitHub diagnostic log files, cannot determine step index')
   }
   const [foundDiagDir, workerLogFiles] = result
-  const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles)
+  const logsToCheck = getTargetWorkerLogFiles(context, foundDiagDir, workerLogFiles, cache)
 
   for (const logFile of logsToCheck) {
     const filePath = upath.join(foundDiagDir, logFile)
-    const content = fs.readFileSync(filePath, 'utf-8')
+    const content = readLogFile(filePath, cache)
 
     // Extract jobDisplayName using the existing regex
     const displayNameMatch = content.match(githubJobDisplayNameRegex)

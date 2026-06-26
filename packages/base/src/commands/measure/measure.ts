@@ -1,12 +1,10 @@
-import type {CILevel} from '@datadog/datadog-ci-base/helpers/ci'
-
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '@datadog/datadog-ci-base/helpers/ci'
+import {getCIEnv, parseLevels, processLevels} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -50,6 +48,10 @@ export class MeasureCommand extends BaseCommand {
         'Tag the current CI job with a command runtime',
         'datadog-ci measure --level job --measures command.runtime:67.1',
       ],
+      [
+        'Add the same measures to several levels at once (one request per level)',
+        'datadog-ci measure --level pipeline,job --measures binary.size:500',
+      ],
       ['Add measures in bulk using a JSON file', 'datadog-ci measure --level job --measures-file my_measures.json'],
     ],
   })
@@ -72,13 +74,12 @@ export class MeasureCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    const levelError = validateLevel(this.level)
+    const {levels, error: levelError} = parseLevels(this.level)
     if (levelError) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${levelError}\n`)
 
       return 1
     }
-    const level = this.level as CILevel
 
     const cliMeasures: string[] | undefined = this.measures
     if (!cliMeasures && !this.measuresFile) {
@@ -108,20 +109,22 @@ export class MeasureCommand extends BaseCommand {
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      enrichCIEnvFromGithubLogs(this.context, level, ciEnv)
+      // The same measures are sent to each requested level (one request per level).
+      const anyFailed = await processLevels(this.context, levels, ciEnv, (levelEnv, levelNumber) =>
+        this.sendMeasures(levelEnv, levelNumber, provider, measures)
+      )
 
-      const exitStatus = await this.sendMeasures(ciEnv, LEVEL_TO_NUMBER[level], provider, measures)
-      if (exitStatus !== 0 && this.noFail) {
+      if (anyFailed && this.noFail) {
         this.context.stderr.write(
           `${chalk.yellow.bold('[WARNING]')} sending measures failed but continuing due to --no-fail\n`
         )
 
         return 0
-      } else if (exitStatus === 0 && !this.dryRun) {
+      } else if (!anyFailed && !this.dryRun) {
         this.context.stdout.write('Measures sent\n')
       }
 
-      return exitStatus
+      return anyFailed ? 1 : 0
     } catch (error) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${error.message}\n`)
 
