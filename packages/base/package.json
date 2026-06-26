@@ -145,7 +145,7 @@
     "terminal-link": "^2.1.1",
     "tiny-async-pool": "^2.1.0",
     "typanion": "^3.14.0",
-    "undici": "^7.24.6",
+    "undici": "^7.28.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
