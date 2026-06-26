@@ -69,12 +69,47 @@ const parseNumericTag = (numericTag: string | undefined): number | undefined => 
 }
 
 /**
+ * If `value` looks like a bracketed array (e.g. `[a,b,c]` or `["a","b"]`),
+ * normalize it to a canonical JSON-array string. Otherwise return it unchanged.
+ *
+ * The CI Visibility API accepts tags as Record<string,string>; sending arrays
+ * as JSON-encoded strings lets the server promote them back to multi-value
+ * facets without a wire-format change.
+ */
+const canonicalizeArrayValue = (value: string): string => {
+  const trimmed = value.trim()
+  if (trimmed.length < 2 || trimmed[0] !== '[' || trimmed[trimmed.length - 1] !== ']') {
+    return value
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as unknown
+    if (Array.isArray(parsed)) {
+      return JSON.stringify(parsed)
+    }
+  } catch {
+    // Not valid JSON. Fall through to legacy bracket parsing for inputs like
+    // `[a,b,c]` (no element quotes).
+  }
+  const inner = trimmed.slice(1, -1).trim()
+  if (inner === '') {
+    return value
+  }
+  const elements = inner.split(',').map((s) => s.trim())
+
+  return JSON.stringify(elements)
+}
+
+/**
  * Receives an array of the form ['key:value', 'key2:value2']
- * and returns an object of the form {key: 'value', key2: 'value2'}
+ * and returns an object of the form {key: 'value', key2: 'value2'}.
+ *
+ * Bracketed values (`key:[a,b,c]` or `key:["a","b"]`) are normalized to a
+ * canonical JSON-array string so the server can deserialize them as a
+ * multi-value attribute.
  */
 export const parseTags = (tags: string[]): Record<string, string> => {
   try {
-    return tags.reduce((acc, keyValuePair) => {
+    return tags.reduce<Record<string, string>>((acc, keyValuePair) => {
       if (!keyValuePair.includes(':')) {
         return acc
       }
@@ -85,7 +120,7 @@ export const parseTags = (tags: string[]): Record<string, string> => {
 
       return {
         ...acc,
-        [key]: value,
+        [key]: canonicalizeArrayValue(value),
       }
     }, {})
   } catch (e) {
@@ -129,10 +164,16 @@ export const parseMetrics = (tags: string[]) => {
  * Receives a filepath to a JSON file that contains tags in the form of:
  * {
  *  "key": "value",
- *  "key2": "value2"
+ *  "key2": "value2",
+ *  "key3": ["a", "b", "c"]
  * }
- * and returns a record of the form {key: 'value', key2: 'value2'}
- * Numbers are converted to strings and nested objects are ignored.
+ * and returns a record of the form
+ * {key: 'value', key2: 'value2', key3: '["a","b","c"]'}.
+ *
+ * Array values are JSON-encoded so they travel through the API as strings
+ * but get promoted to multi-value facets by the server. Numbers are
+ * converted to strings and nested objects are ignored.
+ *
  * @param context - the context of the CLI, used to write to stdout and stderr
  * @param tagsFile - the path to the JSON file
  */
@@ -149,23 +190,26 @@ export const parseTagsFile = (
     return [{}, false]
   }
 
-  let tags: Record<string, string>
+  let raw: Record<string, unknown>
   try {
-    tags = JSON.parse(fileContent) as Record<string, string>
+    raw = JSON.parse(fileContent) as Record<string, unknown>
   } catch (error) {
     context.stderr.write(`${chalk.red.bold('[ERROR]')} could not parse JSON file '${tagsFile}': ${error}\n`)
 
     return [{}, false]
   }
 
-  // We want to ensure that all tags are strings
-  for (const key in tags) {
-    if (typeof tags[key] === 'object') {
+  const tags: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value)) {
+      tags[key] = JSON.stringify(value)
+    } else if (value && typeof value === 'object') {
       context.stdout.write(`${chalk.yellow.bold('[WARN]')} tag '${key}' had nested fields which will be ignored\n`)
-      delete tags[key]
-    } else if (typeof tags[key] !== 'string') {
+    } else if (typeof value === 'string') {
+      tags[key] = value
+    } else {
       context.stdout.write(`${chalk.yellow.bold('[WARN]')} tag '${key}' was not a string, converting to string\n`)
-      tags[key] = String(tags[key])
+      tags[key] = String(value)
     }
   }
 
