@@ -111,6 +111,33 @@ export const WINDOWS_JAVA_WEB_APP: Site = {
   },
 }
 
+export const WINDOWS_DOTNET_FUNCTION_APP: Site = {
+  ...WINDOWS_DOTNET_WEB_APP,
+  kind: 'functionapp',
+}
+
+export const WINDOWS_NODE_FUNCTION_APP: Site = {
+  ...WINDOWS_NODE_WEB_APP,
+  kind: 'functionapp',
+}
+
+// Windows .NET Function App on a Consumption plan (sku 'Dynamic'); the .NET extension can't
+// attach its profiler there, so instrumentation is rejected.
+export const WINDOWS_DOTNET_FUNCTION_APP_CONSUMPTION: Site = {
+  ...WINDOWS_DOTNET_FUNCTION_APP,
+  sku: 'Dynamic',
+}
+
+export const WINDOWS_JAVA_FUNCTION_APP: Site = {
+  ...WINDOWS_JAVA_WEB_APP,
+  kind: 'functionapp',
+}
+
+export const LINUX_FUNCTION_APP: Site = {
+  ...CONTAINER_WEB_APP,
+  kind: 'functionapp,linux',
+}
+
 export const DEFAULT_ARGS = [
   '-s',
   '00000000-0000-0000-0000-000000000000',
