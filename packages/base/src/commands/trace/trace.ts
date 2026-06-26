@@ -31,12 +31,17 @@ export class TraceCommand extends CustomSpanCommand {
         'Trace a command and report to the datadoghq.eu site',
         'DD_SITE=datadoghq.eu datadog-ci trace -- echo "Hello World"',
       ],
+      [
+        'Trace a command without capturing its arguments (e.g. when they contain secrets)',
+        'datadog-ci trace --no-capture -- ./deploy.sh --token "$SECRET"',
+      ],
     ],
   })
 
   private command = Option.Rest({required: 1})
   private name = Option.String('--name')
   private noFail = Option.Boolean('--no-fail')
+  private noCapture = Option.Boolean('--no-capture')
 
   public async execute() {
     this.tryEnableFips()
@@ -74,7 +79,10 @@ export class TraceCommand extends CustomSpanCommand {
     const stderr: string = await stderrCatcher
     const endTime = new Date()
     const exitCode: number = status ?? this.signalToNumber(signal) ?? BAD_COMMAND_EXIT_CODE
-    const commandStr = this.command.join(' ')
+    // With `--no-capture`, only report the executable name so that potentially sensitive
+    // arguments (tokens, secrets, etc.) are not sent to Datadog. The child still runs with
+    // the full argument list above; only what we report is trimmed.
+    const commandStr = this.noCapture ? command : this.command.join(' ')
 
     const res = await this.executeReportCustomSpan(id, startTime, endTime, {
       command: commandStr,
