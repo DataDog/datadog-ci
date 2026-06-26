@@ -38,4 +38,21 @@ describe('printVersion', () => {
       process.argv = original
     }
   })
+
+  it.each(['1', 'true', 'TRUE'])('does not print when DD_CI_SKIP_VERSION_BANNER is %p', (value) => {
+    const original = process.env.DD_CI_SKIP_VERSION_BANNER
+    process.env.DD_CI_SKIP_VERSION_BANNER = value
+
+    try {
+      const {lines, logger} = collect(false)
+      printVersion(logger)
+      expect(lines).toHaveLength(0)
+    } finally {
+      if (original === undefined) {
+        delete process.env.DD_CI_SKIP_VERSION_BANNER
+      } else {
+        process.env.DD_CI_SKIP_VERSION_BANNER = original
+      }
+    }
+  })
 })

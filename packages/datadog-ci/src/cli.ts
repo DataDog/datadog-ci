@@ -78,10 +78,11 @@ if (require.main === module) {
     // Parse error: defer to cli.run below for clipanion's error rendering.
   }
 
-  // Route the banner through the resolved command's logger so it respects `--log-format`.
-  // Builtin commands (e.g. --help) and command line parse errors fall back to a default text logger.
-  const versionLogger =
-    command instanceof BaseCommand ? command.logger : new Logger((s) => context.stdout.write(s), LogLevel.INFO)
+  // Write the banner to stderr so it never corrupts captured stdout (e.g. `VAR=$(datadog-ci ...)`),
+  // while mirroring the resolved command's `--log-format` so it stays a JSON line in JSON mode.
+  // Builtin commands (e.g. --help) and command line parse errors fall back to text format.
+  const jsonOutput = command instanceof BaseCommand ? command.logger.isJsonOutput() : false
+  const versionLogger = new Logger((s) => context.stderr.write(s), LogLevel.INFO, {jsonOutput})
 
   printVersion(versionLogger)
 

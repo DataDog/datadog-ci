@@ -30,8 +30,12 @@ describe('span', () => {
 
     test('no-name', async () => {
       const env = {GITLAB_CI: '1'}
-      const {code} = await runCLI(['--duration', '10000'], env)
+      const {context, code} = await runCLI(['--duration', '10000'], env)
       expect(code).toBe(1)
+      // Validation errors are diagnostics: they belong on stderr, not stdout (which must stay
+      // clean for `$(datadog-ci trace span ...)` captures).
+      expect(context.stderr.toString()).toContain('The span name must be provided.')
+      expect(context.stdout.toString()).toBe('')
     })
 
     test('no-time-info', async () => {

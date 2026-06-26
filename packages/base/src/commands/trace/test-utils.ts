@@ -24,7 +24,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       process.env = {}
       const {context, code} = await runCLI(runCLIArgs)
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('Unsupported CI provider "unknown"')
+      expect(context.stderr.toString()).toContain('Unsupported CI provider "unknown"')
     })
 
     test('should detect the circleci environment', async () => {
