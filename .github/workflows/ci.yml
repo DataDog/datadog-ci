@@ -706,7 +706,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       # setup-alpine downloads apk.static with a single 10s-timeout curl, and the gitlab mirror
-      # is unreliable from arm64 runners. Pre-fetch it with retries into the path setup-alpine
+      # is unreliable from CI runners. Pre-fetch it with retries into the path setup-alpine
       # caches ($RUNNER_TEMP/apk); the action then skips its own flaky download.
       - name: Pre-fetch aarch64 apk.static (work around flaky gitlab mirror)
         run: |
