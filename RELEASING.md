@@ -4,7 +4,7 @@ To release a new version of `datadog-ci`:
 
 1. Create a new branch for the version upgrade.
 2. Run `yarn version:all <major|minor|patch>`.
-3. Commit the change `vX.X.X` and tag it with `git tag vX.X.X`.
+3. Commit the change `vX.X.X` and tag it with `git tag -m vX.X.X vX.X.X`.
    - You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
 4. Push the branch along with the tag using `git push --tags`, and create a PR.
    - Find and open the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/publish-release.yml).
