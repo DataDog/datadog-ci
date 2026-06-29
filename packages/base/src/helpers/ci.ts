@@ -6,6 +6,7 @@ import type {BaseContext} from 'clipanion'
 import chalk from 'chalk'
 import upath from 'upath'
 
+import {gitRawSync} from './git/get-git-data'
 import {globSync, hasMagic} from './glob'
 import {
   CI_ENV_VARS,
@@ -237,6 +238,106 @@ const resolveTilde = (filePath: string | undefined) => {
   }
 
   return filePath
+}
+
+const gitShaRegex = /^[0-9a-f]{7,64}$/i
+
+const getFirstGitSha = (output: string | undefined): string | undefined => {
+  const sha = output?.split(/\s+/)[0]
+
+  return sha && gitShaRegex.test(sha) ? sha : undefined
+}
+
+const getGitShas = (output: string | undefined): string[] =>
+  output?.split(/\s+/).filter((sha) => gitShaRegex.test(sha)) ?? []
+
+const normalizeBranchName = (branchName: string | undefined): string | undefined =>
+  branchName
+    ?.replace(/^refs\/heads\//, '')
+    .replace(/^refs\/remotes\/origin\//, '')
+    .replace(/^origin\//, '')
+
+const getRemoteBranchHeadSha = (branchName: string | undefined, cwd?: string): string | undefined => {
+  const normalizedBranchName = normalizeBranchName(branchName)
+  if (!normalizedBranchName) {
+    return undefined
+  }
+
+  return getFirstGitSha(gitRawSync(['ls-remote', 'origin', `refs/heads/${normalizedBranchName}`], cwd))
+}
+
+const getLocalBranchHeadShas = (branchName: string | undefined, cwd?: string): string[] => {
+  const normalizedBranchName = normalizeBranchName(branchName)
+  if (!normalizedBranchName) {
+    return []
+  }
+
+  return uniq(
+    [
+      getFirstGitSha(
+        gitRawSync(['rev-parse', '--verify', `refs/remotes/origin/${normalizedBranchName}^{commit}`], cwd)
+      ),
+      getFirstGitSha(gitRawSync(['rev-parse', '--verify', `refs/heads/${normalizedBranchName}^{commit}`], cwd)),
+    ].filter((sha): sha is string => !!sha)
+  )
+}
+
+const findMatchingBranchHeadSha = (
+  branchName: string | undefined,
+  candidateShas: string[],
+  cwd?: string
+): string | undefined => {
+  const localBranchHeadSha = getLocalBranchHeadShas(branchName, cwd).find((sha) => candidateShas.includes(sha))
+  if (localBranchHeadSha) {
+    return localBranchHeadSha
+  }
+
+  const remoteBranchHeadSha = getRemoteBranchHeadSha(branchName, cwd)
+
+  return remoteBranchHeadSha && candidateShas.includes(remoteBranchHeadSha) ? remoteBranchHeadSha : undefined
+}
+
+const getBitbucketPullRequestHeadSha = (
+  sourceBranchName: string | undefined,
+  bitbucketCommit: string | undefined,
+  destinationBranchName: string | undefined,
+  cwd?: string
+): string | undefined => {
+  if (!sourceBranchName || !bitbucketCommit) {
+    return undefined
+  }
+
+  const headSha = getFirstGitSha(gitRawSync(['rev-parse', '--verify', 'HEAD^{commit}'], cwd))
+  if (headSha !== bitbucketCommit) {
+    return undefined
+  }
+
+  const commitWithParents = getGitShas(gitRawSync(['rev-list', '--parents', '-n', '1', 'HEAD'], cwd))
+  const firstParent = commitWithParents[1]
+  const sourceBranchHeadSha = findMatchingBranchHeadSha(
+    sourceBranchName,
+    [bitbucketCommit, firstParent].filter((sha): sha is string => !!sha),
+    cwd
+  )
+
+  if (sourceBranchHeadSha === bitbucketCommit) {
+    return bitbucketCommit
+  }
+
+  if (!destinationBranchName || commitWithParents[0] !== bitbucketCommit || commitWithParents.length !== 3) {
+    return undefined
+  }
+
+  const destinationParent = commitWithParents[2]
+  const destinationBranchHeadSha = findMatchingBranchHeadSha(destinationBranchName, [destinationParent], cwd)
+
+  if (sourceBranchHeadSha !== firstParent || destinationBranchHeadSha !== destinationParent) {
+    return undefined
+  }
+
+  // Bitbucket PR pipelines synthesize this merge by merging the destination
+  // branch into the source branch, so the first parent is the PR source head.
+  return firstParent
 }
 
 export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobID?: string): SpanTags | undefined => {
@@ -697,6 +798,12 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
     if (BITBUCKET_PR_ID) {
       tags[PR_NUMBER] = BITBUCKET_PR_ID
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = BITBUCKET_PR_DESTINATION_BRANCH
+      tags[GIT_HEAD_SHA] = getBitbucketPullRequestHeadSha(
+        BITBUCKET_BRANCH,
+        BITBUCKET_COMMIT,
+        BITBUCKET_PR_DESTINATION_BRANCH,
+        resolveTilde(BITBUCKET_CLONE_DIR)
+      )
     }
   }
 
