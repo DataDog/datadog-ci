@@ -310,7 +310,7 @@ describe('upload', () => {
     test('returns empty when git is not available', async () => {
       const command = createCommand(CoverageUploadCommand)
       command['git'] = undefined
-      const result = await command['getHeadAndBase'].call(command, {git_head_sha: HEAD_SHA})
+      const result = await command['getHeadAndBase'].call(command, {'git.commit.head.sha': HEAD_SHA})
       expect(result).toEqual({})
     })
 
