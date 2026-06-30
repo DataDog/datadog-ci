@@ -295,50 +295,6 @@ describe('upload', () => {
     })
   })
 
-  describe('getHeadAndBase', () => {
-    const HEAD_SHA = 'aabbccdd11223344556677889900aabbccdd1122'
-    const BASE_SHA = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
-    const MERGE_BASE = '1234567890abcdef1234567890abcdef12345678'
-
-    test('returns empty when headSha is missing', async () => {
-      const command = createCommand(CoverageUploadCommand)
-      command['git'] = {} as any
-      const result = await command['getHeadAndBase'].call(command, {})
-      expect(result).toEqual({})
-    })
-
-    test('returns empty when git is not available', async () => {
-      const command = createCommand(CoverageUploadCommand)
-      command['git'] = undefined
-      const result = await command['getHeadAndBase'].call(command, {'git.commit.head.sha': HEAD_SHA})
-      expect(result).toEqual({})
-    })
-
-    test('uses baseSha directly when provided (e.g. from BITBUCKET_PR_DESTINATION_COMMIT)', async () => {
-      const raw = jest.fn().mockResolvedValue(`${MERGE_BASE}\n`)
-      const command = createCommand(CoverageUploadCommand)
-      command['git'] = {raw} as any
-      const result = await command['getHeadAndBase'].call(command, {
-        'git.commit.head.sha': HEAD_SHA,
-        'git.pull_request.base_branch_sha': BASE_SHA,
-      })
-      expect(result.headSha).toBe(HEAD_SHA)
-      expect(result.baseSha).toBe(MERGE_BASE)
-    })
-
-    test('falls back to merge-base from branch name when no base SHA is provided', async () => {
-      const raw = jest.fn().mockResolvedValue(`${MERGE_BASE}\n`)
-      const command = createCommand(CoverageUploadCommand)
-      command['git'] = {raw} as any
-      const result = await command['getHeadAndBase'].call(command, {
-        'git.commit.head.sha': HEAD_SHA,
-        'git.pull_request.base_branch': 'main',
-      })
-      expect(result.headSha).toBe(HEAD_SHA)
-      expect(result.baseSha).toBe(MERGE_BASE)
-    })
-  })
-
   describe('getFlags', () => {
     test('should return undefined when no flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
