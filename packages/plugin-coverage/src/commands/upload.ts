@@ -300,6 +300,17 @@ export class PluginCommand extends CoverageUploadCommand {
 
     const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
     if (baseBranch) {
+      // Some CI environments (e.g. Bitbucket Pipelines) only clone the current
+      // branch, leaving the base branch ref unavailable locally for merge-base.
+      // Fetch it explicitly so merge-base works without requiring users to set
+      // DD_GIT_BASE_SHA manually. GitHub and GitLab are unaffected — they supply
+      // a base SHA directly and take the earlier code path.
+      try {
+        await this.git.fetch(['origin', baseBranch])
+      } catch {
+        // Ignore fetch errors — getMergeBase will degrade gracefully if the ref
+        // is still unavailable (preserves the previous behaviour).
+      }
       const mergeBase = await getMergeBase(this.git, baseBranch, headSha)
 
       return {headSha, baseSha: mergeBase}
