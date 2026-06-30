@@ -1457,6 +1457,43 @@ describe('isGithubWindowsRunner', () => {
   })
 })
 
+describe('Bitbucket PR pipeline tags', () => {
+  const BASE_ENV = {
+    BITBUCKET_BRANCH: 'feature/my-branch',
+    BITBUCKET_BUILD_NUMBER: '42',
+    BITBUCKET_CLONE_DIR: '/workspace',
+    BITBUCKET_COMMIT: 'abc123def456abc123def456abc123def456abc1',
+    BITBUCKET_GIT_HTTP_ORIGIN: 'https://bitbucket.org/myworkspace/myrepo.git',
+    BITBUCKET_PIPELINE_UUID: '{pipeline-uuid}',
+    BITBUCKET_REPO_FULL_NAME: 'myworkspace/myrepo',
+    BITBUCKET_PR_ID: '10',
+    BITBUCKET_PR_DESTINATION_BRANCH: 'main',
+  }
+
+  afterEach(() => {
+    process.env = {}
+  })
+
+  it('sets base branch SHA from BITBUCKET_PR_DESTINATION_COMMIT when available', () => {
+    process.env = {
+      ...BASE_ENV,
+      BITBUCKET_PR_DESTINATION_COMMIT: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+    }
+    const tags = getCISpanTags() as SpanTags
+    expect(tags[GIT_PULL_REQUEST_BASE_BRANCH]).toBe('main')
+    expect(tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]).toBe('deadbeefdeadbeefdeadbeefdeadbeefdeadbeef')
+    expect(tags[PR_NUMBER]).toBe('10')
+  })
+
+  it('sets base branch without SHA when BITBUCKET_PR_DESTINATION_COMMIT is absent', () => {
+    process.env = {...BASE_ENV}
+    const tags = getCISpanTags() as SpanTags
+    expect(tags[GIT_PULL_REQUEST_BASE_BRANCH]).toBe('main')
+    expect(tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]).toBeUndefined()
+    expect(tags[PR_NUMBER]).toBe('10')
+  })
+})
+
 const getTags = (): SpanTags => {
   return {
     ...getCISpanTags(),

@@ -314,45 +314,26 @@ describe('upload', () => {
       expect(result).toEqual({})
     })
 
-    test('uses baseSha path and skips fetch when baseSha is provided directly', async () => {
+    test('uses baseSha directly when provided (e.g. from BITBUCKET_PR_DESTINATION_COMMIT)', async () => {
       const raw = jest.fn().mockResolvedValue(`${MERGE_BASE}\n`)
-      const fetch = jest.fn()
       const command = createCommand(CoverageUploadCommand)
-      command['git'] = {raw, fetch} as any
+      command['git'] = {raw} as any
       const result = await command['getHeadAndBase'].call(command, {
         'git.commit.head.sha': HEAD_SHA,
         'git.pull_request.base_branch_sha': BASE_SHA,
       })
-      expect(fetch).not.toHaveBeenCalled()
       expect(result.headSha).toBe(HEAD_SHA)
       expect(result.baseSha).toBe(MERGE_BASE)
     })
 
-    test('fetches base branch before merge-base when only branch name is available', async () => {
+    test('falls back to merge-base from branch name when no base SHA is provided', async () => {
       const raw = jest.fn().mockResolvedValue(`${MERGE_BASE}\n`)
-      const fetch = jest.fn().mockResolvedValue(undefined)
       const command = createCommand(CoverageUploadCommand)
-      command['git'] = {raw, fetch} as any
+      command['git'] = {raw} as any
       const result = await command['getHeadAndBase'].call(command, {
         'git.commit.head.sha': HEAD_SHA,
         'git.pull_request.base_branch': 'main',
       })
-      expect(fetch).toHaveBeenCalledWith(['origin', 'main'])
-      expect(result.headSha).toBe(HEAD_SHA)
-      expect(result.baseSha).toBe(MERGE_BASE)
-    })
-
-    test('degrades gracefully when fetch fails', async () => {
-      const raw = jest.fn().mockResolvedValue(`${MERGE_BASE}\n`)
-      const fetch = jest.fn().mockRejectedValue(new Error('fetch failed'))
-      const command = createCommand(CoverageUploadCommand)
-      command['git'] = {raw, fetch} as any
-      const result = await command['getHeadAndBase'].call(command, {
-        'git.commit.head.sha': HEAD_SHA,
-        'git.pull_request.base_branch': 'main',
-      })
-      // fetch error is swallowed; merge-base still attempted
-      expect(fetch).toHaveBeenCalledWith(['origin', 'main'])
       expect(result.headSha).toBe(HEAD_SHA)
       expect(result.baseSha).toBe(MERGE_BASE)
     })
