@@ -675,6 +675,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       BITBUCKET_PIPELINE_UUID,
       BITBUCKET_PR_ID,
       BITBUCKET_PR_DESTINATION_BRANCH,
+      BITBUCKET_PR_DESTINATION_COMMIT,
       BITBUCKET_CLONE_DIR,
     } = env
 
@@ -697,6 +698,9 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
     if (BITBUCKET_PR_ID) {
       tags[PR_NUMBER] = BITBUCKET_PR_ID
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = BITBUCKET_PR_DESTINATION_BRANCH
+      if (BITBUCKET_PR_DESTINATION_COMMIT) {
+        tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] = BITBUCKET_PR_DESTINATION_COMMIT
+      }
     }
   }
 
