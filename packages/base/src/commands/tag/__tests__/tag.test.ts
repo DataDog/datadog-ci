@@ -335,7 +335,13 @@ describe('execute', () => {
   })
 
   test('earlier levels are still sent before a fatal level aborts the rest', async () => {
-    // GitHub diagnostic logs are absent, so `step` enrichment throws; `pipeline` (sorted first) is sent first.
+    // Force `step` enrichment to fail regardless of the host machine's filesystem layout
+    // (real GitHub Actions runners may have Worker_*.log files under the well-known fallback dirs).
+    jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      const error = new Error('ENOENT') as NodeJS.ErrnoException
+      error.code = 'ENOENT'
+      throw error
+    })
     const result = await runCLI(
       'pipeline,step',
       ['key:value'],
@@ -358,6 +364,11 @@ describe('execute', () => {
   test('a fatal setup error exits non-zero even with --no-fail', async () => {
     // --no-fail only tolerates a failed submission, not a setup error (missing GitHub logs here),
     // matching the original single-level behavior.
+    jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      const error = new Error('ENOENT') as NodeJS.ErrnoException
+      error.code = 'ENOENT'
+      throw error
+    })
     const result = await runCLI(
       'pipeline,step',
       ['key:value'],

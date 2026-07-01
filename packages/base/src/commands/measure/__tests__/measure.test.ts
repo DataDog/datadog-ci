@@ -330,6 +330,13 @@ describe('execute', () => {
   })
 
   test('earlier levels are still sent before a fatal level aborts the rest', async () => {
+    // Force `step` enrichment to fail regardless of the host machine's filesystem layout
+    // (real GitHub Actions runners may have Worker_*.log files under the well-known fallback dirs).
+    jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      const error = new Error('ENOENT') as NodeJS.ErrnoException
+      error.code = 'ENOENT'
+      throw error
+    })
     const result = await runCLI(
       'pipeline,step',
       ['key:12345'],
@@ -350,6 +357,11 @@ describe('execute', () => {
   })
 
   test('a fatal setup error exits non-zero even with --no-fail', async () => {
+    jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      const error = new Error('ENOENT') as NodeJS.ErrnoException
+      error.code = 'ENOENT'
+      throw error
+    })
     const result = await runCLI(
       'pipeline,step',
       ['key:12345'],
