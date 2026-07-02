@@ -1,3 +1,4 @@
+import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 export class Sourcemap {
@@ -26,14 +27,9 @@ export class Sourcemap {
     this.gitData = gitData
   }
 
-  public asMultipartPayload(
-    cliVersion: string,
-    service: string,
-    version: string,
-    projectPath: string
-  ): MultipartPayload {
+  public asMultipartPayload(options: SourcemapUploadOptions): MultipartPayload {
     const content = new Map<string, MultipartValue>([
-      ['event', this.getMetadataPayload(cliVersion, service, version, projectPath)],
+      ['event', this.getMetadataPayload(options)],
       ['source_map', {type: 'file', path: this.sourcemapPath, options: {filename: 'source_map'}}],
       ['minified_file', {type: 'file', path: this.minifiedFilePath, options: {filename: 'minified_file'}}],
     ])
@@ -53,20 +49,23 @@ export class Sourcemap {
     }
   }
 
-  private getMetadataPayload(
-    cliVersion: string,
-    service: string,
-    version: string,
-    projectPath: string
-  ): MultipartValue {
+  private getMetadataPayload({
+    cliVersion,
+    service,
+    version,
+    projectPath,
+    debugId,
+  }: SourcemapUploadOptions): MultipartValue {
     const metadata: {[k: string]: any} = {
       cli_version: cliVersion,
-      minified_url: this.minifiedUrl,
       project_path: projectPath,
-      service,
       type: 'js_sourcemap',
+      service,
       version,
+      minified_url: this.minifiedUrl,
+      debug_id: debugId,
     }
+
     if (this.gitData !== undefined) {
       metadata.git_repository_url = this.gitData.gitRepositoryURL
       metadata.git_commit_sha = this.gitData.gitCommitSha
@@ -81,6 +80,15 @@ export class Sourcemap {
       value: JSON.stringify(metadata),
     }
   }
+}
+
+export interface SourcemapUploadOptions {
+  cliVersion: string
+  context: CommandContext
+  debugId?: string
+  projectPath?: string
+  service?: string
+  version?: string
 }
 
 export interface GitData {

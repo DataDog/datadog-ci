@@ -113,6 +113,54 @@ describe('upload', () => {
     })
   })
 
+  describe('validateOptions', () => {
+    test('returns true when --debug-id is set (skips all other checks)', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['debugId'] = true
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
+    })
+
+    test('returns false when release version is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing release version')
+    })
+
+    test('returns false when service is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing service')
+    })
+
+    test('returns false when minified path prefix is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing minified path prefix')
+    })
+
+    test('returns false when minified path prefix is invalid', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      command['minifiedPathPrefix'] = 'not-a-valid-prefix'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stdout.toString()).toContain('prefix')
+    })
+
+    test('returns true when all required options are valid', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      command['minifiedPathPrefix'] = 'https://static.example.com/js'
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
+    })
+  })
+
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
@@ -233,6 +281,25 @@ describe('execute', () => {
     'https://static.com/js',
     '--dry-run',
   ])
+
+  const runCLIWithDebugId = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--debug-id',
+    '--minified-path-prefix',
+    'https://static.com/js',
+    '--dry-run',
+  ])
+
+  test('debug id', async () => {
+    const {context, code} = await runCLIWithDebugId([
+      './src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id',
+    ])
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain(
+      '[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map for JS file available at https://static.com/js/common.min.js (debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)'
+    )
+  })
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])
