@@ -20,11 +20,10 @@ datadog-ci tag --level job --tags "go.version:`go version`"
   to the span for the currently running job. If `stage` is selected it will be added to the span for the currently
   running stage. If `step` is selected it will be added to the span for the currently running step.
 
-  The value is **additive**: pass a comma-separated list to add the same tags to multiple levels at once, e.g.
-  `--level pipeline,job`. This is useful for tags that apply at every level (e.g. `team`, which does not propagate
-  between spans) or that should "flow down" to a few levels (e.g. `job_maintainer` on `--level job,step`).
-  Duplicate levels are ignored and order does not matter. One request is sent per level; if any level fails the command
-  exits non-zero (unless `--no-fail` is set), and the spans that did succeed remain tagged.
+  Pass a comma-separated list to add the same tags to multiple levels at once, e.g. `--level pipeline,job`.
+  This is useful for tags that apply at every level (e.g. `team`, which does not propagate between spans) or that should 
+  "flow down" to a few levels (e.g. `job_maintainer` on `--level job,step`). If any level fails the command exits non-zero (unless `--no-fail` is set),
+  and the spans that did succeed remain tagged.
 
   ```bash
   datadog-ci tag --level pipeline,job --tags team:backend

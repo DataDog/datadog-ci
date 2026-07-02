@@ -27,10 +27,7 @@ export class TagCommand extends BaseCommand {
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
       ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
-      [
-        'Add the same tags to several levels at once (one request per level)',
-        'datadog-ci tag --level pipeline,job --tags team:backend',
-      ],
+      ['Add the same tags to multiple levels at once', 'datadog-ci tag --level pipeline,job --tags team:backend'],
       ['Add tags in bulk using a JSON file', 'datadog-ci tag --level job --tags-file my_tags.json'],
     ],
   })

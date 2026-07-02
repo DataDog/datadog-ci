@@ -107,6 +107,7 @@ export class MeasureCommand extends BaseCommand {
 
     try {
       const {provider, ciEnv} = getCIEnv()
+
       enrichCIEnvFromGithubLogs(this.context, level, ciEnv)
 
       const exitStatus = await this.sendMeasures(ciEnv, LEVEL_TO_NUMBER[level], provider, measures)
