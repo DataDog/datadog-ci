@@ -26,6 +26,8 @@ import {
   githubWellKnownDiagnosticDirsWin,
   isGithubWindowsRunner,
   isInteractive,
+  parseLevels,
+  processLevels,
   shouldGetGithubJobDisplayName,
 } from '../ci'
 import {globSync} from '../glob'
@@ -1491,6 +1493,139 @@ describe('Bitbucket PR pipeline tags', () => {
     expect(tags[GIT_PULL_REQUEST_BASE_BRANCH]).toBe('main')
     expect(tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]).toBeUndefined()
     expect(tags[PR_NUMBER]).toBe('10')
+  })
+})
+
+describe('parseLevels', () => {
+  beforeEach(() => {
+    // Buildkite supports the `pipeline` and `job` levels (no provider restriction on those).
+    process.env = {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'}
+  })
+
+  test('parses a single level', () => {
+    expect(parseLevels('pipeline')).toEqual({levels: ['pipeline']})
+  })
+
+  test('parses multiple levels, sorted by span depth regardless of input order', () => {
+    expect(parseLevels('job,pipeline')).toEqual({levels: ['pipeline', 'job']})
+  })
+
+  test('dedupes repeated levels', () => {
+    expect(parseLevels('pipeline,pipeline')).toEqual({levels: ['pipeline']})
+  })
+
+  test('trims whitespace around each member', () => {
+    expect(parseLevels(' pipeline , job ')).toEqual({levels: ['pipeline', 'job']})
+  })
+
+  test.each([undefined, '', ',', ' , '])('errors on empty input %p', (input) => {
+    const {levels, error} = parseLevels(input)
+    expect(levels).toEqual([])
+    expect(error).toBe('Level must be one of [pipeline, job, stage, step]')
+  })
+
+  test('errors when a member is unknown', () => {
+    const {levels, error} = parseLevels('pipeline,bogus')
+    expect(levels).toEqual([])
+    expect(error).toBe('Level must be one of [pipeline, job, stage, step]')
+  })
+
+  test('errors when a member is unsupported for the current provider', () => {
+    const {levels, error} = parseLevels('pipeline,stage')
+    expect(levels).toEqual([])
+    expect(error).toContain("Level 'stage' is only supported for providers")
+  })
+})
+
+describe('processLevels', () => {
+  const githubEnv = {
+    GITHUB_ACTIONS: 'true',
+    GITHUB_SERVER_URL: 'url',
+    GITHUB_REPOSITORY: 'repo',
+    GITHUB_RUN_ID: '123',
+    GITHUB_RUN_ATTEMPT: '1',
+    GITHUB_JOB: 'build',
+    GITHUB_ACTION: '__run',
+  }
+
+  const mockWorkerLog = (orchestrationId?: string) => {
+    const readdirSpy = jest.spyOn(fs, 'readdirSync').mockReturnValue([
+      {
+        name: 'Worker_1.log' as any,
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        parentPath: '',
+        path: '',
+      },
+    ])
+    const orchestrationLine = orchestrationId ? `"system.orchestrationId": "${orchestrationId}"\n` : ''
+    const readFileSpy = jest.spyOn(fs, 'readFileSync').mockReturnValue(
+      `[2025-09-15 10:14:00Z INFO Worker] ${orchestrationLine}Job message:\n${JSON.stringify({
+        jobDisplayName: 'real job name',
+        steps: [{contextName: '__checkout'}, {contextName: '__run'}],
+      })}`
+    )
+
+    return {readdirSpy, readFileSpy}
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('locates and reads the GitHub diagnostic logs once across levels', async () => {
+    process.env = {...githubEnv}
+    const {readdirSpy, readFileSpy} = mockWorkerLog()
+
+    const anyFailed = await processLevels(createMockContext() as BaseContext, ['job', 'step'], {}, () =>
+      Promise.resolve(0)
+    )
+
+    expect(anyFailed).toBe(false)
+    // Without the shared cache, each of the job and step levels would re-glob and
+    // re-read the same Worker log; the per-execution cache collapses that to one.
+    expect(readdirSpy).toHaveBeenCalledTimes(1)
+    expect(readFileSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test('rethrows a fatal level error (annotated with the level) after sending earlier levels', async () => {
+    // Force `step` enrichment to fail regardless of the host machine's filesystem layout
+    // (real GitHub Actions runners may have Worker_*.log files under the well-known fallback dirs).
+    jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      const error = new Error('ENOENT') as NodeJS.ErrnoException
+      error.code = 'ENOENT'
+      throw error
+    })
+    process.env = {...githubEnv}
+    const context = createMockContext() as BaseContext
+    const sentLevels: number[] = []
+
+    await expect(
+      processLevels(context, ['pipeline', 'step'], {}, (_levelEnv, levelNumber) => {
+        sentLevels.push(levelNumber)
+
+        return Promise.resolve(0)
+      })
+    ).rejects.toThrow("level 'step'")
+
+    expect(sentLevels).toEqual([0]) // pipeline was sent before the step level threw
+  })
+
+  test('selects the orchestrationId target log once across levels (cached)', async () => {
+    process.env = {...githubEnv, ACTIONS_ORCHESTRATION_ID: 'orch-1'}
+    mockWorkerLog('orch-1')
+    const context = createMockContext() as BaseContext
+
+    const anyFailed = await processLevels(context, ['job', 'step'], {}, () => Promise.resolve(0))
+
+    expect(anyFailed).toBe(false)
+    // The orchestrationId match runs once for the whole command, not once per level.
+    expect(context.stdout.toString().match(/Found Worker log via system\.orchestrationId/g)).toHaveLength(1)
   })
 })
 

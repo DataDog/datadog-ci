@@ -5,7 +5,7 @@ Tag CI Visibility pipeline and job spans.
 ## Usage
 
 ```bash
-datadog-ci tag [--no-fail] [--level <pipeline|job|stage|step>] [--tags]
+datadog-ci tag [--no-fail] [--level <levels>] [--tags]
 ```
 
 For example:
@@ -14,10 +14,20 @@ For example:
 datadog-ci tag --level job --tags "go.version:`go version`"
 ```
 
-- `--level` Has to be one of `[pipeline, job, stage, step]`. It will determine in what span the tags will be added.
+- `--level` is a comma-separated list of `{pipeline,job,stage,step}`. It determines in what span(s) the tags will be added.
+
   If `pipeline` is selected then the tags will be added to the pipeline trace span. If `job` is selected it will be added
   to the span for the currently running job. If `stage` is selected it will be added to the span for the currently
   running stage. If `step` is selected it will be added to the span for the currently running step.
+
+  Pass a comma-separated list to add the same tags to multiple levels at once, e.g. `--level pipeline,job`.
+  This is useful for tags that apply at every level (e.g. `team`, which does not propagate between spans) or that should 
+  "flow down" to a few levels (e.g. `job_maintainer` on `--level job,step`). If any level fails the command exits non-zero (unless `--no-fail` is set),
+  and the spans that did succeed remain tagged.
+
+  ```bash
+  datadog-ci tag --level pipeline,job --tags team:backend
+  ```
 - `--no-fail` (default: `false`) will prevent the tag command from failing if there are issues submitting the data.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will be the tags added to the pipeline or job span.
   The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable and in the `--tags-file` argument.

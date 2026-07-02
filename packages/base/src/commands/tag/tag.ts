@@ -3,8 +3,7 @@ import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
-import type {CILevel} from '../../helpers/ci'
-import {LEVEL_TO_NUMBER, enrichCIEnvFromGithubLogs, getCIEnv, validateLevel} from '../../helpers/ci'
+import {getCIEnv, parseLevels, processLevels} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import type {RequestError} from '../../helpers/request'
@@ -28,6 +27,7 @@ export class TagCommand extends BaseCommand {
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
       ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
+      ['Add the same tags to multiple levels at once', 'datadog-ci tag --level pipeline,job --tags team:backend'],
       ['Add tags in bulk using a JSON file', 'datadog-ci tag --level job --tags-file my_tags.json'],
     ],
   })
@@ -76,13 +76,12 @@ export class TagCommand extends BaseCommand {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    const levelError = validateLevel(this.level)
+    const {levels, error: levelError} = parseLevels(this.level)
     if (levelError) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${levelError}\n`)
 
       return 1
     }
-    const level = this.level as CILevel
 
     if (this.silent) {
       this.context.stdout.write = () => {
@@ -118,20 +117,22 @@ export class TagCommand extends BaseCommand {
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      enrichCIEnvFromGithubLogs(this.context, level, ciEnv)
+      // The same tag set is sent to each requested level (one request per level).
+      const anyFailed = await processLevels(this.context, levels, ciEnv, (levelEnv, levelNumber) =>
+        this.sendTags(levelEnv, levelNumber, provider, tags)
+      )
 
-      const exitStatus = await this.sendTags(ciEnv, LEVEL_TO_NUMBER[level], provider, tags)
-      if (exitStatus !== 0 && this.noFail) {
+      if (anyFailed && this.noFail) {
         this.context.stderr.write(
           `${chalk.yellow.bold('[WARNING]')} sending tags failed but continuing due to --no-fail\n`
         )
 
         return 0
-      } else if (exitStatus === 0 && !this.dryRun) {
+      } else if (!anyFailed && !this.dryRun) {
         this.context.stdout.write('Tags sent\n')
       }
 
-      return exitStatus
+      return anyFailed ? 1 : 0
     } catch (error) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} ${error.message}\n`)
 
