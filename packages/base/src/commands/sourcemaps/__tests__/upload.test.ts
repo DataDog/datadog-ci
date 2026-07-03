@@ -301,6 +301,25 @@ describe('execute', () => {
     )
   })
 
+  test('debug id missing in all files aborts with exit 1', async () => {
+    const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('No debug ID found in any minified file')
+    expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+  })
+
+  test('debug id missing in some files skips only those files', async () => {
+    const {context, code} = await runCLIWithDebugId([
+      './src/commands/sourcemaps/__tests__/fixtures/bundle-with-partial-debug-id',
+    ])
+    expect(code).toBe(0)
+    const stdout = context.stdout.toString()
+    expect(stdout).toContain('[DRYRUN] Uploading sourcemap')
+    expect(stdout).toContain('a.min.js.map')
+    expect(stdout).toContain('because no debug ID was found')
+    expect(stdout).toContain('b.min.js.map')
+  })
+
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])
     const output = context.stdout.toString().split('\n')

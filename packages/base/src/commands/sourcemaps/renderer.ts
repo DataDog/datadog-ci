@@ -38,6 +38,8 @@ export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) =
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
+export const renderNoDebugIdFound = () => 'No debug ID found in any minified file. Aborting upload.\n'
+
 export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
@@ -140,8 +142,8 @@ export const renderCommandInfo = (
   return fullStr
 }
 
-export const renderUpload = (sourcemap: Sourcemap, debugId?: string): string => {
-  const debugIdSuffix = debugId ? ` (debug ID: ${debugId})` : ''
+export const renderUpload = (sourcemap: Sourcemap): string => {
+  const debugIdSuffix = sourcemap.debugId ? ` (debug ID: ${sourcemap.debugId})` : ''
 
   return `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}${debugIdSuffix}\n`
 }

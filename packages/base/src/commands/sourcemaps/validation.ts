@@ -15,7 +15,7 @@ export class InvalidPayload extends Error {
   }
 }
 
-export const validatePayload = (sourcemap: Sourcemap, stdout: Writable) => {
+export const validatePayload = (sourcemap: Sourcemap, stdout: Writable, debugIdRequired = false) => {
   // Check existence of sourcemap file
   const sourcemapCheck = checkFile(sourcemap.sourcemapPath)
   if (!sourcemapCheck.exists) {
@@ -37,6 +37,14 @@ export const validatePayload = (sourcemap: Sourcemap, stdout: Writable) => {
     throw new InvalidPayload(
       'empty_js',
       `Skipping sourcemap (${sourcemap.sourcemapPath}) due to ${sourcemap.minifiedFilePath} being empty`
+    )
+  }
+
+  // Check for a debug ID when uploading in debug-ID mode.
+  if (debugIdRequired && sourcemap.debugId === undefined) {
+    throw new InvalidPayload(
+      'missing_debug_id',
+      `Skipping sourcemap ${sourcemap.sourcemapPath} because no debug ID was found in ${sourcemap.minifiedFilePath}`
     )
   }
 

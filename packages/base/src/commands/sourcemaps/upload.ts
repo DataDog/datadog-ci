@@ -32,7 +32,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {extractDebugId} from './debugId'
+import {addDebugIdToPayloads} from './debugId'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -42,6 +42,7 @@ import {
   renderGitDataNotAttachedWarning,
   renderGitWarning,
   renderInvalidPrefix,
+  renderNoDebugIdFound,
   renderRetriedUpload,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
@@ -138,6 +139,13 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
+
+    if (this.debugId && !addDebugIdToPayloads(payloads)) {
+      this.context.stderr.write(renderNoDebugIdFound())
+
+      return 1
+    }
+
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
@@ -423,7 +431,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   ): (sourcemap: Sourcemap) => Promise<UploadStatus> {
     return async (sourcemap: Sourcemap) => {
       try {
-        validatePayload(sourcemap, this.context.stdout)
+        validatePayload(sourcemap, this.context.stdout, this.debugId)
       } catch (error) {
         if (error instanceof InvalidPayload) {
           this.context.stdout.write(renderFailedUpload(sourcemap, error.message))
@@ -441,17 +449,15 @@ export class SourcemapsUploadCommand extends BaseCommand {
         return UploadStatus.Skipped
       }
 
-      const debugId = this.debugId ? extractDebugId(sourcemap.minifiedFilePath, this.context) : undefined
       const payload = sourcemap.asMultipartPayload({
         cliVersion: this.cliVersion,
         service: this.service,
         version: this.releaseVersion,
         projectPath: this.projectPath,
-        debugId,
         context: this.context,
       })
       if (this.dryRun) {
-        this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap, debugId)}`)
+        this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
 
         return UploadStatus.Success
       }
@@ -470,7 +476,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
           if (this.quiet) {
             return
           }
-          this.context.stdout.write(renderUpload(sourcemap, debugId))
+          this.context.stdout.write(renderUpload(sourcemap))
         },
         retries: 5,
         useGzip: true,

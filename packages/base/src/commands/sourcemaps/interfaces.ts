@@ -2,6 +2,7 @@ import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 export class Sourcemap {
+  public debugId?: string
   public gitData?: GitData
   public minifiedFilePath: string
   public minifiedPathPrefix?: string
@@ -49,13 +50,7 @@ export class Sourcemap {
     }
   }
 
-  private getMetadataPayload({
-    cliVersion,
-    service,
-    version,
-    projectPath,
-    debugId,
-  }: SourcemapUploadOptions): MultipartValue {
+  private getMetadataPayload({cliVersion, service, version, projectPath}: SourcemapUploadOptions): MultipartValue {
     const metadata: {[k: string]: any} = {
       cli_version: cliVersion,
       project_path: projectPath,
@@ -63,7 +58,7 @@ export class Sourcemap {
       service,
       version,
       minified_url: this.minifiedUrl,
-      debug_id: debugId,
+      debug_id: this.debugId,
     }
 
     if (this.gitData !== undefined) {
@@ -85,7 +80,6 @@ export class Sourcemap {
 export interface SourcemapUploadOptions {
   cliVersion: string
   context: CommandContext
-  debugId?: string
   projectPath?: string
   service?: string
   version?: string
