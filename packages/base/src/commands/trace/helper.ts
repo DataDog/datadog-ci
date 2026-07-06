@@ -53,7 +53,8 @@ export abstract class CustomSpanCommand extends BaseCommand {
     id: string,
     startTime: Date,
     endTime: Date,
-    extraTags: Record<string, any>
+    extraTags: Record<string, any>,
+    parentId?: string
   ): Promise<number> {
     const provider = getCIProvider()
     if (!SUPPORTED_PROVIDERS.includes(provider)) {
@@ -87,6 +88,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
       end_time: endTime.toISOString(),
       ci_provider: provider,
       span_id: id,
+      ...(parentId ? {parent_id: parentId} : {}),
       tags: {...gitSpanTags, ...ciSpanTags, ...userGitSpanTags, ...cliTags, ...envVarTags},
       measures,
       command: extraTags.command,

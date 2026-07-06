@@ -16,6 +16,7 @@ export type Provider = (typeof SUPPORTED_PROVIDERS)[number]
 export interface Payload {
   ci_provider: string
   span_id: string
+  parent_id?: string
   command: string
   name: string
   start_time: string
