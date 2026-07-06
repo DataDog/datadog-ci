@@ -219,6 +219,7 @@ The following `<scope>` and `<command>` values are available.
 <sub>**README:** [📚](/packages/base/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>
 
 - Add custom commands to a CI Visibility pipeline in Datadog.
+- `span` ([📚](/packages/base/src/commands/span)): Report a custom span to a CI Visibility pipeline in Datadog without wrapping a command.
 
 #### `unity-symbols`
 
