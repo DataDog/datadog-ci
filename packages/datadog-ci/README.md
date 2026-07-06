@@ -245,6 +245,12 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 - `upload`: Upload Elf debug info files for Profiling.
 
+#### `wasm-symbols`
+
+<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/browser/)</sub>
+
+- `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
+
 ### FIPS support
 
 The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provider if the OpenSSL library installed on the host system provides it.

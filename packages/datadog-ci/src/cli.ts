@@ -15,7 +15,7 @@ export * as gitMetadata from '@datadog/datadog-ci-base/commands/git-metadata/lib
 export * as utils from '@datadog/datadog-ci-base/helpers/utils'
 export {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 
-export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols'])
+export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols', 'wasm-symbols'])
 
 const betaCommandsEnabled =
   process.env.DD_BETA_COMMANDS_ENABLED === '1' || process.env.DD_BETA_COMMANDS_ENABLED === 'true'

@@ -25,6 +25,7 @@ const noPluginExceptions = new Set([
   'trace',
   'unity-symbols',
   'version',
+  'wasm-symbols',
 ])
 
 /**
