@@ -120,6 +120,48 @@ describe('span', () => {
       expect(context.stdout.toString()).toContain('"life":42')
       expect(context.stdout.toString()).toContain('"golden":1.618')
     })
+
+    test('span-id', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {context, code} = await runCLI(
+        ['--name', 'mytestname', '--duration', '10000', '--span-id', '0a1b2c3d4e'],
+        env
+      )
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('"span_id":"0a1b2c3d4e"')
+    })
+
+    test('parent-id', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {context, code} = await runCLI(
+        ['--name', 'mytestname', '--duration', '10000', '--span-id', '0a1b2c3d4e', '--parent-id', '5f6a7b8c9d'],
+        env
+      )
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('"span_id":"0a1b2c3d4e"')
+      expect(context.stdout.toString()).toContain('"parent_id":"5f6a7b8c9d"')
+    })
+
+    test('no-parent-id-by-default', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {context, code} = await runCLI(['--name', 'mytestname', '--duration', '10000'], env)
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('"parent_id"')
+    })
+
+    test('span-id-invalid', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {context, code} = await runCLI(['--name', 'mytestname', '--duration', '10000', '--span-id', 'xyz'], env)
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('The span ID must be a hexadecimal string.')
+    })
+
+    test('parent-id-invalid', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {context, code} = await runCLI(['--name', 'mytestname', '--duration', '10000', '--parent-id', 'xyz'], env)
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('The parent ID must be a hexadecimal string.')
+    })
   })
 
   makeCIProviderTests(runCLI, ['--name', 'mytestname', '--duration', '10000'])
