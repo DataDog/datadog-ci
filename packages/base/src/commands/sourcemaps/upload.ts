@@ -378,6 +378,28 @@ export class SourcemapsUploadCommand extends BaseCommand {
 
   private validateOptions(): boolean {
     if (this.debugId) {
+      const conflicting: string[] = []
+
+      if (this.service !== undefined) {
+        conflicting.push('--service')
+      }
+
+      if (this.releaseVersion !== undefined) {
+        conflicting.push('--release-version')
+      }
+
+      if (this.projectPath !== undefined) {
+        conflicting.push('--project-path')
+      }
+
+      if (conflicting.length > 0) {
+        this.context.stderr.write(
+          `${conflicting.join(', ')} cannot be used with --debug-id. Sourcemaps are matched by debug ID in this mode.\n`
+        )
+
+        return false
+      }
+
       return true
     }
 

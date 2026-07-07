@@ -121,6 +121,17 @@ describe('upload', () => {
       expect(command.context.stderr.toString()).toBe('')
     })
 
+    test('returns false when --debug-id is combined with service/version/path options', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['debugId'] = true
+      command['service'] = 'my-service'
+      command['releaseVersion'] = '1.0.0'
+      command['projectPath'] = 'src'
+      expect(command['validateOptions']()).toBe(false)
+      const stderr = command.context.stderr.toString()
+      expect(stderr).toContain('--service, --release-version, --project-path cannot be used with --debug-id')
+    })
+
     test('returns false when release version is missing', () => {
       const command = createCommand(SourcemapsUploadCommand)
       expect(command['validateOptions']()).toBe(false)
