@@ -2,7 +2,8 @@ import fs from 'fs'
 
 import type {Sourcemap} from './interfaces'
 
-const DD_DEBUG_ID_REGEX = /["']ddDebugId["']\s*:\s*["']([^"']+)["']/
+const DD_DEBUG_ID_REGEX =
+  /["']ddDebugId["']\s*:\s*["']([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})["']/
 
 export const extractDebugId = (filePath: string): string | undefined => {
   try {
