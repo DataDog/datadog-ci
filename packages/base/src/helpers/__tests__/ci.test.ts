@@ -682,6 +682,24 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
   })
 
+  test('should find the job display name at <runnerRoot>/_diag derived from RUNNER_TEMP', () => {
+    // Self-hosted runner installed directly under /home/runner, so diagnostic logs
+    // live at /home/runner/_diag (not under an actions-runner/ subdir). The dir is
+    // only reachable via the RUNNER_TEMP-derived <runnerRoot>/_diag candidate.
+    process.env.RUNNER_TEMP = '/home/runner/_work/_temp'
+    const targetDir = '/home/runner/_diag'
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
   test('should find and return the job display name windows (SaaS)', () => {
     process.env.RUNNER_OS = 'Windows'
     const targetDir = HOSTED_SAAS_DIAG_DIR_WIN
