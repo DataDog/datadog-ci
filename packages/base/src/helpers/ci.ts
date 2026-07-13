@@ -147,6 +147,7 @@ export const parseLevels = (input: string | undefined): {levels: CILevel[]; erro
 }
 
 export const githubWellKnownDiagnosticDirsUnix = [
+  '/home/runner/_diag',
   '/home/runner/actions-runner/_diag', // for self-hosted
   '/opt/actions-runner/_diag', // self-hosted in some cases
 ]
@@ -212,6 +213,12 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
     dirs.push(`${runnerRoot}/actions-runner/*/_diag`)
     dirs.push(`${runnerRoot}/actions-runner/*/*/_diag`)
     dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
+  }
+
+  const home = process.env.HOME
+  if (home) {
+    dirs.push(upath.join(home, '_diag'))
+    dirs.push(upath.join(home, 'actions-runner', '_diag'))
   }
 
   return uniq(dirs.filter(Boolean))
