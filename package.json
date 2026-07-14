@@ -95,5 +95,8 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "resolutions": {
+    "picomatch": "^2.3.2"
+  }
 }
