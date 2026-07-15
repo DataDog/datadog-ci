@@ -286,6 +286,20 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
+    test('Fails with network error message when API key validation throws (e.g. proxy/ECONNRESET)', async () => {
+      const networkError = Object.assign(new Error('read ECONNRESET'), {code: 'ECONNRESET'})
+      validateApiKey.mockClear().mockRejectedValue(networkError)
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(1)
+      const output = context.stdout.toString()
+      expect(output).toContain('network error')
+      expect(output).toContain('HTTP_PROXY')
+      expect(output).not.toContain('Ensure you copied the value and not the Key ID')
+      expect(getToken).not.toHaveBeenCalled()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+    })
+
     test('Warns and exits if Web App is Windows but runtime cannot be detected', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)

@@ -64,15 +64,24 @@ export class PluginCommand extends AasInstrumentCommand {
       return 1
     }
 
+    let isApiKeyValid: boolean
     try {
-      const isApiKeyValid = await newApiKeyValidator({
+      isApiKeyValid = await newApiKeyValidator({
         apiKey: process.env.DD_API_KEY,
         datadogSite: getDatadogSite(),
       }).validateApiKey()
-      if (!isApiKeyValid) {
-        throw Error()
-      }
     } catch (e) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Could not validate the API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
+            process.env.DD_API_KEY ?? ''
+          )}\nA network error occurred while validating your Datadog API key. If you are using a proxy, ensure ${chalk.bold('HTTP_PROXY')} and ${chalk.bold('HTTPS_PROXY')} are set.\nError: ${e}`
+        )
+      )
+
+      return 1
+    }
+    if (!isApiKeyValid) {
       this.context.stdout.write(
         renderSoftWarning(
           `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
