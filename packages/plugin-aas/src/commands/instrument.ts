@@ -75,7 +75,7 @@ export class PluginCommand extends AasInstrumentCommand {
         renderSoftWarning(
           `Could not validate the API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
             process.env.DD_API_KEY ?? ''
-          )}\nA network error occurred while contacting the Datadog API. If you are behind a corporate proxy, ensure ${chalk.bold('HTTP_PROXY')} and ${chalk.bold('HTTPS_PROXY')} are set correctly.\nError: ${e}`
+          )}\nA network error occurred while validating your Datadog API key. If you are using a proxy, ensure ${chalk.bold('HTTP_PROXY')} and ${chalk.bold('HTTPS_PROXY')} are set.\nError: ${e}`
         )
       )
 
