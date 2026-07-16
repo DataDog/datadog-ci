@@ -388,8 +388,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
         conflicting.push('--release-version')
       }
 
-      if (this.projectPath !== undefined) {
-        conflicting.push('--project-path')
+      if (this.minifiedPathPrefix !== undefined) {
+        conflicting.push('--minified-path-prefix')
       }
 
       if (conflicting.length > 0) {
