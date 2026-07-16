@@ -89,9 +89,19 @@ if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	if [ -n "$PR_NUMBER" ]; then
 		PR_REVIEWS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
 			"https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews")
-		# Count unique approvals (latest review per user that is APPROVED)
-		PR_APPROVALS=$(echo "$PR_REVIEWS" | jq '[group_by(.user.login) | .[] | max_by(.submitted_at) | select(.state == "APPROVED")] | length')
-		echo -e "${BLUE}PR approvals:${NC} $PR_APPROVALS"
+		# Keep only each reviewer's latest approval, then require an admin approval.
+		APPROVING_REVIEWERS=$(echo "$PR_REVIEWS" | jq -r '[group_by(.user.login) | .[] | max_by(.submitted_at) | select(.state == "APPROVED") | .user.login] | .[]')
+		PR_APPROVALS=$(echo "$APPROVING_REVIEWERS" | jq -Rsc 'split("\n") | map(select(length > 0)) | length')
+		ADMIN_PR_APPROVALS=0
+		while IFS= read -r reviewer; do
+			[ -z "$reviewer" ] && continue
+			REVIEWER_PERMISSION=$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
+				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '.permission // empty')
+			if [ "$REVIEWER_PERMISSION" = "admin" ]; then
+				ADMIN_PR_APPROVALS=$((ADMIN_PR_APPROVALS + 1))
+			fi
+		done <<< "$APPROVING_REVIEWERS"
+		echo -e "${BLUE}PR approvals:${NC} $PR_APPROVALS ($ADMIN_PR_APPROVALS from admins)"
 	fi
 	echo
 fi
@@ -124,9 +134,9 @@ if [ ${#missing_packages[@]} -eq 0 ]; then
 	echo -e "${GREEN}All local packages exist on NPM ✅${NC}"
 	echo
 
-	# Check that the PR has at least one approval
-	if [ -n "$PR_NUMBER" ] && [ "$PR_APPROVALS" -lt 1 ]; then
-		echo -e "${RED}This PR requires at least one approval before approving the NPM deployment. Please ask an admin to approve the PR. ❌${NC}"
+	# Check that the PR has at least one approval from a repository admin
+	if [ -n "$PR_NUMBER" ] && [ "$ADMIN_PR_APPROVALS" -lt 1 ]; then
+		echo -e "${RED}This PR requires at least one repository-admin approval before approving the NPM deployment. Please ask an admin to approve the PR. ❌${NC}"
 		echo
 		exit 1
 	fi
