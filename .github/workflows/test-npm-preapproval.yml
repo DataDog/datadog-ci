@@ -18,7 +18,6 @@ jobs:
           node-version: 22.19.0
       - run: yarn install --immutable --mode=skip-build
       - name: Run NPM pre-approval check
-        run: yarn check-npm-packages
+        run: GITHUB_SHA="${{ github.event.pull_request.head.sha }}" yarn check-npm-packages
         env:
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
