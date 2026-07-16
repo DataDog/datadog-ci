@@ -38,6 +38,8 @@ export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) =
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
+export const renderNoDebugIdFound = () => 'No debug ID found in any minified file. Aborting upload.\n'
+
 export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
@@ -108,10 +110,11 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
 
 export const renderCommandInfo = (
   basePath: string,
-  minifiedPathPrefix: string,
+  minifiedPathPrefix: string | undefined,
   projectPath: string | undefined,
-  releaseVersion: string,
-  service: string,
+  releaseVersion: string | undefined,
+  service: string | undefined,
+  debugId: boolean,
   poolLimit: number,
   dryRun: boolean
 ) => {
@@ -119,25 +122,28 @@ export const renderCommandInfo = (
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
   }
-  const startStr = chalk.green(`Starting upload with concurrency ${poolLimit}. \n`)
-  fullStr += startStr
-  const basePathStr = chalk.green(`Will look for sourcemaps in ${basePath}\n`)
-  fullStr += basePathStr
-  const minifiedPathPrefixStr = chalk.green(
-    `Will match JS files for errors on files starting with ${minifiedPathPrefix}\n`
-  )
-  fullStr += minifiedPathPrefixStr
+  fullStr += chalk.green(`Starting upload with concurrency ${poolLimit}. \n`)
+  fullStr += chalk.green(`Will look for sourcemaps in ${basePath}\n`)
 
-  const serviceVersionProjectPathStr =
-    [
-      `${chalk.green('Version:')} ${chalk.cyan(releaseVersion)}`,
-      `${chalk.green('Service:')} ${chalk.cyan(service)}`,
-      `${chalk.green('Project path:')} ${projectPath !== undefined ? chalk.cyan(projectPath) : chalk.dim('<empty>')}`,
-    ].join(' · ') + '\n\n'
-  fullStr += serviceVersionProjectPathStr
+  if (minifiedPathPrefix) {
+    fullStr += chalk.green(`Will match JS files for errors on files starting with ${minifiedPathPrefix}\n`)
+  }
+
+  const metaParts = []
+  if (!debugId) {
+    metaParts.push(`${chalk.green('Version:')} ${chalk.cyan(releaseVersion)}`)
+    metaParts.push(`${chalk.green('Service:')} ${chalk.cyan(service)}`)
+  }
+  metaParts.push(
+    `${chalk.green('Project path:')} ${projectPath !== undefined ? chalk.cyan(projectPath) : chalk.dim('<empty>')}`
+  )
+  fullStr += metaParts.join(' · ') + '\n\n'
 
   return fullStr
 }
 
-export const renderUpload = (sourcemap: Sourcemap): string =>
-  `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}\n`
+export const renderUpload = (sourcemap: Sourcemap): string => {
+  const debugIdSuffix = sourcemap.debugId ? ` (debug ID: ${sourcemap.debugId})` : ''
+
+  return `Uploading sourcemap ${sourcemap.sourcemapPath} for JS file available at ${sourcemap.minifiedUrl}${debugIdSuffix}\n`
+}

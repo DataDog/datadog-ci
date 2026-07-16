@@ -113,6 +113,73 @@ describe('upload', () => {
     })
   })
 
+  describe('validateOptions', () => {
+    test('returns true when --debug-id is set (skips all other checks)', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['debugId'] = true
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
+    })
+
+    test('returns false when --debug-id is combined with service/version/minified-path-prefix options', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['debugId'] = true
+      command['service'] = 'my-service'
+      command['releaseVersion'] = '1.0.0'
+      command['minifiedPathPrefix'] = 'https://static.example.com/js'
+      expect(command['validateOptions']()).toBe(false)
+      const stderr = command.context.stderr.toString()
+      expect(stderr).toContain('--service, --release-version, --minified-path-prefix cannot be used with --debug-id')
+    })
+
+    test('returns true when --debug-id is combined with --project-path', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['debugId'] = true
+      command['projectPath'] = 'src'
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
+    })
+
+    test('returns false when release version is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing release version')
+    })
+
+    test('returns false when service is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing service')
+    })
+
+    test('returns false when minified path prefix is missing', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stderr.toString()).toContain('Missing minified path prefix')
+    })
+
+    test('returns false when minified path prefix is invalid', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      command['minifiedPathPrefix'] = 'not-a-valid-prefix'
+      expect(command['validateOptions']()).toBe(false)
+      expect(command.context.stdout.toString()).toContain('prefix')
+    })
+
+    test('returns true when all required options are valid', () => {
+      const command = createCommand(SourcemapsUploadCommand)
+      command['releaseVersion'] = '1.0.0'
+      command['service'] = 'my-service'
+      command['minifiedPathPrefix'] = 'https://static.example.com/js'
+      expect(command['validateOptions']()).toBe(true)
+      expect(command.context.stderr.toString()).toBe('')
+    })
+  })
+
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
@@ -233,6 +300,43 @@ describe('execute', () => {
     'https://static.com/js',
     '--dry-run',
   ])
+
+  const runCLIWithDebugId = makeRunCLI(SourcemapsUploadCommand, ['sourcemaps', 'upload', '--debug-id', '--dry-run'])
+
+  test('debug id', async () => {
+    const {context, code} = await runCLIWithDebugId([
+      './src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id',
+    ])
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain(
+      '[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map for JS file available at common.min.js (debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)'
+    )
+  })
+
+  test('debug id missing in all files aborts with exit 1', async () => {
+    const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('No debug ID found in any minified file')
+    expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+  })
+
+  test('debug id with no sourcemaps found succeeds with exit 0', async () => {
+    const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/doesnotexist'])
+    expect(code).toBe(0)
+    expect(context.stderr.toString()).not.toContain('No debug ID found')
+  })
+
+  test('debug id missing in some files skips only those files', async () => {
+    const {context, code} = await runCLIWithDebugId([
+      './src/commands/sourcemaps/__tests__/fixtures/bundle-with-partial-debug-id',
+    ])
+    expect(code).toBe(0)
+    const stdout = context.stdout.toString()
+    expect(stdout).toContain('[DRYRUN] Uploading sourcemap')
+    expect(stdout).toContain('a.min.js.map')
+    expect(stdout).toContain('because no debug ID was found')
+    expect(stdout).toContain('b.min.js.map')
+  })
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])
