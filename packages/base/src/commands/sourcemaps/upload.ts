@@ -140,7 +140,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
 
-    if (this.debugId && !addDebugIdToPayloads(payloads)) {
+    if (this.debugId && payloads.length > 0 && !addDebugIdToPayloads(payloads)) {
       this.context.stderr.write(renderNoDebugIdFound())
 
       return 1

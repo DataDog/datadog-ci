@@ -320,6 +320,12 @@ describe('execute', () => {
     expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
   })
 
+  test('debug id with no sourcemaps found succeeds with exit 0', async () => {
+    const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/doesnotexist'])
+    expect(code).toBe(0)
+    expect(context.stderr.toString()).not.toContain('No debug ID found')
+  })
+
   test('debug id missing in some files skips only those files', async () => {
     const {context, code} = await runCLIWithDebugId([
       './src/commands/sourcemaps/__tests__/fixtures/bundle-with-partial-debug-id',
