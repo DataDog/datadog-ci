@@ -226,6 +226,12 @@ The following `<scope>` and `<command>` values are available.
 
 - `upload`: Upload Unity symbols for Error Tracking.
 
+#### `wasm-symbols`
+
+<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/browser/)</sub>
+
+- `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
+
 ### Beta commands
 
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
@@ -244,12 +250,6 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 <sub>**README:** [📚](/packages/base/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
 
 - `upload`: Upload Elf debug info files for Profiling.
-
-#### `wasm-symbols`
-
-<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/browser/)</sub>
-
-- `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
 
 ### FIPS support
 

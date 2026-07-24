@@ -28,14 +28,12 @@ To override the full URL for the intake endpoint, define the `DATADOG_SOURCEMAP_
 
 ### `upload`
 
-**Warning:** The `wasm-symbols upload` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
-
 This command will upload debug info from WASM files to Datadog in order to symbolicate your application's WASM stack traces.
 
 Run the following command to upload all the necessary files:
 
 ```bash
-DD_BETA_COMMANDS_ENABLED=1 datadog-ci wasm-symbols upload ~/your/build/output/
+datadog-ci wasm-symbols upload ~/your/build/output/
 ```
 
 If location is a directory, the command will scan it recursively looking for `.wasm` files. If location is a file, only that file is uploaded.
