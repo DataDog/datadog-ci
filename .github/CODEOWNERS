@@ -28,6 +28,7 @@ packages/base/src/commands/flutter-symbols  @DataDog/datadog-ci-admins @DataDog/
 packages/base/src/commands/react-native     @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser @DataDog/rum-backend
 packages/base/src/commands/unity-symbols    @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
+packages/base/src/commands/wasm-symbols     @DataDog/datadog-ci-admins @DataDog/rum-browser @DataDog/rum-backend
 
 ## Serverless (label: serverless)
 packages/plugin-aas                                  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
