@@ -35,6 +35,7 @@ import {
   CI_ENV_VARS,
   CI_NODE_LABELS,
   CI_NODE_NAME,
+  CI_PIPELINE_DISPLAY_NAME,
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
@@ -202,6 +203,8 @@ describe('getCIMetadata', () => {
       delete ciMetadata?.[CI_NODE_NAME]
       delete ciMetadata?.[PR_NUMBER]
       delete ciMetadata?.[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]
+      // there is no DD_CI_PIPELINE_DISPLAY_NAME override, so this tag cannot be overridden by DD env variables
+      delete ciMetadata?.[CI_PIPELINE_DISPLAY_NAME]
       expect(ciMetadata).toEqual(expectedMetadata)
     })
   })
