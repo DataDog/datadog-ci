@@ -16,7 +16,7 @@ import {Logger, LogLevel} from '../../../helpers/logger'
 import * as requestModule from '../../../helpers/request'
 import {getRequestBuilder} from '../../../helpers/utils'
 
-import {uploadToGitDB} from '../gitdb'
+import {uploadPackfile, uploadToGitDB} from '../gitdb'
 
 describe('gitdb', () => {
   const tmpdir = upath.join(os.tmpdir(), 'random')
@@ -1233,7 +1233,8 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
-  test('fails after 3 http requests', async () => {
+  test('includes the endpoint when the search commits request times out after retries', async () => {
+    const searchCommitsError = new requestModule.RequestError('The operation was aborted due to timeout', {})
     const mocks = new MockAll({
       getConfig: [
         {
@@ -1287,7 +1288,7 @@ describe('gitdb', () => {
               ],
             },
           },
-          output: new Error('http error'),
+          output: searchCommitsError,
         },
         {
           input: {
@@ -1308,7 +1309,7 @@ describe('gitdb', () => {
               ],
             },
           },
-          output: new Error('http error'),
+          output: searchCommitsError,
         },
         {
           input: {
@@ -1329,13 +1330,47 @@ describe('gitdb', () => {
               ],
             },
           },
-          output: new Error('http error'),
+          output: searchCommitsError,
         },
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    await expect(upload).rejects.toThrow('http error')
+    await expect(upload).rejects.toThrow('search_commits request failed: The operation was aborted due to timeout')
     mocks.expectCalls()
+  })
+
+  test('includes response details when a packfile request fails', async () => {
+    const httpRequest = jest.mocked(requestModule.httpRequest)
+    httpRequest.mockRejectedValue(
+      new requestModule.RequestError(
+        'Request failed with status code 400',
+        {},
+        {
+          data: {
+            errors: [
+              {
+                status: '400',
+                title: 'Bad Request',
+              },
+            ],
+          },
+          status: 400,
+          statusText: 'Bad Request',
+        }
+      )
+    )
+
+    const upload = uploadPackfile(
+      logger,
+      request,
+      'https://github.com/DataDog/datadog-ci',
+      '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+      temporaryPackFile
+    )
+    await expect(upload).rejects.toThrow(
+      'packfile request failed (status 400 Bad Request): ' + '{"errors":[{"status":"400","title":"Bad Request"}]}'
+    )
+    expect(httpRequest).toHaveBeenCalledTimes(1)
   })
 
   test('fail immediately if returned format is incorrect', async () => {
@@ -1471,22 +1506,20 @@ describe('gitdb', () => {
             data: {
               errors: [
                 {
-                  status: '504',
-                  title: 'Gateway Timeout',
+                  title: 'Unexpected response',
                 },
               ],
             },
             headers: {},
-            status: 504,
-            statusText: 'Gateway Timeout',
+            status: 200,
+            statusText: 'OK',
           },
         },
       ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(
-      'Invalid API response from search_commits (status 504 Gateway Timeout): ' +
-        '{"errors":[{"status":"504","title":"Gateway Timeout"}]}'
+      'Invalid API response from search_commits (status 200 OK): ' + '{"errors":[{"title":"Unexpected response"}]}'
     )
     mocks.expectCalls()
   })

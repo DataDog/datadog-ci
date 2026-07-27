@@ -12,6 +12,7 @@ import upath from 'upath'
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import type {RequestBuilder} from '../../helpers/interfaces'
 import type {Logger} from '../../helpers/logger'
+import {isRequestError} from '../../helpers/request'
 import type {RequestResponse} from '../../helpers/request'
 import {datadogRoute} from '../../helpers/request/datadog-route'
 import {retryRequest} from '../../helpers/retry'
@@ -23,6 +24,21 @@ const API_TIMEOUT = 15000
 const MAX_HISTORY = {
   maxCommits: 1000,
   oldestCommits: '1 month ago',
+}
+
+const formatResponseData = (data: unknown) => (typeof data === 'string' ? data : JSON.stringify(data))
+
+const formatRequestError = (reqName: string, error: unknown) => {
+  if (!isRequestError(error)) {
+    return `${reqName} request failed: ${String(error)}`
+  }
+  if (!error.response) {
+    return `${reqName} request failed: ${error.message}`
+  }
+
+  const status = [error.response.status, error.response.statusText].filter(Boolean).join(' ')
+
+  return `${reqName} request failed (status ${status}): ${formatResponseData(error.response.data)}`
 }
 
 const getCommitsToInclude = async (
@@ -248,8 +264,7 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
   const commits = response.data as SearchCommitResponse
   if (!commits || commits.data === undefined) {
     const status = [response.status, response.statusText].filter(Boolean).join(' ')
-    const body = typeof response.data === 'string' ? response.data : JSON.stringify(response.data)
-    throw new Error(`Invalid API response from search_commits (status ${status}): ${body}`)
+    throw new Error(`Invalid API response from search_commits (status ${status}): ${formatResponseData(response.data)}`)
   }
 
   return commits.data.map((c) => {
@@ -383,15 +398,17 @@ export const uploadPackfile = async (
 
 // runRequest will run the passed request, with retries of retriable errors + logging of any retry attempt.
 const runRequest = async <T>(log: Logger, reqName: string, request: () => Promise<RequestResponse<T>>) => {
-  return retryRequest(request, {
-    retries: 2,
-    onRetry: (e, attempt) => {
-      let errorMessage = `${e}`
-      const maybeHttpError = e as any
-      if (maybeHttpError.response && maybeHttpError.response.statusText) {
-        errorMessage = `${maybeHttpError.message} (${maybeHttpError.response.statusText})`
-      }
-      log.warn(`[attempt ${attempt}] Retrying ${reqName} request: ${errorMessage}`)
-    },
-  })
+  try {
+    return await retryRequest(request, {
+      retries: 2,
+      onRetry: (error, attempt) => {
+        log.warn(`[attempt ${attempt}] ${formatRequestError(reqName, error)}; retrying`)
+      },
+    })
+  } catch (error) {
+    if (isRequestError(error)) {
+      error.message = formatRequestError(reqName, error)
+    }
+    throw error
+  }
 }
