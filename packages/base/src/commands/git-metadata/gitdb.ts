@@ -247,7 +247,9 @@ const getKnownCommits = async (log: Logger, request: RequestBuilder, repoURL: st
   )
   const commits = response.data as SearchCommitResponse
   if (!commits || commits.data === undefined) {
-    throw new Error(`Invalid API response: ${response}`)
+    const status = [response.status, response.statusText].filter(Boolean).join(' ')
+    const body = typeof response.data === 'string' ? response.data : JSON.stringify(response.data)
+    throw new Error(`Invalid API response from search_commits (status ${status}): ${body}`)
   }
 
   return commits.data.map((c) => {

@@ -1412,6 +1412,85 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
+  test('includes response details when the search commits response is invalid', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
+      fetch: [],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [],
+      revparse: [],
+      version: [],
+      execSync: [],
+      httpRequest: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {
+            config: {},
+            data: {
+              errors: [
+                {
+                  status: '504',
+                  title: 'Gateway Timeout',
+                },
+              ],
+            },
+            headers: {},
+            status: 504,
+            statusText: 'Gateway Timeout',
+          },
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(
+      'Invalid API response from search_commits (status 504 Gateway Timeout): ' +
+        '{"errors":[{"status":"504","title":"Gateway Timeout"}]}'
+    )
+    mocks.expectCalls()
+  })
+
   test('all commits are known, no packfile upload', async () => {
     const mocks = new MockAll({
       getConfig: [
