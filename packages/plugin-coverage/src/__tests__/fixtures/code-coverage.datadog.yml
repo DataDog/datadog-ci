@@ -1,0 +1,4 @@
+coverage:
+  ignored_paths:
+    - src/generated
+    - '**/*.test.ts'

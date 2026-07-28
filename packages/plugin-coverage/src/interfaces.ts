@@ -13,7 +13,7 @@ export interface Payload {
   basePath: string | undefined
   commitDiff: DiffData | undefined
   prDiff: DiffData | undefined
-  coverageConfig: RepoFile | undefined
+  coverageConfig: CoverageConfig | undefined
   codeowners: RepoFile | undefined
   fileFixesCompressed: Buffer | undefined
 }
@@ -21,6 +21,18 @@ export interface Payload {
 export interface RepoFile {
   path: string
   sha: string
+}
+
+/**
+ * The code coverage configuration is either resolved from the repository, in which case the backend
+ * looks the blob up in GitDB, or read from a local file, in which case we upload its contents.
+ */
+export type CoverageConfig = ({source: 'repository'} & RepoFile) | LocalCoverageConfig
+
+export interface LocalCoverageConfig {
+  source: 'local'
+  path: string
+  compressed: Buffer
 }
 
 export interface APIHelper {

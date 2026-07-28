@@ -33,7 +33,12 @@ export const uploadCodeCoverageReport =
 
     if (payload.coverageConfig) {
       event['config.path'] = payload.coverageConfig.path
-      event['config.sha'] = payload.coverageConfig.sha
+      if (payload.coverageConfig.source === 'repository') {
+        event['config.sha'] = payload.coverageConfig.sha
+      } else {
+        // Only set for locally read configs, so that the event of a repository config stays unchanged
+        event['config.source'] = 'local'
+      }
     }
 
     form.append('event', JSON.stringify(event), {filename: 'event.json'})
@@ -53,6 +58,13 @@ export const uploadCodeCoverageReport =
     if (payload.fileFixesCompressed) {
       form.append('file_fixes', payload.fileFixesCompressed, {
         filename: 'file_fixes.json.gz',
+      })
+    }
+
+    if (payload.coverageConfig?.source === 'local') {
+      // The filename is fixed on purpose: the user-provided path may start with a dot, which the backend rejects.
+      form.append('coverage_config', payload.coverageConfig.compressed, {
+        filename: 'coverage_config.yml.gz',
       })
     }
 

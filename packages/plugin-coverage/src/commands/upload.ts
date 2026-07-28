@@ -1,7 +1,8 @@
+import fs from 'fs'
 import os from 'os'
 import {gzipSync} from 'zlib'
 
-import type {APIHelper, FileFixes, Payload, RepoFile} from '../interfaces'
+import type {APIHelper, CoverageConfig, FileFixes, LocalCoverageConfig, Payload, RepoFile} from '../interfaces'
 import type {DiffData} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import type {RequestBuilder, SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type * as simpleGit from 'simple-git'
@@ -36,6 +37,7 @@ import {
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
+import yaml from 'js-yaml'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
@@ -78,6 +80,8 @@ export class PluginCommand extends CoverageUploadCommand {
 
   private git: simpleGit.SimpleGit | undefined = undefined
 
+  private localCoverageConfig: LocalCoverageConfig | undefined = undefined
+
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
@@ -96,6 +100,16 @@ export class PluginCommand extends CoverageUploadCommand {
       )
 
       return 1
+    }
+
+    if (this.coverageConfigPath) {
+      try {
+        this.localCoverageConfig = this.readLocalCoverageConfig(this.coverageConfigPath)
+      } catch (e) {
+        this.context.stderr.write(`Could not read coverage config file ${this.coverageConfigPath}: ${e.message}\n`)
+
+        return 1
+      }
     }
 
     const isGitRepository = await isGitRepo()
@@ -185,7 +199,7 @@ export class PluginCommand extends CoverageUploadCommand {
     const flags = this.getFlags()
 
     const reportedCommit = getReportedCommitSha(spanTags)
-    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS, reportedCommit)
+    const coverageConfig = await this.getCoverageConfig(reportedCommit)
     const codeowners = await this.getRepoFile(CODEOWNERS_PATHS, reportedCommit)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
@@ -197,15 +211,18 @@ export class PluginCommand extends CoverageUploadCommand {
     }
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
+    // A local coverage config is uploaded as an extra attachment, so it takes one report slot.
+    const maxReports = coverageConfig?.source === 'local' ? MAX_REPORTS_PER_REQUEST - 1 : MAX_REPORTS_PER_REQUEST
+
     let payloads: Payload[] = []
     if (Object.keys(reports).length) {
       payloads = Object.entries(reports).flatMap(([format, paths]) => {
-        const numChunks = Math.ceil(paths.length / MAX_REPORTS_PER_REQUEST)
+        const numChunks = Math.ceil(paths.length / maxReports)
 
         return Array.from({length: numChunks}, (_, i) => ({
           format,
           basePath: this.basePath,
-          paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
+          paths: paths.slice(i * maxReports, (i + 1) * maxReports),
           spanTags,
           flags,
           hostname: os.hostname(),
@@ -238,6 +255,36 @@ export class PluginCommand extends CoverageUploadCommand {
 
       return undefined
     }
+  }
+
+  private readLocalCoverageConfig(path: string): LocalCoverageConfig {
+    const contents = fs.readFileSync(path, 'utf8')
+
+    // A local config takes precedence over the committed one, so an empty or malformed file must fail
+    // loudly instead of silently dropping the settings the user expects to be applied.
+    const parsed = yaml.load(contents)
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('file is empty or is not a YAML mapping')
+    }
+
+    return {
+      source: 'local',
+      path: upath.normalize(path),
+      compressed: gzipSync(Buffer.from(contents, 'utf8')),
+    }
+  }
+
+  private async getCoverageConfig(ref: string | undefined): Promise<CoverageConfig | undefined> {
+    if (this.localCoverageConfig) {
+      return this.localCoverageConfig
+    }
+
+    const repoFile = await this.getRepoFile(COVERAGE_CONFIG_PATHS, ref)
+    if (!repoFile) {
+      return undefined
+    }
+
+    return {source: 'repository', ...repoFile}
   }
 
   private async getRepoFile(possiblePaths: string[], ref: string | undefined): Promise<RepoFile | undefined> {

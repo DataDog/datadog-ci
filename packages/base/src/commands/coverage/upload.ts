@@ -30,6 +30,10 @@ export class CoverageUploadCommand extends BaseCommand {
       ],
       ['Upload coverage with flags', 'datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 .'],
       [
+        'Upload coverage with a code coverage configuration file that is not committed to the repository',
+        'datadog-ci coverage upload --coverage-config build/code-coverage.datadog.yml .',
+      ],
+      [
         'Upload all code coverage report files in current directory to the datadoghq.eu site',
         'DD_SITE=datadoghq.eu datadog-ci coverage upload .',
       ],
@@ -64,6 +68,10 @@ export class CoverageUploadCommand extends BaseCommand {
     description: 'The repository URL to retrieve git metadata from',
   })
   protected basePath = Option.String('--base-path', {description: 'The base path to the coverage report files'})
+  protected coverageConfigPath = Option.String('--coverage-config', {
+    description:
+      'Path to a local code coverage configuration file whose contents are uploaded. By default, the configuration file is read from the git repository at the reported commit.',
+  })
 
   protected ignoredPaths = Option.String('--ignored-paths', {
     description:

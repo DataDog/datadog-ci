@@ -1,3 +1,7 @@
+import fs from 'fs'
+import {gunzipSync} from 'zlib'
+
+import type {Payload} from '../interfaces'
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
@@ -10,6 +14,8 @@ jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())
+
+const COVERAGE_CONFIG_FIXTURE = 'src/__tests__/fixtures/code-coverage.datadog.yml'
 
 describe('upload', () => {
   describe('getApiHelper', () => {
@@ -295,6 +301,105 @@ describe('upload', () => {
     })
   })
 
+  describe('readLocalCoverageConfig', () => {
+    test('reads and gzips the contents of the local file', () => {
+      const command = createCommand(CoverageUploadCommand)
+
+      const result = command['readLocalCoverageConfig'](COVERAGE_CONFIG_FIXTURE)
+
+      expect(result.source).toEqual('local')
+      expect(result.path).toEqual(COVERAGE_CONFIG_FIXTURE)
+      expect(gunzipSync(result.compressed).toString('utf8')).toEqual(fs.readFileSync(COVERAGE_CONFIG_FIXTURE, 'utf8'))
+    })
+
+    test('throws when the file does not exist', () => {
+      const command = createCommand(CoverageUploadCommand)
+
+      expect(() => command['readLocalCoverageConfig']('src/__tests__/fixtures/does-not-exist.yml')).toThrow('ENOENT')
+    })
+
+    test('throws when the file is empty', () => {
+      const command = createCommand(CoverageUploadCommand)
+
+      expect(() => command['readLocalCoverageConfig']('src/__tests__/fixtures/empty-coverage-config.yml')).toThrow(
+        'file is empty or is not a YAML mapping'
+      )
+    })
+
+    test('throws when the file is not YAML', () => {
+      const command = createCommand(CoverageUploadCommand)
+
+      expect(() => command['readLocalCoverageConfig']('src/__tests__/fixtures/jacoco-report.xml')).toThrow(
+        'file is empty or is not a YAML mapping'
+      )
+    })
+  })
+
+  describe('getCoverageConfig', () => {
+    test('resolves the config from the repository when --coverage-config is not set', async () => {
+      const revparse = jest.fn().mockResolvedValue('blob-sha')
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = {revparse} as any
+
+      const result = await command['getCoverageConfig'].call(command, 'deadbeef')
+
+      expect(result).toEqual({source: 'repository', path: 'code-coverage.datadog.yml', sha: 'blob-sha'})
+      expect(revparse).toHaveBeenCalledWith(['deadbeef:code-coverage.datadog.yml'])
+    })
+
+    test('returns the local config without consulting git when --coverage-config is set', async () => {
+      const revparse = jest.fn()
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = {revparse} as any
+      command['coverageConfigPath'] = COVERAGE_CONFIG_FIXTURE
+      command['localCoverageConfig'] = command['readLocalCoverageConfig'](COVERAGE_CONFIG_FIXTURE)
+
+      const result = await command['getCoverageConfig'].call(command, 'deadbeef')
+
+      expect(result).toEqual(command['localCoverageConfig'])
+      expect(revparse).not.toHaveBeenCalled()
+    })
+
+    test('returns the local config even when there is no git repository', async () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['git'] = undefined
+      command['coverageConfigPath'] = COVERAGE_CONFIG_FIXTURE
+      command['localCoverageConfig'] = command['readLocalCoverageConfig'](COVERAGE_CONFIG_FIXTURE)
+
+      const result = await command['getCoverageConfig'].call(command, undefined)
+
+      expect(result).toEqual(command['localCoverageConfig'])
+    })
+  })
+
+  describe('generatePayloads', () => {
+    const generatePayloadsForReports = async (reportCount: number, coverageConfigPath?: string) => {
+      const command = createCommand(CoverageUploadCommand)
+      jest.spyOn(command as any, 'getMatchingCoverageReportFilesByFormat').mockReturnValue({
+        jacoco: Array.from({length: reportCount}, (_, i) => `report-${i}.xml`),
+      })
+      if (coverageConfigPath) {
+        command['coverageConfigPath'] = coverageConfigPath
+        command['localCoverageConfig'] = command['readLocalCoverageConfig'](coverageConfigPath)
+      }
+
+      return command['generatePayloads']({})
+    }
+
+    test('sends at most 7 reports per payload when the config comes from the repository', async () => {
+      const payloads = await generatePayloadsForReports(8)
+
+      expect(payloads.map((payload) => payload.paths.length)).toEqual([7, 1])
+    })
+
+    test('sends at most 6 reports per payload when the config is uploaded as an attachment', async () => {
+      const payloads = await generatePayloadsForReports(8, COVERAGE_CONFIG_FIXTURE)
+
+      expect(payloads.map((payload) => payload.paths.length)).toEqual([6, 2])
+      expect(payloads.every((payload) => payload.coverageConfig?.source === 'local')).toBe(true)
+    })
+  })
+
   describe('getFlags', () => {
     test('should return undefined when no flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
@@ -330,6 +435,10 @@ describe('upload', () => {
 
 describe('execute', () => {
   const runCLI = makeRunCLI(CoverageUploadCommand, ['coverage', 'upload', '--dry-run'])
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/__tests__/doesnotexist/../fixtures'])
@@ -379,6 +488,62 @@ describe('execute', () => {
     ])
     const {code} = await runCLIWithFlag(['src/__tests__/fixtures'])
     expect(code).toBe(0)
+  })
+
+  test('should upload the contents of the file passed to --coverage-config', async () => {
+    const uploadSpy = jest.spyOn(CoverageUploadCommand.prototype as any, 'uploadCodeCoverageReport')
+    const runCLIWithFlag = makeRunCLI(CoverageUploadCommand, [
+      'coverage',
+      'upload',
+      '--dry-run',
+      '--coverage-config',
+      COVERAGE_CONFIG_FIXTURE,
+    ])
+    const {code} = await runCLIWithFlag(['src/__tests__/fixtures'])
+    expect(code).toBe(0)
+
+    const payloads = uploadSpy.mock.calls.map((call) => call[1] as Payload)
+    expect(payloads.length).toBeGreaterThan(0)
+    for (const payload of payloads) {
+      expect(payload.coverageConfig).toEqual({
+        source: 'local',
+        path: COVERAGE_CONFIG_FIXTURE,
+        compressed: expect.any(Buffer),
+      })
+    }
+
+    const coverageConfig = payloads[0].coverageConfig
+    if (coverageConfig?.source !== 'local') {
+      throw new Error('expected a local coverage config')
+    }
+    expect(gunzipSync(coverageConfig.compressed).toString('utf8')).toEqual(
+      fs.readFileSync(COVERAGE_CONFIG_FIXTURE, 'utf8')
+    )
+  })
+
+  test('should not upload any config contents when --coverage-config is not set', async () => {
+    const uploadSpy = jest.spyOn(CoverageUploadCommand.prototype as any, 'uploadCodeCoverageReport')
+    const {code} = await runCLI(['src/__tests__/fixtures'])
+    expect(code).toBe(0)
+
+    const payloads = uploadSpy.mock.calls.map((call) => call[1] as Payload)
+    expect(payloads.length).toBeGreaterThan(0)
+    expect(payloads.every((payload) => payload.coverageConfig?.source !== 'local')).toBe(true)
+  })
+
+  test('should fail when --coverage-config points at a missing file', async () => {
+    const runCLIWithFlag = makeRunCLI(CoverageUploadCommand, [
+      'coverage',
+      'upload',
+      '--dry-run',
+      '--coverage-config',
+      'src/__tests__/fixtures/does-not-exist.yml',
+    ])
+    const {context, code} = await runCLIWithFlag(['src/__tests__/fixtures'])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain(
+      'Could not read coverage config file src/__tests__/fixtures/does-not-exist.yml'
+    )
   })
 
   test('should upload with flags in dry-run mode', async () => {

@@ -48,7 +48,7 @@ describe('uploadCodeCoverageReport', () => {
       paths: ['/my/path/.resultset.json'],
       basePath: '/my/base/path',
       codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
-      coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
+      coverageConfig: {source: 'repository' as const, path: 'coverage.yml', sha: 'bef456'},
       fileFixesCompressed: undefined,
     }
 
@@ -111,7 +111,7 @@ describe('uploadCodeCoverageReport', () => {
       paths: ['/my/path/.resultset.json'],
       basePath: '/my/base/path',
       codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
-      coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
+      coverageConfig: {source: 'repository' as const, path: 'coverage.yml', sha: 'bef456'},
       fileFixesCompressed: undefined,
     }
 
@@ -318,5 +318,109 @@ describe('uploadCodeCoverageReport', () => {
     const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
     const eventJson = JSON.parse(eventCall[1])
     expect(eventJson).not.toHaveProperty('file_fixes')
+  })
+
+  it('sends coverage_config as gzipped attachment when the config was read locally', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const compressed = Buffer.from('fake-gzipped-config')
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: {source: 'local' as const, path: 'build/code-coverage.datadog.yml', compressed},
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    // The path is still reported, but there is no blob sha to resolve in GitDB
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+    expect(eventJson['config.path']).toEqual('build/code-coverage.datadog.yml')
+    expect(eventJson['config.source']).toEqual('local')
+    // The key contains a dot, so it must be passed as a path array to bypass jest's dotted-path lookup
+    expect(eventJson).not.toHaveProperty(['config.sha'])
+
+    // The contents are sent as a gzipped attachment with a fixed filename
+    const configCall = appendMock.mock.calls.find((call) => call[0] === 'coverage_config')
+    expect(configCall).toBeDefined()
+    expect(configCall[1]).toEqual(compressed)
+    expect(configCall[2]).toEqual({filename: 'coverage_config.yml.gz'})
+  })
+
+  it('does not send coverage_config attachment when the config comes from the repository', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: {source: 'repository' as const, path: 'code-coverage.datadog.yml', sha: 'bef456'},
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const configCall = appendMock.mock.calls.find((call) => call[0] === 'coverage_config')
+    expect(configCall).toBeUndefined()
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+    expect(eventJson['config.sha']).toEqual('bef456')
+    // The event of a repository config is unchanged: no new attribute is sent to the backend.
+    // The key contains a dot, so it must be passed as a path array to bypass jest's dotted-path lookup.
+    expect(eventJson).not.toHaveProperty(['config.source'])
   })
 })

@@ -145,6 +145,7 @@ export default defineConfig(
     '.github/dependabot.yml',
     'packages/base/src/commands/flutter-symbols/__tests__/fixtures/pubspecs/invalidPubspec.yaml',
     'packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml',
+    'packages/plugin-coverage/src/__tests__/fixtures/empty-coverage-config.yml',
   ]),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,

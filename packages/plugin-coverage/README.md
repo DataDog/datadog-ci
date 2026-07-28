@@ -31,6 +31,7 @@ datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 unit-tests/cov
 - `--git-repository-url` is a string specifying the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 - `--disable-file-fixes` (default: `false`): disable the generation and upload of file fixes for code coverage.
 - `--file-fixes-search-path` is a string specifying the root directory used to scan source files for file fixes. By default, the repository root is used. This is useful for monorepos or when coverage reports only cover a subset of the codebase.
+- `--coverage-config` is a string specifying the path to a local code coverage configuration file. Its contents are uploaded along with the coverage reports, which is useful when the configuration file is generated during the CI job and is not committed to the repository. If not specified, the configuration file is read from the git repository at the reported commit.
 
 #### Environment variables
 
