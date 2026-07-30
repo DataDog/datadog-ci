@@ -46,7 +46,6 @@ export interface Metadata {
     pipeline: {
       id?: string
       name?: string
-      display_name?: string
       number?: number
       url?: string
     }
