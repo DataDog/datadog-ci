@@ -1029,7 +1029,6 @@ export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}
       pipeline: removeUndefinedValues({
         id: tags[CI_PIPELINE_ID],
         name: tags[CI_PIPELINE_NAME],
-        //display_name: tags[CI_PIPELINE_DISPLAY_NAME],
         number: parseNumber(tags[CI_PIPELINE_NUMBER]),
         url: tags[CI_PIPELINE_URL],
       }),
