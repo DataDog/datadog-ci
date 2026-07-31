@@ -1,13 +1,20 @@
-import type {IContainer} from './types'
+import type {IContainer, IEnvVar} from './types'
+import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language, SingleLanguageTracerRegistry} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-
+import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
   DEFAULT_TRACER_LIBC,
   DEFAULT_TRACER_REGISTRY,
   DEFAULT_TRACER_VERSION,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {
+  mergeEnvFragment,
+  mergeInjectionModeTag,
+  removeEnvFragment,
+  removeInjectionModeTag,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
   getLanguageCompatibilityError,
   getLanguageInjectionSpec,
@@ -140,6 +147,123 @@ export const selectMainContainer = (
       .map((container) => container.name || '<unnamed>')
       .join(', ')}. Declare a container port on your main container.`
   )
+}
+
+const findEnv = (env: readonly IEnvVar[], name: string): IEnvVar | undefined =>
+  env.find((variable) => variable.name === name)
+
+const assertUniqueTargetEnvNames = (env: readonly IEnvVar[], targetNames: ReadonlySet<string>): void => {
+  for (const name of targetNames) {
+    if (env.filter((variable) => variable.name === name).length > 1) {
+      throw new SsiValidationError(
+        `${name} appears more than once on the ingress container, so Datadog cannot safely modify it. Remove the duplicate before retrying.`
+      )
+    }
+  }
+}
+
+const assertNoValueSource = (existing: IEnvVar | undefined, name: string): void => {
+  if (existing?.valueSource) {
+    throw new SsiValidationError(
+      `${name} on the ingress container is populated from a secret reference, which Datadog cannot safely extend. Set it to a literal value or remove it before instrumenting.`
+    )
+  }
+}
+
+export const assertNativeInjectionEnvCanBeMerged = (
+  existingEnv: readonly IEnvVar[] | null | undefined,
+  spec: SingleLanguageInjectionSpec
+): void => {
+  const env = existingEnv ?? []
+  const targetNames = new Set([...spec.env.map((fragment) => fragment.name), DD_TAGS_ENV_VAR])
+  assertUniqueTargetEnvNames(env, targetNames)
+  for (const name of targetNames) {
+    assertNoValueSource(findEnv(env, name), name)
+  }
+}
+
+const upsertEnv = (env: IEnvVar[], name: string, value: string): IEnvVar[] => {
+  const index = env.findIndex((variable) => variable.name === name)
+  if (index === -1) {
+    return [...env, {name, value}]
+  }
+  const updated = [...env]
+  updated[index] = {...updated[index], value}
+
+  return updated
+}
+
+export const mergeNativeInjectionEnv = (
+  existingEnv: readonly IEnvVar[] | null | undefined,
+  spec: SingleLanguageInjectionSpec
+): IEnvVar[] => {
+  let env: IEnvVar[] = [...(existingEnv ?? [])]
+  assertNativeInjectionEnvCanBeMerged(env, spec)
+
+  for (const fragment of spec.env) {
+    const existing = findEnv(env, fragment.name)
+    env = upsertEnv(env, fragment.name, mergeEnvFragment(existing?.value ?? undefined, fragment))
+  }
+
+  const existingTags = findEnv(env, DD_TAGS_ENV_VAR)
+  env = upsertEnv(env, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value ?? undefined))
+
+  return env
+}
+
+const KNOWN_NATIVE_FRAGMENTS: readonly EnvFragment[] = (() => {
+  const fragments = new Map<string, EnvFragment>()
+  for (const language of SINGLE_LANGUAGE_VALUES) {
+    for (const libc of ['glibc', 'musl'] as const) {
+      if (language === 'ruby' && libc === 'musl') {
+        continue
+      }
+      const spec = getSingleLanguageInjectionSpec({
+        language,
+        libc,
+        registry: DEFAULT_TRACER_REGISTRY,
+        version: DEFAULT_TRACER_VERSION,
+        root: TRACER_MOUNT_PATH,
+      })
+      for (const fragment of spec.env) {
+        fragments.set(JSON.stringify(fragment), fragment)
+      }
+    }
+  }
+
+  return [...fragments.values()]
+})()
+
+const KNOWN_NATIVE_FRAGMENTS_BY_NAME = new Map<string, EnvFragment[]>()
+for (const fragment of KNOWN_NATIVE_FRAGMENTS) {
+  const fragments = KNOWN_NATIVE_FRAGMENTS_BY_NAME.get(fragment.name) ?? []
+  fragments.push(fragment)
+  KNOWN_NATIVE_FRAGMENTS_BY_NAME.set(fragment.name, fragments)
+}
+
+/** Removes every exact native SSI fragment and the injection-mode tag, regardless of selected language or libc. */
+export const removeKnownNativeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] => {
+  const cleaned: IEnvVar[] = []
+  for (const variable of existingEnv ?? []) {
+    if (!variable.name || variable.valueSource || typeof variable.value !== 'string' || variable.value === '') {
+      cleaned.push(variable)
+      continue
+    }
+
+    let value: string | undefined = variable.value
+    if (variable.name === DD_TAGS_ENV_VAR) {
+      value = removeInjectionModeTag(value)
+    }
+    for (const fragment of KNOWN_NATIVE_FRAGMENTS_BY_NAME.get(variable.name) ?? []) {
+      value = removeEnvFragment(value, fragment)
+    }
+
+    if (value !== undefined) {
+      cleaned.push(value === variable.value ? variable : {...variable, value})
+    }
+  }
+
+  return cleaned
 }
 
 export class SsiConfigError extends Error {
