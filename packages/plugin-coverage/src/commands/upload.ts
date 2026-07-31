@@ -50,6 +50,7 @@ import {
   renderFailedUpload,
   renderInvalidFile,
   renderNoCoverageConfigFound,
+  renderOversizedReport,
   renderOversizedRepoFile,
   renderRepoFileNotAttached,
   renderRetriedUpload,
@@ -77,6 +78,12 @@ const errorCodesStopUpload = [400, 403]
 // multipart part named `event` is excluded from the count by the intake decoder.
 const MAX_ATTACHMENTS_PER_REQUEST = 10
 
+// The same intake rejects a request body over 50 MiB with a 413. A 413 is not in
+// `errorCodesStopUpload`, so it is retried and then skipped: reports would go missing from a run that
+// still reports success. Chunk on total size as well as on count, keeping a margin for `event.json`,
+// the multipart framing and the difference between a report's size on disk and gzipped.
+const MAX_REQUEST_SIZE = 48 * 1024 * 1024
+
 const COVERAGE_CONFIG_LABEL = 'the code coverage configuration'
 
 const CODEOWNERS_LABEL = 'the CODEOWNERS file'
@@ -84,6 +91,8 @@ const CODEOWNERS_LABEL = 'the CODEOWNERS file'
 // The head SHA the payload carries on the wire (api.ts spreads `...payload.spanTags`,
 // so this matches what the splitter reads as `coalesce(HeadSHA, SHA)`).
 const getReportedCommitSha = (spanTags: SpanTags): string | undefined => spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+
+const serializedSize = (value: unknown): number => (value === undefined ? 0 : Buffer.byteLength(JSON.stringify(value)))
 
 // The SHA is computed from the content that is attached, not from the committed blob, so that it
 // stays the git blob SHA-1 of whatever the backend ends up reading.
@@ -253,15 +262,24 @@ export class PluginCommand extends CoverageUploadCommand {
     const maxReportsPerRequest = Math.max(1, MAX_ATTACHMENTS_PER_REQUEST - reservedAttachments)
     this.logger.debug(`Uploading at most ${maxReportsPerRequest} coverage report(s) per request`)
 
+    // The diffs are gzipped per request in `api.ts`, so their uncompressed size is used here: over-
+    // estimating the reserved bytes only ever produces smaller chunks, never a request over the cap.
+    const reservedBytes =
+      serializedSize(prDiff) +
+      serializedSize(commitDiff) +
+      (fileFixesCompressed?.length ?? 0) +
+      (coverageConfig?.gzippedContent?.length ?? 0) +
+      (codeowners?.gzippedContent?.length ?? 0)
+    const maxReportBytesPerRequest = Math.max(1, MAX_REQUEST_SIZE - reservedBytes)
+    this.logger.debug(`Uploading at most ${maxReportBytesPerRequest} coverage report byte(s) per request`)
+
     let payloads: Payload[] = []
     if (Object.keys(reports).length) {
-      payloads = Object.entries(reports).flatMap(([format, paths]) => {
-        const numChunks = Math.ceil(paths.length / maxReportsPerRequest)
-
-        return Array.from({length: numChunks}, (_, i) => ({
+      payloads = Object.entries(reports).flatMap(([format, paths]) =>
+        this.chunkReports(paths, maxReportsPerRequest, maxReportBytesPerRequest).map((chunk) => ({
           format,
           basePath: this.basePath,
-          paths: paths.slice(i * maxReportsPerRequest, (i + 1) * maxReportsPerRequest),
+          paths: chunk,
           spanTags,
           flags,
           hostname: os.hostname(),
@@ -271,10 +289,56 @@ export class PluginCommand extends CoverageUploadCommand {
           codeowners,
           fileFixesCompressed,
         }))
-      })
+      )
     }
 
     return payloads
+  }
+
+  /**
+   * Groups report paths into requests that respect both the intake's attachment count limit and its
+   * total request size limit. A report larger than `maxBytes` on its own still gets its own request:
+   * splitting a single report is not possible, so the alternative would be dropping it.
+   */
+  private chunkReports(paths: string[], maxReports: number, maxBytes: number): string[][] {
+    const chunks: string[][] = []
+    let current: string[] = []
+    let currentBytes = 0
+
+    for (const path of paths) {
+      const size = this.getReportSize(path)
+
+      if (current.length > 0 && (current.length >= maxReports || currentBytes + size > maxBytes)) {
+        chunks.push(current)
+        current = []
+        currentBytes = 0
+      }
+
+      if (current.length === 0 && size > maxBytes) {
+        this.logger.warn(renderOversizedReport(path, size, maxBytes))
+      }
+
+      current.push(path)
+      currentBytes += size
+    }
+
+    if (current.length > 0) {
+      chunks.push(current)
+    }
+
+    return chunks
+  }
+
+  private getReportSize(path: string): number {
+    try {
+      return fs.statSync(path).size
+    } catch (e) {
+      // The upload of this path will fail later with a clearer error; do not let sizing be the thing
+      // that breaks, and do not let an unknown size silently consume the whole budget.
+      this.logger.debug(`Error while trying to size the coverage report ${path}: ${e}`)
+
+      return 0
+    }
   }
 
   private async getFileFixes(): Promise<FileFixes | undefined> {

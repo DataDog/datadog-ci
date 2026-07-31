@@ -734,6 +734,143 @@ describe('upload', () => {
         expect(payload.codeowners?.gzippedContent).toBeDefined()
       }
     })
+
+    // A 400 from the intake is in `errorCodesStopUpload`, so an off-by-one here aborts the whole
+    // upload. Assert the invariant over every combination of the optional attachments.
+    test('never lets the total non-event part count exceed the intake limit', async () => {
+      const optional = ['coverageConfig', 'codeowners', 'prDiff', 'commitDiff', 'fileFixes'] as const
+
+      const combinations = optional.reduce<Record<string, boolean>[]>(
+        (acc, key) =>
+          acc.flatMap((combination) => [
+            {...combination, [key]: false},
+            {...combination, [key]: true},
+          ]),
+        [{}]
+      )
+      expect(combinations).toHaveLength(32)
+
+      for (const resolved of combinations) {
+        const command = setUpForBudget(25, resolved)
+
+        const payloads = await command['generatePayloads']({} as SpanTags)
+        const reserved = optional.filter((key) => resolved[key]).length
+
+        expect(payloads.length).toBeGreaterThan(0)
+        for (const payload of payloads) {
+          expect(payload.paths.length + reserved).toBeLessThanOrEqual(10)
+        }
+        // and nothing is dropped
+        expect(payloads.flatMap((payload) => payload.paths)).toHaveLength(25)
+      }
+    })
+  })
+
+  describe('chunkReports', () => {
+    const commandWithReportSizes = (sizes: Record<string, number>) => {
+      const context = createMockContext()
+      const command = createCommand(CoverageUploadCommand, context as any)
+      jest.spyOn(command as any, 'getReportSize').mockImplementation((path) => sizes[path as string] ?? 0)
+
+      return {command, output: () => context.stdout.toString()}
+    }
+
+    test('chunks on count when the reports are small', () => {
+      const {command} = commandWithReportSizes({})
+
+      const chunks = command['chunkReports'](['a', 'b', 'c', 'd', 'e'], 2, 1000)
+
+      expect(chunks).toEqual([['a', 'b'], ['c', 'd'], ['e']])
+    })
+
+    test('starts a new request before the total size would exceed the cap', () => {
+      const {command} = commandWithReportSizes({a: 600, b: 600, c: 600})
+
+      const chunks = command['chunkReports'](['a', 'b', 'c'], 10, 1000)
+
+      expect(chunks).toEqual([['a'], ['b'], ['c']])
+    })
+
+    test('fills a request up to the size cap', () => {
+      const {command} = commandWithReportSizes({a: 400, b: 400, c: 400, d: 400})
+
+      const chunks = command['chunkReports'](['a', 'b', 'c', 'd'], 10, 1000)
+
+      expect(chunks).toEqual([
+        ['a', 'b'],
+        ['c', 'd'],
+      ])
+    })
+
+    test('allows a chunk exactly at the size cap', () => {
+      const {command} = commandWithReportSizes({a: 500, b: 500})
+
+      expect(command['chunkReports'](['a', 'b'], 10, 1000)).toEqual([['a', 'b']])
+    })
+
+    test('applies whichever of the two limits binds first', () => {
+      const {command} = commandWithReportSizes({a: 100, b: 100, c: 900, d: 200})
+
+      // a+b hits the count limit, then c+d would be 1100 bytes so the size limit splits them
+      expect(command['chunkReports'](['a', 'b', 'c', 'd'], 2, 1000)).toEqual([['a', 'b'], ['c'], ['d']])
+    })
+
+    test('still uploads a single report that is larger than the cap, and warns', () => {
+      const {command, output} = commandWithReportSizes({big: 5000, small: 10})
+
+      const chunks = command['chunkReports'](['big', 'small'], 10, 1000)
+
+      expect(chunks).toEqual([['big'], ['small']])
+      expect(output()).toContain('The coverage report [big] is 5000 bytes')
+      expect(output()).toContain('exceeds the 1000 bytes the intake accepts per request')
+    })
+
+    test('does not warn about a report that fits', () => {
+      const {command, output} = commandWithReportSizes({a: 10})
+
+      command['chunkReports'](['a'], 10, 1000)
+
+      expect(output()).not.toContain('exceeds')
+    })
+
+    test('returns no chunks for no reports', () => {
+      const {command} = commandWithReportSizes({})
+
+      expect(command['chunkReports']([], 10, 1000)).toEqual([])
+    })
+
+    test('reserves budget for the other attachments, so a full report set is split by size', async () => {
+      // 4 reports of 20 MiB with the 48 MiB request cap => 2 per request
+      const command = createCommand(CoverageUploadCommand)
+      const paths = ['r1', 'r2', 'r3', 'r4']
+      jest.spyOn(command as any, 'getMatchingCoverageReportFilesByFormat').mockReturnValue({jacoco: paths})
+      jest.spyOn(command as any, 'getReportSize').mockReturnValue(20 * 1024 * 1024)
+      jest.spyOn(command as any, 'resolveCoverageConfig').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'resolveRepoFile').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'getPrDiff').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'getCommitDiff').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'getFileFixes').mockResolvedValue(undefined)
+
+      const payloads = await command['generatePayloads']({} as SpanTags)
+
+      expect(payloads.map((payload) => payload.paths.length)).toEqual([2, 2])
+    })
+  })
+
+  describe('getReportSize', () => {
+    test('returns the size on disk', () => {
+      const root = makeTempDir()
+      const absolutePath = writeFile(root, 'report.xml', 'x'.repeat(123))
+      const command = createCommand(CoverageUploadCommand)
+
+      expect(command['getReportSize'](absolutePath)).toBe(123)
+    })
+
+    test('returns zero for a path that cannot be stat-ed, rather than throwing', () => {
+      const command = createCommand(CoverageUploadCommand)
+
+      expect(command['getReportSize'](upath.join(makeTempDir(), 'missing.xml'))).toBe(0)
+    })
   })
 
   describe('getFlags', () => {

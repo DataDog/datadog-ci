@@ -128,6 +128,12 @@ export const renderOversizedRepoFile = (label: string, file: {path: string; size
   )
 }
 
+export const renderOversizedReport = (path: string, size: number, maxSize: number) => {
+  return chalk.yellow(
+    `${ICONS.WARNING} The coverage report [${chalk.bold.dim(path)}] is ${size} bytes, which on its own exceeds the ${maxSize} bytes the intake accepts per request. It is uploaded anyway, but the request may be rejected.`
+  )
+}
+
 export const renderAttachedRepoFile = (dryRun: boolean, label: string, file: RepoFile) => {
   return chalk.green(
     `${dryRun ? '[DRYRUN] ' : ''}Uploading ${label} ${file.path} (${file.size ?? 0} bytes, sha ${file.sha})`
