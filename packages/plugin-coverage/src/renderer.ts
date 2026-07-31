@@ -1,4 +1,4 @@
-import type {Payload} from './interfaces'
+import type {Payload, RepoFile} from './interfaces'
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import chalk from 'chalk'
@@ -99,4 +99,41 @@ export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
 
 export const renderFailedGitDBSync = (err: any) => {
   return chalk.red.bold(`${ICONS.FAILED} Could not sync git metadata: ${err}\n`)
+}
+
+export const renderCoverageConfigReadError = (path: string, errorMessage: string) => {
+  return chalk.red(
+    `${ICONS.FAILED} Could not read the code coverage configuration file [${chalk.bold.dim(
+      path
+    )}] given by --coverage-config: ${errorMessage}\n`
+  )
+}
+
+export const renderNoCoverageConfigFound = (commit: string | undefined, searchRoots: string[]) => {
+  const searchedIn = [
+    ...(commit ? [`in the files committed at ${commit}`] : []),
+    ...(searchRoots.length ? [`on disk in ${searchRoots.join(', ')}`] : []),
+  ].join(' and ')
+
+  return chalk.yellow(
+    `${ICONS.WARNING} No code coverage configuration found (looked ${searchedIn}); the organization-level configuration will be used. Pass --coverage-config <path> to upload a configuration that is not committed.`
+  )
+}
+
+export const renderOversizedRepoFile = (label: string, file: {path: string; size: number}, maxSize: number) => {
+  return chalk.yellow(
+    `${ICONS.WARNING} Not uploading the content of ${label} [${chalk.bold.dim(file.path)}]: it is ${
+      file.size
+    } bytes, which exceeds the ${maxSize} bytes limit. Only its path and SHA are sent.`
+  )
+}
+
+export const renderAttachedRepoFile = (dryRun: boolean, label: string, file: RepoFile) => {
+  return chalk.green(
+    `${dryRun ? '[DRYRUN] ' : ''}Uploading ${label} ${file.path} (${file.size ?? 0} bytes, sha ${file.sha})`
+  )
+}
+
+export const renderRepoFileNotAttached = (label: string, file: RepoFile) => {
+  return `Not uploading the content of ${label} ${file.path} (sha ${file.sha}): the file is not in the working directory, so it will be read from the repository instead.`
 }

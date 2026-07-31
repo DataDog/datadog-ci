@@ -31,6 +31,25 @@ datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 unit-tests/cov
 - `--git-repository-url` is a string specifying the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 - `--disable-file-fixes` (default: `false`): disable the generation and upload of file fixes for code coverage.
 - `--file-fixes-search-path` is a string specifying the root directory used to scan source files for file fixes. By default, the repository root is used. This is useful for monorepos or when coverage reports only cover a subset of the codebase.
+- `--coverage-config` is a string specifying the path to the [code coverage configuration][2] file to upload. Use it when the configuration is generated during the CI run instead of being committed, or when it is not at one of the default locations. If the file cannot be read, the command fails without uploading anything.
+
+#### Code coverage configuration and CODEOWNERS
+
+The command looks for the [code coverage configuration][2] and the `CODEOWNERS` file, and uploads their
+content along with the coverage reports. Both lookups are best-effort: a missing file never fails the
+upload, and the command warns when no coverage configuration is found at all.
+
+Each file is looked up in two places:
+
+1. The files committed at the reported commit — `code-coverage.datadog.yml`, then `code-coverage.datadog.yaml`
+   for the configuration, and `.github/CODEOWNERS`, `CODEOWNERS`, then `docs/CODEOWNERS` for code owners.
+2. The working directory, under the repository root, then `--base-path`, then the current directory.
+
+**The working-directory copy wins**, so a configuration generated at build time is used even when it is
+not committed — which is also what `--coverage-config` is for when the generated file is somewhere else.
+A file that is only committed (for example in a sparse checkout) still applies: it is read from the
+repository instead of being uploaded. Files larger than 1 MiB are not uploaded; only their path and
+SHA are sent.
 
 #### Environment variables
 
@@ -66,5 +85,7 @@ Will upload code coverage report file packages/plugin-coverage/src/__tests__/fix
 Additional helpful documentation, links, and articles:
 
 - [Learn about Datadog Code Coverage][1]
+- [Code Coverage configuration][2]
 
 [1]: https://docs.datadoghq.com/code_coverage/
+[2]: https://docs.datadoghq.com/code_coverage/configuration/

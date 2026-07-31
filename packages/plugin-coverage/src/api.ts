@@ -13,6 +13,11 @@ import FormData from 'form-data'
 export const intakeUrl = getIntakeUrl('ci-intake')
 export const apiUrl = getApiUrl()
 
+// The backend looks these attachments up by filename, so they must not change.
+// Filenames must not start with a dot: the intake rejects those (see `getReportFilename`).
+export const COVERAGE_CONFIG_ATTACHMENT_FILENAME = 'coverage_config.yml.gz'
+export const CODEOWNERS_ATTACHMENT_FILENAME = 'codeowners.gz'
+
 export const uploadCodeCoverageReport =
   (request: (args: RequestConfig) => Promise<RequestResponse>) => async (payload: Payload) => {
     const form = new FormData()
@@ -53,6 +58,18 @@ export const uploadCodeCoverageReport =
     if (payload.fileFixesCompressed) {
       form.append('file_fixes', payload.fileFixesCompressed, {
         filename: 'file_fixes.json.gz',
+      })
+    }
+
+    if (payload.coverageConfig?.gzippedContent) {
+      form.append('coverage_config', payload.coverageConfig.gzippedContent, {
+        filename: COVERAGE_CONFIG_ATTACHMENT_FILENAME,
+      })
+    }
+
+    if (payload.codeowners?.gzippedContent) {
+      form.append('codeowners', payload.codeowners.gzippedContent, {
+        filename: CODEOWNERS_ATTACHMENT_FILENAME,
       })
     }
 

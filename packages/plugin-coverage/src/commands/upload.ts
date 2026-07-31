@@ -1,3 +1,4 @@
+import fs from 'fs'
 import os from 'os'
 import {gzipSync} from 'zlib'
 
@@ -41,32 +42,57 @@ import upath from 'upath'
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
 import {generateFileFixes} from '../file-fixes'
 import {
+  renderAttachedRepoFile,
   renderCommandInfo,
+  renderCoverageConfigReadError,
   renderDryRunUpload,
   renderFailedGitDBSync,
   renderFailedUpload,
   renderInvalidFile,
+  renderNoCoverageConfigFound,
+  renderOversizedRepoFile,
+  renderRepoFileNotAttached,
   renderRetriedUpload,
   renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderSuccessfulUploadCommand,
   renderUpload,
 } from '../renderer'
+import {
+  CODEOWNERS_PATHS,
+  COVERAGE_CONFIG_PATHS,
+  MAX_ATTACHED_FILE_SIZE,
+  findFileInSearchRoots,
+  gitBlobSha,
+  statFileOnDisk,
+  toRepositoryRelativePath,
+} from '../repo-files'
 import {coverageFormats, detectFormat, isCoverageFormat, toCoverageFormat, validateCoverageReport} from '../utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
-const MAX_REPORTS_PER_REQUEST = 7 // backend supports 10 attachments, to keep the logic simple we subtract 3: for PR diff, commit diff, and file fixes
+// The intake accepts 10 attachments per `cicovreprt` request. `event.json` is not one of them: the
+// multipart part named `event` is excluded from the count by the intake decoder.
+const MAX_ATTACHMENTS_PER_REQUEST = 10
 
-const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml']
+const COVERAGE_CONFIG_LABEL = 'the code coverage configuration'
 
-const CODEOWNERS_PATHS = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
+const CODEOWNERS_LABEL = 'the CODEOWNERS file'
 
 // The head SHA the payload carries on the wire (api.ts spreads `...payload.spanTags`,
 // so this matches what the splitter reads as `coalesce(HeadSHA, SHA)`).
 const getReportedCommitSha = (spanTags: SpanTags): string | undefined => spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+
+// The SHA is computed from the content that is attached, not from the committed blob, so that it
+// stays the git blob SHA-1 of whatever the backend ends up reading.
+const toAttachedFile = (path: string, content: Buffer): RepoFile => ({
+  path,
+  sha: gitBlobSha(content),
+  gzippedContent: gzipSync(content),
+  size: content.length,
+})
 
 export class PluginCommand extends CoverageUploadCommand {
   private config = {
@@ -77,6 +103,11 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private git: simpleGit.SimpleGit | undefined = undefined
+
+  private repositoryRoot: string | undefined = undefined
+
+  // Set when --coverage-config points at a file that could be read and is small enough to attach.
+  private explicitCoverageConfig: RepoFile | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -102,6 +133,19 @@ export class PluginCommand extends CoverageUploadCommand {
 
     if (isGitRepository) {
       this.git = await newSimpleGit()
+      this.repositoryRoot = await this.getRepositoryRoot()
+    }
+
+    // Resolved before anything is uploaded: an explicitly requested configuration that cannot be
+    // read is a user error, and the command must fail instead of silently uploading without it.
+    if (this.coverageConfigPath) {
+      try {
+        this.explicitCoverageConfig = this.readCoverageConfigFile(this.coverageConfigPath)
+      } catch (e) {
+        this.context.stderr.write(renderCoverageConfigReadError(this.coverageConfigPath, (e as Error).message))
+
+        return 1
+      }
     }
 
     if (!this.skipGitMetadataUpload) {
@@ -185,8 +229,8 @@ export class PluginCommand extends CoverageUploadCommand {
     const flags = this.getFlags()
 
     const reportedCommit = getReportedCommitSha(spanTags)
-    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS, reportedCommit)
-    const codeowners = await this.getRepoFile(CODEOWNERS_PATHS, reportedCommit)
+    const coverageConfig = await this.resolveCoverageConfig(reportedCommit)
+    const codeowners = await this.resolveRepoFile(CODEOWNERS_LABEL, CODEOWNERS_PATHS, reportedCommit)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
     const fileFixes = await this.getFileFixes()
@@ -197,15 +241,27 @@ export class PluginCommand extends CoverageUploadCommand {
     }
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
+    // Every chunk carries the same non-report attachments, so the report budget is what is left of
+    // the intake's per-request attachment limit once those are accounted for.
+    const reservedAttachments = [
+      prDiff,
+      commitDiff,
+      fileFixesCompressed,
+      coverageConfig?.gzippedContent,
+      codeowners?.gzippedContent,
+    ].filter((attachment) => attachment !== undefined).length
+    const maxReportsPerRequest = Math.max(1, MAX_ATTACHMENTS_PER_REQUEST - reservedAttachments)
+    this.logger.debug(`Uploading at most ${maxReportsPerRequest} coverage report(s) per request`)
+
     let payloads: Payload[] = []
     if (Object.keys(reports).length) {
       payloads = Object.entries(reports).flatMap(([format, paths]) => {
-        const numChunks = Math.ceil(paths.length / MAX_REPORTS_PER_REQUEST)
+        const numChunks = Math.ceil(paths.length / maxReportsPerRequest)
 
         return Array.from({length: numChunks}, (_, i) => ({
           format,
           basePath: this.basePath,
-          paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
+          paths: paths.slice(i * maxReportsPerRequest, (i + 1) * maxReportsPerRequest),
           spanTags,
           flags,
           hostname: os.hostname(),
@@ -240,7 +296,11 @@ export class PluginCommand extends CoverageUploadCommand {
     }
   }
 
-  private async getRepoFile(possiblePaths: string[], ref: string | undefined): Promise<RepoFile | undefined> {
+  private async getRepoFile(
+    possiblePaths: string[],
+    ref: string | undefined,
+    opts: {explicit?: boolean} = {}
+  ): Promise<RepoFile | undefined> {
     if (!this.git || !ref) {
       return undefined
     }
@@ -252,11 +312,144 @@ export class PluginCommand extends CoverageUploadCommand {
           return {path, sha}
         }
       } catch (e) {
-        this.logger.debug(`Error while trying to get repo file ${path} details at ${ref}: ${e}`)
+        const message = `Error while trying to get repo file ${path} details at ${ref}: ${e}`
+        // A file the user explicitly asked for must not fail silently.
+        if (opts.explicit) {
+          this.logger.warn(message)
+        } else {
+          this.logger.debug(message)
+        }
       }
     }
 
     return undefined
+  }
+
+  private async resolveCoverageConfig(reportedCommit: string | undefined): Promise<RepoFile | undefined> {
+    if (!this.coverageConfigPath) {
+      const resolved = await this.resolveRepoFile(COVERAGE_CONFIG_LABEL, COVERAGE_CONFIG_PATHS, reportedCommit)
+      if (!resolved) {
+        this.logger.warn(renderNoCoverageConfigFound(reportedCommit, this.getSearchRoots()))
+      }
+
+      return resolved
+    }
+
+    if (this.explicitCoverageConfig) {
+      this.reportResolvedRepoFile(COVERAGE_CONFIG_LABEL, this.explicitCoverageConfig)
+
+      return this.explicitCoverageConfig
+    }
+
+    // The explicit configuration exists but is too large to attach (execute() would have failed
+    // otherwise): keep the path and take the SHA from the committed copy of that same file, if any.
+    const reportedPath = toRepositoryRelativePath(upath.resolve(this.coverageConfigPath), this.repositoryRoot)
+    const fromGit = await this.getRepoFile([reportedPath], reportedCommit, {explicit: true})
+    this.reportResolvedRepoFile(COVERAGE_CONFIG_LABEL, fromGit)
+
+    return fromGit
+  }
+
+  /**
+   * Best-effort resolution of a repository file: it is looked up both in the files committed at
+   * `reportedCommit` and in the working directory. The working-directory copy wins when both exist,
+   * because a file regenerated at build time is what the user wants to be used. Never throws.
+   */
+  private async resolveRepoFile(
+    label: string,
+    candidates: string[],
+    reportedCommit: string | undefined
+  ): Promise<RepoFile | undefined> {
+    const fromGit = await this.getRepoFile(candidates, reportedCommit)
+
+    const onDisk = findFileInSearchRoots(candidates, this.getSearchRoots())
+    if (!onDisk) {
+      this.reportResolvedRepoFile(label, fromGit)
+
+      return fromGit
+    }
+
+    if (onDisk.size > MAX_ATTACHED_FILE_SIZE) {
+      // the warning already says that only the path and SHA are sent, so do not report twice
+      this.logger.warn(renderOversizedRepoFile(label, onDisk, MAX_ATTACHED_FILE_SIZE))
+
+      return fromGit
+    }
+
+    let resolved: RepoFile | undefined
+    try {
+      resolved = toAttachedFile(onDisk.path, fs.readFileSync(onDisk.absolutePath))
+    } catch (e) {
+      this.logger.warn(`Could not read ${label} from ${onDisk.absolutePath}: ${e}`)
+      resolved = fromGit
+    }
+    this.reportResolvedRepoFile(label, resolved)
+
+    return resolved
+  }
+
+  /**
+   * Reads the file given by `--coverage-config`. Throws when it cannot be read: the caller turns that
+   * into a non-zero exit code. Returns `undefined` when the file is readable but too large to attach.
+   */
+  private readCoverageConfigFile(configPath: string): RepoFile | undefined {
+    const absolutePath = upath.resolve(configPath)
+
+    const onDisk = statFileOnDisk(absolutePath)
+    if (!onDisk) {
+      throw new Error(`no readable file at ${absolutePath}`)
+    }
+
+    const reportedPath = toRepositoryRelativePath(absolutePath, this.repositoryRoot)
+    if (onDisk.size > MAX_ATTACHED_FILE_SIZE) {
+      const oversized = {...onDisk, path: reportedPath}
+      this.logger.warn(renderOversizedRepoFile(COVERAGE_CONFIG_LABEL, oversized, MAX_ATTACHED_FILE_SIZE))
+
+      return undefined
+    }
+
+    return toAttachedFile(reportedPath, fs.readFileSync(absolutePath))
+  }
+
+  private reportResolvedRepoFile(label: string, file: RepoFile | undefined) {
+    if (!file) {
+      return
+    }
+
+    if (file.gzippedContent) {
+      this.logger.info(renderAttachedRepoFile(this.dryRun, label, file))
+    } else {
+      this.logger.info(renderRepoFileNotAttached(label, file))
+    }
+  }
+
+  /**
+   * Directories searched for the coverage configuration and CODEOWNERS, in priority order.
+   */
+  private getSearchRoots(): string[] {
+    const roots = [
+      ...(this.repositoryRoot ? [this.repositoryRoot] : []),
+      ...(this.basePath ? [upath.resolve(this.basePath)] : []),
+      upath.normalize(process.cwd()),
+    ]
+
+    return [...new Set(roots)]
+  }
+
+  private async getRepositoryRoot(): Promise<string | undefined> {
+    if (!this.git) {
+      return undefined
+    }
+
+    try {
+      const root = (await this.git.revparse(['--show-toplevel'])).trim()
+
+      return root ? upath.normalize(root) : undefined
+    } catch (e) {
+      this.logger.debug(`Error while trying to get the repository root: ${e}`)
+
+      return undefined
+    }
   }
 
   private async getPrDiff(spanTags: SpanTags): Promise<DiffData | undefined> {

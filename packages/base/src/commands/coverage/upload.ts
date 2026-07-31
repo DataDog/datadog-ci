@@ -37,6 +37,10 @@ export class CoverageUploadCommand extends BaseCommand {
         'Upload all code coverage report files in current directory with extra verbosity',
         'datadog-ci coverage upload --verbose .',
       ],
+      [
+        'Upload all code coverage report files in current directory with a coverage configuration generated at build time',
+        'datadog-ci coverage upload --coverage-config build/code-coverage.datadog.yml .',
+      ],
     ],
   })
 
@@ -64,6 +68,11 @@ export class CoverageUploadCommand extends BaseCommand {
     description: 'The repository URL to retrieve git metadata from',
   })
   protected basePath = Option.String('--base-path', {description: 'The base path to the coverage report files'})
+
+  protected coverageConfigPath = Option.String('--coverage-config', {
+    description:
+      'The path to the code coverage configuration file to upload. Useful when the configuration is generated during the CI run instead of being committed. The command fails if the file cannot be read. When this option is not set, the configuration is looked up in the committed files and in the working directory.',
+  })
 
   protected ignoredPaths = Option.String('--ignored-paths', {
     description:

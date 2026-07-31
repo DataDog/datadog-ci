@@ -21,6 +21,11 @@ export interface Payload {
 export interface RepoFile {
   path: string
   sha: string
+  // Gzipped file content, only set when the content could be read and is attached to the request.
+  // When absent, the backend reads the content from the committed blob at `path`/`sha` instead.
+  gzippedContent?: Buffer
+  // Uncompressed size of the attached content, for reporting purposes.
+  size?: number
 }
 
 export interface APIHelper {
