@@ -91,11 +91,6 @@ export const DEFAULT_VOLUME_PATH = '/shared-volume'
 export const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 export const DEFAULT_HEALTH_CHECK_PORT = 5555
 
-export const TRACER_COPY_CONTAINER_NAME = 'datadog-tracer-copy'
-export const TRACER_VOLUME_NAME = 'datadog-tracer'
-export const TRACER_MOUNT_PATH = '/datadog-lib'
-export const TRACER_READINESS_PORT = 18999
-
 /**
  * Regular expression for parsing environment variables in KEY=VALUE format
  */

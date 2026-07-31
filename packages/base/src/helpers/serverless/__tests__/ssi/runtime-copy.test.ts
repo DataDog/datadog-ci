@@ -3,12 +3,12 @@ import {
   TRACER_MOUNT_PATH,
   TRACER_READINESS_PORT,
   TRACER_VOLUME_NAME,
-} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
   buildRuntimeCopyPlan,
   type RuntimeCopyOrderingStrategy,
   type RuntimeCopyRequest,
-} from '@datadog/datadog-ci-base/helpers/serverless/runtime-copy'
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/runtime-copy'
 
 const completionMarker = `${TRACER_MOUNT_PATH}/.dd-trace-rb-copy-finished`
 
@@ -18,7 +18,7 @@ const makeRequest = (overrides: Partial<RuntimeCopyRequest> = {}): RuntimeCopyRe
   volumeName: TRACER_VOLUME_NAME,
   mountPath: TRACER_MOUNT_PATH,
   completionMarker,
-  artifacts: [{anyOf: [`${TRACER_MOUNT_PATH}/auto_inject.rb`, `${TRACER_MOUNT_PATH}/host_inject.rb`]}],
+  artifacts: [{anyOf: [`${TRACER_MOUNT_PATH}/auto_inject.rb`]}],
   ...overrides,
 })
 
@@ -48,7 +48,7 @@ describe('buildRuntimeCopyPlan', () => {
 
   test('models all required artifact groups with alternatives', () => {
     const artifacts = [
-      {anyOf: [`${TRACER_MOUNT_PATH}/auto_inject.rb`, `${TRACER_MOUNT_PATH}/host_inject.rb`]},
+      {anyOf: [`${TRACER_MOUNT_PATH}/primary.so`, `${TRACER_MOUNT_PATH}/fallback.so`]},
       {anyOf: [`${TRACER_MOUNT_PATH}/manifest.json`]},
     ]
 
