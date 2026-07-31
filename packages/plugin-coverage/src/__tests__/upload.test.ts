@@ -355,7 +355,8 @@ describe('upload', () => {
       command['repositoryRoot'] = '/repo'
       command['basePath'] = '/repo/build'
 
-      expect(command['getSearchRoots']()).toEqual(['/repo', '/repo/build', CWD])
+      // --base-path is resolved, so on Windows it picks up the current drive
+      expect(command['getSearchRoots']()).toEqual(['/repo', upath.resolve('/repo/build'), CWD])
     })
 
     test('falls back to the current directory outside of a git repository', () => {
@@ -379,7 +380,7 @@ describe('upload', () => {
       command['repositoryRoot'] = undefined
       command['basePath'] = 'build/reports'
 
-      expect(command['getSearchRoots']()).toEqual([`${CWD}/build/reports`, CWD])
+      expect(command['getSearchRoots']()).toEqual([upath.resolve('build/reports'), CWD])
     })
   })
 

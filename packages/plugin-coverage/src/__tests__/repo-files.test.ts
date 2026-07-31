@@ -71,14 +71,6 @@ describe('statFileOnDisk', () => {
     expect(statFileOnDisk(makeTempDir())).toBeUndefined()
   })
 
-  test('returns undefined for a dangling symlink', () => {
-    const dir = makeTempDir()
-    const file = upath.join(dir, 'code-coverage.datadog.yml')
-    fs.symlinkSync(upath.join(dir, 'missing-target.yml'), file)
-
-    expect(statFileOnDisk(file)).toBeUndefined()
-  })
-
   test('returns undefined when the file exists but is not readable', () => {
     const dir = makeTempDir()
     const file = upath.join(dir, 'code-coverage.datadog.yml')
@@ -93,6 +85,26 @@ describe('statFileOnDisk', () => {
     } finally {
       accessSync.mockRestore()
     }
+  })
+})
+
+describe('statFileOnDisk with symlinks', () => {
+  test('returns undefined for a dangling symlink', () => {
+    const dir = makeTempDir()
+    const file = upath.join(dir, 'code-coverage.datadog.yml')
+    fs.symlinkSync(upath.join(dir, 'missing-target.yml'), file)
+
+    expect(statFileOnDisk(file)).toBeUndefined()
+  })
+
+  test('follows a symlink to a real file', () => {
+    const dir = makeTempDir()
+    const target = upath.join(dir, 'generated.yml')
+    const file = upath.join(dir, 'code-coverage.datadog.yml')
+    fs.writeFileSync(target, 'schema-version: v1\n')
+    fs.symlinkSync(target, file)
+
+    expect(statFileOnDisk(file)).toMatchObject({absolutePath: file, size: 19})
   })
 })
 
