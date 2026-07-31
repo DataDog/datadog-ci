@@ -89,7 +89,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:10"
   ]
 }
@@ -132,7 +132,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:10"
   ]
 }
@@ -181,7 +181,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:141"
   ]
 }
@@ -205,7 +205,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:141"
   ]
 }
@@ -256,7 +256,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:141"
   ]
 }
@@ -280,7 +280,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:141"
   ]
 }
@@ -616,7 +616,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129"
   ]
 }
@@ -908,7 +908,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node24-x:141"
   ]
 }
@@ -958,7 +958,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:98",
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node24-x:141"
   ]
 }
