@@ -233,4 +233,60 @@ describe('createInstrumentedTemplate', () => {
     expect(sidecar).toBeDefined()
     expect((sidecar as {resources?: {ephemeralStorage?: string}}).resources?.ephemeralStorage).toBe('2Gi')
   })
+
+  describe('app container selection', () => {
+    const template = {
+      containers: [
+        {name: 'ingress', env: [{name: 'NODE_ENV', value: 'production'}], volumeMounts: []},
+        {name: 'worker', env: [{name: 'WORKER', value: 'yes'}], volumeMounts: []},
+      ],
+      volumes: [],
+    } as unknown as Parameters<typeof createInstrumentedTemplate>[0]
+    const baseSidecar = {
+      name: 'datadog-sidecar',
+      image: 'gcr.io/datadoghq/serverless-init:latest',
+      env: [],
+      volumeMounts: [],
+    } as unknown as Parameters<typeof createInstrumentedTemplate>[1]
+    const sharedVolumeOptions = {
+      name: 'shared-volume',
+      mountPath: '/shared-volume',
+      mountOptions: {emptyDir: {medium: 1}},
+      volumeMountNameKey: 'name' as const,
+    }
+    const envVarsByName = {DD_SERVICE: {name: 'DD_SERVICE', value: 'app'}}
+
+    test('instruments every non-Agent container when no selection is given', () => {
+      const result = createInstrumentedTemplate(template, baseSidecar, sharedVolumeOptions, envVarsByName)
+
+      for (const name of ['ingress', 'worker']) {
+        const container = result.containers.find((c) => c.name === name)
+        expect(container?.volumeMounts).toEqual([{name: 'shared-volume', mountPath: '/shared-volume'}])
+        expect(container?.env).toContainEqual({name: 'DD_SERVICE', value: 'app'})
+      }
+    })
+
+    test('instruments only selected containers and leaves others unchanged', () => {
+      const result = createInstrumentedTemplate(template, baseSidecar, sharedVolumeOptions, envVarsByName, {
+        appContainerNames: new Set(['ingress']),
+      })
+
+      const ingress = result.containers.find((c) => c.name === 'ingress')
+      expect(ingress?.volumeMounts).toEqual([{name: 'shared-volume', mountPath: '/shared-volume'}])
+      expect(ingress?.env).toContainEqual({name: 'DD_SERVICE', value: 'app'})
+      expect(result.containers.find((c) => c.name === 'worker')).toBe(template.containers?.[1])
+      expect(result.containers.find((c) => c.name === 'datadog-sidecar')).toBeDefined()
+      expect(result.volumes.map((v) => v.name)).toEqual(['shared-volume'])
+    })
+
+    test('an empty selection instruments no app containers', () => {
+      const result = createInstrumentedTemplate(template, baseSidecar, sharedVolumeOptions, envVarsByName, {
+        appContainerNames: new Set(),
+      })
+
+      expect(result.containers[0]).toBe(template.containers?.[0])
+      expect(result.containers[1]).toBe(template.containers?.[1])
+      expect(result.containers.find((c) => c.name === 'datadog-sidecar')).toBeDefined()
+    })
+  })
 })
