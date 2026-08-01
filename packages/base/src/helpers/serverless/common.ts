@@ -208,6 +208,14 @@ interface SharedVolumeOptions {
   volumeMountNameKey: 'name' | 'volumeName'
 }
 
+export interface InstrumentedTemplateOptions {
+  /**
+   * When provided, only the named app containers receive the Agent environment variables and the shared log mount.
+   * Every other non-Agent container is returned unchanged. When omitted, all non-Agent containers are instrumented.
+   */
+  appContainerNames?: ReadonlySet<string>
+}
+
 /**
  * Given the configuration, an app template, the base sidecar configuration, and base shared volume,
  */
@@ -215,7 +223,8 @@ export const createInstrumentedTemplate = (
   template: FullyOptional<AppTemplate>,
   baseSidecar: FullyOptional<Container>,
   sharedVolumeOptions: SharedVolumeOptions,
-  envVarsByName: Record<string, FullyOptional<EnvVar>>
+  envVarsByName: Record<string, FullyOptional<EnvVar>>,
+  options: InstrumentedTemplateOptions = {}
 ): AppTemplate => {
   const sharedVolumeMount: VolumeMount = {
     [sharedVolumeOptions.volumeMountNameKey]: sharedVolumeOptions.name,
@@ -257,10 +266,15 @@ export const createInstrumentedTemplate = (
     volumeMounts: ensureSharedVolumeMount(existingSidecarContainer?.volumeMounts ?? baseSidecar.volumeMounts),
   } as Container
 
-  // Update all app containers to add volume mounts and env vars if they don't have them
+  // Update selected app containers to add volume mounts and env vars if they don't have them
+  const {appContainerNames} = options
   const updatedContainers = containers.map((container) => {
     if (container.name === baseSidecar.name) {
       return newSidecarContainer
+    }
+
+    if (appContainerNames && !appContainerNames.has(container.name ?? '')) {
+      return container
     }
 
     return {
