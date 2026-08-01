@@ -261,6 +261,9 @@ describe('UninstrumentCommand', () => {
       }
     })
 
+    const updateAppContainer = (appContainer: IContainer): IContainer =>
+      command.createUninstrumentedServiceConfig({template: {containers: [appContainer]}}).template!.containers![0]
+
     test('removes shared volume mount and DD_ environment variables', () => {
       const appContainer = {
         name: 'main',
@@ -276,7 +279,7 @@ describe('UninstrumentCommand', () => {
         ],
       }
 
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = updateAppContainer(appContainer)
 
       expect(result.volumeMounts).toEqual([{name: 'other-volume', mountPath: '/other'}])
       expect(result.env).toEqual([
@@ -287,7 +290,7 @@ describe('UninstrumentCommand', () => {
 
     test('handles container with undefined env and volumeMounts', () => {
       const appContainer = {name: 'main'}
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = updateAppContainer(appContainer)
 
       expect(result.volumeMounts).toEqual([])
       expect(result.env).toEqual([])
@@ -308,7 +311,7 @@ describe('UninstrumentCommand', () => {
         volumeMounts: [],
       }
 
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = updateAppContainer(appContainer)
 
       expect(result.env).toEqual([
         {name: 'NODE_ENV', value: 'production'},
@@ -329,7 +332,7 @@ describe('UninstrumentCommand', () => {
         volumeMounts: [],
       }
 
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = updateAppContainer(appContainer)
 
       expect(result.env).toEqual([
         {name: 'NODE_ENV', value: 'production'},
@@ -349,7 +352,7 @@ describe('UninstrumentCommand', () => {
         volumeMounts: [],
       }
 
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = updateAppContainer(appContainer)
 
       expect(result.env).toEqual([{name: 'NODE_ENV', value: 'production'}])
     })
