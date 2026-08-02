@@ -9,11 +9,17 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {TRACER_COPY_CONTAINER_NAME, TRACER_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import * as cloudRunPromptModule from '../prompt'
 import {uninstrumentServiceConfig} from '../service-config'
 import * as utils from '../utils'
+
+const SSI_ADOPTED_INGRESS_CONTAINER_NAME = 'datadog-app'
+const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
+const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
 
 jest.mock('../utils', () => ({
   ...jest.requireActual('../utils'),
@@ -215,6 +221,74 @@ describe('UninstrumentCommand', () => {
         {name: 'NODE_ENV', value: 'production'},
         {name: 'CUSTOM_VAR', value: 'keep-me'},
       ])
+    })
+
+    test('removes owned SSI state from a named ingress', () => {
+      ;(command as any).envVars = ['CONFIGURED_VAR=remove-me']
+      const service: IService = {
+        labels: {[SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE, customer: 'keep-me'},
+        template: {
+          containers: [
+            {
+              name: 'app',
+              env: [
+                {
+                  name: 'NODE_OPTIONS',
+                  value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
+                },
+                {name: DD_TAGS_ENV_VAR, value: `${SINGLE_LANGUAGE_INJECTION_MODE_TAG},team:backend`},
+                {name: 'DD_CUSTOM', value: 'remove-me'},
+                {name: 'CONFIGURED_VAR', value: 'remove-me'},
+                {name: 'CUSTOM_VAR', value: 'keep-me'},
+              ],
+              volumeMounts: [
+                {name: 'shared-volume', mountPath: '/shared-volume'},
+                {name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'},
+                {name: 'customer-volume', mountPath: '/customer'},
+              ],
+              dependsOn: ['datadog-sidecar', TRACER_COPY_CONTAINER_NAME, 'database'],
+            },
+            {name: 'datadog-sidecar'},
+            {name: TRACER_COPY_CONTAINER_NAME},
+          ],
+          volumes: [
+            {name: 'shared-volume', emptyDir: {}},
+            {name: TRACER_VOLUME_NAME, emptyDir: {}},
+            {name: 'customer-volume', emptyDir: {}},
+          ],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      expect(result.labels).toEqual({customer: 'keep-me'})
+      expect(result.template?.containers).toEqual([
+        expect.objectContaining({
+          name: 'app',
+          env: [
+            {name: 'NODE_OPTIONS', value: '--inspect'},
+            {name: 'CUSTOM_VAR', value: 'keep-me'},
+          ],
+          volumeMounts: [{name: 'customer-volume', mountPath: '/customer'}],
+          dependsOn: ['database'],
+        }),
+      ])
+      expect(result.template?.volumes).toEqual([{name: 'customer-volume', emptyDir: {}}])
+    })
+
+    test('restores an adopted datadog-app name and removes its provenance label', () => {
+      const service: IService = {
+        labels: {
+          [SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE,
+          customer: 'keep-me',
+        },
+        template: {containers: [{name: SSI_ADOPTED_INGRESS_CONTAINER_NAME}]},
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      expect(result.labels).toEqual({customer: 'keep-me'})
+      expect(result.template?.containers?.[0].name).toBe('')
     })
 
     test('handles service with no sidecar or shared volume gracefully', () => {
