@@ -290,7 +290,11 @@ describe('SSI service preparation', () => {
     const app = result.template?.containers?.find((container) => container.name === 'app')
 
     expect(result.template?.containers?.find((container) => container.name === 'worker')).toEqual(worker)
-    expect(app?.volumeMounts).toEqual([{name: 'shared-volume', mountPath: '/shared-volume'}])
+    expect(app?.volumeMounts).toEqual([
+      {name: 'shared-volume', mountPath: '/shared-volume'},
+      {name: 'datadog-tracer', mountPath: '/datadog-lib'},
+    ])
+    expect(app?.dependsOn).toEqual(['datadog-tracer-copy', 'datadog-sidecar'])
     expect(app?.env).toContainEqual({name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'})
     expect(app?.env).toContainEqual({
       name: 'NODE_OPTIONS',
@@ -298,8 +302,42 @@ describe('SSI service preparation', () => {
     })
     expect(app?.env?.find((variable) => variable.name === 'DD_TAGS')?.value).toBe(SINGLE_LANGUAGE_INJECTION_MODE_TAG)
     expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
-    expect(result.template?.containers?.some((container) => container.name === 'datadog-tracer-copy')).toBe(false)
-    expect(result.template?.volumes?.some((volume) => volume.name === 'datadog-tracer')).toBe(false)
+  })
+
+  test('applies the verified runtime-copy sidecar and Memory volume', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')
+
+    expect(tracer).toMatchObject({
+      image: 'gcr.io/datadoghq/dd-lib-js-init:latest',
+      command: ['/bin/sh'],
+      volumeMounts: [{name: 'datadog-tracer', mountPath: '/datadog-lib'}],
+      startupProbe: {
+        tcpSocket: {port: 18999},
+        initialDelaySeconds: 0,
+        periodSeconds: 5,
+        failureThreshold: 48,
+        timeoutSeconds: 1,
+      },
+    })
+    expect(tracer?.args?.slice(2)).toEqual([
+      'datadog-tracer-copy',
+      '/datadog-lib',
+      '/datadog-lib/.copy-finished',
+      '18999',
+      '1',
+      '/datadog-lib/node_modules/dd-trace/init.js',
+    ])
+    const script = tracer?.args?.[1] ?? ''
+    expect(script).toContain('/datadog-init/copy-lib.sh "$root"')
+    expect(script).toContain('[ ! -f "$marker" ]')
+    expect(script).toContain('[ -r "$candidate" ]')
+    expect(script).toContain('echo "datadog: no TCP listener is available in the tracer image" >&2\n  exit 1')
+    expect(script.indexOf('if command -v nc')).toBeGreaterThan(script.indexOf('none of these tracer artifacts'))
+    expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
+      name: 'datadog-tracer',
+      emptyDir: {medium: 1},
+    })
   })
 
   test('tracks an adopted unnamed main container without taking over a customer name', () => {
@@ -324,8 +362,6 @@ describe('SSI service preparation', () => {
     app.dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
     worker.dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
     worker.env = mergeLanguageInjectionEnv(worker.env, getSpec('nodejs'))
-    node.template!.containers!.push({name: 'datadog-tracer-copy', image: 'old-tracer'} as IContainer)
-    node.template!.volumes!.push({name: 'datadog-tracer'})
 
     const result = instrumentServiceConfig(node, serviceConfigOptions('python'))
     const updatedApp = result.template?.containers?.find((container) => container.name === 'app')
@@ -333,11 +369,15 @@ describe('SSI service preparation', () => {
 
     expect(updatedApp?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
     expect(updatedApp?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
-    expect(updatedApp?.dependsOn).toEqual(['datadog-sidecar'])
+    expect(updatedApp?.dependsOn).toEqual(['datadog-tracer-copy', 'datadog-sidecar'])
     expect(updatedWorker?.env).toEqual(worker.env)
     expect(updatedWorker?.dependsOn).toEqual(['datadog-sidecar'])
-    expect(result.template?.containers?.some((container) => container.name === 'datadog-tracer-copy')).toBe(false)
-    expect(result.template?.volumes?.some((volume) => volume.name === 'datadog-tracer')).toBe(false)
+    expect(result.template?.containers?.filter((container) => container.name === 'datadog-tracer-copy')).toHaveLength(1)
+    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')?.image).toBe(
+      'gcr.io/datadoghq/dd-lib-python-init:latest'
+    )
+    expect(result.template?.volumes?.filter((volume) => volume.name === 'datadog-tracer')).toHaveLength(1)
+    expect(instrumentServiceConfig(result, serviceConfigOptions('python'))).toEqual(result)
   })
 
   test('no-injection preserves unrelated containers and the requested tracing state', () => {
