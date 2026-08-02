@@ -4,6 +4,7 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 import {API_KEY_ENV_VAR, SERVICE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {TRACER_COPY_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
@@ -25,7 +26,11 @@ const mockServicesClient = {
   getService: jest.fn(),
   updateService: jest.fn(),
 }
+const mockRevisionsClient = {
+  getRevision: jest.fn(),
+}
 jest.mock('@google-cloud/run', () => ({
+  RevisionsClient: jest.fn(() => mockRevisionsClient),
   ServicesClient: jest.fn(() => mockServicesClient),
 }))
 
@@ -205,6 +210,131 @@ describe('InstrumentCommand', () => {
 
       expect(code).toBe(0)
       expect(context.stdout.toString()).toMatchSnapshot()
+    })
+  })
+
+  describe('instrumentService', () => {
+    let command: InstrumentCommand
+    let stdout: jest.Mock
+    let stderr: jest.Mock
+
+    beforeEach(() => {
+      command = new InstrumentCommand()
+      stdout = jest.fn()
+      stderr = jest.fn()
+      ;(command as any).context = {stdout: {write: stdout}, stderr: {write: stderr}}
+      ;(command as any).dryRun = false
+      ;(command as any).interactive = false
+    })
+
+    test('skips the update when only object key order and template revision differ', async () => {
+      const existingService = {
+        name: 'projects/test-project/locations/us-central1/services/test-service',
+        labels: {z: 'last', a: 'first'},
+        template: {
+          revision: 'test-service-00001',
+          containers: [{name: 'app', args: ['first', 'second']}],
+          volumes: [],
+        },
+      }
+      const generatedService = {
+        template: {
+          volumes: [],
+          containers: [{args: ['first', 'second'], name: 'app'}],
+          revision: 'test-service-00002',
+        },
+        labels: {a: 'first', z: 'last'},
+        name: 'projects/test-project/locations/us-central1/services/test-service',
+      }
+      jest.spyOn(command, 'createInstrumentedServiceConfig').mockReturnValue(generatedService)
+
+      await command.instrumentService(mockServicesClient as any, existingService, 'test-service', 'test-service')
+
+      expect(mockServicesClient.updateService).not.toHaveBeenCalled()
+      expect(stdout).toHaveBeenCalledWith(expect.stringContaining('no changes needed'))
+    })
+
+    test('updates when positional arguments are reordered', async () => {
+      const existingService = {
+        name: 'projects/test-project/locations/us-central1/services/test-service',
+        template: {revision: 'test-service-00001', containers: [{name: 'app', args: ['first', 'second']}]},
+      }
+      const generatedService = {
+        name: existingService.name,
+        template: {revision: undefined, containers: [{name: 'app', args: ['second', 'first']}]},
+      }
+      const promise = jest.fn().mockResolvedValue(undefined)
+      mockServicesClient.updateService.mockResolvedValue([{promise}])
+      jest.spyOn(command, 'createInstrumentedServiceConfig').mockReturnValue(generatedService)
+
+      await command.instrumentService(mockServicesClient as any, existingService, 'test-service', 'test-service')
+
+      expect(mockServicesClient.updateService).toHaveBeenCalledWith({service: generatedService})
+      expect(promise).toHaveBeenCalled()
+    })
+
+    test('diagnoses the latest revision for a markerless tracer update failure', async () => {
+      const updateError = new Error('revision failed to become ready')
+      const existingService = {
+        name: 'projects/test-project/locations/us-central1/services/test-service',
+        template: {containers: [{name: 'app'}]},
+      }
+      const generatedService = {
+        name: existingService.name,
+        template: {containers: [{name: 'app'}, {name: TRACER_COPY_CONTAINER_NAME}]},
+      }
+      mockServicesClient.updateService.mockResolvedValue([{promise: jest.fn().mockRejectedValue(updateError)}])
+      mockServicesClient.getService.mockResolvedValue([
+        {...generatedService, latestCreatedRevision: `${existingService.name}/revisions/test-service-00002`},
+      ])
+      mockRevisionsClient.getRevision.mockResolvedValue([
+        {
+          conditions: [
+            {
+              type: 'Ready',
+              state: 'CONDITION_FAILED',
+              revisionReason: 'HEALTH_CHECK_CONTAINER_ERROR',
+              message: 'The tracer copy container failed its startup probe.',
+            },
+          ],
+          logUri: 'https://console.cloud.google.com/logs/viewer?revision=test-service-00002',
+        },
+      ])
+      jest.spyOn(command, 'createInstrumentedServiceConfig').mockReturnValue(generatedService)
+
+      await expect(
+        command.instrumentService(mockServicesClient as any, existingService, 'test-service', 'test-service')
+      ).rejects.toBe(updateError)
+
+      expect(mockRevisionsClient.getRevision).toHaveBeenCalledWith({
+        name: `${existingService.name}/revisions/test-service-00002`,
+      })
+      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('HEALTH_CHECK_CONTAINER_ERROR')
+      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('https://console.cloud.google.com/logs')
+      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('gcloud run revisions describe')
+    })
+
+    test('preserves the update error when revision diagnosis fails', async () => {
+      const updateError = new Error('update failed')
+      const existingService = {
+        name: 'projects/test-project/locations/us-central1/services/test-service',
+        template: {containers: [{name: 'app'}]},
+      }
+      const generatedService = {
+        name: existingService.name,
+        template: {containers: [{name: 'app'}, {name: TRACER_COPY_CONTAINER_NAME}]},
+      }
+      mockServicesClient.updateService.mockResolvedValue([{promise: jest.fn().mockRejectedValue(updateError)}])
+      mockServicesClient.getService.mockRejectedValue(new Error('revision read denied'))
+      jest.spyOn(command, 'createInstrumentedServiceConfig').mockReturnValue(generatedService)
+
+      await expect(
+        command.instrumentService(mockServicesClient as any, existingService, 'test-service', 'test-service')
+      ).rejects.toBe(updateError)
+
+      const diagnosticOutput = stderr.mock.calls.map(([message]) => message).join('')
+      expect(diagnosticOutput).toContain('Unable to read the latest revision details: revision read denied')
+      expect(diagnosticOutput).toContain('gcloud run services describe')
     })
   })
 
