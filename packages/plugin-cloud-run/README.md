@@ -14,11 +14,20 @@ datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name
 datadog-ci cloud-run instrument -i
 
 # Instrument a service with a pinned or custom sidecar image
-datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --sidecarImage gcr.io/datadoghq/serverless-init@sha256:<sha256>
+datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --sidecar-image gcr.io/datadoghq/serverless-init@sha256:<sha256>
+
+# Install a Python tracer and enable APM
+datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --apm-enabled --language python
 
 # Dry run of all updates
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> -d
 ```
+
+With `--apm-enabled`, `--language` selects a Single-Language SSI tracer for Java, Node.js, .NET, Python, Ruby, or PHP. Go enables Agent trace collection but does not install a tracer; instrument the application with `dd-trace-go`. The command rejects `--apm-enabled` with `--tracing false`, tracer options without `--apm-enabled`, and tracer image options for Go.
+
+Single-Language SSI targets the Cloud Run ingress container. The command fails without changing the service when multiple containers make ingress selection ambiguous.
+
+The tracer uses a memory-backed volume. Its default size is `768Mi`, and the tracer copy sidecar defaults to `1Gi`; `--tracer-sidecar-memory` must be at least `--tracer-volume-size`. Increase both limits for larger tracer images because Cloud Run charges the volume's contents against memory.
 
 ### `uninstrument`
 
@@ -26,7 +35,7 @@ Run `datadog-ci cloud-run uninstrument` to revert Datadog instrumentation from a
 
 ```bash
 # Uninstrument multiple services specified by names
-datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> -s <another-service-name>
+datadog-ci cloud-run uninstrument -p <gcp-project> -r us-central1 -s <service-name> -s <another-service-name>
 
 # Uninstrument a service in interactive mode
 datadog-ci cloud-run uninstrument -i
@@ -82,7 +91,13 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
-| `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
+| `--language` |  | Set the application language. Sets DD_SOURCE for advanced log parsing and selects the tracer when --apm-enabled is set. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
+| `--apm-enabled` |  | Enable APM for the language given by --language. Single-Language SSI installs a tracer for supported runtimes; Go enables Agent collection but requires application instrumentation. | `false` |
+| `--tracer-version` |  | The tracer image tag to use with --apm-enabled. | `latest` |
+| `--tracer-registry` |  | The tracer image registry to use with --apm-enabled. Possible values: "gcr.io/datadoghq", "public.ecr.aws/datadog", "datadoghq.azurecr.io". | `gcr.io/datadoghq` |
+| `--libc` |  | The C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
+| `--tracer-volume-size` |  | The size limit of the in-memory tracer volume. | `768Mi` |
+| `--tracer-sidecar-memory` |  | The memory allocated to the tracer copy sidecar. | `1Gi` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`

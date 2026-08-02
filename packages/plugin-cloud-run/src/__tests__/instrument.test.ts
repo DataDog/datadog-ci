@@ -8,6 +8,7 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
+import * as serviceConfigModule from '../service-config'
 import * as utils from '../utils'
 
 jest.mock('@datadog/datadog-ci-base/helpers/apikey')
@@ -33,6 +34,7 @@ describe('InstrumentCommand', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['cloud-run', 'instrument'])
 
   beforeEach(() => {
+    jest.restoreAllMocks()
     jest.clearAllMocks()
     const mockValidator = {
       validateApiKey: jest.fn().mockResolvedValue(true),
@@ -113,6 +115,82 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
+    })
+  })
+
+  describe('Single-Language SSI command wiring', () => {
+    const service = {
+      name: 'projects/test-project/locations/us-central1/services/test-service',
+      template: {
+        containers: [{name: 'app', ports: [{containerPort: 8080}]}],
+        volumes: [],
+      },
+    }
+    const requiredFlags = [
+      '--project',
+      'test-project',
+      '--services',
+      'test-service',
+      '--region',
+      'us-central1',
+      '--no-source-code-integration',
+    ]
+
+    test.each([
+      [['--apm-enabled'], '--language'],
+      [['--apm-enabled', '--language', 'nodejs', '--tracing', 'false'], '--tracing false'],
+      [['--tracer-version', '1.2.3'], '--apm-enabled'],
+      [['--apm-enabled', '--language', 'go', '--tracer-version', '1.2.3'], '--language go'],
+      [['--apm-enabled', '--language', 'python', '--tracer-volume-size', '2Gi'], 'cannot be smaller'],
+    ])('rejects invalid local options before network calls: %s', async (flags, expected) => {
+      const {code, context} = await runCLI([...requiredFlags, ...flags])
+
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain(expected)
+      expect(apikey.newApiKeyValidator).not.toHaveBeenCalled()
+      expect(utils.checkAuthentication).not.toHaveBeenCalled()
+      expect(mockServicesClient.getService).not.toHaveBeenCalled()
+    })
+
+    test('passes validated tracer options to service configuration', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+
+      const {code} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--apm-enabled',
+        '--language',
+        'python',
+        '--tracer-version',
+        '2.0.0',
+        '--tracer-volume-size',
+        '256Mi',
+        '--tracer-sidecar-memory',
+        '512Mi',
+      ])
+
+      expect(code).toBe(0)
+      expect(instrumentConfig).toHaveBeenCalledWith(
+        service,
+        expect.objectContaining({
+          ssi: expect.objectContaining({
+            kind: 'single-language',
+            language: 'python',
+            tracerVolumeSize: '256Mi',
+            tracerSidecarMemory: '512Mi',
+          }),
+        })
+      )
+    })
+
+    test('warns that Go requires application instrumentation', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+
+      const {code, context} = await runCLI([...requiredFlags, '--dry-run', '--apm-enabled', '--language', 'go'])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('dd-trace-go')
     })
   })
 
