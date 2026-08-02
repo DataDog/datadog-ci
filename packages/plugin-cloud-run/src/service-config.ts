@@ -21,7 +21,11 @@ const UNIFIED_SERVICE_TAG_LABELS = {
   environment: 'env',
   version: 'version',
 } as const
-const INSTRUMENTATION_LABELS = new Set([...Object.values(UNIFIED_SERVICE_TAG_LABELS), SERVERLESS_CLI_VERSION_TAG_NAME])
+const INSTRUMENTATION_LABELS = new Set([
+  ...Object.values(UNIFIED_SERVICE_TAG_LABELS),
+  SERVERLESS_CLI_VERSION_TAG_NAME,
+  SSI_INJECTION_MODE_LABEL,
+])
 
 export interface InstrumentServiceConfigOptions {
   readonly ssiConfig?: SsiConfigResult
@@ -136,10 +140,24 @@ export const uninstrumentServiceConfig = (
   const volumes: IVolume[] = template.volumes || []
   const sidecarRemoved = containers.some((container) => container.name === options.sidecarName)
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
+  const ownsSsiState = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const updatedContainers = containers
-    .filter((container) => container.name !== options.sidecarName)
-    .map((container) => removeContainerInstrumentation(container, options.sharedVolumeName, options.envVarNames))
-  const updatedVolumes = volumes.filter((volume) => volume.name !== options.sharedVolumeName)
+    .filter(
+      (container) =>
+        container.name !== options.sidecarName && (!ownsSsiState || container.name !== TRACER_COPY_CONTAINER_NAME)
+    )
+    .map((container) =>
+      removeContainerInstrumentation(
+        container,
+        options.sidecarName,
+        options.sharedVolumeName,
+        options.envVarNames,
+        ownsSsiState
+      )
+    )
+  const updatedVolumes = volumes.filter(
+    (volume) => volume.name !== options.sharedVolumeName && (!ownsSsiState || volume.name !== TRACER_VOLUME_NAME)
+  )
   const labels = Object.fromEntries(
     Object.entries(service.labels ?? {}).filter(([name]) => !INSTRUMENTATION_LABELS.has(name))
   )
@@ -287,12 +305,23 @@ const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentSe
 
 const removeContainerInstrumentation = (
   container: IContainer,
+  agentContainerName: string,
   sharedVolumeName: string,
-  envVarNames: ReadonlySet<string>
-): IContainer => ({
-  ...container,
-  volumeMounts: (container.volumeMounts || []).filter((volumeMount) => volumeMount.name !== sharedVolumeName),
-  env: (container.env || []).filter(
-    (envVar) => envVar.name && !envVar.name.startsWith('DD_') && !envVarNames.has(envVar.name)
-  ),
-})
+  envVarNames: ReadonlySet<string>,
+  ownsSsiState: boolean
+): IContainer => {
+  const hasTracerMount = container.volumeMounts?.some((mount) => mount.name === TRACER_VOLUME_NAME) ?? false
+  let updated = ownsSsiState && hasTracerMount ? scrubPriorSsiContainer(container, true) : container
+  if (ownsSsiState) {
+    updated = removeDependency(updated, agentContainerName)
+  }
+
+  return {
+    ...updated,
+    name: ownsSsiState && updated.name === SSI_ADOPTED_INGRESS_CONTAINER_NAME ? '' : updated.name,
+    volumeMounts: (updated.volumeMounts || []).filter((volumeMount) => volumeMount.name !== sharedVolumeName),
+    env: (updated.env || []).filter(
+      (envVar) => envVar.name && !envVar.name.startsWith('DD_') && !envVarNames.has(envVar.name)
+    ),
+  }
+}
