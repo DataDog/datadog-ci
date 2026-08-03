@@ -15,18 +15,18 @@ describe('environment fragment merging', () => {
     name: 'NODE_OPTIONS',
     value: '--require /datadog-lib/node_modules/dd-trace/init.js',
     separator: ' ',
-    direction: 'append',
+    mode: 'append',
   }
   const prependFragment: EnvFragment = {
     name: 'RUBYOPT',
     value: '-r/datadog-lib/auto_inject',
     separator: ' ',
-    direction: 'prepend',
+    mode: 'prepend',
   }
   const scalarFragment: EnvFragment = {
     name: 'CORECLR_ENABLE_PROFILING',
     value: '1',
-    direction: 'set-if-absent',
+    mode: 'set-if-absent',
   }
 
   test.each([
@@ -39,7 +39,7 @@ describe('environment fragment merging', () => {
     {fragment: scalarFragment, current: undefined, merged: '1'},
     {fragment: scalarFragment, current: '', merged: '1'},
     {fragment: scalarFragment, current: '1', merged: '1'},
-  ])('merges $fragment.direction fragments', ({fragment, current, merged}) => {
+  ])('merges $fragment.mode fragments', ({fragment, current, merged}) => {
     expect(mergeEnvFragment(current, fragment)).toBe(merged)
   })
 
@@ -48,11 +48,11 @@ describe('environment fragment merging', () => {
     {fragment: prependFragment, current: `${prependFragment.value} -w`},
     {fragment: appendFragment, current: `${appendFragment.value} --inspect ${appendFragment.value}`},
     {fragment: prependFragment, current: `${prependFragment.value} -w ${prependFragment.value}`},
-  ])('deduplicates exact $fragment.direction fragments', ({fragment, current}) => {
+  ])('deduplicates exact $fragment.mode fragments', ({fragment, current}) => {
     const merged = mergeEnvFragment(current, fragment)
     expect(merged.split(fragment.value)).toHaveLength(2)
-    expect(merged.startsWith(fragment.value)).toBe(fragment.direction === 'prepend')
-    expect(merged.endsWith(fragment.value)).toBe(fragment.direction === 'append')
+    expect(merged.startsWith(fragment.value)).toBe(fragment.mode === 'prepend')
+    expect(merged.endsWith(fragment.value)).toBe(fragment.mode === 'append')
   })
 
   test.each([
@@ -62,7 +62,7 @@ describe('environment fragment merging', () => {
     {fragment: scalarFragment, current: '1', present: true},
     {fragment: scalarFragment, current: '0', present: false},
     {fragment: scalarFragment, current: undefined, present: false},
-  ])('detects exact $fragment.direction fragments', ({fragment, current, present}) => {
+  ])('detects exact $fragment.mode fragments', ({fragment, current, present}) => {
     expect(hasEnvFragment(current, fragment)).toBe(present)
   })
 
@@ -76,11 +76,17 @@ describe('environment fragment merging', () => {
     {fragment: appendFragment, current: '--inspect'},
     {fragment: prependFragment, current: '-w'},
     {
-      fragment: {name: 'PYTHONPATH', value: '/datadog-lib', separator: ':', direction: 'append'} as EnvFragment,
+      fragment: {name: 'PYTHONPATH', value: '/datadog-lib', separator: ':', mode: 'append'} as EnvFragment,
       current: '/app:/vendor',
     },
     {
-      fragment: {name: 'PHP_INI_SCAN_DIR', value: ':/datadog-lib/linux-gnu/loader', direction: 'append'} as EnvFragment,
+      fragment: {
+        name: 'PHP_INI_SCAN_DIR',
+        value: '/datadog-lib/linux-gnu/loader',
+        separator: ':',
+        mode: 'append',
+        preserveLeadingEmpty: true,
+      } as EnvFragment,
       current: '/etc/php/conf.d',
     },
   ])('merge then remove restores $current for $fragment.name', ({fragment, current}) => {
@@ -90,13 +96,16 @@ describe('environment fragment merging', () => {
   test('deduplicates and exactly removes PHP config from the middle of a path list', () => {
     const fragment: EnvFragment = {
       name: 'PHP_INI_SCAN_DIR',
-      value: ':/datadog-lib/linux-gnu/loader',
-      direction: 'append',
+      value: '/datadog-lib/linux-gnu/loader',
+      separator: ':',
+      mode: 'append',
+      preserveLeadingEmpty: true,
     }
-    const current = `/etc/php${fragment.value}:/custom/php${fragment.value}`
-    expect(mergeEnvFragment(current, fragment)).toBe(`/etc/php:/custom/php${fragment.value}`)
-    expect(removeEnvFragment(`/etc/php${fragment.value}:/custom/php`, fragment)).toBe('/etc/php:/custom/php')
-    expect(removeEnvFragment(`/etc/php${fragment.value}.backup`, fragment)).toBe(`/etc/php${fragment.value}.backup`)
+    const current = `/etc/php:${fragment.value}:/custom/php:${fragment.value}`
+    expect(mergeEnvFragment(undefined, fragment)).toBe(`:${fragment.value}`)
+    expect(mergeEnvFragment(current, fragment)).toBe(`/etc/php:/custom/php:${fragment.value}`)
+    expect(removeEnvFragment(`/etc/php:${fragment.value}:/custom/php`, fragment)).toBe('/etc/php:/custom/php')
+    expect(removeEnvFragment(`/etc/php:${fragment.value}.backup`, fragment)).toBe(`/etc/php:${fragment.value}.backup`)
   })
 
   test('preserves pre-existing separator formatting', () => {
@@ -118,7 +127,7 @@ describe('environment fragment merging', () => {
     name: 'LD_PRELOAD',
     value: '/datadog-lib/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so',
     separator: ' ',
-    direction: 'prepend',
+    mode: 'prepend',
     maxLength: 1024,
   }
 
@@ -143,23 +152,6 @@ describe('environment fragment merging', () => {
   test('treats an empty current value as absent during removal', () => {
     expect(removeEnvFragment('', appendFragment)).toBeUndefined()
     expect(removeEnvFragment('', scalarFragment)).toBeUndefined()
-  })
-
-  test.each(['line\nbreak', 'nul\0value'])('rejects malformed current value %p', (current) => {
-    expect(() => hasEnvFragment(current, appendFragment)).toThrow('Existing value')
-    expect(() => mergeEnvFragment(current, appendFragment)).toThrow('Existing value')
-    expect(() => removeEnvFragment(current, appendFragment)).toThrow('Existing value')
-  })
-
-  test.each([
-    {...appendFragment, name: ''},
-    {...appendFragment, value: ''},
-    {...appendFragment, value: 'line\nbreak'},
-    {...appendFragment, maxLength: 0},
-    {...scalarFragment, separator: ' ' as const},
-  ])('rejects malformed fragment %#', (fragment) => {
-    expect(() => hasEnvFragment(undefined, fragment)).toThrow()
-    expect(() => mergeEnvFragment(undefined, fragment)).toThrow()
   })
 })
 

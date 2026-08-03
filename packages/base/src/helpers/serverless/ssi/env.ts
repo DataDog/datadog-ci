@@ -1,47 +1,101 @@
 export const SINGLE_LANGUAGE_INJECTION_MODE_TAG = '_dd.injection.mode:serverless-single-lang'
 
-export type EnvMergeDirection = 'append' | 'prepend' | 'set-if-absent'
-export type EnvSeparator = ' ' | ':' | ','
-
-export interface EnvFragment {
+type EnvFragmentBase = {
   name: string
   value: string
-  separator?: EnvSeparator
-  direction: EnvMergeDirection
   maxLength?: number
 }
+
+type EnvSeparator = ' ' | ':' | ','
+
+type AppendedEnvFragment = EnvFragmentBase &
+  (
+    | {mode: 'append'; separator?: EnvSeparator; preserveLeadingEmpty?: never}
+    | {mode: 'append'; separator: EnvSeparator; preserveLeadingEmpty: true}
+  )
+
+type PositionedEnvFragment =
+  | AppendedEnvFragment
+  | (EnvFragmentBase & {mode: 'prepend'; separator?: EnvSeparator; preserveLeadingEmpty?: never})
+
+type ScalarEnvFragment = EnvFragmentBase & {
+  mode: 'set-if-absent'
+  separator?: never
+  preserveLeadingEmpty?: never
+}
+
+export type EnvFragment = PositionedEnvFragment | ScalarEnvFragment
+
+export const hasEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): boolean => {
+  if (currentValue === undefined) {
+    return false
+  }
+
+  return fragment.mode === 'set-if-absent'
+    ? currentValue === fragment.value
+    : findRanges(currentValue, fragment).length > 0
+}
+
+export const mergeEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
+  if (fragment.mode === 'set-if-absent') {
+    if (currentValue && currentValue !== fragment.value) {
+      throw new EnvFragmentConflictError(fragment.name, currentValue, fragment.value)
+    }
+    const value = currentValue || fragment.value
+    assertWithinMaxLength(value, fragment)
+
+    return value
+  }
+
+  const remaining = currentValue === undefined ? undefined : removeExactFragment(currentValue, fragment)
+  let result: string
+  if (!remaining) {
+    result = `${fragment.preserveLeadingEmpty ? fragment.separator : ''}${fragment.value}`
+  } else if (fragment.mode === 'append') {
+    result = `${remaining}${fragment.separator ?? ''}${fragment.value}`
+  } else {
+    result = `${fragment.value}${fragment.separator ?? ''}${remaining}`
+  }
+  assertWithinMaxLength(result, fragment)
+
+  return result
+}
+
+/**
+ * Removes only the exact fragment. Callers must track whether it existed before merging and remove only fragments
+ * they own.
+ */
+export const removeEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string | undefined => {
+  if (!currentValue) {
+    return undefined
+  }
+  if (fragment.mode === 'set-if-absent') {
+    return currentValue === fragment.value ? undefined : currentValue
+  }
+
+  return removeExactFragment(currentValue, fragment) || undefined
+}
+
+const INJECTION_MODE_TAG_FRAGMENT: EnvFragment = {
+  name: 'DD_TAGS',
+  value: SINGLE_LANGUAGE_INJECTION_MODE_TAG,
+  separator: ',',
+  mode: 'prepend',
+}
+
+export const hasInjectionModeTag = (currentTags: string | undefined): boolean =>
+  hasEnvFragment(currentTags, INJECTION_MODE_TAG_FRAGMENT)
+
+export const mergeInjectionModeTag = (currentTags: string | undefined): string =>
+  mergeEnvFragment(currentTags, INJECTION_MODE_TAG_FRAGMENT)
+
+export const removeInjectionModeTag = (currentTags: string | undefined): string | undefined =>
+  removeEnvFragment(currentTags, INJECTION_MODE_TAG_FRAGMENT)
 
 export class EnvFragmentConflictError extends Error {
   constructor(name: string, currentValue: string, requiredValue: string) {
     super(`${name} is already set to ${JSON.stringify(currentValue)}; expected ${JSON.stringify(requiredValue)}`)
     this.name = 'EnvFragmentConflictError'
-  }
-}
-
-const ENV_NAME_REG_EXP = /^[A-Za-z_][A-Za-z0-9_]*$/
-
-const validateStringValue = (value: string, description: string): void => {
-  if (typeof value !== 'string' || !value || /[\0\r\n]/.test(value)) {
-    throw new Error(`${description} must be a non-empty single-line string`)
-  }
-}
-
-const validateCurrentValue = (value: string | undefined, name: string): void => {
-  if (value !== undefined && (typeof value !== 'string' || /[\0\r\n]/.test(value))) {
-    throw new Error(`Existing value for ${name} must be a single-line string`)
-  }
-}
-
-const validateFragment = (fragment: EnvFragment): void => {
-  if (!ENV_NAME_REG_EXP.test(fragment.name)) {
-    throw new Error(`Invalid environment variable name: ${JSON.stringify(fragment.name)}`)
-  }
-  validateStringValue(fragment.value, `Fragment for ${fragment.name}`)
-  if (fragment.direction === 'set-if-absent' && fragment.separator !== undefined) {
-    throw new Error(`set-if-absent fragment ${fragment.name} cannot have a separator`)
-  }
-  if (fragment.maxLength !== undefined && (!Number.isInteger(fragment.maxLength) || fragment.maxLength <= 0)) {
-    throw new Error(`maxLength for ${fragment.name} must be a positive integer`)
   }
 }
 
@@ -51,30 +105,13 @@ const assertWithinMaxLength = (value: string, fragment: EnvFragment): void => {
   }
 }
 
-const findExactFragmentRanges = (currentValue: string, fragment: EnvFragment): [number, number][] => {
-  const separator = fragment.separator
+const findRanges = (currentValue: string, fragment: PositionedEnvFragment): [number, number][] => {
+  const {separator} = fragment
   if (separator === undefined) {
-    if (fragment.direction === 'append' && fragment.value.startsWith(':')) {
-      const colonDelimitedRanges: [number, number][] = []
-      let searchOffset = 0
-      while (searchOffset <= currentValue.length - fragment.value.length) {
-        const index = currentValue.indexOf(fragment.value, searchOffset)
-        if (index === -1) {
-          break
-        }
-        const end = index + fragment.value.length
-        if (end === currentValue.length || currentValue[end] === ':') {
-          colonDelimitedRanges.push([index, end])
-        }
-        searchOffset = end
-      }
-
-      return colonDelimitedRanges
-    }
-    if (fragment.direction === 'append' && currentValue.endsWith(fragment.value)) {
+    if (fragment.mode === 'append' && currentValue.endsWith(fragment.value)) {
       return [[currentValue.length - fragment.value.length, currentValue.length]]
     }
-    if (fragment.direction === 'prepend' && currentValue.startsWith(fragment.value)) {
+    if (fragment.mode === 'prepend' && currentValue.startsWith(fragment.value)) {
       return [[0, fragment.value.length]]
     }
 
@@ -89,9 +126,9 @@ const findExactFragmentRanges = (currentValue: string, fragment: EnvFragment): [
       break
     }
     const end = index + fragment.value.length
-    const hasStartBoundary = index === 0 || currentValue[index - 1] === separator
-    const hasEndBoundary = end === currentValue.length || currentValue[end] === separator
-    if (hasStartBoundary && hasEndBoundary) {
+    const startsAtBoundary = index === 0 || currentValue[index - 1] === separator
+    const endsAtBoundary = end === currentValue.length || currentValue[end] === separator
+    if (startsAtBoundary && endsAtBoundary) {
       ranges.push([index, end])
     }
     start = end
@@ -100,24 +137,23 @@ const findExactFragmentRanges = (currentValue: string, fragment: EnvFragment): [
   return ranges
 }
 
-const removeRanges = (currentValue: string, fragment: EnvFragment, ranges: [number, number][]): string => {
-  const separator = fragment.separator
-  const expandedRanges = ranges.map(([start, end]): [number, number] => {
-    if (separator === undefined) {
+const removeExactFragment = (currentValue: string, fragment: PositionedEnvFragment): string => {
+  const ranges = findRanges(currentValue, fragment).map(([start, end]): [number, number] => {
+    if (fragment.separator === undefined) {
       return [start, end]
     }
-    if (fragment.direction === 'append') {
-      if (start > 0 && currentValue[start - 1] === separator) {
+    if (fragment.mode === 'append') {
+      if (start > 0 && currentValue[start - 1] === fragment.separator) {
         return [start - 1, end]
       }
-      if (end < currentValue.length && currentValue[end] === separator) {
+      if (end < currentValue.length && currentValue[end] === fragment.separator) {
         return [start, end + 1]
       }
-    } else if (fragment.direction === 'prepend') {
-      if (end < currentValue.length && currentValue[end] === separator) {
+    } else {
+      if (end < currentValue.length && currentValue[end] === fragment.separator) {
         return [start, end + 1]
       }
-      if (start > 0 && currentValue[start - 1] === separator) {
+      if (start > 0 && currentValue[start - 1] === fragment.separator) {
         return [start - 1, end]
       }
     }
@@ -125,103 +161,22 @@ const removeRanges = (currentValue: string, fragment: EnvFragment, ranges: [numb
     return [start, end]
   })
 
-  const mergedRanges: [number, number][] = []
-  for (const range of expandedRanges) {
-    const previous = mergedRanges.at(-1)
+  const merged: [number, number][] = []
+  for (const range of ranges) {
+    const previous = merged.at(-1)
     if (previous && range[0] <= previous[1]) {
       previous[1] = Math.max(previous[1], range[1])
     } else {
-      mergedRanges.push([...range])
+      merged.push([...range])
     }
   }
 
   let result = ''
   let offset = 0
-  for (const [start, end] of mergedRanges) {
+  for (const [start, end] of merged) {
     result += currentValue.slice(offset, start)
     offset = end
   }
 
   return result + currentValue.slice(offset)
 }
-
-const removeExactFragments = (currentValue: string, fragment: EnvFragment): string => {
-  return removeRanges(currentValue, fragment, findExactFragmentRanges(currentValue, fragment))
-}
-
-export const hasEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): boolean => {
-  validateFragment(fragment)
-  validateCurrentValue(currentValue, fragment.name)
-  if (currentValue === undefined) {
-    return false
-  }
-
-  return fragment.direction === 'set-if-absent'
-    ? currentValue === fragment.value
-    : findExactFragmentRanges(currentValue, fragment).length > 0
-}
-
-export const mergeEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
-  validateFragment(fragment)
-  validateCurrentValue(currentValue, fragment.name)
-
-  if (fragment.direction === 'set-if-absent') {
-    if (currentValue && currentValue !== fragment.value) {
-      throw new EnvFragmentConflictError(fragment.name, currentValue, fragment.value)
-    }
-    const scalarValue = currentValue || fragment.value
-    assertWithinMaxLength(scalarValue, fragment)
-
-    return scalarValue
-  }
-
-  const valueWithoutFragment = currentValue === undefined ? undefined : removeExactFragments(currentValue, fragment)
-  let result: string
-  if (!valueWithoutFragment) {
-    result = fragment.value
-  } else if (fragment.direction === 'append') {
-    result = `${valueWithoutFragment}${fragment.separator ?? ''}${fragment.value}`
-  } else {
-    result = `${fragment.value}${fragment.separator ?? ''}${valueWithoutFragment}`
-  }
-  assertWithinMaxLength(result, fragment)
-
-  return result
-}
-
-/**
- * Removes exact values described by the fragment only. Callers must track whether a matching value pre-existed
- * before merging and call this helper only for values they own.
- */
-export const removeEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string | undefined => {
-  validateFragment(fragment)
-  validateCurrentValue(currentValue, fragment.name)
-  if (!currentValue) {
-    return undefined
-  }
-  if (fragment.direction === 'set-if-absent') {
-    return currentValue === fragment.value ? undefined : currentValue
-  }
-
-  return removeExactFragments(currentValue, fragment) || undefined
-}
-
-const INJECTION_MODE_TAG_FRAGMENT: EnvFragment = {
-  name: 'DD_TAGS',
-  value: SINGLE_LANGUAGE_INJECTION_MODE_TAG,
-  separator: ',',
-  direction: 'prepend',
-}
-
-export const hasInjectionModeTag = (currentTags: string | undefined): boolean =>
-  hasEnvFragment(currentTags, INJECTION_MODE_TAG_FRAGMENT)
-
-export const mergeInjectionModeTag = (currentTags: string | undefined): string =>
-  mergeEnvFragment(currentTags, INJECTION_MODE_TAG_FRAGMENT)
-
-/**
- * Removes the exact Single-Language injection mode tag only. Callers must track whether the tag pre-existed
- * before merging and call this helper only for a tag they own.
- */
-export const removeInjectionModeTag = (currentTags: string | undefined): string | undefined =>
-  removeEnvFragment(currentTags, INJECTION_MODE_TAG_FRAGMENT)
