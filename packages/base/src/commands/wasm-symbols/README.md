@@ -49,5 +49,3 @@ The module's identifier is read from a `build_id` custom section if present. If 
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
 | `--replace-existing` | Optional | If symbol information with the same build ID is already present on Datadog side, discard it and use the newly uploaded information.<br>Default behavior is to only replace existing debug information if the newly uploaded information is considered a better source with the following ordering: embedded debug info > external debug info reference. |
-| `--arch` | Optional | The target WASM architecture: `wasm32` or `wasm64`. Defaults to `wasm32`. |
-| `--source-url` | Optional | The URL the module is served from in production. Used as an additional lookup key for engines that key module identity by fetch URL (e.g. `WebAssembly.instantiateStreaming`). |

@@ -2,7 +2,6 @@ import {createHash} from 'crypto'
 import fs from 'fs'
 
 import {
-  DEFAULT_WASM_ARCH,
   WASM_BUILD_ID_SECTION_NAME,
   WASM_DEBUG_SECTION_PREFIX,
   WASM_EXTERNAL_DEBUG_INFO_SECTION_NAME,
@@ -14,7 +13,6 @@ import {
 export type WasmFileMetadata = {
   filename: string
   isWasm: boolean
-  arch: string
   buildId: string
   fileHash: string
   hasDebugInfo: boolean
@@ -128,7 +126,6 @@ export const getWasmFileMetadata = async (filename: string): Promise<WasmFileMet
   const metadata: WasmFileMetadata = {
     filename,
     isWasm: false,
-    arch: DEFAULT_WASM_ARCH,
     buildId: '',
     fileHash: '',
     hasDebugInfo: false,
@@ -175,8 +172,5 @@ export const getWasmFileMetadata = async (filename: string): Promise<WasmFileMet
 
   return metadata
 }
-
-export const getBuildIdWithArch = (fileMetadata: WasmFileMetadata): string =>
-  `${fileMetadata.buildId}-${fileMetadata.arch}`
 
 export const getOutputFilenameFromBuildId = (buildId: string): string => buildId.replace(/\//g, '-')

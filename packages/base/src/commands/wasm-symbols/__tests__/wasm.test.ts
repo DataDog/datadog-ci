@@ -7,7 +7,6 @@ import upath from 'upath'
 import {
   computeCodeSectionHash,
   computeFileHash,
-  getBuildIdWithArch,
   getOutputFilenameFromBuildId,
   getWasmFileMetadata,
   isWasmFile,
@@ -199,12 +198,6 @@ describe('getWasmFileMetadata', () => {
     const metadata = await getWasmFileMetadata(filename)
     expect(metadata.isWasm).toBe(true)
     expect(metadata.error).toBeInstanceOf(Error)
-  })
-})
-
-describe('getBuildIdWithArch', () => {
-  test('combines build id and arch', () => {
-    expect(getBuildIdWithArch({buildId: 'abc', arch: 'wasm32'} as any)).toBe('abc-wasm32')
   })
 })
 

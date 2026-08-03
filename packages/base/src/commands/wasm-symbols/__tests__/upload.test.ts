@@ -31,9 +31,8 @@ const commonMetadata = {
   cli_version: cliVersion,
   origin: 'datadog-ci',
   origin_version: cliVersion,
-  type: 'wasm',
+  type: 'wasm_symbol_file',
   overwrite: false,
-  source_url: undefined,
 }
 
 describe('wasm-symbols upload', () => {
@@ -91,18 +90,6 @@ describe('wasm-symbols upload', () => {
 
       expect(exitCode).not.toBe(0)
       expect(errorOutput).toContain(renderInvalidSymbolsLocation(nonExistentSymbolsLocation))
-    })
-
-    test('fails on an unsupported --arch value', async () => {
-      writeWasmFile('a.wasm', withDebugInfo('aabbcc', Buffer.from([0x01])))
-      const {exitCode, context} = await runCommand((cmd) => {
-        cmd['symbolsLocations'] = [fixtureDir]
-        cmd['arch'] = 'x86_64'
-      })
-      const errorOutput = context.stderr.toString()
-
-      expect(exitCode).not.toBe(0)
-      expect(errorOutput).toContain('arch')
     })
   })
 
@@ -169,7 +156,6 @@ describe('wasm-symbols upload', () => {
       const wasmFileMetadata = {
         filename: './a/b/c/fake-filename.wasm',
         isWasm: true,
-        arch: 'wasm32',
         buildId: 'fake-build-id',
         fileHash: 'fake-file-hash',
         hasDebugInfo: true,
@@ -180,7 +166,6 @@ describe('wasm-symbols upload', () => {
 
       expect(metadata).toEqual({
         ...commonMetadata,
-        arch: 'wasm32',
         build_id: 'fake-build-id',
         file_hash: 'fake-file-hash',
         git_commit_sha: 'fake-git-hash',
@@ -218,7 +203,6 @@ describe('wasm-symbols upload', () => {
       expect(calls).toEqual([
         {
           ...commonMetadata,
-          arch: 'wasm32',
           build_id: 'aabbcc',
           file_hash: calls[0].file_hash,
           filename: 'a.wasm',
@@ -226,7 +210,6 @@ describe('wasm-symbols upload', () => {
         },
         {
           ...commonMetadata,
-          arch: 'wasm32',
           build_id: 'ddeeff',
           file_hash: calls[1].file_hash,
           filename: 'b.wasm',

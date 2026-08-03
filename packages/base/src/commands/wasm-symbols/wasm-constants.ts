@@ -30,10 +30,3 @@ export const WASM_EXTERNAL_DEBUG_INFO_SECTION_NAME = 'external_debug_info'
 
 // DWARF debug sections are embedded as custom sections using the same names as in ELF/Mach-O.
 export const WASM_DEBUG_SECTION_PREFIX = '.debug_'
-
-export const SUPPORTED_WASM_ARCHS = ['wasm32', 'wasm64'] as const
-export type WasmArch = (typeof SUPPORTED_WASM_ARCHS)[number]
-export const DEFAULT_WASM_ARCH: WasmArch = 'wasm32'
-
-export const isSupportedWasmArch = (arch: string): arch is WasmArch =>
-  (SUPPORTED_WASM_ARCHS as readonly string[]).includes(arch)

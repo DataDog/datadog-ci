@@ -43,8 +43,7 @@ import {
   renderUpload,
   renderWarning,
 } from './renderer'
-import {getBuildIdWithArch, getWasmFileMetadata} from './wasm'
-import {DEFAULT_WASM_ARCH, isSupportedWasmArch} from './wasm-constants'
+import {getWasmFileMetadata} from './wasm'
 
 export class WasmSymbolsUploadCommand extends BaseCommand {
   public static paths = [['wasm-symbols', 'upload']]
@@ -65,8 +64,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
   private replaceExisting = Option.Boolean('--replace-existing', false)
-  private arch = Option.String('--arch', DEFAULT_WASM_ARCH)
-  private sourceUrl = Option.String('--source-url')
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = cliVersion
@@ -186,7 +183,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
       cli_version: this.cliVersion,
       origin_version: this.cliVersion,
       origin: 'datadog-ci',
-      arch: this.arch,
       build_id: wasmFileMetadata.buildId,
       file_hash: wasmFileMetadata.fileHash,
       git_commit_sha: this.gitData?.hash,
@@ -195,7 +191,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
       filename: upath.basename(wasmFileMetadata.filename),
       overwrite: this.replaceExisting,
       type: TYPE_WASM_DEBUG_INFOS,
-      source_url: this.sourceUrl,
     }
   }
 
@@ -275,7 +270,7 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
   private removeBuildIdDuplicates(filesMetadata: WasmFileMetadata[]): WasmFileMetadata[] {
     const buildIds = new Map<string, WasmFileMetadata>()
     for (const metadata of filesMetadata) {
-      const buildId = getBuildIdWithArch(metadata)
+      const buildId = metadata.buildId
       const existing = buildIds.get(buildId)
       if (existing) {
         if (metadata.hasDebugInfo && !existing.hasDebugInfo) {
@@ -394,11 +389,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
           parametersOkay = false
         }
       }
-    }
-
-    if (!isSupportedWasmArch(this.arch)) {
-      this.context.stderr.write(renderArgumentMissingError(`arch (must be one of wasm32, wasm64, got "${this.arch}")`))
-      parametersOkay = false
     }
 
     return parametersOkay
