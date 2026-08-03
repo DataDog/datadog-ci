@@ -318,7 +318,7 @@ const removeContainerInstrumentation = (
 
   return {
     ...updated,
-    name: ownsSsiState && updated.name === SSI_ADOPTED_MAIN_CONTAINER_NAME ? '' : updated.name,
+    name: ownsSsiState && hasTracerMount && updated.name === SSI_ADOPTED_MAIN_CONTAINER_NAME ? '' : updated.name,
     volumeMounts: (updated.volumeMounts || []).filter((volumeMount) => volumeMount.name !== sharedVolumeName),
     env: (updated.env || []).filter(
       (envVar) => envVar.name && !envVar.name.startsWith('DD_') && !envVarNames.has(envVar.name)
