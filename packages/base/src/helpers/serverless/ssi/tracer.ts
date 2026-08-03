@@ -5,49 +5,36 @@ export const SINGLE_LANGUAGE_TRACER_REGISTRIES = [
 ] as const
 
 export type SingleLanguageTracerRegistry = (typeof SINGLE_LANGUAGE_TRACER_REGISTRIES)[number]
-export type ServerlessLanguage = 'java' | 'nodejs' | 'csharp' | 'python' | 'ruby' | 'php'
-export type CanonicalTracerLanguage = 'java' | 'js' | 'dotnet' | 'python' | 'ruby' | 'php'
 
-export interface LanguageMetadata {
-  canonicalLanguage: CanonicalTracerLanguage
-  repository: string
-}
+export const LANGUAGE_METADATA = {
+  java: {tracerLanguage: 'java', repository: 'dd-trace-java'},
+  nodejs: {tracerLanguage: 'js', repository: 'dd-trace-js'},
+  csharp: {tracerLanguage: 'dotnet', repository: 'dd-trace-dotnet'},
+  python: {tracerLanguage: 'python', repository: 'dd-trace-py'},
+  ruby: {tracerLanguage: 'ruby', repository: 'dd-trace-rb'},
+  php: {tracerLanguage: 'php', repository: 'dd-trace-php'},
+} as const
 
-export const LANGUAGE_METADATA: Record<ServerlessLanguage, LanguageMetadata> = {
-  java: {canonicalLanguage: 'java', repository: 'dd-trace-java'},
-  nodejs: {canonicalLanguage: 'js', repository: 'dd-trace-js'},
-  csharp: {canonicalLanguage: 'dotnet', repository: 'dd-trace-dotnet'},
-  python: {canonicalLanguage: 'python', repository: 'dd-trace-py'},
-  ruby: {canonicalLanguage: 'ruby', repository: 'dd-trace-rb'},
-  php: {canonicalLanguage: 'php', repository: 'dd-trace-php'},
-}
+export type Language = keyof typeof LANGUAGE_METADATA
+export type TracerLanguage = (typeof LANGUAGE_METADATA)[Language]['tracerLanguage']
 
-const CANONICAL_TRACER_LANGUAGES: readonly CanonicalTracerLanguage[] = ['java', 'js', 'dotnet', 'python', 'ruby', 'php']
 const IMAGE_TAG_REG_EXP = /^[\w][\w.-]{0,127}$/
-
-export const normalizeServerlessLanguage = (language: ServerlessLanguage): CanonicalTracerLanguage => {
-  const metadata = LANGUAGE_METADATA[language]
-  if (!metadata) {
-    throw new Error(`Unsupported serverless language: ${String(language)}`)
-  }
-
-  return metadata.canonicalLanguage
-}
 
 export const buildSingleLanguageTracerImage = (
   registry: SingleLanguageTracerRegistry,
-  canonicalLanguage: CanonicalTracerLanguage,
+  language: Language,
   version: string
 ): string => {
   if (!(SINGLE_LANGUAGE_TRACER_REGISTRIES as readonly string[]).includes(registry)) {
     throw new Error(`Unsupported tracer registry: ${String(registry)}`)
   }
-  if (!CANONICAL_TRACER_LANGUAGES.includes(canonicalLanguage)) {
-    throw new Error(`Unsupported canonical tracer language: ${String(canonicalLanguage)}`)
+  const metadata = LANGUAGE_METADATA[language]
+  if (!metadata) {
+    throw new Error(`Unsupported language: ${String(language)}`)
   }
   if (typeof version !== 'string' || !IMAGE_TAG_REG_EXP.test(version)) {
     throw new Error(`Invalid tracer version: ${JSON.stringify(version)}`)
   }
 
-  return `${registry}/dd-lib-${canonicalLanguage}-init:${version}`
+  return `${registry}/dd-lib-${metadata.tracerLanguage}-init:${version}`
 }

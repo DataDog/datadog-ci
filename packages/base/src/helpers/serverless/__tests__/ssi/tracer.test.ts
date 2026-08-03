@@ -1,38 +1,37 @@
 import {
   SINGLE_LANGUAGE_TRACER_REGISTRIES,
   buildSingleLanguageTracerImage,
-  normalizeServerlessLanguage,
-  type CanonicalTracerLanguage,
-  type ServerlessLanguage,
+  type Language,
   type SingleLanguageTracerRegistry,
+  type TracerLanguage,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 const languageCases: {
-  language: ServerlessLanguage
-  canonical: CanonicalTracerLanguage
+  language: Language
+  tracerLanguage: TracerLanguage
 }[] = [
-  {language: 'java', canonical: 'java'},
-  {language: 'nodejs', canonical: 'js'},
-  {language: 'csharp', canonical: 'dotnet'},
-  {language: 'python', canonical: 'python'},
-  {language: 'ruby', canonical: 'ruby'},
-  {language: 'php', canonical: 'php'},
+  {language: 'java', tracerLanguage: 'java'},
+  {language: 'nodejs', tracerLanguage: 'js'},
+  {language: 'csharp', tracerLanguage: 'dotnet'},
+  {language: 'python', tracerLanguage: 'python'},
+  {language: 'ruby', tracerLanguage: 'ruby'},
+  {language: 'php', tracerLanguage: 'php'},
 ]
 
 describe('language and image metadata', () => {
-  test.each(languageCases)('normalizes $language to $canonical', ({language, canonical}) => {
-    expect(normalizeServerlessLanguage(language)).toBe(canonical)
+  test.each(
+    SINGLE_LANGUAGE_TRACER_REGISTRIES.flatMap((registry) =>
+      languageCases.map(({language, tracerLanguage}) => ({registry, language, tracerLanguage}))
+    )
+  )('builds the $registry $tracerLanguage image for $language', ({registry, language, tracerLanguage}) => {
+    expect(buildSingleLanguageTracerImage(registry, language, '1.2.3')).toBe(
+      `${registry}/dd-lib-${tracerLanguage}-init:1.2.3`
+    )
   })
 
   test('rejects an unsupported language at runtime', () => {
-    expect(() => normalizeServerlessLanguage('go' as ServerlessLanguage)).toThrow('Unsupported serverless language')
-  })
-
-  test.each(
-    SINGLE_LANGUAGE_TRACER_REGISTRIES.flatMap((registry) => languageCases.map(({canonical}) => ({registry, canonical})))
-  )('builds the $registry $canonical image', ({registry, canonical}) => {
-    expect(buildSingleLanguageTracerImage(registry, canonical, '1.2.3')).toBe(
-      `${registry}/dd-lib-${canonical}-init:1.2.3`
+    expect(() => buildSingleLanguageTracerImage('gcr.io/datadoghq', 'go' as Language, 'latest')).toThrow(
+      'Unsupported language'
     )
   })
 
@@ -53,10 +52,4 @@ describe('language and image metadata', () => {
       )
     }
   )
-
-  test('rejects an unsupported canonical language at runtime', () => {
-    expect(() =>
-      buildSingleLanguageTracerImage('gcr.io/datadoghq', 'nodejs' as CanonicalTracerLanguage, 'latest')
-    ).toThrow('Unsupported canonical tracer language')
-  })
 })
