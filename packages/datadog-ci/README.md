@@ -57,7 +57,7 @@ If you are using the NPM package:
   datadog-ci plugin install <scope>
   ```
 
-If you are using the [standalone binary](#standalone-binary), they are already included, so you don't need to install them separately.
+If you are using the [standalone binary](#standalone-binary), all plugins are already included, so you don't need to install them separately.
 
 ### Plugin auto-installation
 
