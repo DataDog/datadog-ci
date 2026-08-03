@@ -288,6 +288,7 @@ describe('UninstrumentCommand', () => {
               name: SSI_ADOPTED_INGRESS_CONTAINER_NAME,
               volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
             },
+            {name: 'worker', dependsOn: [SSI_ADOPTED_INGRESS_CONTAINER_NAME, 'database']},
           ],
         },
       }
@@ -296,6 +297,7 @@ describe('UninstrumentCommand', () => {
 
       expect(result.labels).toEqual({customer: 'keep-me'})
       expect(result.template?.containers?.[0].name).toBe('')
+      expect(result.template?.containers?.[1].dependsOn).toEqual(['database'])
     })
 
     test('does not restore an unrelated datadog-app worker without the tracer mount', () => {
