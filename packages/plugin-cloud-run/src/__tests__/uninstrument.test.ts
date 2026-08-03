@@ -282,13 +282,43 @@ describe('UninstrumentCommand', () => {
           [SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE,
           customer: 'keep-me',
         },
-        template: {containers: [{name: SSI_ADOPTED_INGRESS_CONTAINER_NAME}]},
+        template: {
+          containers: [
+            {
+              name: SSI_ADOPTED_INGRESS_CONTAINER_NAME,
+              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
+            },
+          ],
+        },
       }
 
       const result = command.createUninstrumentedServiceConfig(service)
 
       expect(result.labels).toEqual({customer: 'keep-me'})
       expect(result.template?.containers?.[0].name).toBe('')
+    })
+
+    test('does not restore an unrelated datadog-app worker without the tracer mount', () => {
+      const service: IService = {
+        labels: {[SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE},
+        template: {
+          containers: [
+            {
+              name: 'ingress',
+              ports: [{containerPort: 8080}],
+              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
+            },
+            {name: SSI_ADOPTED_INGRESS_CONTAINER_NAME},
+          ],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      expect(result.template?.containers?.map((container) => container.name)).toEqual([
+        'ingress',
+        SSI_ADOPTED_INGRESS_CONTAINER_NAME,
+      ])
     })
 
     test('handles service with no sidecar or shared volume gracefully', () => {
