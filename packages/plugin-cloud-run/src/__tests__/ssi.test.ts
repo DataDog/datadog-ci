@@ -380,6 +380,22 @@ describe('SSI service preparation', () => {
     expect(instrumentServiceConfig(result, serviceConfigOptions('python'))).toEqual(result)
   })
 
+  test.each([
+    ['directly', false],
+    ['transitively', true],
+  ] as const)('rejects an Agent that %s depends on the ingress', (_description, transitive) => {
+    const service = serviceWithWorker()
+    if (transitive) {
+      service.template!.containers![1].dependsOn = ['app']
+    }
+    service.template!.containers!.push({
+      name: 'datadog-sidecar',
+      dependsOn: [transitive ? 'worker' : 'app'],
+    } as IContainer)
+
+    expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(SsiConfigError)
+  })
+
   test('no-injection preserves unrelated containers and the requested tracing state', () => {
     const service = serviceWithWorker()
     const tracer = {name: 'datadog-tracer-copy', image: 'old-tracer', env: [{name: 'KEEP', value: 'true'}]}

@@ -155,6 +155,7 @@ const applyRuntimeCopyPlan = (
   }
 
   const mainContainer = containers[mainContainerIndex]
+  assertNoDependencyCycle(containers, ingressName, [plan.containerName, ...dependencyNames])
   const managedDependencies = new Set([plan.containerName, ...dependencyNames])
   containers[mainContainerIndex] = {
     ...mainContainer,
@@ -175,6 +176,32 @@ const applyRuntimeCopyPlan = (
     ...template,
     containers,
     volumes: [...(template.volumes ?? []), buildTracerVolume(plan.volumeName)],
+  }
+}
+
+const assertNoDependencyCycle = (
+  containers: readonly IContainer[],
+  ingressName: string,
+  dependencyNames: readonly string[]
+): void => {
+  const containersByName = new Map(
+    containers.flatMap((container) => (container.name ? [[container.name, container] as const] : []))
+  )
+  for (const dependencyName of dependencyNames) {
+    const pending = [dependencyName]
+    const visited = new Set<string>()
+    while (pending.length > 0) {
+      const name = pending.pop()!
+      if (name === ingressName) {
+        throw new SsiConfigError(
+          `Cannot make ingress container '${ingressName}' depend on '${dependencyName}' because that container already depends on the ingress directly or transitively.`
+        )
+      }
+      if (!visited.has(name)) {
+        visited.add(name)
+        pending.push(...(containersByName.get(name)?.dependsOn ?? []))
+      }
+    }
   }
 }
 
@@ -277,6 +304,13 @@ export const uninstrumentServiceConfig = (
   const sidecarRemoved = containers.some((container) => container.name === options.sidecarName)
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
   const ownsSsiState = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
+  const restoreAdoptedIngressName =
+    ownsSsiState &&
+    containers.some(
+      (container) =>
+        container.name === SSI_ADOPTED_INGRESS_CONTAINER_NAME &&
+        (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
+    )
   const updatedContainers = containers
     .filter(
       (container) =>
@@ -288,7 +322,8 @@ export const uninstrumentServiceConfig = (
         options.sidecarName,
         options.sharedVolumeName,
         options.envVarNames,
-        ownsSsiState
+        ownsSsiState,
+        restoreAdoptedIngressName
       )
     )
   const updatedVolumes = volumes.filter(
@@ -444,12 +479,16 @@ const removeContainerInstrumentation = (
   agentContainerName: string,
   sharedVolumeName: string,
   envVarNames: ReadonlySet<string>,
-  ownsSsiState: boolean
+  ownsSsiState: boolean,
+  restoreAdoptedIngressName: boolean
 ): IContainer => {
   const hasTracerMount = container.volumeMounts?.some((mount) => mount.name === TRACER_VOLUME_NAME) ?? false
   let updated = ownsSsiState && hasTracerMount ? removeExistingSsiContainer(container, true) : container
   if (ownsSsiState) {
     updated = removeDependency(updated, agentContainerName)
+  }
+  if (restoreAdoptedIngressName) {
+    updated = removeDependency(updated, SSI_ADOPTED_INGRESS_CONTAINER_NAME)
   }
 
   return {
