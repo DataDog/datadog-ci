@@ -24,8 +24,24 @@ type ScalarEnvFragment = EnvFragmentBase & {
   preserveLeadingEmpty?: never
 }
 
+/**
+ * An environment value owned by instrumentation. `mode` controls placement, `separator` defines exact entry
+ * boundaries, and `maxLength` limits the merged value in bytes. `preserveLeadingEmpty` retains the default entry in
+ * path lists such as `PHP_INI_SCAN_DIR`.
+ */
 export type EnvFragment = PositionedEnvFragment | ScalarEnvFragment
 
+/**
+ * Checks whether an environment variable contains the exact owned fragment.
+ *
+ * @example
+ * hasEnvFragment('--inspect --require /datadog-lib/node_modules/dd-trace/init.js', {
+ *   name: 'NODE_OPTIONS',
+ *   value: '--require /datadog-lib/node_modules/dd-trace/init.js',
+ *   separator: ' ',
+ *   mode: 'append',
+ * }) // true
+ */
 export const hasEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): boolean => {
   if (currentValue === undefined) {
     return false
@@ -36,6 +52,26 @@ export const hasEnvFragment = (currentValue: string | undefined, fragment: EnvFr
     : findRanges(currentValue, fragment).length > 0
 }
 
+/**
+ * Adds an owned fragment once in its configured position.
+ *
+ * @example
+ * mergeEnvFragment('--inspect', {
+ *   name: 'NODE_OPTIONS',
+ *   value: '--require /datadog-lib/node_modules/dd-trace/init.js',
+ *   separator: ' ',
+ *   mode: 'append',
+ * }) // '--inspect --require /datadog-lib/node_modules/dd-trace/init.js'
+ *
+ * @example
+ * mergeEnvFragment(undefined, {
+ *   name: 'PHP_INI_SCAN_DIR',
+ *   value: '/datadog-lib/linux-gnu/loader',
+ *   separator: ':',
+ *   mode: 'append',
+ *   preserveLeadingEmpty: true,
+ * }) // ':/datadog-lib/linux-gnu/loader'
+ */
 export const mergeEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
   if (fragment.mode === 'set-if-absent') {
     if (currentValue && currentValue !== fragment.value) {
@@ -48,22 +84,22 @@ export const mergeEnvFragment = (currentValue: string | undefined, fragment: Env
   }
 
   const remaining = currentValue === undefined ? undefined : removeExactFragment(currentValue, fragment)
-  let result: string
-  if (!remaining) {
-    result = `${fragment.preserveLeadingEmpty ? fragment.separator : ''}${fragment.value}`
-  } else if (fragment.mode === 'append') {
-    result = `${remaining}${fragment.separator ?? ''}${fragment.value}`
-  } else {
-    result = `${fragment.value}${fragment.separator ?? ''}${remaining}`
-  }
+  const result = mergePositionedFragment(remaining, fragment)
   assertWithinMaxLength(result, fragment)
 
   return result
 }
 
 /**
- * Removes only the exact fragment. Callers must track whether it existed before merging and remove only fragments
- * they own.
+ * Removes an exact fragment. Only remove fragments owned by the caller.
+ *
+ * @example
+ * removeEnvFragment('--inspect --require /datadog-lib/node_modules/dd-trace/init.js', {
+ *   name: 'NODE_OPTIONS',
+ *   value: '--require /datadog-lib/node_modules/dd-trace/init.js',
+ *   separator: ' ',
+ *   mode: 'append',
+ * }) // '--inspect'
  */
 export const removeEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string | undefined => {
   if (!currentValue) {
@@ -105,7 +141,24 @@ const assertWithinMaxLength = (value: string, fragment: EnvFragment): void => {
   }
 }
 
-const findRanges = (currentValue: string, fragment: PositionedEnvFragment): [number, number][] => {
+const mergePositionedFragment = (currentValue: string | undefined, fragment: PositionedEnvFragment): string => {
+  if (!currentValue) {
+    return `${fragment.preserveLeadingEmpty ? fragment.separator : ''}${fragment.value}`
+  }
+
+  switch (fragment.mode) {
+    case 'append':
+      return `${currentValue}${fragment.separator ?? ''}${fragment.value}`
+    case 'prepend':
+      return `${fragment.value}${fragment.separator ?? ''}${currentValue}`
+  }
+}
+
+type Range = readonly [start: number, end: number]
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const findRanges = (currentValue: string, fragment: PositionedEnvFragment): Range[] => {
   const {separator} = fragment
   if (separator === undefined) {
     if (fragment.mode === 'append' && currentValue.endsWith(fragment.value)) {
@@ -118,65 +171,57 @@ const findRanges = (currentValue: string, fragment: PositionedEnvFragment): [num
     return []
   }
 
-  const ranges: [number, number][] = []
-  let start = 0
-  while (start <= currentValue.length - fragment.value.length) {
-    const index = currentValue.indexOf(fragment.value, start)
-    if (index === -1) {
-      break
-    }
-    const end = index + fragment.value.length
-    const startsAtBoundary = index === 0 || currentValue[index - 1] === separator
-    const endsAtBoundary = end === currentValue.length || currentValue[end] === separator
-    if (startsAtBoundary && endsAtBoundary) {
-      ranges.push([index, end])
-    }
-    start = end
-  }
+  const pattern = new RegExp(`(^|${escapeRegExp(separator)})(${escapeRegExp(fragment.value)})(?=${separator}|$)`, 'g')
 
-  return ranges
+  return [...currentValue.matchAll(pattern)].map((match): Range => {
+    const start = match.index! + match[1].length
+
+    return [start, start + fragment.value.length]
+  })
 }
 
-const removeExactFragment = (currentValue: string, fragment: PositionedEnvFragment): string => {
-  const ranges = findRanges(currentValue, fragment).map(([start, end]): [number, number] => {
-    if (fragment.separator === undefined) {
-      return [start, end]
-    }
-    if (fragment.mode === 'append') {
-      if (start > 0 && currentValue[start - 1] === fragment.separator) {
-        return [start - 1, end]
-      }
-      if (end < currentValue.length && currentValue[end] === fragment.separator) {
-        return [start, end + 1]
-      }
-    } else {
-      if (end < currentValue.length && currentValue[end] === fragment.separator) {
-        return [start, end + 1]
-      }
-      if (start > 0 && currentValue[start - 1] === fragment.separator) {
-        return [start - 1, end]
-      }
-    }
-
+const expandRange = (currentValue: string, fragment: PositionedEnvFragment, [start, end]: Range): Range => {
+  const {separator} = fragment
+  if (separator === undefined) {
     return [start, end]
-  })
+  }
 
-  const merged: [number, number][] = []
-  for (const range of ranges) {
-    const previous = merged.at(-1)
-    if (previous && range[0] <= previous[1]) {
-      previous[1] = Math.max(previous[1], range[1])
-    } else {
-      merged.push([...range])
+  const canRemoveBefore = start > 0 && currentValue[start - 1] === separator
+  const canRemoveAfter = end < currentValue.length && currentValue[end] === separator
+
+  if (fragment.mode === 'append') {
+    if (canRemoveBefore) {
+      return [start - 1, end]
+    }
+    if (canRemoveAfter) {
+      return [start, end + 1]
+    }
+  } else {
+    if (canRemoveAfter) {
+      return [start, end + 1]
+    }
+    if (canRemoveBefore) {
+      return [start - 1, end]
     }
   }
 
-  let result = ''
-  let offset = 0
-  for (const [start, end] of merged) {
-    result += currentValue.slice(offset, start)
-    offset = end
-  }
+  return [start, end]
+}
 
-  return result + currentValue.slice(offset)
+const mergeRanges = (ranges: Range[]): Range[] =>
+  ranges.reduce<Range[]>((merged, range) => {
+    const previous = merged.at(-1)
+
+    return previous && range[0] <= previous[1]
+      ? [...merged.slice(0, -1), [previous[0], Math.max(previous[1], range[1])]]
+      : [...merged, range]
+  }, [])
+
+const removeExactFragment = (currentValue: string, fragment: PositionedEnvFragment): string => {
+  const ranges = mergeRanges(
+    findRanges(currentValue, fragment).map((range) => expandRange(currentValue, fragment, range))
+  )
+  const parts = ranges.map(([start], index) => currentValue.slice(index === 0 ? 0 : ranges[index - 1][1], start))
+
+  return [...parts, currentValue.slice(ranges.at(-1)?.[1] ?? 0)].join('')
 }
