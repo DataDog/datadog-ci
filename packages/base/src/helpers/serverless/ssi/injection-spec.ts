@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import type {EnvFragment} from './env'
 
 import {buildSingleLanguageTracerImage, type Language, type SingleLanguageTracerRegistry} from './tracer'
@@ -24,6 +26,8 @@ export interface LanguageInjectionOptions {
   readonly root?: string
 }
 
+export type LanguageCompatibilityOptions = Pick<LanguageInjectionOptions, 'language' | 'libc' | 'version'>
+
 /**
  * Builds the image, required artifacts, and environment for one tracer.
  *
@@ -36,44 +40,48 @@ export interface LanguageInjectionOptions {
  * })
  */
 export const getLanguageInjectionSpec = (options: LanguageInjectionOptions): LanguageInjectionSpec => {
-  const buildSpec = LANGUAGE_SPECS[options.language]
-  if (!buildSpec) {
-    throw new Error(`Unsupported language: ${String(options.language)}`)
-  }
-  if (!LIBCS.includes(options.libc)) {
-    throw new Error(`Unsupported libc: ${String(options.libc)}`)
-  }
-  if (options.language === 'ruby' && options.libc === 'musl') {
-    throw new Error('Ruby Single-Language SSI does not support musl')
-  }
-
-  const root = normalizeRoot(options.root ?? DEFAULT_TRACER_ROOT)
+  const root = options.root ?? DEFAULT_TRACER_ROOT
   const image = buildSingleLanguageTracerImage(options.registry, options.language, options.version)
-  assertDotnetLayout(options.language, options.version)
 
-  return {image, ...buildSpec(root, options.libc)}
+  return {image, ...LANGUAGE_SPECS[options.language](root, options.libc)}
+}
+
+/** Returns a domain compatibility error after individual CLI arguments have been validated. */
+export const getLanguageCompatibilityError = (options: LanguageCompatibilityOptions): string | undefined => {
+  if (options.language === 'ruby' && options.libc === 'musl') {
+    return 'Ruby Single-Language SSI does not support musl'
+  }
+  if (options.language !== 'csharp') {
+    return undefined
+  }
+
+  const pinnedMajor = options.version.match(/^v?(\d+)(?:\.|$)/)?.[1]
+
+  return pinnedMajor !== undefined && Number(pinnedMajor) < 3
+    ? `Unsupported .NET tracer version ${JSON.stringify(options.version)}: versions before 3.0 require architecture-specific package paths`
+    : undefined
 }
 
 type SpecFactory = (root: string, libc: Libc) => Pick<LanguageInjectionSpec, 'artifacts' | 'env'>
 
 const LANGUAGE_SPECS = {
   java: (root) => ({
-    artifacts: [[inRoot(root, 'dd-java-agent.jar')]],
+    artifacts: [[path.posix.join(root, 'dd-java-agent.jar')]],
     env: [
       {
         name: 'JAVA_TOOL_OPTIONS',
-        value: `-javaagent:${inRoot(root, 'dd-java-agent.jar')} -XX:+IgnoreUnrecognizedVMOptions`,
+        value: `-javaagent:${path.posix.join(root, 'dd-java-agent.jar')} -XX:+IgnoreUnrecognizedVMOptions`,
         separator: ' ',
         mode: 'append',
       },
     ],
   }),
   nodejs: (root) => ({
-    artifacts: [[inRoot(root, 'node_modules/dd-trace/init.js')]],
+    artifacts: [[path.posix.join(root, 'node_modules/dd-trace/init.js')]],
     env: [
       {
         name: 'NODE_OPTIONS',
-        value: `--require ${inRoot(root, 'node_modules/dd-trace/init.js')}`,
+        value: `--require ${path.posix.join(root, 'node_modules/dd-trace/init.js')}`,
         separator: ' ',
         mode: 'append',
       },
@@ -81,13 +89,13 @@ const LANGUAGE_SPECS = {
   }),
   csharp: (root) => ({
     artifacts: [
-      [inRoot(root, 'Datadog.Trace.ClrProfiler.Native.so')],
-      [inRoot(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so')],
+      [path.posix.join(root, 'Datadog.Trace.ClrProfiler.Native.so')],
+      [path.posix.join(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so')],
     ],
     env: getDotnetEnv(root),
   }),
   python: (root) => ({
-    artifacts: [[inRoot(root, 'sitecustomize.py')]],
+    artifacts: [[path.posix.join(root, 'sitecustomize.py')]],
     env: [
       {
         name: 'PYTHONPATH',
@@ -98,11 +106,11 @@ const LANGUAGE_SPECS = {
     ],
   }),
   ruby: (root) => ({
-    artifacts: [[inRoot(root, 'auto_inject.rb')]],
+    artifacts: [[path.posix.join(root, 'auto_inject.rb')]],
     env: [
       {
         name: 'RUBYOPT',
-        value: `-r${inRoot(root, 'auto_inject')}`,
+        value: `-r${path.posix.join(root, 'auto_inject')}`,
         separator: ' ',
         mode: 'prepend',
       },
@@ -110,7 +118,7 @@ const LANGUAGE_SPECS = {
   }),
   php: (root, libc) => {
     const platform = libc === 'glibc' ? 'linux-gnu' : 'linux-musl'
-    const loader = inRoot(root, `${platform}/loader`)
+    const loader = path.posix.join(root, `${platform}/loader`)
 
     return {
       artifacts: [[`${loader}/dd_library_loader.ini`], [`${loader}/dd_library_loader.so`]],
@@ -128,36 +136,6 @@ const LANGUAGE_SPECS = {
   },
 } satisfies Record<Language, SpecFactory>
 
-const normalizeRoot = (root: string): string => {
-  if (
-    !root.startsWith('/') ||
-    /[\s\0]/.test(root) ||
-    (root !== '/' && root.includes('//')) ||
-    root.split('/').some((part) => part === '.' || part === '..')
-  ) {
-    throw new Error(
-      `Tracer root must be an absolute path without whitespace or relative segments: ${JSON.stringify(root)}`
-    )
-  }
-
-  return root === '/' ? root : root.replace(/\/+$/, '')
-}
-
-const inRoot = (root: string, path: string): string => `${root === '/' ? '' : root}/${path}`
-
-const assertDotnetLayout = (language: Language, version: string): void => {
-  if (language !== 'csharp') {
-    return
-  }
-
-  const pinnedMajor = version.match(/^v?(\d+)(?:\.|$)/)?.[1]
-  if (pinnedMajor !== undefined && Number(pinnedMajor) < 3) {
-    throw new Error(
-      `Unsupported .NET tracer version ${JSON.stringify(version)}: versions before 3.0 require architecture-specific package paths`
-    )
-  }
-}
-
 const getDotnetEnv = (root: string): EnvFragment[] => [
   {name: 'CORECLR_ENABLE_PROFILING', value: '1', mode: 'set-if-absent'},
   {
@@ -167,13 +145,13 @@ const getDotnetEnv = (root: string): EnvFragment[] => [
   },
   {
     name: 'CORECLR_PROFILER_PATH',
-    value: inRoot(root, 'Datadog.Trace.ClrProfiler.Native.so'),
+    value: path.posix.join(root, 'Datadog.Trace.ClrProfiler.Native.so'),
     mode: 'set-if-absent',
   },
   {name: 'DD_DOTNET_TRACER_HOME', value: root, mode: 'set-if-absent'},
   {
     name: 'LD_PRELOAD',
-    value: inRoot(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so'),
+    value: path.posix.join(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so'),
     separator: ' ',
     mode: 'prepend',
     maxLength: 1024,
