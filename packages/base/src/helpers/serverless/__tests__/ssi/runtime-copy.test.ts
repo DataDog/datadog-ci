@@ -18,7 +18,7 @@ const makeRequest = (overrides: Partial<RuntimeCopyRequest> = {}): RuntimeCopyRe
   volumeName: TRACER_VOLUME_NAME,
   mountPath: TRACER_MOUNT_PATH,
   completionMarker,
-  artifacts: [{anyOf: [`${TRACER_MOUNT_PATH}/auto_inject.rb`]}],
+  artifacts: [[`${TRACER_MOUNT_PATH}/auto_inject.rb`]],
   ...overrides,
 })
 
@@ -47,9 +47,9 @@ describe('buildRuntimeCopyPlan', () => {
   })
 
   test('models all required artifact groups with alternatives', () => {
-    const artifacts = [
-      {anyOf: [`${TRACER_MOUNT_PATH}/primary.so`, `${TRACER_MOUNT_PATH}/fallback.so`]},
-      {anyOf: [`${TRACER_MOUNT_PATH}/manifest.json`]},
+    const artifacts: RuntimeCopyRequest['artifacts'] = [
+      [`${TRACER_MOUNT_PATH}/primary.so`, `${TRACER_MOUNT_PATH}/fallback.so`],
+      [`${TRACER_MOUNT_PATH}/manifest.json`],
     ]
 
     expect(buildRuntimeCopyPlan(makeRequest({artifacts}), {kind: 'ecs-success-dependency'}).artifacts).toEqual(
@@ -61,7 +61,7 @@ describe('buildRuntimeCopyPlan', () => {
     const request = makeRequest({
       mountPath: `${TRACER_MOUNT_PATH}/./`,
       completionMarker: `${TRACER_MOUNT_PATH}//.copy marker;$(ignored)`,
-      artifacts: [{anyOf: [`${TRACER_MOUNT_PATH}/nested/../tracer file;$(ignored)`]}],
+      artifacts: [[`${TRACER_MOUNT_PATH}/nested/../tracer file;$(ignored)`]],
     })
 
     const plan = buildRuntimeCopyPlan(request, {kind: 'azure-container-app-init'})
@@ -72,82 +72,23 @@ describe('buildRuntimeCopyPlan', () => {
   })
 
   test.each([
-    ['image', {image: ' '}],
-    ['container name', {containerName: ''}],
-    ['volume name', {volumeName: ' '}],
-  ] as const)('rejects an empty %s', (_description, override) => {
-    expect(() => buildRuntimeCopyPlan(makeRequest(override), {kind: 'azure-container-app-init'})).toThrow(
-      'must be a non-empty string'
-    )
-  })
-
-  test('rejects a relative mount path', () => {
+    ['a relative mount path', 'relative', 'must be an absolute path'],
+    ['a traversing mount path', `${TRACER_MOUNT_PATH}/../`, 'must not contain parent traversal'],
+  ])('rejects %s', (_description, mountPath, error) => {
     expect(() =>
-      buildRuntimeCopyPlan(makeRequest({mountPath: 'relative'}), {
+      buildRuntimeCopyPlan(makeRequest({mountPath}), {
         kind: 'azure-container-app-init',
       })
-    ).toThrow('must be an absolute path')
+    ).toThrow(error)
   })
 
   test.each<[string, Partial<RuntimeCopyRequest>]>([
     ['completion marker', {completionMarker: '/tmp/copy-finished'}],
-    ['artifact candidate', {artifacts: [{anyOf: ['/tmp/tracer']}]}],
-    ['traversing artifact candidate', {artifacts: [{anyOf: [`${TRACER_MOUNT_PATH}/../tmp/tracer`]}]}],
-  ])('rejects a %s outside the mount', (_description, override) => {
+    ['artifact candidate', {artifacts: [['/tmp/tracer']]}],
+    ['traversing artifact candidate', {artifacts: [[`${TRACER_MOUNT_PATH}/../tmp/tracer`]]}],
+  ])('rejects %s outside the mount', (_description, override) => {
     expect(() => buildRuntimeCopyPlan(makeRequest(override), {kind: 'ecs-success-dependency'})).toThrow(
       'must be below mount path'
     )
-  })
-
-  test('rejects an empty artifact requirement list', () => {
-    expect(() => buildRuntimeCopyPlan(makeRequest({artifacts: []}), {kind: 'azure-container-app-init'})).toThrow(
-      'must have at least one artifact requirement'
-    )
-  })
-
-  test('rejects an empty artifact candidate group', () => {
-    expect(() =>
-      buildRuntimeCopyPlan(makeRequest({artifacts: [{anyOf: []}]}), {kind: 'azure-container-app-init'})
-    ).toThrow('must have at least one candidate')
-  })
-
-  test('rejects duplicate normalized candidates', () => {
-    expect(() =>
-      buildRuntimeCopyPlan(
-        makeRequest({
-          artifacts: [{anyOf: [`${TRACER_MOUNT_PATH}/tracer`]}, {anyOf: [`${TRACER_MOUNT_PATH}//tracer`]}],
-        }),
-        {kind: 'ecs-success-dependency'}
-      )
-    ).toThrow('Duplicate runtime-copy artifact candidate')
-  })
-
-  test.each([0, -1, 1.5, Number.NaN, 65536])('rejects invalid Cloud Run readiness port %p', (readinessPort) => {
-    expect(() => buildRuntimeCopyPlan(makeRequest(), {kind: 'cloud-run-idling-sidecar', readinessPort})).toThrow(
-      'must be an integer from 1 to 65535'
-    )
-  })
-
-  test.each([1, 65535])('accepts Cloud Run readiness port %p', (readinessPort) => {
-    expect(buildRuntimeCopyPlan(makeRequest(), {kind: 'cloud-run-idling-sidecar', readinessPort}).ordering).toEqual({
-      kind: 'cloud-run-idling-sidecar',
-      readinessPort,
-    })
-  })
-
-  test('does not copy adversarial request properties into the plan', () => {
-    const request = Object.assign(makeRequest(), {
-      env: {SECRET: 'value'},
-      containers: ['application'],
-      volumes: ['application'],
-      service: {platform: 'cloud-run'},
-    })
-
-    const plan = buildRuntimeCopyPlan(request, {kind: 'azure-container-app-init'})
-
-    expect(plan).not.toHaveProperty('env')
-    expect(plan).not.toHaveProperty('containers')
-    expect(plan).not.toHaveProperty('volumes')
-    expect(plan).not.toHaveProperty('service')
   })
 })

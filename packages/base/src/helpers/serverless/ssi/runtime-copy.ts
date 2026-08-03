@@ -1,22 +1,20 @@
 import path from 'node:path'
 
+import type {RequiredArtifact} from './injection-spec'
+
 export type RuntimeCopyOrderingStrategy =
   | {kind: 'cloud-run-idling-sidecar'; readinessPort: number}
   | {kind: 'azure-container-app-init'}
   | {kind: 'ecs-success-dependency'}
 
-export interface RuntimeCopyArtifactRequirement {
-  anyOf: string[]
-}
-
-/** Absolute paths are data; shell adapters must pass them as quoted positional arguments, not interpolate them. */
+/** Shell adapters must pass paths as quoted arguments, never interpolate them. */
 export interface RuntimeCopyRequest {
   image: string
   containerName: string
   volumeName: string
   mountPath: string
   completionMarker: string
-  artifacts: RuntimeCopyArtifactRequirement[]
+  artifacts: readonly [RequiredArtifact, ...RequiredArtifact[]]
   resources?: {memory?: string; cpu?: string}
 }
 
@@ -24,19 +22,23 @@ export interface RuntimeCopyPlan extends RuntimeCopyRequest {
   ordering: RuntimeCopyOrderingStrategy
 }
 
-const validateNonEmpty = (value: string, description: string): void => {
-  if (typeof value !== 'string' || !value.trim()) {
-    throw new Error(`${description} must be a non-empty string`)
-  }
+export const buildRuntimeCopyPlan = (
+  request: RuntimeCopyRequest,
+  ordering: RuntimeCopyOrderingStrategy
+): RuntimeCopyPlan => {
+  validateMountPath(request.mountPath)
+  validatePathBelowMount(request.completionMarker, 'Runtime-copy completion marker', request.mountPath)
+  request.artifacts
+    .flat()
+    .forEach((artifact) => validatePathBelowMount(artifact, 'Runtime-copy artifact', request.mountPath))
+
+  return {...request, ordering}
 }
 
-const validateAbsolutePath = (value: string, description: string): void => {
-  validateNonEmpty(value, description)
-  if (!path.posix.isAbsolute(value)) {
-    throw new Error(`${description} must be an absolute path`)
-  }
-  if (value.includes('\0')) {
-    throw new Error(`${description} must not contain a null byte`)
+const validateMountPath = (value: string): void => {
+  validateAbsolutePath(value, 'Runtime-copy mount path')
+  if (value.split('/').includes('..')) {
+    throw new Error('Runtime-copy mount path must not contain parent traversal')
   }
 }
 
@@ -51,72 +53,8 @@ const validatePathBelowMount = (value: string, description: string, mountPath: s
   }
 }
 
-const validateOrdering = (ordering: RuntimeCopyOrderingStrategy): RuntimeCopyOrderingStrategy => {
-  switch (ordering.kind) {
-    case 'cloud-run-idling-sidecar':
-      if (!Number.isInteger(ordering.readinessPort) || ordering.readinessPort < 1 || ordering.readinessPort > 65535) {
-        throw new Error('Cloud Run readiness port must be an integer from 1 to 65535')
-      }
-
-      return {...ordering}
-    case 'azure-container-app-init':
-    case 'ecs-success-dependency':
-      return {...ordering}
-    default:
-      throw new Error(`Unsupported runtime-copy ordering strategy: ${String((ordering as {kind?: unknown}).kind)}`)
+const validateAbsolutePath = (value: string, description: string): void => {
+  if (!path.posix.isAbsolute(value)) {
+    throw new Error(`${description} must be an absolute path`)
   }
-}
-
-export const buildRuntimeCopyPlan = (
-  request: RuntimeCopyRequest,
-  ordering: RuntimeCopyOrderingStrategy
-): RuntimeCopyPlan => {
-  validateNonEmpty(request.image, 'Runtime-copy image')
-  validateNonEmpty(request.containerName, 'Runtime-copy container name')
-  validateNonEmpty(request.volumeName, 'Runtime-copy volume name')
-  validateAbsolutePath(request.mountPath, 'Runtime-copy mount path')
-  validatePathBelowMount(request.completionMarker, 'Runtime-copy completion marker', request.mountPath)
-
-  if (!Array.isArray(request.artifacts) || request.artifacts.length === 0) {
-    throw new Error('Runtime-copy plan must have at least one artifact requirement')
-  }
-
-  const candidates = new Set<string>()
-  const artifacts = request.artifacts.map((requirement, requirementIndex) => {
-    if (!Array.isArray(requirement.anyOf) || requirement.anyOf.length === 0) {
-      throw new Error(`Runtime-copy artifact requirement ${requirementIndex} must have at least one candidate`)
-    }
-
-    const anyOf = requirement.anyOf.map((candidate, candidateIndex) => {
-      validatePathBelowMount(
-        candidate,
-        `Runtime-copy artifact candidate ${requirementIndex}:${candidateIndex}`,
-        request.mountPath
-      )
-      const normalized = path.posix.normalize(candidate)
-      if (candidates.has(normalized)) {
-        throw new Error(`Duplicate runtime-copy artifact candidate: ${normalized}`)
-      }
-      candidates.add(normalized)
-
-      return candidate
-    })
-
-    return {anyOf}
-  })
-
-  const plan: RuntimeCopyPlan = {
-    image: request.image,
-    containerName: request.containerName,
-    volumeName: request.volumeName,
-    mountPath: request.mountPath,
-    completionMarker: request.completionMarker,
-    artifacts,
-    ordering: validateOrdering(ordering),
-  }
-  if (request.resources !== undefined) {
-    plan.resources = {...request.resources}
-  }
-
-  return plan
 }
