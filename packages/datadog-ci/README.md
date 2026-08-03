@@ -47,15 +47,14 @@ yarn dlx @datadog/datadog-ci@v5 [scope]
 
 Plugins are NPM packages that were split from the main `@datadog/datadog-ci` NPM package to reduce its installation size.
 
-If you are using the NPM package:
-- Run `datadog-ci plugin list` to list the available plugins:
-  ```sh
-  datadog-ci plugin list
-  ```
-- Run `datadog-ci plugin install` to install a plugin:
-  ```sh
-  datadog-ci plugin install <scope>
-  ```
+If you are using the NPM package, you can manage plugins with the following commands:
+```sh
+# List available plugins
+datadog-ci plugin list
+
+# Install a plugin
+datadog-ci plugin install <scope>
+```
 
 If you are using the [standalone binary](#standalone-binary), all plugins are already included, so you don't need to install them separately.
 
