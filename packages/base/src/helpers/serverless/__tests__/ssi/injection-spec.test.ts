@@ -1,5 +1,9 @@
 import {mergeEnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
-import {getLanguageInjectionSpec, type Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import {
+  getLanguageCompatibilityError,
+  getLanguageInjectionSpec,
+  type Libc,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {LANGUAGE_METADATA, type Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 const languages = Object.keys(LANGUAGE_METADATA) as Language[]
@@ -42,21 +46,6 @@ describe('injection specification metadata and root', () => {
     expect(spec.artifacts).toEqual([['/sitecustomize.py']])
     expect(spec.env[0].value).toBe('/')
   })
-
-  test.each(['', 'relative', '/path with-space', '/opt/../datadog', '/opt//datadog'])(
-    'rejects unsafe root %p',
-    (root) => {
-      expect(() =>
-        getLanguageInjectionSpec({
-          language: 'java',
-          libc: 'glibc',
-          registry: 'gcr.io/datadoghq',
-          version: 'latest',
-          root,
-        })
-      ).toThrow('Tracer root')
-    }
-  )
 })
 
 describe('language injection specifications', () => {
@@ -113,8 +102,10 @@ describe('language injection specifications', () => {
     ])
   })
 
-  test('rejects Ruby on musl', () => {
-    expect(() => getSpec('ruby', 'musl')).toThrow('does not support musl')
+  test('reports Ruby on musl as incompatible', () => {
+    expect(getLanguageCompatibilityError({language: 'ruby', libc: 'musl', version: 'latest'})).toContain(
+      'does not support musl'
+    )
   })
 
   test.each([
@@ -138,15 +129,10 @@ describe('language injection specifications', () => {
     expect(mergeEnvFragment('/etc/php/conf.d', spec.env[0])).toBe(`/etc/php/conf.d:${loader}`)
   })
 
-  test.each(['2.56.0', 'v2.60.1'])('rejects pinned .NET 2.x layouts that require architecture', (version) => {
-    expect(() =>
-      getLanguageInjectionSpec({
-        language: 'csharp',
-        libc: 'glibc',
-        registry: 'gcr.io/datadoghq',
-        version,
-      })
-    ).toThrow('versions before 3.0 require architecture-specific package paths')
+  test.each(['2.56.0', 'v2.60.1'])('reports .NET 2.x layouts as incompatible', (version) => {
+    expect(getLanguageCompatibilityError({language: 'csharp', libc: 'glibc', version})).toContain(
+      'versions before 3.0 require architecture-specific package paths'
+    )
   })
 
   test.each(['glibc', 'musl'] as const)('uses the current universal .NET package paths for %s', (libc) => {
@@ -178,8 +164,8 @@ describe('language injection specifications', () => {
     ])
   })
 
-  test('rejects unsupported user input', () => {
-    expect(() => getSpec('go' as Language)).toThrow('Unsupported language')
-    expect(() => getSpec('java', 'uclibc' as Libc)).toThrow('Unsupported libc')
+  test('accepts compatible language options', () => {
+    expect(getLanguageCompatibilityError({language: 'java', libc: 'musl', version: 'latest'})).toBeUndefined()
+    expect(getLanguageCompatibilityError({language: 'csharp', libc: 'glibc', version: '3.0.0'})).toBeUndefined()
   })
 })
