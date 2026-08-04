@@ -81,7 +81,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     )
     const namedMainContainer = ensureMainContainerName(sourceTemplate, mainContainer, ownsSsiState)
     sourceTemplate = ownsSsiState
-      ? scrubPriorSsiState(namedMainContainer.template, namedMainContainer.mainContainerName)
+      ? removeExistingSsiState(namedMainContainer.template, namedMainContainer.mainContainerName)
       : namedMainContainer.template
     targetContainerNames = new Set([namedMainContainer.mainContainerName])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
@@ -218,30 +218,30 @@ const ensureMainContainerName = (
   }
 }
 
-const scrubPriorSsiState = (template: IServiceTemplate, mainContainerName: string): IServiceTemplate => ({
+const removeExistingSsiState = (template: IServiceTemplate, mainContainerName: string): IServiceTemplate => ({
   ...template,
   containers: (template.containers ?? [])
     .filter((container) => container.name !== TRACER_COPY_CONTAINER_NAME)
-    .map((container) => scrubPriorSsiContainer(container, container.name === mainContainerName)),
+    .map((container) => removeExistingSsiContainer(container, container.name === mainContainerName)),
   volumes: (template.volumes ?? []).filter((volume) => volume.name !== TRACER_VOLUME_NAME),
 })
 
-const scrubPriorSsiContainer = (container: IContainer, isMainContainer: boolean): IContainer => {
+const removeExistingSsiContainer = (container: IContainer, isMainContainer: boolean): IContainer => {
   const existingEnv = container.env ?? []
   const env = isMainContainer ? removeLanguageInjectionEnv(existingEnv) : existingEnv
   const envChanged = env.length !== existingEnv.length || env.some((variable, index) => variable !== existingEnv[index])
   const existingMounts = container.volumeMounts ?? []
   const volumeMounts = existingMounts.filter((mount) => mount.name !== TRACER_VOLUME_NAME)
 
-  let scrubbed = container
+  let cleaned = container
   if (envChanged) {
-    scrubbed = {...scrubbed, env}
+    cleaned = {...cleaned, env}
   }
   if (volumeMounts.length !== existingMounts.length) {
-    scrubbed = {...scrubbed, volumeMounts}
+    cleaned = {...cleaned, volumeMounts}
   }
 
-  return removeDependency(scrubbed, TRACER_COPY_CONTAINER_NAME)
+  return removeDependency(cleaned, TRACER_COPY_CONTAINER_NAME)
 }
 
 const removeDependency = (container: IContainer, name: string): IContainer => {
