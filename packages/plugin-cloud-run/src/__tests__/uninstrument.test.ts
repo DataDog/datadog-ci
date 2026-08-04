@@ -232,6 +232,27 @@ describe('UninstrumentCommand', () => {
       expect(writeStdout).toHaveBeenCalledWith(expect.stringContaining("Shared volume 'shared-volume' not found"))
     })
 
+    test.each([[], undefined])('handles %p configured environment variables', (envVars) => {
+      ;(command as any).envVars = envVars
+      const service = {
+        template: {
+          containers: [
+            {
+              name: 'main',
+              env: [
+                {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+                {name: 'CUSTOM_VAR', value: 'custom-value'},
+              ],
+            },
+          ],
+        },
+      }
+
+      expect(command.createUninstrumentedServiceConfig(service).template?.containers?.[0].env).toEqual([
+        {name: 'CUSTOM_VAR', value: 'custom-value'},
+      ])
+    })
+
     test('uses custom sidecar and volume names', () => {
       ;(command as any).sidecarName = 'custom-sidecar'
       ;(command as any).sharedVolumeName = 'custom-volume'
@@ -254,16 +275,16 @@ describe('UninstrumentCommand', () => {
   })
 
   describe('application container cleanup', () => {
-    let envVars: string[] | undefined
+    let envVarNames: ReadonlySet<string>
 
     beforeEach(() => {
-      envVars = []
+      envVarNames = new Set()
     })
 
     const cleanAppContainer = (appContainer: IContainer): IContainer =>
       uninstrumentServiceConfig(
         {template: {containers: [appContainer]}},
-        {sidecarName: 'datadog-sidecar', sharedVolumeName: 'shared-volume', envVars}
+        {sidecarName: 'datadog-sidecar', sharedVolumeName: 'shared-volume', envVarNames}
       ).service.template!.containers![0]
 
     test('removes shared volume mount and DD_ environment variables', () => {
@@ -298,7 +319,7 @@ describe('UninstrumentCommand', () => {
     })
 
     test('removes configured environment variables', () => {
-      envVars = ['CUSTOM_VAR=value1', 'ANOTHER_VAR=value2']
+      envVarNames = new Set(['CUSTOM_VAR', 'ANOTHER_VAR'])
       const appContainer = {
         name: 'main',
         env: [
@@ -317,22 +338,24 @@ describe('UninstrumentCommand', () => {
       ])
     })
 
-    test.each([[], undefined])('handles %p configured environment variables', (configuredEnvVars) => {
-      envVars = configuredEnvVars
-      const appContainer = {
-        name: 'main',
-        env: [
-          {name: 'NODE_ENV', value: 'production'},
-          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
-          {name: 'CUSTOM_VAR', value: 'custom-value'},
-        ],
-        volumeMounts: [],
-      }
+    test.each([
+      [false, false],
+      [true, false],
+      [false, true],
+      [true, true],
+    ])('reports sidecar=%s and volume=%s removal independently', (hasSidecar, hasVolume) => {
+      const result = uninstrumentServiceConfig(
+        {
+          template: {
+            containers: [{name: 'main'}, ...(hasSidecar ? [{name: 'datadog-sidecar'}] : [])],
+            volumes: hasVolume ? [{name: 'shared-volume'}] : [],
+          },
+        },
+        {sidecarName: 'datadog-sidecar', sharedVolumeName: 'shared-volume', envVarNames: new Set()}
+      )
 
-      expect(cleanAppContainer(appContainer).env).toEqual([
-        {name: 'NODE_ENV', value: 'production'},
-        {name: 'CUSTOM_VAR', value: 'custom-value'},
-      ])
+      expect(result.sidecarRemoved).toBe(hasSidecar)
+      expect(result.sharedVolumeRemoved).toBe(hasVolume)
     })
   })
 })
