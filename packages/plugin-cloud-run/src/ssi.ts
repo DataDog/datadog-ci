@@ -192,12 +192,12 @@ const assertLanguageInjectionEnvCanBeMerged = (env: readonly IEnvVar[], spec: La
     const matching = env.filter((variable) => variable.name === name)
     if (matching.length > 1) {
       throw new SsiConfigError(
-        `${name} appears more than once on the ingress container, so Datadog cannot safely modify it. Remove the duplicate before retrying.`
+        `${name} appears more than once on the main container, so Datadog cannot safely modify it. Remove the duplicate before retrying.`
       )
     }
     if (matching[0]?.valueSource) {
       throw new SsiConfigError(
-        `${name} on the ingress container is populated from a secret reference, which Datadog cannot safely extend. Set it to a literal value or remove it before instrumenting.`
+        `${name} on the main container is populated from a secret reference, which Datadog cannot safely extend. Set it to a literal value or remove it before instrumenting.`
       )
     }
   }
