@@ -2,7 +2,6 @@ import type {IContainer} from './types'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language, SingleLanguageTracerRegistry} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {
   DEFAULT_TRACER_LIBC,
   DEFAULT_TRACER_REGISTRY,
@@ -22,10 +21,12 @@ export const CLOUD_RUN_LANGUAGES = [...TRACER_INJECTION_LANGUAGES, 'go'] as cons
 
 export type CloudRunLanguage = (typeof CLOUD_RUN_LANGUAGES)[number]
 
+export const NORMALIZED_TRACING_MODES = ['manual', 'disabled', 'inject'] as const
+export type TracingMode = (typeof NORMALIZED_TRACING_MODES)[number]
+
 export interface SsiOptions {
-  apmEnabled: boolean
   language: CloudRunLanguage | undefined
-  tracing: string | undefined
+  tracing: TracingMode | undefined
   tracerVersion: string
   tracerRegistry: SingleLanguageTracerRegistry
   tracerLibc: Libc
@@ -35,7 +36,7 @@ export interface SsiOptions {
 
 export type SsiConfigResult = (
   | {kind: 'errors'; errors: readonly string[]}
-  | {kind: 'disabled' | 'agent-only'}
+  | {kind: 'no-injection'}
   | {
       kind: 'single-language'
       language: Language
@@ -48,57 +49,38 @@ export type SsiConfigResult = (
 
 /** Resolves SSI inputs to a mode or validation errors. */
 export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
-  if (!options.apmEnabled) {
+  if (options.tracing !== 'inject') {
     const unusedFlags = nonDefaultTracerFlags(options)
 
     return unusedFlags.length > 0
       ? {
           kind: 'errors',
-          errors: [
-            `${unusedFlags.join(
-              ', '
-            )} only applies when --apm-enabled is set. Add --apm-enabled, or remove these flags to avoid silently changing nothing.`,
-          ],
+          errors: [`${unusedFlags.join(', ')} only applies with --tracing inject.`],
           warnings: [],
         }
-      : {kind: 'disabled', warnings: []}
+      : {kind: 'no-injection', warnings: []}
   }
-
-  const tracingErrors =
-    toBoolean(options.tracing) === false
-      ? ['--apm-enabled cannot be combined with disabled tracing. Remove one of the two flags.']
-      : []
 
   if (options.language === undefined) {
     return {
       kind: 'errors',
       errors: [
-        ...tracingErrors,
-        `--apm-enabled requires --language. Multi-Language instrumentation is not supported yet. Supported Single-Language values are: ${TRACER_INJECTION_LANGUAGES.join(
+        `--tracing inject requires --language until automatic multi-language injection is supported. Possible values: ${TRACER_INJECTION_LANGUAGES.join(
           ', '
-        )}, plus "go" for agent-only tracing.`,
+        )}.`,
       ],
       warnings: [],
     }
   }
 
   if (options.language === 'go') {
-    const unsupportedFlags = nonDefaultTracerFlags(options)
-    const goErrors = [
-      ...tracingErrors,
-      ...(unsupportedFlags.length > 0
-        ? [
-            `${unsupportedFlags.join(', ')} cannot be used with --language go because Go does not use an SSI tracer image. Remove these flags.`,
-          ]
-        : []),
-    ]
-    const goWarnings = [
-      'Go does not support automatic tracer injection. Datadog is setting DD_TRACE_ENABLED=true so the Datadog Agent sidecar can collect traces, but no tracer is installed. Instrument your Go application with dd-trace-go and redeploy your image to get traces.',
-    ]
-
-    return goErrors.length > 0
-      ? {kind: 'errors', errors: goErrors, warnings: goWarnings}
-      : {kind: 'agent-only', warnings: goWarnings}
+    return {
+      kind: 'errors',
+      errors: [
+        'Go does not support tracer injection. Instrument the application with dd-trace-go and use --tracing manual.',
+      ],
+      warnings: [],
+    }
   }
 
   const compatibilityError = getLanguageCompatibilityError({
@@ -106,7 +88,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     libc: options.tracerLibc,
     version: options.tracerVersion,
   })
-  const errors = [...tracingErrors, ...(compatibilityError === undefined ? [] : [compatibilityError])]
+  const errors = compatibilityError === undefined ? [] : [compatibilityError]
   if (errors.length > 0) {
     return {kind: 'errors', errors, warnings: []}
   }
