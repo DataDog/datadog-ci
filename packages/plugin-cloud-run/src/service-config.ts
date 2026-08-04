@@ -311,14 +311,14 @@ const removeContainerInstrumentation = (
   ownsSsiState: boolean
 ): IContainer => {
   const hasTracerMount = container.volumeMounts?.some((mount) => mount.name === TRACER_VOLUME_NAME) ?? false
-  let updated = ownsSsiState && hasTracerMount ? scrubPriorSsiContainer(container, true) : container
+  let updated = ownsSsiState && hasTracerMount ? removeExistingSsiContainer(container, true) : container
   if (ownsSsiState) {
     updated = removeDependency(updated, agentContainerName)
   }
 
   return {
     ...updated,
-    name: ownsSsiState && updated.name === SSI_ADOPTED_INGRESS_CONTAINER_NAME ? '' : updated.name,
+    name: ownsSsiState && updated.name === SSI_ADOPTED_MAIN_CONTAINER_NAME ? '' : updated.name,
     volumeMounts: (updated.volumeMounts || []).filter((volumeMount) => volumeMount.name !== sharedVolumeName),
     env: (updated.env || []).filter(
       (envVar) => envVar.name && !envVar.name.startsWith('DD_') && !envVarNames.has(envVar.name)
