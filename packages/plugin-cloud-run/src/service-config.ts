@@ -230,7 +230,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       volumeMountNameKey: 'name',
     },
     envVarsByName,
-    appContainerNames ? {appContainerNames} : {}
+    appContainerNames
   ) as IServiceTemplate
 
   const updatedLabels: Record<string, string> = {
