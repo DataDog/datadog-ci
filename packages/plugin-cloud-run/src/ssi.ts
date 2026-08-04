@@ -5,11 +5,9 @@ import type {Language, SingleLanguageTracerRegistry} from '@datadog/datadog-ci-b
 import {
   DEFAULT_TRACER_LIBC,
   DEFAULT_TRACER_REGISTRY,
-  DEFAULT_TRACER_SIDECAR_MEMORY,
   DEFAULT_TRACER_VERSION,
-  DEFAULT_TRACER_VOLUME_SIZE,
-  TRACER_MOUNT_PATH,
-} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
+import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
   getLanguageCompatibilityError,
   getLanguageInjectionSpec,
@@ -30,8 +28,6 @@ export interface SsiOptions {
   tracerVersion: string
   tracerRegistry: SingleLanguageTracerRegistry
   tracerLibc: Libc
-  tracerVolumeSize: string
-  tracerSidecarMemory: string
 }
 
 export type SsiConfigResult = (
@@ -42,8 +38,6 @@ export type SsiConfigResult = (
       language: Language
       libc: Libc
       spec: LanguageInjectionSpec
-      tracerVolumeSize: string
-      tracerSidecarMemory: string
     }
 ) & {warnings: readonly string[]}
 
@@ -113,8 +107,6 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     language: options.language,
     libc: options.tracerLibc,
     spec,
-    tracerVolumeSize: options.tracerVolumeSize,
-    tracerSidecarMemory: options.tracerSidecarMemory,
   }
 }
 
@@ -163,6 +155,4 @@ const nonDefaultTracerFlags = (options: SsiOptions): string[] =>
     options.tracerVersion !== DEFAULT_TRACER_VERSION ? '--tracer-version' : undefined,
     options.tracerRegistry !== DEFAULT_TRACER_REGISTRY ? '--tracer-registry' : undefined,
     options.tracerLibc !== DEFAULT_TRACER_LIBC ? '--tracer-libc' : undefined,
-    options.tracerVolumeSize !== DEFAULT_TRACER_VOLUME_SIZE ? '--tracer-volume-size' : undefined,
-    options.tracerSidecarMemory !== DEFAULT_TRACER_SIDECAR_MEMORY ? '--tracer-sidecar-memory' : undefined,
   ].filter((flag): flag is string => flag !== undefined)

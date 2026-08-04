@@ -1,5 +1,9 @@
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR} from '../../helpers/serverless/constants'
 
+export const DEFAULT_TRACER_REGISTRY = 'gcr.io/datadoghq'
+export const DEFAULT_TRACER_VERSION = 'latest'
+export const DEFAULT_TRACER_LIBC = 'glibc'
+
 export const SKIP_MASKING_CLOUDRUN_ENV_VARS = new Set([
   SITE_ENV_VAR,
   SERVICE_ENV_VAR,
