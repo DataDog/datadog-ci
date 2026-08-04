@@ -145,25 +145,25 @@ const buildTracerVolume = (volumeName: string): IVolume => ({
 const applyRuntimeCopyPlan = (
   template: IServiceTemplate,
   plan: RuntimeCopyPlan,
-  ingressName: string,
+  mainContainerName: string,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
   const containers = [...(template.containers ?? [])]
-  const ingressIndex = containers.findIndex((container) => container.name === ingressName)
-  if (ingressIndex === -1) {
-    throw new SsiConfigError(`Ingress container '${ingressName}' was not found in the service template.`)
+  const mainContainerIndex = containers.findIndex((container) => container.name === mainContainerName)
+  if (mainContainerIndex === -1) {
+    throw new SsiConfigError(`Main container '${mainContainerName}' was not found in the service template.`)
   }
 
-  const ingress = containers[ingressIndex]
+  const mainContainer = containers[mainContainerIndex]
   const managedDependencies = new Set([plan.containerName, ...dependencyNames])
-  containers[ingressIndex] = {
-    ...ingress,
+  containers[mainContainerIndex] = {
+    ...mainContainer,
     volumeMounts: [
-      ...(ingress.volumeMounts ?? []).filter((mount) => mount.name !== plan.volumeName),
+      ...(mainContainer.volumeMounts ?? []).filter((mount) => mount.name !== plan.volumeName),
       {name: plan.volumeName, mountPath: plan.mountPath},
     ],
     dependsOn: [
-      ...(ingress.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
+      ...(mainContainer.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
       plan.containerName,
       ...dependencyNames,
     ],
@@ -260,7 +260,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       },
       {kind: 'cloud-run-idling-sidecar', readinessPort: TRACER_READINESS_PORT}
     )
-    template = applyRuntimeCopyPlan(template, plan, [...appContainerNames!][0], [options.sidecarName])
+    template = applyRuntimeCopyPlan(template, plan, [...targetContainerNames!][0], [options.sidecarName])
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 
