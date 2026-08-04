@@ -144,8 +144,19 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
       sharedVolumeName: this.sharedVolumeName,
       envVars: this.envVars,
     })
-    for (const warning of result.warnings) {
-      this.context.stdout.write(renderSoftWarning(`${warning}\n`))
+    if (!result.sidecarRemoved) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Sidecar container '${this.sidecarName}' not found, so no container was removed. Specify the container name with --sidecar-name.\n`
+        )
+      )
+    }
+    if (!result.sharedVolumeRemoved) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Shared volume '${this.sharedVolumeName}' not found, so no shared volume was removed. Specify the shared volume name with --shared-volume-name.\n`
+        )
+      )
     }
 
     return result.service
