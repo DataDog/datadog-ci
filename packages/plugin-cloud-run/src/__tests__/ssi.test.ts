@@ -1,13 +1,24 @@
 import type {IContainer, IEnvVar} from '../types'
+import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-import type {ServerlessLibc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
-import type {ServerlessLanguage} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
-import {getSingleLanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
-import {resolveSsiConfig,
-  mergeNativeInjectionEnv,
-  removeKnownNativeInjectionEnv, selectMainContainer, SsiConfigError, type SsiOptions} from '../ssi'
+import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
+import {
+  LIBCS,
+  getLanguageCompatibilityError,
+  getLanguageInjectionSpec,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+
+import {
+  TRACER_INJECTION_LANGUAGES,
+  mergeLanguageInjectionEnv,
+  removeLanguageInjectionEnv,
+  resolveSsiConfig,
+  selectMainContainer,
+  SsiConfigError,
+  type SsiOptions,
+} from '../ssi'
 
 const defaultOptions: SsiOptions = {
   language: undefined,
@@ -17,16 +28,21 @@ const defaultOptions: SsiOptions = {
   tracerLibc: 'glibc',
 }
 
-const getSpec = (language: ServerlessLanguage, libc: ServerlessLibc = 'glibc') =>
-  getSingleLanguageInjectionSpec({
+const getSpec = (language: Language, libc: Libc = defaultOptions.tracerLibc) =>
+  getLanguageInjectionSpec({
     language,
-    registry: 'gcr.io/datadoghq',
-    version: 'latest',
+    registry: defaultOptions.tracerRegistry,
+    version: defaultOptions.tracerVersion,
     libc,
-    root: '/datadog-lib',
+    root: TRACER_MOUNT_PATH,
   })
 
 const nodeSpec = getSpec('nodejs')
+const supportedLanguageVariants = TRACER_INJECTION_LANGUAGES.flatMap((language) =>
+  LIBCS.filter(
+    (libc) => getLanguageCompatibilityError({language, libc, version: defaultOptions.tracerVersion}) === undefined
+  ).map((libc) => [language, libc] as const)
+)
 
 const getErrors = (overrides: Partial<SsiOptions>) => {
   const result = resolveSsiConfig({...defaultOptions, ...overrides})
@@ -81,30 +97,30 @@ describe('resolveSsiConfig', () => {
   })
 })
 
-describe('native injection environment', () => {
+describe('language injection environment', () => {
   test('extends existing values and adds the injection tag once', () => {
     const existing: IEnvVar[] = [
       {name: 'NODE_OPTIONS', value: '--max-old-space-size=512'},
       {name: 'DD_TAGS', value: 'team:backend'},
     ]
 
-    const first = mergeNativeInjectionEnv(existing, nodeSpec)
+    const first = mergeLanguageInjectionEnv(existing, nodeSpec)
     expect(first).toEqual([
       {name: 'NODE_OPTIONS', value: '--max-old-space-size=512 --require /datadog-lib/node_modules/dd-trace/init.js'},
       {name: 'DD_TAGS', value: `${SINGLE_LANGUAGE_INJECTION_MODE_TAG},team:backend`},
     ])
-    expect(mergeNativeInjectionEnv(first, nodeSpec)).toEqual(first)
+    expect(mergeLanguageInjectionEnv(first, nodeSpec)).toEqual(first)
   })
 
   test.each(['NODE_OPTIONS', 'DD_TAGS'])('rejects a value-source target for %s', (name) => {
-    expect(() => mergeNativeInjectionEnv([{name, valueSource: {secretKeyRef: {secret: 'secret'}}}], nodeSpec)).toThrow(
-      SsiValidationError
-    )
+    expect(() =>
+      mergeLanguageInjectionEnv([{name, valueSource: {secretKeyRef: {secret: 'secret'}}}], nodeSpec)
+    ).toThrow(SsiConfigError)
   })
 
   test.each(['NODE_OPTIONS', 'DD_TAGS'])('rejects a duplicate target for %s', (name) => {
     expect(() =>
-      mergeNativeInjectionEnv(
+      mergeLanguageInjectionEnv(
         [
           {name, value: 'first'},
           {name, value: 'second'},
@@ -114,20 +130,14 @@ describe('native injection environment', () => {
     ).toThrow(/more than once/)
   })
 
-  test.each([
-    ['java', 'glibc'],
-    ['java', 'musl'],
-    ['nodejs', 'glibc'],
-    ['nodejs', 'musl'],
-    ['csharp', 'glibc'],
-    ['csharp', 'musl'],
-    ['python', 'glibc'],
-    ['python', 'musl'],
-    ['ruby', 'glibc'],
-    ['php', 'glibc'],
-    ['php', 'musl'],
-  ] as [ServerlessLanguage, ServerlessLibc][])('removes every exact known %s/%s fragment', (language, libc) => {
-    const injected = mergeNativeInjectionEnv(
+  test('rejects a conflicting scalar value', () => {
+    expect(() =>
+      mergeLanguageInjectionEnv([{name: 'CORECLR_ENABLE_PROFILING', value: '0'}], getSpec('csharp'))
+    ).toThrow(SsiConfigError)
+  })
+
+  test.each(supportedLanguageVariants)('removes the %s/%s tracer environment', (language, libc) => {
+    const injected = mergeLanguageInjectionEnv(
       [
         {name: 'CUSTOM', value: 'keep'},
         {name: 'DD_TAGS', value: 'team:backend'},
@@ -135,17 +145,17 @@ describe('native injection environment', () => {
       getSpec(language, libc)
     )
 
-    expect(removeKnownNativeInjectionEnv(injected)).toEqual([
+    expect(removeLanguageInjectionEnv(injected)).toEqual([
       {name: 'CUSTOM', value: 'keep'},
       {name: 'DD_TAGS', value: 'team:backend'},
     ])
   })
 
-  test('supports markerless cross-language replacement', () => {
-    const markerlessJava = mergeNativeInjectionEnv([{name: 'CUSTOM', value: 'keep'}], getSpec('java')).filter(
+  test('replaces another language when the injection tag is missing', () => {
+    const markerlessJava = mergeLanguageInjectionEnv([{name: 'CUSTOM', value: 'keep'}], getSpec('java')).filter(
       (variable) => variable.name !== 'DD_TAGS'
     )
-    const replaced = mergeNativeInjectionEnv(removeKnownNativeInjectionEnv(markerlessJava), nodeSpec)
+    const replaced = mergeLanguageInjectionEnv(removeLanguageInjectionEnv(markerlessJava), nodeSpec)
 
     expect(replaced).toEqual([
       {name: 'CUSTOM', value: 'keep'},
@@ -154,11 +164,20 @@ describe('native injection environment', () => {
     ])
   })
 
+  test('preserves value-source and empty environment variables during removal', () => {
+    const env: IEnvVar[] = [
+      {name: 'NODE_OPTIONS', valueSource: {secretKeyRef: {secret: 'node-options'}}},
+      {name: 'DD_TAGS', value: ''},
+    ]
+
+    expect(removeLanguageInjectionEnv(env)).toEqual(env)
+  })
+
   test('removes both known PHP libc paths while preserving other scan directories', () => {
     const glibc = getSpec('php', 'glibc').env[0].value
     const musl = getSpec('php', 'musl').env[0].value
     expect(
-      removeKnownNativeInjectionEnv([{name: 'PHP_INI_SCAN_DIR', value: `/etc/php${glibc}${musl}:/custom/php`}])
+      removeLanguageInjectionEnv([{name: 'PHP_INI_SCAN_DIR', value: `/etc/php:${glibc}:${musl}:/custom/php`}])
     ).toEqual([{name: 'PHP_INI_SCAN_DIR', value: '/etc/php:/custom/php'}])
   })
 })
