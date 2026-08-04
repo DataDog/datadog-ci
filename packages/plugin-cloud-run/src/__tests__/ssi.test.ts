@@ -283,7 +283,7 @@ describe('SSI service preparation', () => {
     expect(() => instrumentServiceConfig(volumeService, serviceConfigOptions())).toThrow(/reserved/)
   })
 
-  test('applies Agent and language environment only to the ingress', () => {
+  test('applies Agent and language environment only to the main container', () => {
     const service = serviceWithWorker()
     const worker = service.template?.containers?.[1]
     const result = instrumentServiceConfig(service, serviceConfigOptions())
@@ -302,7 +302,7 @@ describe('SSI service preparation', () => {
     expect(result.template?.volumes?.some((volume) => volume.name === 'datadog-tracer')).toBe(false)
   })
 
-  test('tracks an adopted unnamed ingress without taking over a customer name', () => {
+  test('tracks an adopted unnamed main container without taking over a customer name', () => {
     const unnamed = serviceWithWorker()
     unnamed.template!.containers![0].name = ''
     const adopted = instrumentServiceConfig(unnamed, serviceConfigOptions())
