@@ -9,8 +9,6 @@ const defaultOptions: SsiOptions = {
   tracerVersion: 'latest',
   tracerRegistry: 'gcr.io/datadoghq',
   tracerLibc: 'glibc',
-  tracerVolumeSize: '768Mi',
-  tracerSidecarMemory: '1Gi',
 }
 
 const getErrors = (overrides: Partial<SsiOptions>) => {
