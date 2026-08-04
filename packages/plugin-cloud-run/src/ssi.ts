@@ -110,8 +110,8 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
   }
 }
 
-/** Selects the ingress application container or rejects an ambiguous layout. */
-export const selectIngressContainer = (
+/** Selects the main application container or rejects an ambiguous layout. */
+export const selectMainContainer = (
   containers: readonly IContainer[],
   reservedNames: ReadonlySet<string>
 ): IContainer => {
@@ -126,9 +126,9 @@ export const selectIngressContainer = (
   }
   if (withPorts.length > 1) {
     throw new SsiConfigError(
-      `Multiple containers declare ports, so the ingress container is ambiguous: ${withPorts
+      `Multiple containers declare ports, so the main container is ambiguous: ${withPorts
         .map((container) => container.name || '<unnamed>')
-        .join(', ')}. Cloud Run allows exactly one ingress container.`
+        .join(', ')}. Cloud Run allows exactly one main container.`
     )
   }
   if (candidates.length === 1) {
@@ -136,9 +136,9 @@ export const selectIngressContainer = (
   }
 
   throw new SsiConfigError(
-    `No container declares ports, so the ingress container is ambiguous: ${candidates
+    `No container declares ports, so the main container is ambiguous: ${candidates
       .map((container) => container.name || '<unnamed>')
-      .join(', ')}. Declare a container port on your ingress container.`
+      .join(', ')}. Declare a container port on your main container.`
   )
 }
 
