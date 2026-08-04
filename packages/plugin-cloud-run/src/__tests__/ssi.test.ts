@@ -9,7 +9,7 @@ const baseFlags: SsiOptions = {
   tracing: undefined,
   tracerVersion: 'latest',
   tracerRegistry: 'gcr.io/datadoghq',
-  libc: 'glibc',
+  tracerLibc: 'glibc',
   tracerVolumeSize: '768Mi',
   tracerSidecarMemory: '1Gi',
 }
@@ -23,7 +23,7 @@ const errorsFor = (overrides: Partial<SsiOptions>) => {
 describe('resolveSsiConfig', () => {
   test('is disabled when APM is not requested', () => {
     expect(resolveSsiConfig({...baseFlags, language: 'nodejs'})).toEqual({kind: 'disabled', warnings: []})
-    expect(errorsFor({tracerVersion: '1.2.3', libc: 'musl'})).toContain('--tracer-version, --libc')
+    expect(errorsFor({tracerVersion: '1.2.3', tracerLibc: 'musl'})).toContain('--tracer-version, --tracer-libc')
   })
 
   test.each([
@@ -31,7 +31,7 @@ describe('resolveSsiConfig', () => {
     [{apmEnabled: true, language: 'nodejs', tracing: 'false'}, 'disabled tracing'],
     [{apmEnabled: true, language: 'nodejs', tracing: 'FALSE'}, 'disabled tracing'],
     [{apmEnabled: true, language: 'nodejs', tracing: '0'}, 'disabled tracing'],
-    [{apmEnabled: true, language: 'ruby', libc: 'musl'}, 'musl'],
+    [{apmEnabled: true, language: 'ruby', tracerLibc: 'musl'}, 'musl'],
     [{apmEnabled: true, language: 'csharp', tracerVersion: '2.51.0'}, '2.51.0'],
   ] satisfies [Partial<SsiOptions>, string][])('rejects incompatible options %#', (options, message) => {
     expect(errorsFor(options)).toContain(message)
