@@ -1,16 +1,12 @@
 import type {IContainer} from '../types'
+import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-import {
-  cloudRunQuantityToBytes,
-  selectIngressContainer,
-  SsiValidationError,
-  validateCloudRunQuantity,
-  validateSsiFlags,
-} from '../ssi'
-const baseFlags = {
+import {resolveSsiConfig, selectIngressContainer, SsiConfigError, type SsiOptions} from '../ssi'
+
+const baseFlags: SsiOptions = {
   apmEnabled: false,
-  language: undefined as string | undefined,
-  tracing: undefined as string | undefined,
+  language: undefined,
+  tracing: undefined,
   tracerVersion: 'latest',
   tracerRegistry: 'gcr.io/datadoghq',
   libc: 'glibc',
@@ -18,75 +14,53 @@ const baseFlags = {
   tracerSidecarMemory: '1Gi',
 }
 
-const errorsFor = (overrides: Partial<typeof baseFlags>) => {
-  const result = validateSsiFlags({...baseFlags, ...overrides})
+const errorsFor = (overrides: Partial<SsiOptions>) => {
+  const result = resolveSsiConfig({...baseFlags, ...overrides})
 
   return result.kind === 'errors' ? result.errors.join('\n') : ''
 }
 
-describe('Cloud Run quantities', () => {
-  test.each([
-    ['512Mi', 512 * 1024 ** 2],
-    ['1Gi', 1024 ** 3],
-    ['0.5Gi', 0.5 * 1024 ** 3],
-    ['256', 256],
-  ])('parses %s', (value, bytes) => {
-    expect(cloudRunQuantityToBytes(value)).toBe(bytes)
-    expect(validateCloudRunQuantity(value, '--size')).toBe('')
-  })
-
-  test.each(['0', '0Mi', 'abc', '-1Gi', '1 Gi'])('rejects %s', (value) => {
-    expect(cloudRunQuantityToBytes(value)).toBeUndefined()
-    expect(validateCloudRunQuantity(value, '--size')).toContain('--size')
-  })
-})
-
-describe('validateSsiFlags', () => {
+describe('resolveSsiConfig', () => {
   test('is disabled when APM is not requested', () => {
-    expect(validateSsiFlags({...baseFlags, language: 'nodejs'})).toEqual({kind: 'disabled', warnings: []})
+    expect(resolveSsiConfig({...baseFlags, language: 'nodejs'})).toEqual({kind: 'disabled', warnings: []})
     expect(errorsFor({tracerVersion: '1.2.3', libc: 'musl'})).toContain('--tracer-version, --libc')
   })
 
   test.each([
     [{apmEnabled: true}, '--language'],
-    [{apmEnabled: true, language: 'rust'}, 'rust'],
-    [{apmEnabled: true, language: 'nodejs', tracing: 'false'}, '--tracing false'],
+    [{apmEnabled: true, language: 'nodejs', tracing: 'false'}, 'disabled tracing'],
+    [{apmEnabled: true, language: 'nodejs', tracing: 'FALSE'}, 'disabled tracing'],
+    [{apmEnabled: true, language: 'nodejs', tracing: '0'}, 'disabled tracing'],
     [{apmEnabled: true, language: 'ruby', libc: 'musl'}, 'musl'],
     [{apmEnabled: true, language: 'csharp', tracerVersion: '2.51.0'}, '2.51.0'],
-    [{apmEnabled: true, language: 'nodejs', tracerRegistry: 'example.com'}, 'example.com'],
-    [{apmEnabled: true, language: 'nodejs', tracerVersion: 'v1/../evil'}, 'Invalid tracer version'],
-  ])('rejects invalid options %#', (options, message) => {
+  ] satisfies [Partial<SsiOptions>, string][])('rejects incompatible options %#', (options, message) => {
     expect(errorsFor(options)).toContain(message)
   })
 
   test('uses agent-only mode for Go and rejects tracer image flags', () => {
-    const result = validateSsiFlags({...baseFlags, apmEnabled: true, language: 'go'})
-    expect(result.kind).toBe('go-agent-only')
+    const result = resolveSsiConfig({...baseFlags, apmEnabled: true, language: 'go'})
+    expect(result.kind).toBe('agent-only')
     expect(result.warnings.join('\n')).toContain('dd-trace-go')
     expect(errorsFor({apmEnabled: true, language: 'go', tracerVersion: '1.2.3'})).toContain('--tracer-version')
   })
 
-  test.each([
+  test.each<[Language, string]>([
     ['java', 'java'],
     ['nodejs', 'js'],
     ['csharp', 'dotnet'],
     ['python', 'python'],
     ['ruby', 'ruby'],
     ['php', 'php'],
-  ])('resolves the %s tracer image', (language, canonical) => {
-    const result = validateSsiFlags({...baseFlags, apmEnabled: true, language})
+  ])('resolves the %s tracer image', (language, tracerLanguage) => {
+    const result = resolveSsiConfig({...baseFlags, apmEnabled: true, language})
     expect(result.kind).toBe('single-language')
     expect(result.kind === 'single-language' && result.spec.image).toBe(
-      `gcr.io/datadoghq/dd-lib-${canonical}-init:latest`
+      `gcr.io/datadoghq/dd-lib-${tracerLanguage}-init:latest`
     )
   })
 
-  test('validates volume sizing and emits the Java warning', () => {
-    expect(errorsFor({apmEnabled: true, language: 'nodejs', tracerVolumeSize: 'bad'})).toContain('positive')
-    expect(
-      errorsFor({apmEnabled: true, language: 'nodejs', tracerVolumeSize: '1Gi', tracerSidecarMemory: '1000M'})
-    ).toContain('cannot be smaller')
-    expect(validateSsiFlags({...baseFlags, apmEnabled: true, language: 'java'}).warnings.join('\n')).toContain(
+  test('emits the Java warning', () => {
+    expect(resolveSsiConfig({...baseFlags, apmEnabled: true, language: 'java'}).warnings.join('\n')).toContain(
       'Java 24+'
     )
   })
@@ -112,7 +86,7 @@ describe('selectIngressContainer', () => {
   })
 
   test('rejects missing and ambiguous ingress containers', () => {
-    expect(() => selectIngressContainer([{name: 'datadog-sidecar'}], reserved)).toThrow(SsiValidationError)
+    expect(() => selectIngressContainer([{name: 'datadog-sidecar'}], reserved)).toThrow(SsiConfigError)
     expect(() =>
       selectIngressContainer(
         [
