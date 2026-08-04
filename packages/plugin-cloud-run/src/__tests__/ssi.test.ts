@@ -1,7 +1,7 @@
 import type {IContainer} from '../types'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-import {resolveSsiConfig, selectIngressContainer, SsiConfigError, type SsiOptions} from '../ssi'
+import {resolveSsiConfig, selectMainContainer, SsiConfigError, type SsiOptions} from '../ssi'
 
 const defaultOptions: SsiOptions = {
   language: undefined,
@@ -64,7 +64,7 @@ describe('resolveSsiConfig', () => {
   })
 })
 
-describe('selectIngressContainer', () => {
+describe('selectMainContainer', () => {
   const reserved = new Set(['datadog-sidecar', 'datadog-tracer-copy'])
 
   test('selects the sole application port and ignores reserved and probe ports', () => {
@@ -73,20 +73,18 @@ describe('selectIngressContainer', () => {
       {name: 'app', ports: [{containerPort: 8080}]},
       {name: 'datadog-sidecar', ports: [{containerPort: 8126}]},
     ]
-    expect(selectIngressContainer(containers, reserved).name).toBe('app')
+    expect(selectMainContainer(containers, reserved).name).toBe('app')
   })
 
-  test('selects an unnamed ingress or the sole portless candidate', () => {
-    expect(selectIngressContainer([{name: '', ports: [{containerPort: 8080}]}, {name: 'worker'}], reserved).name).toBe(
-      ''
-    )
-    expect(selectIngressContainer([{name: 'app'}, {name: 'datadog-sidecar'}], reserved).name).toBe('app')
+  test('selects an unnamed main container or the sole portless candidate', () => {
+    expect(selectMainContainer([{name: '', ports: [{containerPort: 8080}]}, {name: 'worker'}], reserved).name).toBe('')
+    expect(selectMainContainer([{name: 'app'}, {name: 'datadog-sidecar'}], reserved).name).toBe('app')
   })
 
-  test('rejects missing and ambiguous ingress containers', () => {
-    expect(() => selectIngressContainer([{name: 'datadog-sidecar'}], reserved)).toThrow(SsiConfigError)
+  test('rejects missing and ambiguous main containers', () => {
+    expect(() => selectMainContainer([{name: 'datadog-sidecar'}], reserved)).toThrow(SsiConfigError)
     expect(() =>
-      selectIngressContainer(
+      selectMainContainer(
         [
           {name: 'app', ports: [{containerPort: 8080}]},
           {name: 'admin', ports: [{containerPort: 9090}]},
@@ -94,6 +92,6 @@ describe('selectIngressContainer', () => {
         reserved
       )
     ).toThrow(/app, admin/)
-    expect(() => selectIngressContainer([{name: 'app'}, {name: 'worker'}], reserved)).toThrow(/app, worker/)
+    expect(() => selectMainContainer([{name: 'app'}, {name: 'worker'}], reserved)).toThrow(/app, worker/)
   })
 })
