@@ -208,23 +208,14 @@ interface SharedVolumeOptions {
   volumeMountNameKey: 'name' | 'volumeName'
 }
 
-export interface InstrumentedTemplateOptions {
-  /**
-   * When provided, only the named app containers receive the Agent environment variables and the shared log mount.
-   * Every other non-Agent container is returned unchanged. When omitted, all non-Agent containers are instrumented.
-   */
-  appContainerNames?: ReadonlySet<string>
-}
-
-/**
- * Given the configuration, an app template, the base sidecar configuration, and base shared volume,
- */
+/** Adds the Datadog sidecar, shared volume, and environment to an app template. */
 export const createInstrumentedTemplate = (
   template: FullyOptional<AppTemplate>,
   baseSidecar: FullyOptional<Container>,
   sharedVolumeOptions: SharedVolumeOptions,
   envVarsByName: Record<string, FullyOptional<EnvVar>>,
-  options: InstrumentedTemplateOptions = {}
+  /** Limits app instrumentation by container name. An empty set targets none; undefined targets all. */
+  appContainerNames?: ReadonlySet<string>
 ): AppTemplate => {
   const sharedVolumeMount: VolumeMount = {
     [sharedVolumeOptions.volumeMountNameKey]: sharedVolumeOptions.name,
@@ -266,8 +257,6 @@ export const createInstrumentedTemplate = (
     volumeMounts: ensureSharedVolumeMount(existingSidecarContainer?.volumeMounts ?? baseSidecar.volumeMounts),
   } as Container
 
-  // Update selected app containers to add volume mounts and env vars if they don't have them
-  const {appContainerNames} = options
   const updatedContainers = containers.map((container) => {
     if (container.name === baseSidecar.name) {
       return newSidecarContainer
