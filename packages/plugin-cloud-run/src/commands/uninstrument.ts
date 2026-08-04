@@ -5,7 +5,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {generateConfigDiff} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
@@ -142,7 +142,7 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     const result = uninstrumentServiceConfig(service, {
       sidecarName: this.sidecarName,
       sharedVolumeName: this.sharedVolumeName,
-      envVars: this.envVars,
+      envVarNames: new Set(Object.keys(parseEnvVars(this.envVars))),
     })
     if (!result.sidecarRemoved) {
       this.context.stdout.write(
