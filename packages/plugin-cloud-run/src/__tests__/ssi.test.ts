@@ -4,11 +4,7 @@ import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injecti
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {DD_TRACE_ENABLED_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {
-  TRACER_MOUNT_PATH,
-  SSI_ADOPTION_LABEL_NAME,
-  SSI_ADOPTION_LABEL_VALUE,
-} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
   LIBCS,
@@ -221,13 +217,12 @@ describe('selectMainContainer', () => {
   })
 })
 
-const serviceConfigOptions = (
-  language: 'nodejs' | 'python' | 'go' | 'disabled' = 'nodejs'
-): InstrumentServiceConfigOptions => ({
-  ssi:
-    language === 'disabled'
-      ? {kind: 'disabled', warnings: []}
-      : validateSsiFlags({...baseFlags, apmEnabled: true, language}),
+const serviceConfigOptions = (language: Language | 'none' = 'nodejs'): InstrumentServiceConfigOptions => ({
+  ssiConfig: resolveSsiConfig({
+    ...defaultOptions,
+    tracing: language === 'none' ? undefined : 'inject',
+    language: language === 'none' ? undefined : language,
+  }),
   ddService: 'service',
   environment: undefined,
   version: undefined,
@@ -262,12 +257,12 @@ const serviceWithWorker = (): IService =>
   }) as IService
 
 describe('SSI service preparation', () => {
-  test('rejects invalid validation results and reserved Agent configuration', () => {
+  test('rejects invalid configuration and reserved Agent resource names', () => {
     const service = serviceWithWorker()
     expect(() =>
       instrumentServiceConfig(service, {
         ...serviceConfigOptions(),
-        ssi: {kind: 'errors', errors: ['invalid SSI flags'], warnings: []},
+        ssiConfig: {kind: 'errors', errors: ['invalid SSI flags'], warnings: []},
       })
     ).toThrow('invalid SSI flags')
     expect(() =>
@@ -278,7 +273,17 @@ describe('SSI service preparation', () => {
     ).toThrow(/reserved/)
   })
 
-  test('applies Agent and native environment only to the ingress', () => {
+  test('does not replace unowned reserved resources', () => {
+    const containerService = serviceWithWorker()
+    containerService.template!.containers!.push({name: 'datadog-tracer-copy'} as IContainer)
+    expect(() => instrumentServiceConfig(containerService, serviceConfigOptions())).toThrow(/reserved/)
+
+    const volumeService = serviceWithWorker()
+    volumeService.template!.volumes!.push({name: 'datadog-tracer'})
+    expect(() => instrumentServiceConfig(volumeService, serviceConfigOptions())).toThrow(/reserved/)
+  })
+
+  test('applies Agent and language environment only to the ingress', () => {
     const service = serviceWithWorker()
     const worker = service.template?.containers?.[1]
     const result = instrumentServiceConfig(service, serviceConfigOptions())
@@ -292,7 +297,7 @@ describe('SSI service preparation', () => {
       value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
     })
     expect(app?.env?.find((variable) => variable.name === 'DD_TAGS')?.value).toBe(SINGLE_LANGUAGE_INJECTION_MODE_TAG)
-    expect(result.labels?.[SSI_ADOPTION_LABEL_NAME]).toBe(SSI_ADOPTION_LABEL_VALUE)
+    expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
     expect(result.template?.containers?.some((container) => container.name === 'datadog-tracer-copy')).toBe(false)
     expect(result.template?.volumes?.some((volume) => volume.name === 'datadog-tracer')).toBe(false)
   })
@@ -302,54 +307,50 @@ describe('SSI service preparation', () => {
     unnamed.template!.containers![0].name = ''
     const adopted = instrumentServiceConfig(unnamed, serviceConfigOptions())
     expect(adopted.template?.containers?.[0].name).toBe('datadog-app')
+    expect(instrumentServiceConfig(adopted, serviceConfigOptions('python')).template?.containers?.[0].name).toBe(
+      'datadog-app'
+    )
 
     const customer = serviceWithWorker()
     customer.template!.containers![0].name = 'datadog-app'
     expect(() => instrumentServiceConfig(customer, serviceConfigOptions())).toThrow(/reserved/)
     expect(customer.template?.containers?.[0].name).toBe('datadog-app')
-
-    const go = instrumentServiceConfig(adopted, serviceConfigOptions('go'))
-    expect(go.template?.containers?.[0].name).toBe('')
-    expect(go.labels?.[SSI_ADOPTION_LABEL_NAME]).toBeUndefined()
   })
 
-  test('uses reserved resources to scrub markerless prior SSI before replacement', () => {
-    const service = serviceWithWorker()
-    service.template!.containers![0].env = mergeNativeInjectionEnv(
-      service.template!.containers![0].env,
-      getSpec('java')
-    )
-    service.template!.containers![0].dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
-    service.template!.containers!.push({name: 'datadog-tracer-copy', image: 'old-tracer'} as IContainer)
-    service.template!.volumes = [{name: 'datadog-tracer'}]
+  test('replaces owned SSI without removing unrelated container configuration', () => {
+    const node = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const app = node.template!.containers![0]
+    const worker = node.template!.containers![1]
+    app.dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
+    worker.dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
+    worker.env = mergeLanguageInjectionEnv(worker.env, getSpec('nodejs'))
+    node.template!.containers!.push({name: 'datadog-tracer-copy', image: 'old-tracer'} as IContainer)
+    node.template!.volumes!.push({name: 'datadog-tracer'})
 
-    const result = instrumentServiceConfig(service, serviceConfigOptions('python'))
-    const app = result.template?.containers?.find((container) => container.name === 'app')
-    expect(app?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
-    expect(app?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
-    expect(app?.dependsOn).toBeUndefined()
+    const result = instrumentServiceConfig(node, serviceConfigOptions('python'))
+    const updatedApp = result.template?.containers?.find((container) => container.name === 'app')
+    const updatedWorker = result.template?.containers?.find((container) => container.name === 'worker')
+
+    expect(updatedApp?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
+    expect(updatedApp?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
+    expect(updatedApp?.dependsOn).toEqual(['datadog-sidecar'])
+    expect(updatedWorker?.env).toEqual(worker.env)
+    expect(updatedWorker?.dependsOn).toEqual(['datadog-sidecar'])
     expect(result.template?.containers?.some((container) => container.name === 'datadog-tracer-copy')).toBe(false)
     expect(result.template?.volumes?.some((volume) => volume.name === 'datadog-tracer')).toBe(false)
   })
 
-  test('Go is Agent-only and removes adopted native SSI state', () => {
-    const native = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
-    const result = instrumentServiceConfig(native, serviceConfigOptions('go'))
-    const app = result.template?.containers?.find((container) => container.name === 'app')
-
-    expect(app?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
-    expect(app?.env).toContainEqual({name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'})
-    expect(app?.env?.some((variable) => variable.name === 'DD_TAGS')).toBe(false)
-    expect(result.labels?.[SSI_ADOPTION_LABEL_NAME]).toBeUndefined()
-  })
-
-  test('legacy instrumentation preserves a lingering tracer-copy container', () => {
+  test('no-injection preserves unrelated containers and the requested tracing state', () => {
     const service = serviceWithWorker()
     const tracer = {name: 'datadog-tracer-copy', image: 'old-tracer', env: [{name: 'KEEP', value: 'true'}]}
     service.template!.containers!.push(tracer)
 
-    const result = instrumentServiceConfig(service, serviceConfigOptions('disabled'))
+    const result = instrumentServiceConfig(service, serviceConfigOptions('none'))
     expect(result.template?.containers?.find((container) => container.name === tracer.name)).toEqual(tracer)
+    expect(result.template?.containers?.find((container) => container.name === 'app')?.env).toContainEqual({
+      name: DD_TRACE_ENABLED_ENV_VAR,
+      value: 'false',
+    })
     expect(result.template?.containers?.find((container) => container.name === 'worker')?.env).toContainEqual({
       name: 'DD_SERVICE',
       value: 'service',
