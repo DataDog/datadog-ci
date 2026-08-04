@@ -383,7 +383,7 @@ describe('SSI service preparation', () => {
   test.each([
     ['directly', false],
     ['transitively', true],
-  ] as const)('rejects an Agent that %s depends on the ingress', (_description, transitive) => {
+  ] as const)('rejects an Agent that %s depends on the main container', (_description, transitive) => {
     const service = serviceWithWorker()
     if (transitive) {
       service.template!.containers![1].dependsOn = ['app']
