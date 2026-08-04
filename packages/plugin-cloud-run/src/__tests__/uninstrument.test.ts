@@ -223,7 +223,7 @@ describe('UninstrumentCommand', () => {
       ])
     })
 
-    test('removes owned SSI state from a named ingress', () => {
+    test('removes owned SSI state from a named main container', () => {
       ;(command as any).envVars = ['CONFIGURED_VAR=remove-me']
       const service: IService = {
         labels: {[SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE, customer: 'keep-me'},
