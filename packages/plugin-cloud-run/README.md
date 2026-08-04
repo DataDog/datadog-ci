@@ -25,7 +25,7 @@ datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name
 
 With `--apm-enabled`, `--language` selects a Single-Language SSI tracer for Java, Node.js, .NET, Python, Ruby, or PHP. Go enables Agent trace collection but does not install a tracer; instrument the application with `dd-trace-go`. The command rejects `--apm-enabled` with `--tracing false`, tracer options without `--apm-enabled`, and tracer image options for Go.
 
-Single-Language SSI targets the Cloud Run ingress container. The command fails without changing the service when multiple containers make ingress selection ambiguous.
+Single-Language SSI targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
 The tracer uses a memory-backed volume. Its default size is `768Mi`, and the tracer copy sidecar defaults to `1Gi`; `--tracer-sidecar-memory` must be at least `--tracer-volume-size`. Increase both limits for larger tracer images because Cloud Run charges the volume's contents against memory.
 
