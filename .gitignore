@@ -77,7 +77,8 @@ dist
 .claude/todos/
 .claude/credits.json
 
-.agents
+.agents/*
+!.agents/skills
 skills-lock.json
 
 # Test generated files

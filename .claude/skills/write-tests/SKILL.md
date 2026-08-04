@@ -1,3 +1,8 @@
+---
+name: write-tests
+description: Write tests for datadog-ci commands and helpers using established repository patterns.
+---
+
 # Write Tests
 
 Write tests for datadog-ci commands and helpers following the repo's established patterns. Before writing tests, read existing tests in the same package to match local patterns.
