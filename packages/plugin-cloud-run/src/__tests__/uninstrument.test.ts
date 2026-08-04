@@ -304,7 +304,7 @@ describe('UninstrumentCommand', () => {
         template: {
           containers: [
             {
-              name: 'ingress',
+              name: 'main',
               ports: [{containerPort: 8080}],
               volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
             },
@@ -316,7 +316,7 @@ describe('UninstrumentCommand', () => {
       const result = command.createUninstrumentedServiceConfig(service)
 
       expect(result.template?.containers?.map((container) => container.name)).toEqual([
-        'ingress',
+        'main',
         SSI_ADOPTED_INGRESS_CONTAINER_NAME,
       ])
     })
