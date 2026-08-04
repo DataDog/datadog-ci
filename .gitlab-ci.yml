@@ -47,6 +47,7 @@ publish-docker-image:
   variables:
     IMG_SOURCES: registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
     IMG_DESTINATIONS: ci:${CI_COMMIT_TAG},ci:latest
+    IMG_REGISTRIES: public
     IMG_SIGNING: 'false'
 
 catalog-endpoints-generate:
