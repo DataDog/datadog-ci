@@ -3,10 +3,9 @@ import type {IContainer, IEnvVar, IService} from '../types'
 import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
-
 import {DD_TRACE_ENABLED_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
+  TRACER_MOUNT_PATH,
   SSI_ADOPTION_LABEL_NAME,
   SSI_ADOPTION_LABEL_VALUE,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
