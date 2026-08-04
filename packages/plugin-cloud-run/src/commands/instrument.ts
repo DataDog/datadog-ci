@@ -226,8 +226,8 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       sharedVolumePath: this.sharedVolumePath,
     })
   }
+
   public getEnvVarsByName(config: ServerlessConfigOptions): Record<string, IEnvVar> {
-    // Get base environment variables
     const envVars = getBaseEnvVars(config)
 
     for (const [name, value] of [

@@ -4,43 +4,107 @@ import {createInstrumentedTemplate, parseEnvVars} from '@datadog/datadog-ci-base
 import {HEALTH_PORT_ENV_VAR, DEFAULT_HEALTH_CHECK_PORT} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
-// equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
-const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
-
 export interface InstrumentServiceConfigOptions {
-  ddService: string
-  environment: string | undefined
-  version: string | undefined
-  envVarsByName: Record<string, IEnvVar>
-  healthCheckPort: string | undefined
-  sidecarName: string
-  sidecarImage: string
-  sidecarCpus: string
-  sidecarMemory: string
-  sharedVolumeName: string
-  sharedVolumePath: string
+  readonly ddService: string
+  readonly environment: string | undefined
+  readonly version: string | undefined
+  readonly envVarsByName: Readonly<Record<string, IEnvVar>>
+  readonly healthCheckPort: string | undefined
+  readonly sidecarName: string
+  readonly sidecarImage: string
+  readonly sidecarCpus: string
+  readonly sidecarMemory: string
+  readonly sharedVolumeName: string
+  readonly sharedVolumePath: string
 }
 
-export interface UninstrumentServiceConfigOptions {
-  sidecarName: string
-  sharedVolumeName: string
-  envVars: string[] | undefined
+interface UninstrumentServiceConfigOptions {
+  readonly sidecarName: string
+  readonly sharedVolumeName: string
+  readonly envVars: string[] | undefined
 }
 
-export interface UninstrumentServiceConfigResult {
-  service: IService
-  warnings: string[]
+interface UninstrumentServiceConfigResult {
+  readonly service: IService
+  readonly sidecarRemoved: boolean
+  readonly sharedVolumeRemoved: boolean
 }
 
-const buildBaseSidecarContainer = (template: IServiceTemplate, options: InstrumentServiceConfigOptions): IContainer => {
-  const existingSidecarContainer = template.containers?.find((container) => container.name === options.sidecarName)
-  let healthCheckPort = Number(
-    options.healthCheckPort ?? existingSidecarContainer?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+export const instrumentServiceConfig = (service: IService, options: InstrumentServiceConfigOptions): IService => {
+  const sourceTemplate: IServiceTemplate = service.template || {}
+  const template: IServiceTemplate = {
+    ...createInstrumentedTemplate(
+      sourceTemplate,
+      buildSidecarContainer(sourceTemplate, options),
+      {
+        name: options.sharedVolumeName,
+        mountPath: options.sharedVolumePath,
+        mountOptions: {emptyDir: {medium: MEMORY_VOLUME_MEDIUM}},
+        volumeMountNameKey: 'name',
+      },
+      options.envVarsByName
+    ),
+    revision: undefined,
+  }
+
+  const labels: Record<string, string> = {
+    ...service.labels,
+    [UNIFIED_SERVICE_TAG_LABELS.service]: options.ddService,
+    [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace(/\./g, '_'),
+  }
+  if (options.environment) {
+    labels[UNIFIED_SERVICE_TAG_LABELS.environment] = options.environment
+  }
+  if (options.version) {
+    labels[UNIFIED_SERVICE_TAG_LABELS.version] = options.version
+  }
+
+  return {...service, labels, template}
+}
+
+export const uninstrumentServiceConfig = (
+  service: IService,
+  options: UninstrumentServiceConfigOptions
+): UninstrumentServiceConfigResult => {
+  const template: IServiceTemplate = service.template || {}
+  const containers: IContainer[] = template.containers || []
+  const volumes: IVolume[] = template.volumes || []
+  const sidecarRemoved = containers.some((container) => container.name === options.sidecarName)
+  const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
+  const configuredEnvVars = parseEnvVars(options.envVars)
+  const updatedContainers = containers
+    .filter((container) => container.name !== options.sidecarName)
+    .map((container) => removeContainerInstrumentation(container, options.sharedVolumeName, configuredEnvVars))
+  const updatedVolumes = volumes.filter((volume) => volume.name !== options.sharedVolumeName)
+  const labels = Object.fromEntries(
+    Object.entries(service.labels ?? {}).filter(([name]) => !INSTRUMENTATION_LABELS.has(name))
   )
-  healthCheckPort = Number.isNaN(healthCheckPort) ? DEFAULT_HEALTH_CHECK_PORT : healthCheckPort
 
   return {
-    ...existingSidecarContainer,
+    service: {
+      ...service,
+      labels,
+      template: {
+        ...template,
+        containers: updatedContainers,
+        volumes: updatedVolumes,
+        revision: undefined,
+      },
+    },
+    sidecarRemoved,
+    sharedVolumeRemoved,
+  }
+}
+
+const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentServiceConfigOptions): IContainer => {
+  const existingSidecar = template.containers?.find((container) => container.name === options.sidecarName)
+  const parsedHealthCheckPort = Number(
+    options.healthCheckPort ?? existingSidecar?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+  )
+  const healthCheckPort = Number.isNaN(parsedHealthCheckPort) ? DEFAULT_HEALTH_CHECK_PORT : parsedHealthCheckPort
+
+  return {
+    ...existingSidecar,
     name: options.sidecarName,
     image: options.sidecarImage,
     startupProbe: {
@@ -59,37 +123,7 @@ const buildBaseSidecarContainer = (template: IServiceTemplate, options: Instrume
   }
 }
 
-export const instrumentServiceConfig = (service: IService, options: InstrumentServiceConfigOptions): IService => {
-  const sourceTemplate: IServiceTemplate = service.template || {}
-  const template: IServiceTemplate = createInstrumentedTemplate(
-    sourceTemplate,
-    buildBaseSidecarContainer(sourceTemplate, options),
-    {
-      name: options.sharedVolumeName,
-      mountPath: options.sharedVolumePath,
-      mountOptions: {emptyDir: {medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY}},
-      volumeMountNameKey: 'name',
-    },
-    options.envVarsByName
-  )
-  template.revision = undefined
-
-  const updatedLabels: Record<string, string> = {
-    ...service.labels,
-    service: options.ddService,
-    [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace(/\./g, '_'),
-  }
-  if (options.environment) {
-    updatedLabels.env = options.environment
-  }
-  if (options.version) {
-    updatedLabels.version = options.version
-  }
-
-  return {...service, labels: updatedLabels, template}
-}
-
-const cleanUninstrumentedContainer = (
+const removeContainerInstrumentation = (
   container: IContainer,
   sharedVolumeName: string,
   configuredEnvVars: Record<string, string>
@@ -101,49 +135,10 @@ const cleanUninstrumentedContainer = (
   ),
 })
 
-export const uninstrumentServiceConfig = (
-  service: IService,
-  options: UninstrumentServiceConfigOptions
-): UninstrumentServiceConfigResult => {
-  const template: IServiceTemplate = service.template || {}
-  const containers: IContainer[] = template.containers || []
-  const volumes: IVolume[] = template.volumes || []
-  const warnings: string[] = []
-
-  if (!containers.some((container) => container.name === options.sidecarName)) {
-    warnings.push(
-      `Sidecar container '${options.sidecarName}' not found, so no container was removed. Specify the container name with --sidecar-name.`
-    )
-  }
-  if (!volumes.some((volume) => volume.name === options.sharedVolumeName)) {
-    warnings.push(
-      `Shared volume '${options.sharedVolumeName}' not found, so no shared volume was removed. Specify the shared volume name with --shared-volume-name.`
-    )
-  }
-
-  const configuredEnvVars = parseEnvVars(options.envVars)
-  const updatedContainers = containers
-    .filter((container) => container.name !== options.sidecarName)
-    .map((container) => cleanUninstrumentedContainer(container, options.sharedVolumeName, configuredEnvVars))
-  const updatedVolumes = volumes.filter((volume) => volume.name !== options.sharedVolumeName)
-
-  const updatedLabels = {...service.labels}
-  delete updatedLabels.service
-  delete updatedLabels.env
-  delete updatedLabels.version
-  delete updatedLabels[SERVERLESS_CLI_VERSION_TAG_NAME]
-
-  return {
-    service: {
-      ...service,
-      labels: updatedLabels,
-      template: {
-        ...template,
-        containers: updatedContainers,
-        volumes: updatedVolumes,
-        revision: undefined,
-      },
-    },
-    warnings,
-  }
-}
+const MEMORY_VOLUME_MEDIUM = 1 as const // google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
+const UNIFIED_SERVICE_TAG_LABELS = {
+  service: 'service',
+  environment: 'env',
+  version: 'version',
+} as const
+const INSTRUMENTATION_LABELS = new Set([...Object.values(UNIFIED_SERVICE_TAG_LABELS), SERVERLESS_CLI_VERSION_TAG_NAME])
