@@ -241,13 +241,13 @@ describe('createInstrumentedTemplate', () => {
         {name: 'worker', env: [{name: 'WORKER', value: 'yes'}], volumeMounts: []},
       ],
       volumes: [],
-    } as unknown as Parameters<typeof createInstrumentedTemplate>[0]
+    }
     const baseSidecar = {
       name: 'datadog-sidecar',
       image: 'gcr.io/datadoghq/serverless-init:latest',
       env: [],
       volumeMounts: [],
-    } as unknown as Parameters<typeof createInstrumentedTemplate>[1]
+    }
     const sharedVolumeOptions = {
       name: 'shared-volume',
       mountPath: '/shared-volume',
@@ -267,9 +267,13 @@ describe('createInstrumentedTemplate', () => {
     })
 
     test('instruments only selected containers and leaves others unchanged', () => {
-      const result = createInstrumentedTemplate(template, baseSidecar, sharedVolumeOptions, envVarsByName, {
-        appContainerNames: new Set(['ingress']),
-      })
+      const result = createInstrumentedTemplate(
+        template,
+        baseSidecar,
+        sharedVolumeOptions,
+        envVarsByName,
+        new Set(['ingress'])
+      )
 
       const ingress = result.containers.find((c) => c.name === 'ingress')
       expect(ingress?.volumeMounts).toEqual([{name: 'shared-volume', mountPath: '/shared-volume'}])
@@ -280,9 +284,7 @@ describe('createInstrumentedTemplate', () => {
     })
 
     test('an empty selection instruments no app containers', () => {
-      const result = createInstrumentedTemplate(template, baseSidecar, sharedVolumeOptions, envVarsByName, {
-        appContainerNames: new Set(),
-      })
+      const result = createInstrumentedTemplate(template, baseSidecar, sharedVolumeOptions, envVarsByName, new Set())
 
       expect(result.containers[0]).toBe(template.containers?.[0])
       expect(result.containers[1]).toBe(template.containers?.[1])
