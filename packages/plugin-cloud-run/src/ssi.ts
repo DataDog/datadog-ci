@@ -2,12 +2,13 @@ import type {IContainer, IEnvVar} from './types'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language, SingleLanguageTracerRegistry} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+
 import {
   DEFAULT_TRACER_LIBC,
   DEFAULT_TRACER_REGISTRY,
   DEFAULT_TRACER_VERSION,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
+import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
   mergeEnvFragment,
@@ -16,6 +17,7 @@ import {
   removeInjectionModeTag,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
+  LIBCS,
   getLanguageCompatibilityError,
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
@@ -149,129 +151,89 @@ export const selectIngressContainer = (
   )
 }
 
+export const mergeLanguageInjectionEnv = (
+  existingEnv: readonly IEnvVar[] | null | undefined,
+  spec: LanguageInjectionSpec
+): IEnvVar[] => {
+  const env = existingEnv ?? []
+  assertLanguageInjectionEnvCanBeMerged(env, spec)
+  const merged = spec.env.reduce<IEnvVar[]>(
+    (current, fragment) => {
+      const existing = findEnv(current, fragment.name)
+
+      return upsertEnv(current, fragment.name, mergeLanguageEnvFragment(existing?.value ?? undefined, fragment))
+    },
+    [...env]
+  )
+  const existingTags = findEnv(merged, DD_TAGS_ENV_VAR)
+
+  return upsertEnv(merged, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value ?? undefined))
+}
+
+/** Removes exact tracer fragments for every supported language so replacing a tracer cannot leave stale settings. */
+export const removeLanguageInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
+  (existingEnv ?? []).flatMap((variable) => {
+    if (!variable.name || variable.valueSource || !variable.value) {
+      return [variable]
+    }
+
+    const fragments = LANGUAGE_ENV_FRAGMENTS.filter((fragment) => fragment.name === variable.name)
+    const withoutTag = variable.name === DD_TAGS_ENV_VAR ? removeInjectionModeTag(variable.value) : variable.value
+    const value = fragments.reduce<string | undefined>(removeEnvFragment, withoutTag)
+
+    return value === undefined ? [] : [value === variable.value ? variable : {...variable, value}]
+  })
+
 const findEnv = (env: readonly IEnvVar[], name: string): IEnvVar | undefined =>
   env.find((variable) => variable.name === name)
 
-const assertUniqueTargetEnvNames = (env: readonly IEnvVar[], targetNames: ReadonlySet<string>): void => {
+const assertLanguageInjectionEnvCanBeMerged = (env: readonly IEnvVar[], spec: LanguageInjectionSpec): void => {
+  const targetNames = new Set([...spec.env.map((fragment) => fragment.name), DD_TAGS_ENV_VAR])
   for (const name of targetNames) {
-    if (env.filter((variable) => variable.name === name).length > 1) {
-      throw new SsiValidationError(
+    const matching = env.filter((variable) => variable.name === name)
+    if (matching.length > 1) {
+      throw new SsiConfigError(
         `${name} appears more than once on the ingress container, so Datadog cannot safely modify it. Remove the duplicate before retrying.`
+      )
+    }
+    if (matching[0]?.valueSource) {
+      throw new SsiConfigError(
+        `${name} on the ingress container is populated from a secret reference, which Datadog cannot safely extend. Set it to a literal value or remove it before instrumenting.`
       )
     }
   }
 }
 
-const assertNoValueSource = (existing: IEnvVar | undefined, name: string): void => {
-  if (existing?.valueSource) {
-    throw new SsiValidationError(
-      `${name} on the ingress container is populated from a secret reference, which Datadog cannot safely extend. Set it to a literal value or remove it before instrumenting.`
-    )
-  }
-}
-
-export const assertNativeInjectionEnvCanBeMerged = (
-  existingEnv: readonly IEnvVar[] | null | undefined,
-  spec: SingleLanguageInjectionSpec
-): void => {
-  const env = existingEnv ?? []
-  const targetNames = new Set([...spec.env.map((fragment) => fragment.name), DD_TAGS_ENV_VAR])
-  assertUniqueTargetEnvNames(env, targetNames)
-  for (const name of targetNames) {
-    assertNoValueSource(findEnv(env, name), name)
-  }
-}
-
-const upsertEnv = (env: IEnvVar[], name: string, value: string): IEnvVar[] => {
+const upsertEnv = (env: readonly IEnvVar[], name: string, value: string): IEnvVar[] => {
   const index = env.findIndex((variable) => variable.name === name)
-  if (index === -1) {
-    return [...env, {name, value}]
-  }
-  const updated = [...env]
-  updated[index] = {...updated[index], value}
 
-  return updated
+  return index === -1
+    ? [...env, {name, value}]
+    : env.map((variable, variableIndex) => (variableIndex === index ? {...variable, value} : variable))
 }
 
-export const mergeNativeInjectionEnv = (
-  existingEnv: readonly IEnvVar[] | null | undefined,
-  spec: SingleLanguageInjectionSpec
-): IEnvVar[] => {
-  let env: IEnvVar[] = [...(existingEnv ?? [])]
-  assertNativeInjectionEnvCanBeMerged(env, spec)
-
-  for (const fragment of spec.env) {
-    const existing = findEnv(env, fragment.name)
-    env = upsertEnv(env, fragment.name, mergeEnvFragment(existing?.value ?? undefined, fragment))
+const mergeLanguageEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
+  try {
+    return mergeEnvFragment(currentValue, fragment)
+  } catch (error) {
+    throw new SsiConfigError(error instanceof Error ? error.message : String(error))
   }
-
-  const existingTags = findEnv(env, DD_TAGS_ENV_VAR)
-  env = upsertEnv(env, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value ?? undefined))
-
-  return env
 }
 
-const KNOWN_NATIVE_FRAGMENTS: readonly EnvFragment[] = (() => {
-  const fragments = new Map<string, EnvFragment>()
-  for (const language of SINGLE_LANGUAGE_VALUES) {
-    for (const libc of ['glibc', 'musl'] as const) {
-      if (language === 'ruby' && libc === 'musl') {
-        continue
-      }
-      const spec = getSingleLanguageInjectionSpec({
+const LANGUAGE_ENV_FRAGMENTS: readonly EnvFragment[] = TRACER_INJECTION_LANGUAGES.flatMap((language) =>
+  LIBCS.filter(
+    (libc) => getLanguageCompatibilityError({language, libc, version: DEFAULT_TRACER_VERSION}) === undefined
+  ).flatMap(
+    (libc) =>
+      getLanguageInjectionSpec({
         language,
         libc,
         registry: DEFAULT_TRACER_REGISTRY,
         version: DEFAULT_TRACER_VERSION,
         root: TRACER_MOUNT_PATH,
-      })
-      for (const fragment of spec.env) {
-        fragments.set(JSON.stringify(fragment), fragment)
-      }
-    }
-  }
-
-  return [...fragments.values()]
-})()
-
-const KNOWN_NATIVE_FRAGMENTS_BY_NAME = new Map<string, EnvFragment[]>()
-for (const fragment of KNOWN_NATIVE_FRAGMENTS) {
-  const fragments = KNOWN_NATIVE_FRAGMENTS_BY_NAME.get(fragment.name) ?? []
-  fragments.push(fragment)
-  KNOWN_NATIVE_FRAGMENTS_BY_NAME.set(fragment.name, fragments)
-}
-
-/** Removes every exact native SSI fragment and the injection-mode tag, regardless of selected language or libc. */
-export const removeKnownNativeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] => {
-  const cleaned: IEnvVar[] = []
-  for (const variable of existingEnv ?? []) {
-    if (!variable.name || variable.valueSource || typeof variable.value !== 'string' || variable.value === '') {
-      cleaned.push(variable)
-      continue
-    }
-
-    let value: string | undefined = variable.value
-    if (variable.name === DD_TAGS_ENV_VAR) {
-      value = removeInjectionModeTag(value)
-    }
-    for (const fragment of KNOWN_NATIVE_FRAGMENTS_BY_NAME.get(variable.name) ?? []) {
-      value = removeEnvFragment(value, fragment)
-    }
-
-    if (value !== undefined) {
-      cleaned.push(value === variable.value ? variable : {...variable, value})
-    }
-  }
-
-  return cleaned
-}
-
-export class SsiConfigError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'SsiConfigError'
-  }
-}
+      }).env
+  )
+)
 
 /** Returns tracer flags whose values differ from their defaults. */
 const nonDefaultTracerFlags = (options: SsiOptions): string[] =>
@@ -280,3 +242,10 @@ const nonDefaultTracerFlags = (options: SsiOptions): string[] =>
     options.tracerRegistry !== DEFAULT_TRACER_REGISTRY ? '--tracer-registry' : undefined,
     options.tracerLibc !== DEFAULT_TRACER_LIBC ? '--tracer-libc' : undefined,
   ].filter((flag): flag is string => flag !== undefined)
+
+export class SsiConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SsiConfigError'
+  }
+}
