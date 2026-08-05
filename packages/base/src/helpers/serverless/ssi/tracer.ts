@@ -28,10 +28,10 @@ export const buildSingleLanguageTracerImage = (
   if (!(SINGLE_LANGUAGE_TRACER_REGISTRIES as readonly string[]).includes(registry)) {
     throw new Error(`Unsupported tracer registry: ${String(registry)}`)
   }
-  const metadata = LANGUAGE_METADATA[language]
-  if (!metadata) {
+  if (!Object.prototype.hasOwnProperty.call(LANGUAGE_METADATA, language)) {
     throw new Error(`Unsupported language: ${String(language)}`)
   }
+  const metadata = LANGUAGE_METADATA[language]
   if (typeof version !== 'string' || !IMAGE_TAG_REG_EXP.test(version)) {
     throw new Error(`Invalid tracer version: ${JSON.stringify(version)}`)
   }

@@ -29,11 +29,14 @@ describe('language and image metadata', () => {
     )
   })
 
-  test('rejects an unsupported language at runtime', () => {
-    expect(() => buildSingleLanguageTracerImage('gcr.io/datadoghq', 'go' as Language, 'latest')).toThrow(
-      'Unsupported language'
-    )
-  })
+  test.each(['go', 'toString', 'constructor', '__proto__'])(
+    'rejects unsupported language %p at runtime',
+    (language) => {
+      expect(() => buildSingleLanguageTracerImage('gcr.io/datadoghq', language as Language, 'latest')).toThrow(
+        'Unsupported language'
+      )
+    }
+  )
 
   test.each(['docker.io/datadog', 'gcr.io/datadoghq/', '', ' public.ecr.aws/datadog'])(
     'rejects registry %p',
