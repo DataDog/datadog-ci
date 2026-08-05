@@ -1,0 +1,58 @@
+import {
+  SINGLE_LANGUAGE_TRACER_REGISTRIES,
+  buildSingleLanguageTracerImage,
+  type Language,
+  type SingleLanguageTracerRegistry,
+  type TracerLanguage,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+
+const languageCases: {
+  language: Language
+  tracerLanguage: TracerLanguage
+}[] = [
+  {language: 'java', tracerLanguage: 'java'},
+  {language: 'nodejs', tracerLanguage: 'js'},
+  {language: 'csharp', tracerLanguage: 'dotnet'},
+  {language: 'python', tracerLanguage: 'python'},
+  {language: 'ruby', tracerLanguage: 'ruby'},
+  {language: 'php', tracerLanguage: 'php'},
+]
+
+describe('language and image metadata', () => {
+  test.each(
+    SINGLE_LANGUAGE_TRACER_REGISTRIES.flatMap((registry) =>
+      languageCases.map(({language, tracerLanguage}) => ({registry, language, tracerLanguage}))
+    )
+  )('builds the $registry $tracerLanguage image for $language', ({registry, language, tracerLanguage}) => {
+    expect(buildSingleLanguageTracerImage(registry, language, '1.2.3')).toBe(
+      `${registry}/dd-lib-${tracerLanguage}-init:1.2.3`
+    )
+  })
+
+  test.each(['go', 'toString', 'constructor', '__proto__'])(
+    'rejects unsupported language %p at runtime',
+    (language) => {
+      expect(() => buildSingleLanguageTracerImage('gcr.io/datadoghq', language as Language, 'latest')).toThrow(
+        'Unsupported language'
+      )
+    }
+  )
+
+  test.each(['docker.io/datadog', 'gcr.io/datadoghq/', '', ' public.ecr.aws/datadog'])(
+    'rejects registry %p',
+    (registry) => {
+      expect(() => buildSingleLanguageTracerImage(registry as SingleLanguageTracerRegistry, 'java', 'latest')).toThrow(
+        'Unsupported tracer registry'
+      )
+    }
+  )
+
+  test.each(['', ' ', '/', '1/2', 'latest:debug', '.latest', `a${'b'.repeat(128)}`, undefined])(
+    'rejects malformed version %p',
+    (version) => {
+      expect(() => buildSingleLanguageTracerImage('gcr.io/datadoghq', 'java', version as string)).toThrow(
+        'Invalid tracer version'
+      )
+    }
+  )
+})
