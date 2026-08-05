@@ -43,98 +43,109 @@ export const getLanguageInjectionSpec = (options: LanguageInjectionOptions): Lan
   const root = options.root ?? DEFAULT_TRACER_ROOT
   const image = buildSingleLanguageTracerImage(options.registry, options.language, options.version)
 
-  return {image, ...LANGUAGE_SPECS[options.language](root, options.libc)}
+  return {image, ...LANGUAGE_CONFIG[options.language].getSpec(root, options.libc)}
 }
 
 /** Returns a domain compatibility error after individual CLI arguments have been validated. */
-export const getLanguageCompatibilityError = (options: LanguageCompatibilityOptions): string | undefined => {
-  if (options.language === 'ruby' && options.libc === 'musl') {
-    return 'Ruby Single-Language SSI does not support musl'
-  }
-  if (options.language !== 'csharp') {
-    return undefined
-  }
+export const getLanguageCompatibilityError = (options: LanguageCompatibilityOptions): string | undefined =>
+  LANGUAGE_CONFIG[options.language].getCompatibilityError?.(options)
 
-  const pinnedMajor = options.version.match(/^v?(\d+)(?:\.|$)/)?.[1]
-
-  return pinnedMajor !== undefined && Number(pinnedMajor) < 3
-    ? `Unsupported .NET tracer version ${JSON.stringify(options.version)}: versions before 3.0 require architecture-specific package paths`
-    : undefined
+type LanguageConfig = {
+  getSpec: (root: string, libc: Libc) => Pick<LanguageInjectionSpec, 'artifacts' | 'env'>
+  getCompatibilityError?: (options: Omit<LanguageCompatibilityOptions, 'language'>) => string | undefined
 }
 
-type SpecFactory = (root: string, libc: Libc) => Pick<LanguageInjectionSpec, 'artifacts' | 'env'>
-
-const LANGUAGE_SPECS = {
-  java: (root) => ({
-    artifacts: [[path.posix.join(root, 'dd-java-agent.jar')]],
-    env: [
-      {
-        name: 'JAVA_TOOL_OPTIONS',
-        value: `-javaagent:${path.posix.join(root, 'dd-java-agent.jar')} -XX:+IgnoreUnrecognizedVMOptions`,
-        separator: ' ',
-        mode: 'append',
-      },
-    ],
-  }),
-  nodejs: (root) => ({
-    artifacts: [[path.posix.join(root, 'node_modules/dd-trace/init.js')]],
-    env: [
-      {
-        name: 'NODE_OPTIONS',
-        value: `--require ${path.posix.join(root, 'node_modules/dd-trace/init.js')}`,
-        separator: ' ',
-        mode: 'append',
-      },
-    ],
-  }),
-  csharp: (root) => ({
-    artifacts: [
-      [path.posix.join(root, 'Datadog.Trace.ClrProfiler.Native.so')],
-      [path.posix.join(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so')],
-    ],
-    env: getDotnetEnv(root),
-  }),
-  python: (root) => ({
-    artifacts: [[path.posix.join(root, 'sitecustomize.py')]],
-    env: [
-      {
-        name: 'PYTHONPATH',
-        value: root,
-        separator: ':',
-        mode: 'append',
-      },
-    ],
-  }),
-  ruby: (root) => ({
-    artifacts: [[path.posix.join(root, 'auto_inject.rb')]],
-    env: [
-      {
-        name: 'RUBYOPT',
-        value: `-r${path.posix.join(root, 'auto_inject')}`,
-        separator: ' ',
-        mode: 'prepend',
-      },
-    ],
-  }),
-  php: (root, libc) => {
-    const platform = libc === 'glibc' ? 'linux-gnu' : 'linux-musl'
-    const loader = path.posix.join(root, `${platform}/loader`)
-
-    return {
-      artifacts: [[`${loader}/dd_library_loader.ini`], [`${loader}/dd_library_loader.so`]],
+const LANGUAGE_CONFIG: Record<Language, LanguageConfig> = {
+  java: {
+    getSpec: (root) => ({
+      artifacts: [[path.posix.join(root, 'dd-java-agent.jar')]],
       env: [
         {
-          name: 'PHP_INI_SCAN_DIR',
-          value: loader,
+          name: 'JAVA_TOOL_OPTIONS',
+          value: `-javaagent:${path.posix.join(root, 'dd-java-agent.jar')} -XX:+IgnoreUnrecognizedVMOptions`,
+          separator: ' ',
+          mode: 'append',
+        },
+      ],
+    }),
+  },
+  nodejs: {
+    getSpec: (root) => ({
+      artifacts: [[path.posix.join(root, 'node_modules/dd-trace/init.js')]],
+      env: [
+        {
+          name: 'NODE_OPTIONS',
+          value: `--require ${path.posix.join(root, 'node_modules/dd-trace/init.js')}`,
+          separator: ' ',
+          mode: 'append',
+        },
+      ],
+    }),
+  },
+  csharp: {
+    getSpec: (root) => ({
+      artifacts: [
+        [path.posix.join(root, 'Datadog.Trace.ClrProfiler.Native.so')],
+        [path.posix.join(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so')],
+      ],
+      env: getDotnetEnv(root),
+    }),
+    getCompatibilityError: ({version}) => {
+      const pinnedMajor = version.match(/^v?(\d+)(?:\.|$)/)?.[1]
+
+      return pinnedMajor !== undefined && Number(pinnedMajor) < 3
+        ? `Unsupported .NET tracer version ${JSON.stringify(version)}: versions before 3.0 require architecture-specific package paths`
+        : undefined
+    },
+  },
+  python: {
+    getSpec: (root) => ({
+      artifacts: [[path.posix.join(root, 'sitecustomize.py')]],
+      env: [
+        {
+          name: 'PYTHONPATH',
+          value: root,
           separator: ':',
           mode: 'append',
-          preserveLeadingEmpty: true,
         },
-        {name: 'DD_LOADER_PACKAGE_PATH', value: root, mode: 'set-if-absent'},
       ],
-    }
+    }),
   },
-} satisfies Record<Language, SpecFactory>
+  ruby: {
+    getSpec: (root) => ({
+      artifacts: [[path.posix.join(root, 'auto_inject.rb')]],
+      env: [
+        {
+          name: 'RUBYOPT',
+          value: `-r${path.posix.join(root, 'auto_inject')}`,
+          separator: ' ',
+          mode: 'prepend',
+        },
+      ],
+    }),
+    getCompatibilityError: ({libc}) => (libc === 'musl' ? 'Ruby Single-Language SSI does not support musl' : undefined),
+  },
+  php: {
+    getSpec: (root, libc) => {
+      const platform = libc === 'glibc' ? 'linux-gnu' : 'linux-musl'
+      const loader = path.posix.join(root, `${platform}/loader`)
+
+      return {
+        artifacts: [[`${loader}/dd_library_loader.ini`], [`${loader}/dd_library_loader.so`]],
+        env: [
+          {
+            name: 'PHP_INI_SCAN_DIR',
+            value: loader,
+            separator: ':',
+            mode: 'append',
+            preserveLeadingEmpty: true,
+          },
+          {name: 'DD_LOADER_PACKAGE_PATH', value: root, mode: 'set-if-absent'},
+        ],
+      }
+    },
+  },
+}
 
 const getDotnetEnv = (root: string): EnvFragment[] => [
   {name: 'CORECLR_ENABLE_PROFILING', value: '1', mode: 'set-if-absent'},
