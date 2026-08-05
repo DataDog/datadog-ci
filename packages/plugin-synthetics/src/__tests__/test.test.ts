@@ -358,4 +358,51 @@ describe('getTestAndOverrideConfig', () => {
       'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: multi, step sub-types: [dns, ssl]).'
     )
   })
+
+  test('Not found error when public ID is neither a test nor a suite', async () => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((_e: any) => {
+      throw getRequestError(404, {errors: ['Not found']})
+    }) as any)
+
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
+    expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toStrictEqual({
+      errorMessage: '[123-456-789] Test not found: query on https://app.datadoghq.com/example returned: "Not found"',
+    })
+  })
+
+  test('Resolves a Test Suite public ID as a suite placeholder', async () => {
+    jest.mocked(requestModule.httpRequest).mockImplementation(((e: any) => {
+      if (e.url?.includes('/synthetics/suites/aet-7st-a66')) {
+        return Promise.resolve({
+          data: {
+            data: {
+              id: 'aet-7st-a66',
+              attributes: {
+                name: 'User profile management',
+                tests: [{public_id: 'gb2-jzk-t3k'}],
+              },
+            },
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: e,
+        })
+      }
+
+      throw getRequestError(404, {errors: ['Synthetics test not found']})
+    }) as any)
+
+    const triggerConfig = {suite: 'Suite 1', id: 'aet-7st-a66'}
+    expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
+      expect.objectContaining({
+        test: expect.objectContaining({
+          public_id: 'aet-7st-a66',
+          type: 'suite',
+          name: 'User profile management',
+          memberPublicIds: ['gb2-jzk-t3k'],
+        }),
+      })
+    )
+  })
 })

@@ -20,6 +20,7 @@ import type {
   SelectiveRerunDecision,
   ServerTest,
   Summary,
+  Test,
   TestPlan,
   UserConfigOverride,
 } from '../../interfaces'
@@ -121,9 +122,7 @@ describe('Default reporter', () => {
       writeMock.mockClear()
     })
 
-    const testObject: Pick<ServerTest, 'name'> = {
-      name: 'Request on example.org',
-    }
+    const testObject = {name: 'Request on example.org'} as Test
     const testId = 'aaa-bbb-ccc'
 
     const cases: [string, ExecutionRule, UserConfigOverride][] = [
@@ -160,6 +159,13 @@ describe('Default reporter', () => {
 
     test.each(cases)('%s', (title, executionRule, testOverrides) => {
       reporter.testTrigger(testObject, testId, executionRule, testOverrides)
+      const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
+      expect(mostRecentOutput).toMatchSnapshot()
+    })
+
+    test('Suite, containing multiple tests', () => {
+      const suiteObject = {name: 'User profile management', type: 'suite' as const, memberPublicIds: ['a', 'b']} as Test
+      reporter.testTrigger(suiteObject, testId, ExecutionRule.BLOCKING, {})
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

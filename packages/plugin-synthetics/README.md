@@ -232,16 +232,18 @@ npm run datadog-ci-synthetics
 
 Run tests by executing the CLI through **Yarn**:
 
-The `run-tests` sub-command accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
+The `run-tests` command accepts one or more `--public-id` (or shorthand `-p`) arguments:
 
 ```bash
 yarn datadog-ci synthetics run-tests --public-id aaa-aaa-aaa --public-id bbb-bbb-bbb
 ```
 
-You can also specify a specific version of a test using the format `<public-id>@<version>`:
+A `--public-id` argument can refer to a test, a specific version of a test (e.g. `aaa-aaa-aaa@2`) or to a [Test Suite][20], in which case all tests in the suite are run.
+
+Example running a test's latest version, a test's specific version, and a [Test Suite][20]:
 
 ```bash
-yarn datadog-ci synthetics run-tests --public-id aaa-aaa-aaa@2 --public-id bbb-bbb-bbb@4
+yarn datadog-ci synthetics run-tests --public-id aaa-aaa-aaa --public-id bbb-bbb-bbb@3 --public-id ccc-ccc-ccc
 ```
 
 It is also possible to trigger tests corresponding to a search query by using the `--search` (or shorthand `-s`) argument. With this option, the overrides defined in your [global configuration file](#global-configuration-file) apply to all tests discovered with the search query.
@@ -425,7 +427,7 @@ The proxy to be used for outgoing connections to Datadog. `host` and `port` keys
 
 Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic [test configuration files](#test-files).
 
-You can specify a specific version of a test using the format `<public-id>@<version>`. For example, `abc-def-ghi@123` runs version 123 of the test with public ID `abc-def-ghi`. If no version is specified, the latest version of the test is used.
+A public ID can refer to a test, a specific version of a test (e.g. `aaa-aaa-aaa@2`) or to a [Test Suite](https://docs.datadoghq.com/synthetics/test_suites/), in which case all tests in the suite are run.
 
 **Configuration options**
 
@@ -1132,6 +1134,7 @@ Additional helpful documentation, links, and articles:
 [17]: https://app.datadoghq.com/synthetics/settings/continuous-testing
 [18]: https://docs.datadoghq.com/synthetics/mobile_app_testing/
 [19]: https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/src/interfaces.ts#L223-L254
+[20]: https://docs.datadoghq.com/synthetics/test_suites/
 
 <!--
   This page is single-sourced:
