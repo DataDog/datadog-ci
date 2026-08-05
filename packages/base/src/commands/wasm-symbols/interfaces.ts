@@ -9,9 +9,8 @@ export interface MappingMetadata {
   origin: string
   git_commit_sha?: string
   git_repository_url?: string
-  // Toolchain-provided `build_id` custom section, or a SHA-256-of-code-section fallback when absent.
+  // Toolchain-provided `build_id` custom section.
   build_id: string
-  file_hash: string
   symbol_source: string
   filename: string
   type: string

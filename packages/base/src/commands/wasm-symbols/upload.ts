@@ -184,7 +184,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
       origin_version: this.cliVersion,
       origin: 'datadog-ci',
       build_id: wasmFileMetadata.buildId,
-      file_hash: wasmFileMetadata.fileHash,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       symbol_source: this.getWasmSymbolSource(wasmFileMetadata),
@@ -250,7 +249,7 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
           continue
         }
         if (!metadata.buildId) {
-          reportFailure(`Skipped ${p} because it has no build id and no code section to derive one from`)
+          reportFailure(`Skipped ${p} because it has no build_id custom section`)
           continue
         }
         if (!metadata.hasDebugInfo && !metadata.hasExternalDebugInfo) {

@@ -99,5 +99,4 @@ export const renderRetriedUpload = (filePath: string, errorMessage: string, atte
 }
 
 export const renderUpload = (filePath: string, metadata: MappingMetadata): string =>
-  `Uploading debug info for WASM file ${filePath} (BuildID:${metadata.build_id || 'none'} \
-FileHash:${metadata.file_hash || 'none'})\n`
+  `Uploading debug info for WASM file ${filePath} (BuildID:${metadata.build_id || 'none'})\n`

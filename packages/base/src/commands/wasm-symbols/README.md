@@ -40,7 +40,7 @@ If location is a directory, the command will scan it recursively looking for `.w
 
 A `.wasm` file is only uploaded if it carries debug information: either embedded DWARF debug sections (produced by e.g. `emcc -g`, `wasm-pack build --dev`) or a custom `external_debug_info` section pointing at a separate debug artifact.
 
-The module's identifier is read from a `build_id` custom section if present. If absent, it falls back to a SHA-256 hash of the module's code section, which the Datadog Browser SDK computes the same way at runtime — so lookups keep working even for toolchains that don't emit a `build_id` section.
+The module's identifier is read from a `build_id` custom section. A `.wasm` file without one is skipped, since there is no key to look up its symbols by.
 
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|

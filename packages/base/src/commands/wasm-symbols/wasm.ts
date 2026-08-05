@@ -1,4 +1,3 @@
-import {createHash} from 'crypto'
 import fs from 'fs'
 
 import {
@@ -14,10 +13,8 @@ export type WasmFileMetadata = {
   filename: string
   isWasm: boolean
   buildId: string
-  fileHash: string
   hasDebugInfo: boolean
   hasExternalDebugInfo: boolean
-  hasCode: boolean
   error?: Error
 }
 
@@ -92,45 +89,13 @@ export const readWasmSections = (buffer: Buffer): WasmSection[] => {
   return sections
 }
 
-// The Datadog Browser SDK reads this section from the module at `WebAssembly.instantiate` time.
-// When absent (most toolchains don't emit it by default), datadog-ci and the SDK must derive the
-// same fallback identifier so that uploaded symbols can still be looked up: the SHA-256 of the
-// code section's raw bytes.
-export const computeCodeSectionHash = (codeSectionPayload: Buffer): string =>
-  createHash('sha256').update(codeSectionPayload).digest('hex')
-
-// Same convention as the ELF/PE uploaders: SHA-256 of the first and last 4096 bytes of the file
-// plus the file size, truncated to 128 bits. Cheap to compute on very large debug artifacts.
-export const computeFileHash = async (filename: string): Promise<string> => {
-  const fd = await fs.promises.open(filename, 'r')
-  try {
-    const stats = await fd.stat()
-    const fileSize = stats.size
-    const hash = createHash('sha256')
-    const buffer = Buffer.alloc(4096)
-    let {bytesRead} = await fd.read(buffer, 0, 4096, 0)
-    hash.update(buffer.subarray(0, bytesRead))
-    ;({bytesRead} = await fd.read(buffer, 0, 4096, Math.max(0, fileSize - 4096)))
-    hash.update(buffer.subarray(0, bytesRead))
-
-    buffer.writeBigUInt64BE(BigInt(fileSize), 0)
-    hash.update(buffer.subarray(0, 8))
-
-    return hash.digest('hex').slice(0, 32)
-  } finally {
-    await fd.close()
-  }
-}
-
 export const getWasmFileMetadata = async (filename: string): Promise<WasmFileMetadata> => {
   const metadata: WasmFileMetadata = {
     filename,
     isWasm: false,
     buildId: '',
-    fileHash: '',
     hasDebugInfo: false,
     hasExternalDebugInfo: false,
-    hasCode: false,
   }
 
   try {
@@ -155,17 +120,6 @@ export const getWasmFileMetadata = async (filename: string): Promise<WasmFileMet
     metadata.hasDebugInfo = sections.some(
       (section) => section.id === WasmSectionId.CUSTOM && section.name.startsWith(WASM_DEBUG_SECTION_PREFIX)
     )
-
-    const codeSection = sections.find((section) => section.id === WasmSectionId.CODE)
-    metadata.hasCode = codeSection !== undefined && codeSection.payload.length > 0
-
-    if (!metadata.buildId && codeSection) {
-      metadata.buildId = computeCodeSectionHash(codeSection.payload)
-    }
-
-    if (metadata.hasCode) {
-      metadata.fileHash = await computeFileHash(filename)
-    }
   } catch (error) {
     metadata.error = error
   }

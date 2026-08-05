@@ -1,12 +1,9 @@
-import {createHash} from 'crypto'
 import fs from 'fs'
 import os from 'os'
 
 import upath from 'upath'
 
 import {
-  computeCodeSectionHash,
-  computeFileHash,
   getOutputFilenameFromBuildId,
   getWasmFileMetadata,
   isWasmFile,
@@ -76,44 +73,6 @@ describe('readWasmSections', () => {
   })
 })
 
-describe('computeCodeSectionHash', () => {
-  test('matches a plain sha256 of the payload', () => {
-    const payload = Buffer.from([0x01, 0x02, 0x03, 0x04])
-    expect(computeCodeSectionHash(payload)).toBe(createHash('sha256').update(payload).digest('hex'))
-  })
-})
-
-describe('computeFileHash', () => {
-  let tmpDir: string
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(upath.join(os.tmpdir(), 'wasm-tests-'))
-  })
-
-  afterEach(() => {
-    fs.rmSync(tmpDir, {recursive: true})
-  })
-
-  test('is deterministic for the same content', async () => {
-    const filename = upath.join(tmpDir, 'a.wasm')
-    fs.writeFileSync(filename, Buffer.from('some file content'))
-
-    const hash1 = await computeFileHash(filename)
-    const hash2 = await computeFileHash(filename)
-    expect(hash1).toBe(hash2)
-    expect(hash1).toHaveLength(32)
-  })
-
-  test('differs for different content', async () => {
-    const filenameA = upath.join(tmpDir, 'a.wasm')
-    const filenameB = upath.join(tmpDir, 'b.wasm')
-    fs.writeFileSync(filenameA, Buffer.from('content a'))
-    fs.writeFileSync(filenameB, Buffer.from('content b'))
-
-    expect(await computeFileHash(filenameA)).not.toBe(await computeFileHash(filenameB))
-  })
-})
-
 describe('getWasmFileMetadata', () => {
   let tmpDir: string
 
@@ -148,11 +107,9 @@ describe('getWasmFileMetadata', () => {
     expect(metadata.buildId).toBe('deadbeef')
     expect(metadata.hasDebugInfo).toBe(true)
     expect(metadata.hasExternalDebugInfo).toBe(false)
-    expect(metadata.hasCode).toBe(true)
-    expect(metadata.fileHash).toHaveLength(32)
   })
 
-  test('falls back to the code section hash when no build_id section is present', async () => {
+  test('has no build id when no build_id section is present', async () => {
     const filename = upath.join(tmpDir, 'no-build-id.wasm')
     const codePayload = Buffer.from([0x01, 0x02, 0x03, 0x04, 0x05])
     const module = buildWasmModule([
@@ -162,7 +119,7 @@ describe('getWasmFileMetadata', () => {
     fs.writeFileSync(filename, module)
 
     const metadata = await getWasmFileMetadata(filename)
-    expect(metadata.buildId).toBe(computeCodeSectionHash(codePayload))
+    expect(metadata.buildId).toBe('')
   })
 
   test('detects external_debug_info section', async () => {
@@ -179,15 +136,13 @@ describe('getWasmFileMetadata', () => {
     expect(metadata.hasExternalDebugInfo).toBe(true)
   })
 
-  test('has no build id and no code section when the module is empty', async () => {
+  test('has no build id when the module is empty', async () => {
     const filename = upath.join(tmpDir, 'empty.wasm')
     fs.writeFileSync(filename, buildWasmModule([]))
 
     const metadata = await getWasmFileMetadata(filename)
     expect(metadata.isWasm).toBe(true)
     expect(metadata.buildId).toBe('')
-    expect(metadata.hasCode).toBe(false)
-    expect(metadata.fileHash).toBe('')
   })
 
   test('records a parse error instead of throwing', async () => {

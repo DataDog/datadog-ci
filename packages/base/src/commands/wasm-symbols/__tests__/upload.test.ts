@@ -157,17 +157,14 @@ describe('wasm-symbols upload', () => {
         filename: './a/b/c/fake-filename.wasm',
         isWasm: true,
         buildId: 'fake-build-id',
-        fileHash: 'fake-file-hash',
         hasDebugInfo: true,
         hasExternalDebugInfo: false,
-        hasCode: true,
       }
       const metadata = command['getMappingMetadata'](wasmFileMetadata)
 
       expect(metadata).toEqual({
         ...commonMetadata,
         build_id: 'fake-build-id',
-        file_hash: 'fake-file-hash',
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
         symbol_source: 'debug_info',
@@ -204,14 +201,12 @@ describe('wasm-symbols upload', () => {
         {
           ...commonMetadata,
           build_id: 'aabbcc',
-          file_hash: calls[0].file_hash,
           filename: 'a.wasm',
           symbol_source: 'debug_info',
         },
         {
           ...commonMetadata,
           build_id: 'ddeeff',
-          file_hash: calls[1].file_hash,
           filename: 'b.wasm',
           symbol_source: 'debug_info',
         },
