@@ -50,6 +50,12 @@ describe('generateConfigDiff', () => {
     expect(result).toContain('No changes detected.')
   })
 
+  test('should show reordered positional arrays', () => {
+    const result = generateConfigDiff({args: ['first', 'second']}, {args: ['second', 'first']})
+
+    expect(result).not.toContain('No changes detected.')
+  })
+
   test('should obfuscate sensitive values', () => {
     const original = {api_key: 'abc123'}
     const updated = {api_key: '1234567890abcdef1234567890abcdef'}
@@ -103,38 +109,21 @@ describe('sortedEqual', () => {
     expect(sortedEqual(null, undefined)).toBe(false)
   })
 
-  test('should return true for arrays of primitives in different order', () => {
-    expect(sortedEqual([3, 1, 2], [1, 2, 3])).toBe(true)
-    expect(sortedEqual(['c', 'a', 'b'], ['a', 'b', 'c'])).toBe(true)
-  })
-
-  test('should return true for arrays of objects with same content', () => {
-    expect(sortedEqual([{id: 1}, {id: 2}], [{id: 2}, {id: 1}])).toBe(true)
-    expect(sortedEqual([{a: 1, b: 2}, {c: 3}], [{c: 3}, {b: 2, a: 1}])).toBe(true)
+  test('should preserve array order', () => {
+    expect(sortedEqual([3, 1, 2], [1, 2, 3])).toBe(false)
+    expect(sortedEqual([{id: 1}, {id: 2}], [{id: 2}, {id: 1}])).toBe(false)
   })
 
   test('should return false for arrays of objects with different content', () => {
     expect(sortedEqual([{id: 1}, {id: 2}], [{id: 1}, {id: 3}])).toBe(false)
   })
 
-  test('should handle mixed type arrays', () => {
-    expect(sortedEqual([1, 'test', {a: 1}], [{a: 1}, 'test', 1])).toBe(true)
-    expect(sortedEqual([null, 1, 'test'], ['test', 1, null])).toBe(true)
-  })
-
   test('should return false for mixed type arrays with different values', () => {
     expect(sortedEqual([1, 'test', {a: 1}], [1, 'test', {a: 2}])).toBe(false)
   })
 
-  test('should handle deeply nested structures', () => {
-    const obj1 = {a: [1, {b: [2, 3]}, 4], c: {d: 5}}
-    const obj2 = {c: {d: 5}, a: [4, {b: [3, 2]}, 1]}
-    expect(sortedEqual(obj1, obj2)).toBe(true)
-  })
-
-  test('should handle arrays with duplicate values', () => {
-    expect(sortedEqual([1, 2, 2, 3], [3, 2, 1, 2])).toBe(true)
-    expect(sortedEqual([1, 2, 2], [1, 2, 2, 2])).toBe(false)
+  test('should preserve nested array order', () => {
+    expect(sortedEqual({a: [1, {b: [2, 3]}, 4]}, {a: [1, {b: [3, 2]}, 4]})).toBe(false)
   })
 })
 

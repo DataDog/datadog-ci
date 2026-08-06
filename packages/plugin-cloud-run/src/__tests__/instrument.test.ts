@@ -1,6 +1,6 @@
 import type {IContainer, IEnvVar, IVolumeMount} from '../types'
 
-import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 import {API_KEY_ENV_VAR, SERVICE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
@@ -87,7 +87,7 @@ describe('InstrumentCommand', () => {
       expect(context.stderr.toString()).toContain('Unable to authenticate with GCP')
     })
 
-    test('should fail if sidecar instrumentation fails', async () => {
+    test('renders a sidecar instrumentation failure once', async () => {
       const mockInstrumentSidecar = jest.fn().mockRejectedValue(new Error('Failed to instrument sidecar'))
       jest.spyOn(InstrumentCommand.prototype as any, 'instrumentSidecar').mockImplementation(mockInstrumentSidecar)
 
@@ -99,6 +99,7 @@ describe('InstrumentCommand', () => {
         '--region',
         'us-central1',
       ])
+
       expect(code).toBe(1)
       expect(context.stderr.toString()).toContain('Instrumentation failed: Failed to instrument sidecar')
       expect(context.stderr.toString()).not.toContain('Uninstrumentation failed')
@@ -219,12 +220,14 @@ describe('InstrumentCommand', () => {
     let stderr: jest.Mock
 
     beforeEach(() => {
-      command = new InstrumentCommand()
+      command = createCommand(InstrumentCommand)
       stdout = jest.fn()
       stderr = jest.fn()
       ;(command as any).context = {stdout: {write: stdout}, stderr: {write: stderr}}
       ;(command as any).dryRun = false
       ;(command as any).interactive = false
+      ;(command as any).project = 'test-project'
+      ;(command as any).region = 'us-central1'
     })
 
     test('skips the update when only object key order and template revision differ', async () => {
@@ -342,7 +345,7 @@ describe('InstrumentCommand', () => {
     let command: InstrumentCommand
 
     beforeEach(() => {
-      command = new InstrumentCommand()
+      command = createCommand(InstrumentCommand)
       ;(command as any).tracing = undefined
       ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
       ;(command as any).sidecarName = 'datadog-sidecar'

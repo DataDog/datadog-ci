@@ -1,3 +1,5 @@
+import {isDeepStrictEqual} from 'node:util'
+
 import type {IEnvVar, IService} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
@@ -31,38 +33,6 @@ import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, re
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {instrumentServiceConfig} from '../service-config'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
-
-const canonicalize = (value: unknown): unknown => {
-  if (Array.isArray(value)) {
-    return value.map(canonicalize)
-  }
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, child]) => [key, canonicalize(child)])
-    )
-  }
-
-  return value
-}
-
-const servicesAreEqual = (left: IService, right: IService): boolean => {
-  const withoutRevision = (service: IService): IService => ({
-    ...service,
-    template: service.template ? {...service.template, revision: undefined} : service.template,
-  })
-
-  return JSON.stringify(canonicalize(withoutRevision(left))) === JSON.stringify(canonicalize(withoutRevision(right)))
-}
-
-const parseServiceName = (name: string | undefined) => {
-  const match = name?.match(/^projects\/([^/]+)\/locations\/([^/]+)\/services\/([^/]+)$/)
-
-  return match ? {project: match[1], region: match[2], service: match[3]} : undefined
-}
-
-const shortRevisionName = (name: string) => name.split('/').pop() ?? name
 
 export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
@@ -304,10 +274,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       return
     }
 
-    const parsedName = parseServiceName(service.name || undefined)
-    const project = parsedName?.project ?? this.project
-    const region = parsedName?.region ?? this.region
-    const shortServiceName = parsedName?.service ?? serviceName
     let revisionName: string | undefined
 
     this.context.stderr.write(chalk.yellow('\nDiagnosing the latest Cloud Run revision...\n'))
@@ -328,13 +294,11 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         this.context.stderr.write('Conditions:\n')
         for (const condition of revision.conditions) {
           const reason = condition.revisionReason ?? condition.reason
-          const hasState = typeof condition.state === 'number' || typeof condition.state === 'string'
-          const hasReason = typeof reason === 'number' || typeof reason === 'string'
           const details = [
-            condition.type || 'Unknown',
-            hasState ? `state=${condition.state}` : undefined,
-            hasReason ? `reason=${reason}` : undefined,
-            condition.message || undefined,
+            condition.type ?? 'Unknown',
+            typeof condition.state === 'undefined' ? undefined : `state=${condition.state}`,
+            typeof reason === 'undefined' ? undefined : `reason=${reason}`,
+            condition.message ?? undefined,
           ].filter((detail): detail is string => detail !== undefined)
           this.context.stderr.write(`  - ${details.join(': ')}\n`)
         }
@@ -345,21 +309,34 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         this.context.stderr.write(`Logs: ${revision.logUri}\n`)
       }
     } catch (diagnosticError) {
-      const message = diagnosticError instanceof Error ? diagnosticError.message : String(diagnosticError)
-      this.context.stderr.write(chalk.yellow(`Unable to read the latest revision details: ${message}\n`))
+      this.context.stderr.write(
+        chalk.yellow(`Unable to read the latest revision details: ${getErrorMessage(diagnosticError)}\n`)
+      )
     }
 
-    if (project && region) {
-      const revision = revisionName ? shortRevisionName(revisionName) : undefined
+    if (this.project && this.region) {
+      const revision = revisionName ? getRevisionId(revisionName) : undefined
       const describeCommand = revision
-        ? `gcloud run revisions describe ${revision} --project ${project} --region ${region}`
-        : `gcloud run services describe ${shortServiceName} --project ${project} --region ${region}`
+        ? `gcloud run revisions describe ${revision} --project ${this.project} --region ${this.region}`
+        : `gcloud run services describe ${serviceName} --project ${this.project} --region ${this.region}`
       const logFilter = revision
         ? `resource.labels.revision_name="${revision}"`
-        : `resource.labels.service_name="${shortServiceName}"`
+        : `resource.labels.service_name="${serviceName}"`
       this.context.stderr.write(
-        `Fallback commands:\n  ${describeCommand}\n  gcloud logging read 'resource.type="cloud_run_revision" AND ${logFilter}' --project ${project} --limit 50\n`
+        `Fallback commands:\n  ${describeCommand}\n  gcloud logging read 'resource.type="cloud_run_revision" AND ${logFilter}' --project ${this.project} --limit 50\n`
       )
     }
   }
 }
+
+const withoutGeneratedRevisionName = (service: IService): IService => ({
+  ...service,
+  template: service.template ? {...service.template, revision: undefined} : service.template,
+})
+
+const servicesAreEqual = (left: IService, right: IService): boolean =>
+  isDeepStrictEqual(withoutGeneratedRevisionName(left), withoutGeneratedRevisionName(right))
+
+const getErrorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error))
+
+const getRevisionId = (revisionName: string) => revisionName.split('/').pop() ?? revisionName
