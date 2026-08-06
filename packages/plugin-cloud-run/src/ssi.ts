@@ -9,7 +9,7 @@ import {
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
-  getLanguageCompatibilityError,
+  getLanguageCompatibilityErrors,
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {LANGUAGE_METADATA} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
@@ -77,12 +77,11 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     }
   }
 
-  const compatibilityError = getLanguageCompatibilityError({
+  const errors = getLanguageCompatibilityErrors({
     language: options.language,
     libc: options.tracerLibc,
     version: options.tracerVersion,
   })
-  const errors = compatibilityError === undefined ? [] : [compatibilityError]
   if (errors.length > 0) {
     return {kind: 'errors', errors, warnings: []}
   }
