@@ -108,6 +108,34 @@ describe('environment fragment merging', () => {
     expect(removeEnvFragment(`/etc/php:${fragment.value}.backup`, fragment)).toBe(`/etc/php:${fragment.value}.backup`)
   })
 
+  const pythonPathFragment: EnvFragment = {
+    name: 'PYTHONPATH',
+    value: '/datadog-lib',
+    separator: ':',
+    mode: 'append',
+  }
+
+  test.each([
+    {
+      fragment: prependFragment,
+      current: `-w ${prependFragment.value} ${prependFragment.value}`,
+      removed: '-w',
+      merged: `${prependFragment.value} -w`,
+    },
+    {
+      fragment: pythonPathFragment,
+      current: `${pythonPathFragment.value}:${pythonPathFragment.value}:/custom`,
+      removed: '/custom',
+      merged: `/custom:${pythonPathFragment.value}`,
+    },
+  ])(
+    'removes adjacent $fragment.mode fragments without leaving a separator',
+    ({fragment, current, removed, merged}) => {
+      expect(removeEnvFragment(current, fragment)).toBe(removed)
+      expect(mergeEnvFragment(current, fragment)).toBe(merged)
+    }
+  )
+
   test('preserves pre-existing separator formatting', () => {
     const current = '--inspect  --trace-warnings '
     const merged = mergeEnvFragment(current, appendFragment)
@@ -166,6 +194,7 @@ describe('injection mode tag', () => {
     {current: `env:prod,${tag}`, merged: `${tag},env:prod`},
     {current: `env:prod,${tag},team:serverless`, merged: `${tag},env:prod,team:serverless`},
     {current: `${tag},env:prod,${tag}`, merged: `${tag},env:prod`},
+    {current: `env:prod,${tag},${tag}`, merged: `${tag},env:prod`},
   ])('merges exactly once into $current', ({current, merged}) => {
     expect(mergeInjectionModeTag(current)).toBe(merged)
     expect(mergeInjectionModeTag(merged)).toBe(merged)
@@ -187,6 +216,7 @@ describe('injection mode tag', () => {
     {current: `${tag},env:prod`, removed: 'env:prod'},
     {current: `env:prod,${tag}`, removed: 'env:prod'},
     {current: `env:prod,${tag},team:serverless`, removed: 'env:prod,team:serverless'},
+    {current: `env:prod,${tag},${tag}`, removed: 'env:prod'},
   ])('removes only the exact tag from $current', ({current, removed}) => {
     expect(removeInjectionModeTag(current)).toBe(removed)
   })

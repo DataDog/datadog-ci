@@ -208,19 +208,18 @@ const expandRange = (currentValue: string, fragment: PositionedEnvFragment, [sta
   return [start, end]
 }
 
-const mergeRanges = (ranges: Range[]): Range[] =>
+const mergeRanges = (ranges: Range[], maxGap = 0): Range[] =>
   ranges.reduce<Range[]>((merged, range) => {
     const previous = merged.at(-1)
 
-    return previous && range[0] <= previous[1]
+    return previous && range[0] <= previous[1] + maxGap
       ? [...merged.slice(0, -1), [previous[0], Math.max(previous[1], range[1])]]
       : [...merged, range]
   }, [])
 
 const removeExactFragment = (currentValue: string, fragment: PositionedEnvFragment): string => {
-  const ranges = mergeRanges(
-    findRanges(currentValue, fragment).map((range) => expandRange(currentValue, fragment, range))
-  )
+  const fragmentRuns = mergeRanges(findRanges(currentValue, fragment), fragment.separator?.length)
+  const ranges = mergeRanges(fragmentRuns.map((range) => expandRange(currentValue, fragment, range)))
   const parts = ranges.map(([start], index) => currentValue.slice(index === 0 ? 0 : ranges[index - 1][1], start))
 
   return [...parts, currentValue.slice(ranges.at(-1)?.[1] ?? 0)].join('')
