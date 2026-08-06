@@ -46,13 +46,13 @@ export const getLanguageInjectionSpec = (options: LanguageInjectionOptions): Lan
   return {image, ...LANGUAGE_CONFIG[options.language].getSpec(root, options.libc)}
 }
 
-/** Returns a domain compatibility error after individual CLI arguments have been validated. */
-export const getLanguageCompatibilityError = (options: LanguageCompatibilityOptions): string | undefined =>
-  LANGUAGE_CONFIG[options.language].getCompatibilityError?.(options)
+/** Returns domain compatibility errors after individual CLI arguments have been validated. */
+export const getLanguageCompatibilityErrors = (options: LanguageCompatibilityOptions): readonly string[] =>
+  LANGUAGE_CONFIG[options.language].getCompatibilityErrors?.(options) ?? []
 
 type LanguageConfig = {
   getSpec: (root: string, libc: Libc) => Pick<LanguageInjectionSpec, 'artifacts' | 'env'>
-  getCompatibilityError?: (options: Omit<LanguageCompatibilityOptions, 'language'>) => string | undefined
+  getCompatibilityErrors?: (options: Omit<LanguageCompatibilityOptions, 'language'>) => readonly string[]
 }
 
 const LANGUAGE_CONFIG: Record<Language, LanguageConfig> = {
@@ -90,12 +90,14 @@ const LANGUAGE_CONFIG: Record<Language, LanguageConfig> = {
       ],
       env: getDotnetEnv(root),
     }),
-    getCompatibilityError: ({version}) => {
+    getCompatibilityErrors: ({version}) => {
       const pinnedMajor = version.match(/^v?(\d+)(?:\.|$)/)?.[1]
 
       return pinnedMajor !== undefined && Number(pinnedMajor) < 3
-        ? `Unsupported .NET tracer version ${JSON.stringify(version)}: versions before 3.0 require architecture-specific package paths`
-        : undefined
+        ? [
+            `Unsupported .NET tracer version ${JSON.stringify(version)}: versions before 3.0 require architecture-specific package paths`,
+          ]
+        : []
     },
   },
   python: {
@@ -123,7 +125,7 @@ const LANGUAGE_CONFIG: Record<Language, LanguageConfig> = {
         },
       ],
     }),
-    getCompatibilityError: ({libc}) => (libc === 'musl' ? 'Ruby Single-Language SSI does not support musl' : undefined),
+    getCompatibilityErrors: ({libc}) => (libc === 'musl' ? ['Ruby Single-Language SSI does not support musl'] : []),
   },
   php: {
     getSpec: (root, libc) => {

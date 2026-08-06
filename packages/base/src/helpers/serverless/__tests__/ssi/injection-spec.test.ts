@@ -1,6 +1,6 @@
 import {mergeEnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
-  getLanguageCompatibilityError,
+  getLanguageCompatibilityErrors,
   getLanguageInjectionSpec,
   type Libc,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
@@ -103,9 +103,9 @@ describe('language injection specifications', () => {
   })
 
   test('reports Ruby on musl as incompatible', () => {
-    expect(getLanguageCompatibilityError({language: 'ruby', libc: 'musl', version: 'latest'})).toContain(
-      'does not support musl'
-    )
+    expect(getLanguageCompatibilityErrors({language: 'ruby', libc: 'musl', version: 'latest'})).toEqual([
+      expect.stringContaining('does not support musl'),
+    ])
   })
 
   test.each([
@@ -130,9 +130,9 @@ describe('language injection specifications', () => {
   })
 
   test.each(['2.56.0', 'v2.60.1'])('reports .NET 2.x layouts as incompatible', (version) => {
-    expect(getLanguageCompatibilityError({language: 'csharp', libc: 'glibc', version})).toContain(
-      'versions before 3.0 require architecture-specific package paths'
-    )
+    expect(getLanguageCompatibilityErrors({language: 'csharp', libc: 'glibc', version})).toEqual([
+      expect.stringContaining('versions before 3.0 require architecture-specific package paths'),
+    ])
   })
 
   test.each(['glibc', 'musl'] as const)('uses the current universal .NET package paths for %s', (libc) => {
@@ -165,7 +165,7 @@ describe('language injection specifications', () => {
   })
 
   test('accepts compatible language options', () => {
-    expect(getLanguageCompatibilityError({language: 'java', libc: 'musl', version: 'latest'})).toBeUndefined()
-    expect(getLanguageCompatibilityError({language: 'csharp', libc: 'glibc', version: '3.0.0'})).toBeUndefined()
+    expect(getLanguageCompatibilityErrors({language: 'java', libc: 'musl', version: 'latest'})).toEqual([])
+    expect(getLanguageCompatibilityErrors({language: 'csharp', libc: 'glibc', version: '3.0.0'})).toEqual([])
   })
 })
