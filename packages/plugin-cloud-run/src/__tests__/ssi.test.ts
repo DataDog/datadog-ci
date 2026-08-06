@@ -329,11 +329,18 @@ describe('SSI service preparation', () => {
       '/datadog-lib/node_modules/dd-trace/init.js',
     ])
     const script = tracer?.args?.[1] ?? ''
-    expect(script).toContain('/datadog-init/copy-lib.sh "$root"')
-    expect(script).toContain('[ ! -f "$marker" ]')
-    expect(script).toContain('[ -r "$candidate" ]')
-    expect(script).toContain('echo "datadog: no TCP listener is available in the tracer image" >&2\n  exit 1')
-    expect(script.indexOf('if command -v nc')).toBeGreaterThan(script.indexOf('none of these tracer artifacts'))
+    const probePreflight = script.indexOf('[ ! -x /datadog-init/probe-server ]')
+    const copy = script.indexOf('/datadog-init/copy-lib.sh "$root"')
+    const markerVerification = script.indexOf('[ ! -f "$marker" ]')
+    const artifactVerification = script.indexOf('[ -r "$candidate" ]')
+    const probeServer = script.indexOf('exec /datadog-init/probe-server "$port"')
+    expect(probePreflight).toBeGreaterThan(-1)
+    expect(copy).toBeGreaterThan(probePreflight)
+    expect(markerVerification).toBeGreaterThan(copy)
+    expect(artifactVerification).toBeGreaterThan(markerVerification)
+    expect(probeServer).toBeGreaterThan(artifactVerification)
+    expect(script).not.toContain('command -v nc')
+    expect(script).not.toContain('python3')
     expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
       name: 'datadog-tracer',
       emptyDir: {medium: 1},

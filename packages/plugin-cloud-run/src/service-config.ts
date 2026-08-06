@@ -68,6 +68,7 @@ const TRACER_COPY_SCRIPT = [
   'port=$3',
   'shift 3',
   'if [ ! -x /datadog-init/copy-lib.sh ]; then echo "datadog: /datadog-init/copy-lib.sh is missing from the tracer image" >&2; exit 1; fi',
+  'if [ ! -x /datadog-init/probe-server ]; then echo "datadog: /datadog-init/probe-server is missing from the tracer image" >&2; exit 1; fi',
   '/datadog-init/copy-lib.sh "$root"',
   'if [ ! -f "$marker" ]; then echo "datadog: tracer copy did not complete (missing $marker)" >&2; exit 1; fi',
   'while [ "$#" -gt 0 ]; do',
@@ -86,15 +87,7 @@ const TRACER_COPY_SCRIPT = [
   '  if [ -z "$found" ]; then echo "datadog: none of these tracer artifacts were copied:$names" >&2; exit 1; fi',
   'done',
   'echo "datadog: tracer install verified in $root"',
-  // TODO(SVLS-9302): Node.js and Ruby lack nc/python; all tracer images need a stable readiness-server contract.
-  'if command -v nc >/dev/null 2>&1; then',
-  '  while true; do nc -l -p "$port" </dev/null >/dev/null 2>&1 || nc -l "$port" </dev/null >/dev/null 2>&1 || sleep 1; done',
-  'elif command -v python3 >/dev/null 2>&1; then',
-  '  python3 -c \'import socket,sys\nlistener=socket.socket()\nlistener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\nlistener.bind(("0.0.0.0", int(sys.argv[1])))\nlistener.listen(64)\nwhile True:\n    listener.accept()[0].close()\' "$port"',
-  'else',
-  '  echo "datadog: no TCP listener is available in the tracer image" >&2',
-  '  exit 1',
-  'fi',
+  'exec /datadog-init/probe-server "$port"',
 ].join('\n')
 
 const buildTracerCopyArgs = (plan: RuntimeCopyPlan): string[] => {
