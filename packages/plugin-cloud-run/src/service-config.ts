@@ -246,7 +246,6 @@ const applyTracerCopy = (
     )
   }
 
-  assertNoDependencyCycle(containers, mainContainer.name || undefined, [runtimeCopy.containerName, ...dependencyNames])
   const managedDependencies = new Set([runtimeCopy.containerName, ...dependencyNames])
   containers[mainContainerIndex] = {
     ...mainContainer,
@@ -267,32 +266,6 @@ const applyTracerCopy = (
     ...template,
     containers,
     volumes: [...(template.volumes ?? []), {name: runtimeCopy.volumeName, emptyDir: {medium: MEMORY_VOLUME_MEDIUM}}],
-  }
-}
-
-const assertNoDependencyCycle = (
-  containers: readonly IContainer[],
-  mainContainerName: string | undefined,
-  dependencyNames: readonly string[]
-): void => {
-  const containersByName = new Map(
-    containers.flatMap((container) => (container.name ? [[container.name, container] as const] : []))
-  )
-  for (const dependencyName of dependencyNames) {
-    const pending = [dependencyName]
-    const visited = new Set<string>()
-    while (pending.length > 0) {
-      const name = pending.pop()!
-      if (mainContainerName !== undefined && name === mainContainerName) {
-        throw new SsiConfigError(
-          `Cannot enable automatic instrumentation because '${dependencyName}' depends on main container '${mainContainerName}', which would create a dependency cycle. Change the container dependencies so '${dependencyName}' no longer depends on '${mainContainerName}', then retry.`
-        )
-      }
-      if (!visited.has(name)) {
-        visited.add(name)
-        pending.push(...(containersByName.get(name)?.dependsOn ?? []))
-      }
-    }
   }
 }
 

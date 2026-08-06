@@ -377,24 +377,6 @@ describe('SSI service preparation', () => {
   })
 
   test.each([
-    ['directly', false],
-    ['transitively', true],
-  ] as const)('rejects an Agent that %s depends on the main container', (_description, transitive) => {
-    const service = serviceWithWorker()
-    if (transitive) {
-      service.template!.containers![1].dependsOn = ['app']
-    }
-    service.template!.containers!.push({
-      name: 'datadog-sidecar',
-      dependsOn: [transitive ? 'worker' : 'app'],
-    } as IContainer)
-
-    expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(
-      /would create a dependency cycle.*no longer depends on/
-    )
-  })
-
-  test.each([
     ['manual', 'true'],
     ['disabled', 'false'],
   ] as const)('removes owned SSI when tracing is %s', (tracing, traceEnabled) => {
