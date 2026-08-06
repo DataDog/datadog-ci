@@ -214,8 +214,8 @@ export const createInstrumentedTemplate = (
   baseSidecar: FullyOptional<Container>,
   sharedVolumeOptions: SharedVolumeOptions,
   envVarsByName: Record<string, FullyOptional<EnvVar>>,
-  /** Limits app instrumentation by container name. An empty set targets none; undefined targets all. */
-  targetContainerNames?: ReadonlySet<string>
+  /** Limits app instrumentation by container identity. An empty set targets none; undefined targets all. */
+  targetContainers?: ReadonlySet<FullyOptional<Container>>
 ): AppTemplate => {
   const sharedVolumeMount: VolumeMount = {
     [sharedVolumeOptions.volumeMountNameKey]: sharedVolumeOptions.name,
@@ -262,7 +262,7 @@ export const createInstrumentedTemplate = (
       return newSidecarContainer
     }
 
-    if (targetContainerNames && !targetContainerNames.has(container.name ?? '')) {
+    if (targetContainers && !targetContainers.has(container)) {
       return container
     }
 

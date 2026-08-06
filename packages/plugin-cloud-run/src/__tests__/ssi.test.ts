@@ -336,19 +336,13 @@ describe('SSI service preparation', () => {
     })
   })
 
-  test('tracks an adopted unnamed main container without taking over a customer name', () => {
-    const unnamed = serviceWithWorker()
-    unnamed.template!.containers![0].name = ''
-    const adopted = instrumentServiceConfig(unnamed, serviceConfigOptions())
-    expect(adopted.template?.containers?.[0].name).toBe('datadog-app')
-    expect(instrumentServiceConfig(adopted, serviceConfigOptions('python')).template?.containers?.[0].name).toBe(
-      'datadog-app'
-    )
+  test('keeps an unnamed main container unnamed during injection and replacement', () => {
+    const service = serviceWithWorker()
+    service.template!.containers![0].name = ''
 
-    const customer = serviceWithWorker()
-    customer.template!.containers![0].name = 'datadog-app'
-    expect(() => instrumentServiceConfig(customer, serviceConfigOptions())).toThrow(/reserved/)
-    expect(customer.template?.containers?.[0].name).toBe('datadog-app')
+    const injected = instrumentServiceConfig(service, serviceConfigOptions())
+    expect(injected.template?.containers?.[0].name).toBe('')
+    expect(instrumentServiceConfig(injected, serviceConfigOptions('python')).template?.containers?.[0].name).toBe('')
   })
 
   test('replaces owned SSI without removing unrelated container configuration', () => {
@@ -393,22 +387,16 @@ describe('SSI service preparation', () => {
   })
 
   test.each([
-    ['manual', 'true', false],
-    ['disabled', 'false', true],
-  ] as const)('removes owned SSI when tracing is %s', (tracing, traceEnabled, adoptsMainContainer) => {
+    ['manual', 'true'],
+    ['disabled', 'false'],
+  ] as const)('removes owned SSI when tracing is %s', (tracing, traceEnabled) => {
     const service = serviceWithWorker()
-    if (adoptsMainContainer) {
-      service.template!.containers![0].name = ''
-    }
+    service.template!.containers![0].name = ''
     const injected = instrumentServiceConfig(service, serviceConfigOptions())
     const injectedApp = injected.template!.containers![0]
     injectedApp.volumeMounts!.push({name: 'customer-volume', mountPath: '/customer'})
     injectedApp.dependsOn!.push('database')
     injected.template!.volumes!.push({name: 'customer-volume'})
-    if (adoptsMainContainer) {
-      injected.template!.containers![1].dependsOn = ['datadog-app', 'database']
-    }
-
     const noInjectionOptions = serviceConfigOptions('none')
     const result = instrumentServiceConfig(injected, {
       ...noInjectionOptions,
@@ -427,7 +415,7 @@ describe('SSI service preparation', () => {
     )
     expect(result.template!.volumes!.map((volume) => volume.name)).not.toContain('datadog-tracer')
     expect(app).toMatchObject({
-      name: adoptsMainContainer ? '' : 'app',
+      name: '',
       env: expect.arrayContaining([
         {name: 'NODE_OPTIONS', value: '--inspect'},
         {name: DD_TRACE_ENABLED_ENV_VAR, value: traceEnabled},
@@ -440,7 +428,7 @@ describe('SSI service preparation', () => {
     })
     expect(app.env?.find((variable) => variable.name === 'DD_TAGS')).toBeUndefined()
     expect(app.volumeMounts?.map((mount) => mount.name)).not.toContain('datadog-tracer')
-    expect(result.template!.containers![1].dependsOn).toEqual(adoptsMainContainer ? ['database'] : undefined)
+    expect(result.template!.containers![1].dependsOn).toBeUndefined()
   })
 
   test('omitting SSI configuration preserves owned SSI', () => {

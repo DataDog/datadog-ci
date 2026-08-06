@@ -20,7 +20,6 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 import {mergeLanguageInjectionEnv, removeLanguageInjectionEnv, selectMainContainer, SsiConfigError} from './ssi'
 
 const MEMORY_VOLUME_MEDIUM = 1 as const // google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
-const SSI_ADOPTED_MAIN_CONTAINER_NAME = 'datadog-app'
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
 const UNIFIED_SERVICE_TAG_LABELS = {
@@ -68,7 +67,8 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   }
 
   let sourceTemplate: IServiceTemplate = service.template || {}
-  let targetContainerNames: ReadonlySet<string> | undefined
+  let targetContainers: ReadonlySet<IContainer> | undefined
+  let mainContainerIndex: number | undefined
   const envVarsByName = {...options.envVarsByName}
   const ownsSsiState = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const removesOwnedSsiState = ownsSsiState && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
@@ -77,12 +77,10 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     sourceTemplate = removeExistingSsiState(sourceTemplate)
   } else if (ssiConfig.kind === 'no-injection') {
     if (sourceTemplate.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
-      targetContainerNames = new Set(
-        sourceTemplate.containers
-          .filter(
-            (container) => container.name !== options.sidecarName && container.name !== TRACER_COPY_CONTAINER_NAME
-          )
-          .map((container) => container.name ?? '')
+      targetContainers = new Set(
+        sourceTemplate.containers.filter(
+          (container) => container.name !== options.sidecarName && container.name !== TRACER_COPY_CONTAINER_NAME
+        )
       )
     }
   } else {
@@ -92,11 +90,13 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
     )
-    const namedMainContainer = ensureMainContainerName(sourceTemplate, mainContainer, ownsSsiState)
-    sourceTemplate = ownsSsiState
-      ? removeExistingSsiState(namedMainContainer.template, namedMainContainer.mainContainerName)
-      : namedMainContainer.template
-    targetContainerNames = new Set([namedMainContainer.mainContainerName])
+    sourceTemplate = ownsSsiState ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
+    const updatedMainContainer = selectMainContainer(
+      sourceTemplate.containers ?? [],
+      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+    )
+    mainContainerIndex = sourceTemplate.containers!.indexOf(updatedMainContainer)
+    targetContainers = new Set([updatedMainContainer])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
   }
 
@@ -110,7 +110,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       volumeMountNameKey: 'name',
     },
     envVarsByName,
-    targetContainerNames
+    targetContainers
   ) as IServiceTemplate
 
   const labels: Record<string, string> = {
@@ -132,8 +132,8 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   if (ssiConfig.kind === 'single-language') {
     template = {
       ...template,
-      containers: template.containers?.map((container) =>
-        targetContainerNames?.has(container.name ?? '')
+      containers: template.containers?.map((container, index) =>
+        index === mainContainerIndex
           ? {...container, env: mergeLanguageInjectionEnv(container.env, ssiConfig.spec)}
           : container
       ),
@@ -149,7 +149,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       },
       {kind: 'cloud-run-idling-sidecar', readinessPort: TRACER_READINESS_PORT}
     )
-    template = applyTracerCopy(template, runtimeCopy, [...targetContainerNames!][0], [options.sidecarName])
+    template = applyTracerCopy(template, runtimeCopy, mainContainerIndex!, [options.sidecarName])
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 
@@ -166,13 +166,6 @@ export const uninstrumentServiceConfig = (
   const sidecarRemoved = containers.some((container) => container.name === options.sidecarName)
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
   const ownsSsiState = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
-  const restoreAdoptedMainContainerName =
-    ownsSsiState &&
-    containers.some(
-      (container) =>
-        container.name === SSI_ADOPTED_MAIN_CONTAINER_NAME &&
-        (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
-    )
   const updatedContainers = containers
     .filter(
       (container) =>
@@ -184,8 +177,7 @@ export const uninstrumentServiceConfig = (
         options.sidecarName,
         options.sharedVolumeName,
         options.envVarNames,
-        ownsSsiState,
-        restoreAdoptedMainContainerName
+        ownsSsiState
       )
     )
   const updatedVolumes = volumes.filter(
@@ -243,17 +235,16 @@ const buildTracerCopyContainer = (runtimeCopy: RuntimeCopyPlan): IContainer => (
 const applyTracerCopy = (
   template: IServiceTemplate,
   runtimeCopy: RuntimeCopyPlan,
-  mainContainerName: string,
+  mainContainerIndex: number,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
   const containers = [...(template.containers ?? [])]
-  const mainContainerIndex = containers.findIndex((container) => container.name === mainContainerName)
-  if (mainContainerIndex === -1) {
-    throw new SsiConfigError(`Main container '${mainContainerName}' was not found in the service template.`)
+  const mainContainer = containers[mainContainerIndex]
+  if (!mainContainer) {
+    throw new SsiConfigError('Main container was not found in the service template.')
   }
 
-  const mainContainer = containers[mainContainerIndex]
-  assertNoDependencyCycle(containers, mainContainerName, [runtimeCopy.containerName, ...dependencyNames])
+  assertNoDependencyCycle(containers, mainContainer.name || undefined, [runtimeCopy.containerName, ...dependencyNames])
   const managedDependencies = new Set([runtimeCopy.containerName, ...dependencyNames])
   containers[mainContainerIndex] = {
     ...mainContainer,
@@ -279,7 +270,7 @@ const applyTracerCopy = (
 
 const assertNoDependencyCycle = (
   containers: readonly IContainer[],
-  mainContainerName: string,
+  mainContainerName: string | undefined,
   dependencyNames: readonly string[]
 ): void => {
   const containersByName = new Map(
@@ -290,7 +281,7 @@ const assertNoDependencyCycle = (
     const visited = new Set<string>()
     while (pending.length > 0) {
       const name = pending.pop()!
-      if (name === mainContainerName) {
+      if (mainContainerName !== undefined && name === mainContainerName) {
         throw new SsiConfigError(
           `Cannot make main container '${mainContainerName}' depend on '${dependencyName}' because that container already depends on the main container directly or transitively.`
         )
@@ -327,72 +318,20 @@ const assertSsiResourceNamesAvailable = (
   }
 }
 
-const ensureMainContainerName = (
-  template: IServiceTemplate,
-  mainContainer: IContainer,
-  ownsSsiState: boolean
-): {template: IServiceTemplate; mainContainerName: string} => {
-  if (mainContainer.name === SSI_ADOPTED_MAIN_CONTAINER_NAME) {
-    if (!ownsSsiState) {
-      throw new SsiConfigError(
-        `Main container name '${SSI_ADOPTED_MAIN_CONTAINER_NAME}' is reserved for unnamed containers adopted by Datadog.`
+const removeExistingSsiState = (template: IServiceTemplate, mainContainer?: IContainer): IServiceTemplate => ({
+  ...template,
+  containers: (template.containers ?? [])
+    .filter((container) => container.name !== TRACER_COPY_CONTAINER_NAME)
+    .map((container) =>
+      removeExistingSsiContainer(
+        container,
+        mainContainer === undefined
+          ? (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
+          : container === mainContainer
       )
-    }
-
-    return {template, mainContainerName: SSI_ADOPTED_MAIN_CONTAINER_NAME}
-  }
-  if (mainContainer.name) {
-    return {template, mainContainerName: mainContainer.name}
-  }
-  if (template.containers?.some((container) => container.name === SSI_ADOPTED_MAIN_CONTAINER_NAME)) {
-    throw new SsiConfigError(
-      `Cannot name the unnamed main container '${SSI_ADOPTED_MAIN_CONTAINER_NAME}' because another container already uses that name.`
-    )
-  }
-
-  return {
-    template: {
-      ...template,
-      containers: template.containers?.map((container) =>
-        container === mainContainer ? {...container, name: SSI_ADOPTED_MAIN_CONTAINER_NAME} : container
-      ),
-    },
-    mainContainerName: SSI_ADOPTED_MAIN_CONTAINER_NAME,
-  }
-}
-
-const removeExistingSsiState = (template: IServiceTemplate, mainContainerName?: string): IServiceTemplate => {
-  const restoresAdoptedMainContainerName =
-    mainContainerName === undefined &&
-    (template.containers ?? []).some(
-      (container) =>
-        container.name === SSI_ADOPTED_MAIN_CONTAINER_NAME &&
-        (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
-    )
-
-  return {
-    ...template,
-    containers: (template.containers ?? [])
-      .filter((container) => container.name !== TRACER_COPY_CONTAINER_NAME)
-      .map((container) => {
-        const isAdoptedMainContainer =
-          container.name === SSI_ADOPTED_MAIN_CONTAINER_NAME &&
-          (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
-        let updated = removeExistingSsiContainer(
-          container,
-          mainContainerName === undefined
-            ? (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
-            : container.name === mainContainerName
-        )
-        if (restoresAdoptedMainContainerName) {
-          updated = removeDependency(updated, SSI_ADOPTED_MAIN_CONTAINER_NAME)
-        }
-
-        return restoresAdoptedMainContainerName && isAdoptedMainContainer ? {...updated, name: ''} : updated
-      }),
-    volumes: (template.volumes ?? []).filter((volume) => volume.name !== TRACER_VOLUME_NAME),
-  }
-}
+    ),
+  volumes: (template.volumes ?? []).filter((volume) => volume.name !== TRACER_VOLUME_NAME),
+})
 
 const removeExistingSsiContainer = (container: IContainer, isMainContainer: boolean): IContainer => {
   const existingEnv = container.env ?? []
@@ -458,21 +397,16 @@ const removeContainerInstrumentation = (
   agentContainerName: string,
   sharedVolumeName: string,
   envVarNames: ReadonlySet<string>,
-  ownsSsiState: boolean,
-  restoreAdoptedMainContainerName: boolean
+  ownsSsiState: boolean
 ): IContainer => {
   const hasTracerMount = container.volumeMounts?.some((mount) => mount.name === TRACER_VOLUME_NAME) ?? false
   let updated = ownsSsiState && hasTracerMount ? removeExistingSsiContainer(container, true) : container
   if (ownsSsiState) {
     updated = removeDependency(updated, agentContainerName)
   }
-  if (restoreAdoptedMainContainerName) {
-    updated = removeDependency(updated, SSI_ADOPTED_MAIN_CONTAINER_NAME)
-  }
 
   return {
     ...updated,
-    name: ownsSsiState && hasTracerMount && updated.name === SSI_ADOPTED_MAIN_CONTAINER_NAME ? '' : updated.name,
     volumeMounts: (updated.volumeMounts || []).filter((volumeMount) => volumeMount.name !== sharedVolumeName),
     env: (updated.env || []).filter(
       (envVar) => envVar.name && !envVar.name.startsWith('DD_') && !envVarNames.has(envVar.name)

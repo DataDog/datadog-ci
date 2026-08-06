@@ -17,7 +17,6 @@ import * as cloudRunPromptModule from '../prompt'
 import {uninstrumentServiceConfig} from '../service-config'
 import * as utils from '../utils'
 
-const SSI_ADOPTED_MAIN_CONTAINER_NAME = 'datadog-app'
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
 
@@ -276,7 +275,7 @@ describe('UninstrumentCommand', () => {
       expect(result.template?.volumes).toEqual([{name: 'customer-volume', emptyDir: {}}])
     })
 
-    test('restores an adopted datadog-app name and removes its provenance label', () => {
+    test('keeps an unnamed main container unnamed', () => {
       const service: IService = {
         labels: {
           [SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE,
@@ -285,10 +284,9 @@ describe('UninstrumentCommand', () => {
         template: {
           containers: [
             {
-              name: SSI_ADOPTED_MAIN_CONTAINER_NAME,
+              name: '',
               volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
             },
-            {name: 'worker', dependsOn: [SSI_ADOPTED_MAIN_CONTAINER_NAME, 'database']},
           ],
         },
       }
@@ -297,30 +295,6 @@ describe('UninstrumentCommand', () => {
 
       expect(result.labels).toEqual({customer: 'keep-me'})
       expect(result.template?.containers?.[0].name).toBe('')
-      expect(result.template?.containers?.[1].dependsOn).toEqual(['database'])
-    })
-
-    test('does not restore an unrelated datadog-app worker without the tracer mount', () => {
-      const service: IService = {
-        labels: {[SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE},
-        template: {
-          containers: [
-            {
-              name: 'main',
-              ports: [{containerPort: 8080}],
-              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
-            },
-            {name: SSI_ADOPTED_MAIN_CONTAINER_NAME},
-          ],
-        },
-      }
-
-      const result = command.createUninstrumentedServiceConfig(service)
-
-      expect(result.template?.containers?.map((container) => container.name)).toEqual([
-        'main',
-        SSI_ADOPTED_MAIN_CONTAINER_NAME,
-      ])
     })
 
     test('handles service with no sidecar or shared volume gracefully', () => {

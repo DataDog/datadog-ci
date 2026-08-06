@@ -272,7 +272,7 @@ describe('createInstrumentedTemplate', () => {
         baseSidecar,
         sharedVolumeOptions,
         envVarsByName,
-        new Set(['ingress'])
+        new Set([template.containers[0]])
       )
 
       const ingress = result.containers.find((c) => c.name === 'ingress')
@@ -281,6 +281,26 @@ describe('createInstrumentedTemplate', () => {
       expect(result.containers.find((c) => c.name === 'worker')).toBe(template.containers?.[1])
       expect(result.containers.find((c) => c.name === 'datadog-sidecar')).toBeDefined()
       expect(result.volumes.map((v) => v.name)).toEqual(['shared-volume'])
+    })
+
+    test('selects an unnamed container by identity', () => {
+      const unnamedTemplate = {
+        ...template,
+        containers: [
+          {name: '', env: [{name: 'ROLE', value: 'main'}], volumeMounts: []},
+          {name: '', env: [{name: 'ROLE', value: 'worker'}], volumeMounts: []},
+        ],
+      }
+      const result = createInstrumentedTemplate(
+        unnamedTemplate,
+        baseSidecar,
+        sharedVolumeOptions,
+        envVarsByName,
+        new Set([unnamedTemplate.containers[0]])
+      )
+
+      expect(result.containers[0].env).toContainEqual({name: 'DD_SERVICE', value: 'app'})
+      expect(result.containers[1]).toBe(unnamedTemplate.containers[1])
     })
 
     test('an empty selection instruments no app containers', () => {
