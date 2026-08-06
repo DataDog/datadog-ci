@@ -95,8 +95,7 @@ describe('resolveSsiConfig', () => {
   test.each([
     [{tracing: 'inject'}, '--language'],
     [{tracing: 'inject', language: 'go'}, '--tracing manual'],
-    [{tracing: 'inject', language: 'nodejs'}, 'startup probe'],
-    [{tracing: 'inject', language: 'ruby'}, 'startup probe'],
+    [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'musl'],
     [{tracing: 'inject', language: 'csharp', tracerVersion: '2.51.0'}, 'Use tracer version 3.0'],
   ] satisfies [Partial<SsiOptions>, string][])('rejects incompatible options %#', (options, message) => {
     expect(getErrors(options)).toContain(message)
@@ -104,8 +103,10 @@ describe('resolveSsiConfig', () => {
 
   test.each<[Language, string]>([
     ['java', 'java'],
+    ['nodejs', 'js'],
     ['csharp', 'dotnet'],
     ['python', 'python'],
+    ['ruby', 'ruby'],
     ['php', 'php'],
   ])('resolves the %s tracer image', (language, tracerLanguage) => {
     const result = resolveSsiConfig({...defaultOptions, tracing: 'inject', language})

@@ -26,12 +26,6 @@ import {
 import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 
-const CLOUD_RUN_TRACER_ERRORS: Partial<Record<Language, string>> = {
-  nodejs:
-    'Node.js automatic instrumentation is not yet supported on Cloud Run because the tracer image cannot serve the startup probe.',
-  ruby: 'Ruby automatic instrumentation is not yet supported on Cloud Run because the tracer image cannot serve the startup probe.',
-}
-
 export interface SsiOptions {
   readonly language: CloudRunLanguage | undefined
   readonly tracing: TracingMode | undefined
@@ -83,11 +77,6 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
       ],
       warnings: [],
     }
-  }
-
-  const cloudRunTracerError = CLOUD_RUN_TRACER_ERRORS[options.language]
-  if (cloudRunTracerError) {
-    return {kind: 'errors', errors: [cloudRunTracerError], warnings: []}
   }
 
   const tracerVersion = options.tracerVersion ?? DEFAULT_TRACER_VERSION
