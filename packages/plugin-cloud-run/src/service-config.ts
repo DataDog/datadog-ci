@@ -70,10 +70,10 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   let targetContainers: ReadonlySet<IContainer> | undefined
   let mainContainerIndex: number | undefined
   const envVarsByName = {...options.envVarsByName}
-  const ownsSsiState = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
-  const removesOwnedSsiState = ownsSsiState && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
+  const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
+  const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
-  if (removesOwnedSsiState) {
+  if (shouldRemoveSsi) {
     sourceTemplate = removeExistingSsiState(sourceTemplate)
   } else if (ssiConfig.kind === 'no-injection') {
     if (sourceTemplate.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
@@ -84,13 +84,13 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       )
     }
   } else {
-    assertSsiResourceNamesAvailable(sourceTemplate, options, ownsSsiState)
+    assertSsiResourceNamesAvailable(sourceTemplate, options, hasSsi)
 
     const mainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
     )
-    sourceTemplate = ownsSsiState ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
+    sourceTemplate = hasSsi ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
@@ -125,7 +125,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     labels[UNIFIED_SERVICE_TAG_LABELS.version] = options.version
   }
 
-  if (removesOwnedSsiState) {
+  if (shouldRemoveSsi) {
     delete labels[SSI_INJECTION_MODE_LABEL]
   }
 
@@ -165,11 +165,11 @@ export const uninstrumentServiceConfig = (
   const volumes: IVolume[] = template.volumes || []
   const sidecarRemoved = containers.some((container) => container.name === options.sidecarName)
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
-  const ownsSsiState = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
+  const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const updatedContainers = containers
     .filter(
       (container) =>
-        container.name !== options.sidecarName && (!ownsSsiState || container.name !== TRACER_COPY_CONTAINER_NAME)
+        container.name !== options.sidecarName && (!hasSsi || container.name !== TRACER_COPY_CONTAINER_NAME)
     )
     .map((container) =>
       removeContainerInstrumentation(
@@ -177,11 +177,11 @@ export const uninstrumentServiceConfig = (
         options.sidecarName,
         options.sharedVolumeName,
         options.envVarNames,
-        ownsSsiState
+        hasSsi
       )
     )
   const updatedVolumes = volumes.filter(
-    (volume) => volume.name !== options.sharedVolumeName && (!ownsSsiState || volume.name !== TRACER_VOLUME_NAME)
+    (volume) => volume.name !== options.sharedVolumeName && (!hasSsi || volume.name !== TRACER_VOLUME_NAME)
   )
   const labels = Object.fromEntries(
     Object.entries(service.labels ?? {}).filter(([name]) => !INSTRUMENTATION_LABELS.has(name))
@@ -297,7 +297,7 @@ const assertNoDependencyCycle = (
 const assertSsiResourceNamesAvailable = (
   template: IServiceTemplate,
   options: InstrumentServiceConfigOptions,
-  ownsSsiState: boolean
+  hasSsi: boolean
 ): void => {
   if (options.sidecarName === TRACER_COPY_CONTAINER_NAME) {
     throw new SsiConfigError(`The Agent sidecar name '${options.sidecarName}' is reserved for tracer injection.`)
@@ -307,7 +307,7 @@ const assertSsiResourceNamesAvailable = (
       `The Agent shared volume name '${options.sharedVolumeName}' is reserved for tracer injection.`
     )
   }
-  if (ownsSsiState) {
+  if (hasSsi) {
     return
   }
   if (template.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
@@ -397,11 +397,11 @@ const removeContainerInstrumentation = (
   agentContainerName: string,
   sharedVolumeName: string,
   envVarNames: ReadonlySet<string>,
-  ownsSsiState: boolean
+  hasSsi: boolean
 ): IContainer => {
   const hasTracerMount = container.volumeMounts?.some((mount) => mount.name === TRACER_VOLUME_NAME) ?? false
-  let updated = ownsSsiState && hasTracerMount ? removeExistingSsiContainer(container, true) : container
-  if (ownsSsiState) {
+  let updated = hasSsi && hasTracerMount ? removeExistingSsiContainer(container, true) : container
+  if (hasSsi) {
     updated = removeDependency(updated, agentContainerName)
   }
 
