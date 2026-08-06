@@ -95,7 +95,7 @@ const LANGUAGE_CONFIG: Record<Language, LanguageConfig> = {
 
       return pinnedMajor !== undefined && Number(pinnedMajor) < 3
         ? [
-            `Unsupported .NET tracer version ${JSON.stringify(version)}: versions before 3.0 require architecture-specific package paths`,
+            `Automatic instrumentation cannot use .NET tracer version ${JSON.stringify(version)} because versions before 3.0 require architecture-specific package paths. Use tracer version 3.0 or later.`,
           ]
         : []
     },
@@ -125,7 +125,10 @@ const LANGUAGE_CONFIG: Record<Language, LanguageConfig> = {
         },
       ],
     }),
-    getCompatibilityErrors: ({libc}) => (libc === 'musl' ? ['Ruby Single-Language SSI does not support musl'] : []),
+    getCompatibilityErrors: ({libc}) =>
+      libc === 'musl'
+        ? ['Ruby automatic instrumentation does not support musl. Use glibc or install the tracer manually.']
+        : [],
   },
   php: {
     getSpec: (root, libc) => {

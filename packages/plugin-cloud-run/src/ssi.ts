@@ -11,6 +11,8 @@ import {
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
+  EnvFragmentConflictError,
+  EnvFragmentLengthError,
   mergeEnvFragment,
   mergeInjectionModeTag,
   removeEnvFragment,
@@ -58,7 +60,9 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     return unusedFlags.length > 0
       ? {
           kind: 'errors',
-          errors: [`${unusedFlags.join(', ')} only applies with --tracing inject.`],
+          errors: [
+            `Tracer options ${unusedFlags.join(', ')} require --tracing inject. Remove these options or use --tracing inject.`,
+          ],
           warnings: [],
         }
       : {kind: 'no-injection', tracing: options.tracing, warnings: []}
@@ -80,7 +84,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     return {
       kind: 'errors',
       errors: [
-        'Go does not support tracer injection. Instrument the application with dd-trace-go and use --tracing manual.',
+        'Go automatic instrumentation is not supported. Instrument the application with dd-trace-go and use --tracing manual.',
       ],
       warnings: [],
     }
@@ -125,7 +129,9 @@ export const selectMainContainer = (
 ): IContainer => {
   const candidates = containers.filter((container) => !container.name || !reservedNames.has(container.name))
   if (candidates.length === 0) {
-    throw new SsiConfigError('No application container was found to instrument.')
+    throw new SsiConfigError(
+      'Cannot enable automatic instrumentation because no application container was found. Add an application container, or choose a different --sidecar-name if it matches your application container.'
+    )
   }
 
   const withPorts = candidates.filter((container) => (container.ports ?? []).length > 0)
@@ -134,9 +140,9 @@ export const selectMainContainer = (
   }
   if (withPorts.length > 1) {
     throw new SsiConfigError(
-      `Multiple containers declare ports, so the main container is ambiguous: ${withPorts
+      `Cannot identify the main application container because multiple containers declare ports: ${withPorts
         .map((container) => container.name || '<unnamed>')
-        .join(', ')}. Cloud Run allows exactly one main container.`
+        .join(', ')}. Configure only the main application container with a port, then retry.`
     )
   }
   if (candidates.length === 1) {
@@ -144,9 +150,9 @@ export const selectMainContainer = (
   }
 
   throw new SsiConfigError(
-    `No container declares ports, so the main container is ambiguous: ${candidates
+    `Cannot identify the main application container because none of these containers declares a port: ${candidates
       .map((container) => container.name || '<unnamed>')
-      .join(', ')}. Declare a container port on your main container.`
+      .join(', ')}. Declare a port on the main application container, then retry.`
   )
 }
 
@@ -192,12 +198,12 @@ const assertLanguageInjectionEnvCanBeMerged = (env: readonly IEnvVar[], spec: La
     const matching = env.filter((variable) => variable.name === name)
     if (matching.length > 1) {
       throw new SsiConfigError(
-        `${name} appears more than once on the main container, so Datadog cannot safely modify it. Remove the duplicate before retrying.`
+        `${name} appears more than once on the main container, so datadog-ci cannot safely add automatic instrumentation. Remove the duplicate before retrying.`
       )
     }
     if (matching[0]?.valueSource) {
       throw new SsiConfigError(
-        `${name} on the main container is populated from a secret reference, which Datadog cannot safely extend. Set it to a literal value or remove it before instrumenting.`
+        `${name} on the main container comes from a secret reference, so datadog-ci cannot safely add automatic instrumentation. Set it to a literal value or remove it before retrying.`
       )
     }
   }
@@ -215,7 +221,22 @@ const mergeLanguageEnvFragment = (currentValue: string | undefined, fragment: En
   try {
     return mergeEnvFragment(currentValue, fragment)
   } catch (error) {
-    throw new SsiConfigError(error instanceof Error ? error.message : String(error))
+    if (error instanceof EnvFragmentConflictError) {
+      throw new SsiConfigError(
+        `Cannot enable automatic instrumentation because ${fragment.name} has a conflicting value. Set ${fragment.name} to ${JSON.stringify(
+          fragment.value
+        )} or use --tracing manual.`
+      )
+    }
+    if (error instanceof EnvFragmentLengthError) {
+      throw new SsiConfigError(
+        `Cannot enable automatic instrumentation because adding to ${fragment.name} would exceed its allowed length. Shorten ${fragment.name} or use --tracing manual.`
+      )
+    }
+
+    throw new SsiConfigError(
+      `Cannot enable automatic instrumentation while updating ${fragment.name}: ${error instanceof Error ? error.message : String(error)}`
+    )
   }
 }
 

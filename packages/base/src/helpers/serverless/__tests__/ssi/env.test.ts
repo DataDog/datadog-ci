@@ -1,5 +1,6 @@
 import {
   EnvFragmentConflictError,
+  EnvFragmentLengthError,
   SINGLE_LANGUAGE_INJECTION_MODE_TAG,
   hasEnvFragment,
   hasInjectionModeTag,
@@ -163,7 +164,7 @@ describe('environment fragment merging', () => {
     const fragment = dotnetPreloadFragment
     expect(mergeEnvFragment('x'.repeat(1024 - Buffer.byteLength(fragment.value) - 1), fragment)).toHaveLength(1024)
     expect(() => mergeEnvFragment('x'.repeat(1024 - Buffer.byteLength(fragment.value)), fragment)).toThrow(
-      '1024-byte limit'
+      EnvFragmentLengthError
     )
   })
 

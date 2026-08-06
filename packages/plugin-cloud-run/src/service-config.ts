@@ -241,7 +241,9 @@ const applyTracerCopy = (
   const containers = [...(template.containers ?? [])]
   const mainContainer = containers[mainContainerIndex]
   if (!mainContainer) {
-    throw new SsiConfigError('Main container was not found in the service template.')
+    throw new SsiConfigError(
+      'datadog-ci lost track of the main application container while preparing automatic instrumentation. Retry, and contact Datadog support if the problem persists.'
+    )
   }
 
   assertNoDependencyCycle(containers, mainContainer.name || undefined, [runtimeCopy.containerName, ...dependencyNames])
@@ -283,7 +285,7 @@ const assertNoDependencyCycle = (
       const name = pending.pop()!
       if (mainContainerName !== undefined && name === mainContainerName) {
         throw new SsiConfigError(
-          `Cannot make main container '${mainContainerName}' depend on '${dependencyName}' because that container already depends on the main container directly or transitively.`
+          `Cannot enable automatic instrumentation because '${dependencyName}' depends on main container '${mainContainerName}', which would create a dependency cycle. Change the container dependencies so '${dependencyName}' no longer depends on '${mainContainerName}', then retry.`
         )
       }
       if (!visited.has(name)) {
@@ -300,21 +302,27 @@ const assertSsiResourceNamesAvailable = (
   hasSsi: boolean
 ): void => {
   if (options.sidecarName === TRACER_COPY_CONTAINER_NAME) {
-    throw new SsiConfigError(`The Agent sidecar name '${options.sidecarName}' is reserved for tracer injection.`)
+    throw new SsiConfigError(
+      `--sidecar-name cannot be '${options.sidecarName}' because automatic instrumentation uses that container name. Choose a different --sidecar-name.`
+    )
   }
   if (options.sharedVolumeName === TRACER_VOLUME_NAME) {
     throw new SsiConfigError(
-      `The Agent shared volume name '${options.sharedVolumeName}' is reserved for tracer injection.`
+      `--shared-volume-name cannot be '${options.sharedVolumeName}' because automatic instrumentation uses that volume name. Choose a different --shared-volume-name.`
     )
   }
   if (hasSsi) {
     return
   }
   if (template.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
-    throw new SsiConfigError(`Container name '${TRACER_COPY_CONTAINER_NAME}' is reserved for tracer injection.`)
+    throw new SsiConfigError(
+      `Cannot enable automatic instrumentation because container '${TRACER_COPY_CONTAINER_NAME}' already exists and is not marked as managed by datadog-ci. Rename or remove it, then retry.`
+    )
   }
   if (template.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME)) {
-    throw new SsiConfigError(`Volume name '${TRACER_VOLUME_NAME}' is reserved for tracer injection.`)
+    throw new SsiConfigError(
+      `Cannot enable automatic instrumentation because volume '${TRACER_VOLUME_NAME}' already exists and is not marked as managed by datadog-ci. Rename or remove it, then retry.`
+    )
   }
 }
 

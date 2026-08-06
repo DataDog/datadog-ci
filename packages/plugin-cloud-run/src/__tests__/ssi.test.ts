@@ -72,9 +72,9 @@ describe('resolveSsiConfig', () => {
 
   test.each([
     [{tracing: 'inject'}, '--language'],
-    [{tracing: 'inject', language: 'go'}, 'dd-trace-go'],
-    [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'musl'],
-    [{tracing: 'inject', language: 'csharp', tracerVersion: '2.51.0'}, '2.51.0'],
+    [{tracing: 'inject', language: 'go'}, '--tracing manual'],
+    [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'Use glibc'],
+    [{tracing: 'inject', language: 'csharp', tracerVersion: '2.51.0'}, 'Use tracer version 3.0'],
   ] satisfies [Partial<SsiOptions>, string][])('rejects incompatible options %#', (options, message) => {
     expect(getErrors(options)).toContain(message)
   })
@@ -134,10 +134,10 @@ describe('language injection environment', () => {
     ).toThrow(/more than once/)
   })
 
-  test('rejects a conflicting scalar value', () => {
+  test('explains how to resolve a conflicting scalar value', () => {
     expect(() =>
       mergeLanguageInjectionEnv([{name: 'CORECLR_ENABLE_PROFILING', value: '0'}], getSpec('csharp'))
-    ).toThrow(SsiConfigError)
+    ).toThrow(/Set CORECLR_ENABLE_PROFILING to "1" or use --tracing manual/)
   })
 
   test.each(supportedLanguageVariants)('removes the %s/%s tracer environment', (language, libc) => {
@@ -203,8 +203,8 @@ describe('selectMainContainer', () => {
     expect(selectMainContainer([{name: 'app'}, {name: 'datadog-sidecar'}], reserved).name).toBe('app')
   })
 
-  test('rejects missing and ambiguous main containers', () => {
-    expect(() => selectMainContainer([{name: 'datadog-sidecar'}], reserved)).toThrow(SsiConfigError)
+  test('explains how to resolve missing and ambiguous main containers', () => {
+    expect(() => selectMainContainer([{name: 'datadog-sidecar'}], reserved)).toThrow(/Add an application container/)
     expect(() =>
       selectMainContainer(
         [
@@ -213,8 +213,10 @@ describe('selectMainContainer', () => {
         ],
         reserved
       )
-    ).toThrow(/app, admin/)
-    expect(() => selectMainContainer([{name: 'app'}, {name: 'worker'}], reserved)).toThrow(/app, worker/)
+    ).toThrow(/app, admin.*only the main application container with a port/)
+    expect(() => selectMainContainer([{name: 'app'}, {name: 'worker'}], reserved)).toThrow(
+      /app, worker.*Declare a port on the main application container/
+    )
   })
 })
 
@@ -268,20 +270,24 @@ describe('SSI service preparation', () => {
     ).toThrow('invalid SSI flags')
     expect(() =>
       instrumentServiceConfig(service, {...serviceConfigOptions(), sidecarName: 'datadog-tracer-copy'})
-    ).toThrow(/reserved/)
+    ).toThrow(/Choose a different --sidecar-name/)
     expect(() =>
       instrumentServiceConfig(service, {...serviceConfigOptions(), sharedVolumeName: 'datadog-tracer'})
-    ).toThrow(/reserved/)
+    ).toThrow(/Choose a different --shared-volume-name/)
   })
 
   test('does not replace unowned reserved resources', () => {
     const containerService = serviceWithWorker()
     containerService.template!.containers!.push({name: 'datadog-tracer-copy'} as IContainer)
-    expect(() => instrumentServiceConfig(containerService, serviceConfigOptions())).toThrow(/reserved/)
+    expect(() => instrumentServiceConfig(containerService, serviceConfigOptions())).toThrow(
+      /not marked as managed by datadog-ci.*Rename or remove it/
+    )
 
     const volumeService = serviceWithWorker()
     volumeService.template!.volumes!.push({name: 'datadog-tracer'})
-    expect(() => instrumentServiceConfig(volumeService, serviceConfigOptions())).toThrow(/reserved/)
+    expect(() => instrumentServiceConfig(volumeService, serviceConfigOptions())).toThrow(
+      /not marked as managed by datadog-ci.*Rename or remove it/
+    )
   })
 
   test('applies Agent and language environment only to the main container', () => {
@@ -383,7 +389,9 @@ describe('SSI service preparation', () => {
       dependsOn: [transitive ? 'worker' : 'app'],
     } as IContainer)
 
-    expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(SsiConfigError)
+    expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(
+      /would create a dependency cycle.*no longer depends on/
+    )
   })
 
   test.each([
