@@ -221,7 +221,7 @@ const mergeLanguageEnvFragment = (currentValue: string | undefined, fragment: En
 
 const LANGUAGE_ENV_FRAGMENTS: readonly EnvFragment[] = TRACER_INJECTION_LANGUAGES.flatMap((language) =>
   LIBCS.filter(
-    (libc) => getLanguageCompatibilityError({language, libc, version: DEFAULT_TRACER_VERSION}) === undefined
+    (libc) => getLanguageCompatibilityErrors({language, libc, version: DEFAULT_TRACER_VERSION}).length === 0
   ).flatMap(
     (libc) =>
       getLanguageInjectionSpec({

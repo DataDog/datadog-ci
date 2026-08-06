@@ -6,7 +6,7 @@ import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
   LIBCS,
-  getLanguageCompatibilityError,
+  getLanguageCompatibilityErrors,
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
@@ -40,7 +40,7 @@ const getSpec = (language: Language, libc: Libc = defaultOptions.tracerLibc) =>
 const nodeSpec = getSpec('nodejs')
 const supportedLanguageVariants = TRACER_INJECTION_LANGUAGES.flatMap((language) =>
   LIBCS.filter(
-    (libc) => getLanguageCompatibilityError({language, libc, version: defaultOptions.tracerVersion}) === undefined
+    (libc) => getLanguageCompatibilityErrors({language, libc, version: defaultOptions.tracerVersion}).length === 0
   ).map((libc) => [language, libc] as const)
 )
 
