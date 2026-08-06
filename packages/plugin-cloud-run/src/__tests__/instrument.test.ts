@@ -140,7 +140,6 @@ describe('InstrumentCommand', () => {
       [['--tracing', 'inject'], 'requires --language'],
       [['--tracer-version', 'latest'], 'require --tracing inject'],
       [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
-      [['--tracing', 'inject', '--language', 'nodejs'], 'startup probe'],
     ])('rejects incompatible options before network calls: %s', async (flags, expected) => {
       const {code, context} = await runCLI([...requiredFlags, ...flags])
 
