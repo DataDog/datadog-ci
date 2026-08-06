@@ -20,6 +20,10 @@ export type TracerLanguage = (typeof LANGUAGE_METADATA)[Language]['tracerLanguag
 
 const IMAGE_TAG_REG_EXP = /^[\w][\w.-]{0,127}$/
 
+/** Returns the copy-lib.sh completion marker for one tracer image. */
+export const getTracerCopyCompletionMarker = (language: Language, mountPath: string): string =>
+  `${mountPath}/.${LANGUAGE_METADATA[language].repository}-copy-finished`
+
 export const buildSingleLanguageTracerImage = (
   registry: SingleLanguageTracerRegistry,
   language: Language,

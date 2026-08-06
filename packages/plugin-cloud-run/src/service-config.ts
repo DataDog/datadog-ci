@@ -1,6 +1,5 @@
 import type {SsiConfigResult} from './ssi'
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume} from './types'
-import type {RuntimeCopyPlan} from '@datadog/datadog-ci-base/helpers/serverless/ssi/runtime-copy'
 
 import {createInstrumentedTemplate} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
@@ -14,7 +13,7 @@ import {
   TRACER_READINESS_PORT,
   TRACER_VOLUME_NAME,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
-import {buildRuntimeCopyPlan} from '@datadog/datadog-ci-base/helpers/serverless/ssi/runtime-copy'
+import {getTracerCopyCompletionMarker} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {mergeLanguageInjectionEnv, removeLanguageInjectionEnv, selectMainContainer, SsiConfigError} from './ssi'
@@ -63,81 +62,42 @@ interface UninstrumentServiceConfigResult {
 
 const TRACER_COPY_SCRIPT = [
   'set -e',
-  'root=$1',
-  'marker=$2',
-  'port=$3',
-  'shift 3',
-  'if [ ! -x /datadog-init/copy-lib.sh ]; then echo "datadog: /datadog-init/copy-lib.sh is missing from the tracer image" >&2; exit 1; fi',
-  'if [ ! -x /datadog-init/probe-server ]; then echo "datadog: /datadog-init/probe-server is missing from the tracer image" >&2; exit 1; fi',
-  '/datadog-init/copy-lib.sh "$root"',
-  'if [ ! -f "$marker" ]; then echo "datadog: tracer copy did not complete (missing $marker)" >&2; exit 1; fi',
-  'while [ "$#" -gt 0 ]; do',
-  '  count=$1',
-  '  shift',
-  '  found=""',
-  '  names=""',
-  '  i=0',
-  '  while [ "$i" -lt "$count" ]; do',
-  '    candidate=$1',
-  '    shift',
-  '    names="$names $candidate"',
-  '    if [ -z "$found" ] && [ -r "$candidate" ]; then found=$candidate; fi',
-  '    i=$((i+1))',
-  '  done',
-  '  if [ -z "$found" ]; then echo "datadog: none of these tracer artifacts were copied:$names" >&2; exit 1; fi',
-  'done',
-  'echo "datadog: tracer install verified in $root"',
-  'exec /datadog-init/probe-server "$port"',
+  '/datadog-init/copy-lib.sh "$1"',
+  '[ -f "$2" ]',
+  'exec /datadog-init/probe-server "$3"',
 ].join('\n')
 
-const buildTracerCopyArgs = (plan: RuntimeCopyPlan): string[] => {
-  if (plan.ordering.kind !== 'cloud-run-idling-sidecar') {
-    throw new Error(`Unsupported Cloud Run runtime-copy ordering: ${plan.ordering.kind}`)
-  }
-
-  const artifactArgs = plan.artifacts.flatMap((requirement) => [String(requirement.length), ...requirement])
-
-  return [
+const buildTracerCopyContainer = (image: string, marker: string): IContainer => ({
+  name: TRACER_COPY_CONTAINER_NAME,
+  image,
+  command: ['/bin/sh'],
+  args: [
     '-c',
     TRACER_COPY_SCRIPT,
-    plan.containerName,
-    plan.mountPath,
-    plan.completionMarker,
-    String(plan.ordering.readinessPort),
-    ...artifactArgs,
-  ]
-}
-
-const buildTracerCopyContainer = (plan: RuntimeCopyPlan): IContainer => {
-  if (plan.ordering.kind !== 'cloud-run-idling-sidecar') {
-    throw new Error(`Unsupported Cloud Run runtime-copy ordering: ${plan.ordering.kind}`)
-  }
-
-  return {
-    name: plan.containerName,
-    image: plan.image,
-    command: ['/bin/sh'],
-    args: buildTracerCopyArgs(plan),
-    volumeMounts: [{name: plan.volumeName, mountPath: plan.mountPath}],
-    resources: plan.resources?.memory ? {limits: {memory: plan.resources.memory}} : undefined,
-    startupProbe: {
-      tcpSocket: {port: plan.ordering.readinessPort},
-      initialDelaySeconds: 0,
-      periodSeconds: 5,
-      failureThreshold: 48,
-      timeoutSeconds: 1,
-    },
-  }
-}
+    TRACER_COPY_CONTAINER_NAME,
+    TRACER_MOUNT_PATH,
+    marker,
+    String(TRACER_READINESS_PORT),
+  ],
+  volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
+  startupProbe: {
+    tcpSocket: {port: TRACER_READINESS_PORT},
+    initialDelaySeconds: 0,
+    periodSeconds: 5,
+    failureThreshold: 48,
+    timeoutSeconds: 1,
+  },
+})
 
 const buildTracerVolume = (volumeName: string): IVolume => ({
   name: volumeName,
   emptyDir: {medium: MEMORY_VOLUME_MEDIUM},
 })
 
-const applyRuntimeCopyPlan = (
+const applyTracerCopy = (
   template: IServiceTemplate,
-  plan: RuntimeCopyPlan,
+  image: string,
+  marker: string,
   mainContainerName: string,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
@@ -148,27 +108,27 @@ const applyRuntimeCopyPlan = (
   }
 
   const mainContainer = containers[mainContainerIndex]
-  assertNoDependencyCycle(containers, mainContainerName, [plan.containerName, ...dependencyNames])
-  const managedDependencies = new Set([plan.containerName, ...dependencyNames])
+  assertNoDependencyCycle(containers, mainContainerName, [TRACER_COPY_CONTAINER_NAME, ...dependencyNames])
+  const managedDependencies = new Set([TRACER_COPY_CONTAINER_NAME, ...dependencyNames])
   containers[mainContainerIndex] = {
     ...mainContainer,
     volumeMounts: [
-      ...(mainContainer.volumeMounts ?? []).filter((mount) => mount.name !== plan.volumeName),
-      {name: plan.volumeName, mountPath: plan.mountPath},
+      ...(mainContainer.volumeMounts ?? []).filter((mount) => mount.name !== TRACER_VOLUME_NAME),
+      {name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH},
     ],
     dependsOn: [
       ...(mainContainer.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
-      plan.containerName,
+      TRACER_COPY_CONTAINER_NAME,
       ...dependencyNames,
     ],
   }
 
-  containers.push(buildTracerCopyContainer(plan))
+  containers.push(buildTracerCopyContainer(image, marker))
 
   return {
     ...template,
     containers,
-    volumes: [...(template.volumes ?? []), buildTracerVolume(plan.volumeName)],
+    volumes: [...(template.volumes ?? []), buildTracerVolume(TRACER_VOLUME_NAME)],
   }
 }
 
@@ -269,18 +229,13 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
           : container
       ),
     }
-    const plan = buildRuntimeCopyPlan(
-      {
-        image: ssiConfig.spec.image,
-        containerName: TRACER_COPY_CONTAINER_NAME,
-        volumeName: TRACER_VOLUME_NAME,
-        mountPath: TRACER_MOUNT_PATH,
-        completionMarker: `${TRACER_MOUNT_PATH}/.copy-finished`,
-        artifacts: ssiConfig.spec.artifacts as RuntimeCopyPlan['artifacts'],
-      },
-      {kind: 'cloud-run-idling-sidecar', readinessPort: TRACER_READINESS_PORT}
+    template = applyTracerCopy(
+      template,
+      ssiConfig.spec.image,
+      getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
+      [...targetContainerNames!][0],
+      [options.sidecarName]
     )
-    template = applyRuntimeCopyPlan(template, plan, [...targetContainerNames!][0], [options.sidecarName])
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 

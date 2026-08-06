@@ -304,7 +304,7 @@ describe('SSI service preparation', () => {
     expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
   })
 
-  test('applies the verified runtime-copy sidecar and Memory volume', () => {
+  test('applies the tracer-copy sidecar and Memory volume', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
     const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')
 
@@ -323,24 +323,12 @@ describe('SSI service preparation', () => {
     expect(tracer?.args?.slice(2)).toEqual([
       'datadog-tracer-copy',
       '/datadog-lib',
-      '/datadog-lib/.copy-finished',
+      '/datadog-lib/.dd-trace-js-copy-finished',
       '18999',
-      '1',
-      '/datadog-lib/node_modules/dd-trace/init.js',
     ])
-    const script = tracer?.args?.[1] ?? ''
-    const probePreflight = script.indexOf('[ ! -x /datadog-init/probe-server ]')
-    const copy = script.indexOf('/datadog-init/copy-lib.sh "$root"')
-    const markerVerification = script.indexOf('[ ! -f "$marker" ]')
-    const artifactVerification = script.indexOf('[ -r "$candidate" ]')
-    const probeServer = script.indexOf('exec /datadog-init/probe-server "$port"')
-    expect(probePreflight).toBeGreaterThan(-1)
-    expect(copy).toBeGreaterThan(probePreflight)
-    expect(markerVerification).toBeGreaterThan(copy)
-    expect(artifactVerification).toBeGreaterThan(markerVerification)
-    expect(probeServer).toBeGreaterThan(artifactVerification)
-    expect(script).not.toContain('command -v nc')
-    expect(script).not.toContain('python3')
+    expect(tracer?.args?.[1]).toBe(
+      ['set -e', '/datadog-init/copy-lib.sh "$1"', '[ -f "$2" ]', 'exec /datadog-init/probe-server "$3"'].join('\n')
+    )
     expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
       name: 'datadog-tracer',
       emptyDir: {medium: 1},
