@@ -111,6 +111,12 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     envVarsByName,
     targetContainers
   ) as IServiceTemplate
+  if (!(DD_TRACE_ENABLED_ENV_VAR in envVarsByName)) {
+    template = {
+      ...template,
+      containers: removeAddedTracingEnv(sourceTemplate.containers, template.containers),
+    }
+  }
 
   const labels: Record<string, string> = {
     ...service.labels,
@@ -205,6 +211,23 @@ export const uninstrumentServiceConfig = (
     sharedVolumeRemoved,
   }
 }
+
+const removeAddedTracingEnv = (
+  sourceContainers: readonly IContainer[] | null | undefined,
+  targetContainers: readonly IContainer[] | null | undefined
+): IContainer[] =>
+  (targetContainers ?? []).map((container, index) => {
+    const sourceHasTracing = sourceContainers?.[index]?.env?.some(
+      (variable) => variable.name === DD_TRACE_ENABLED_ENV_VAR
+    )
+    if (sourceHasTracing) {
+      return container
+    }
+
+    const env = container.env?.filter((variable) => variable.name !== DD_TRACE_ENABLED_ENV_VAR)
+
+    return env?.length === container.env?.length ? container : {...container, env}
+  })
 
 const TRACER_COPY_SCRIPT = [
   'set -e',

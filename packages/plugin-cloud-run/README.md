@@ -16,18 +16,20 @@ datadog-ci cloud-run instrument -i
 # Instrument a service with a pinned or custom sidecar image
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --sidecar-image gcr.io/datadoghq/serverless-init@sha256:<sha256>
 
-# Install a Python tracer and enable APM
-datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --apm-enabled --language python
+# Enable automatic APM instrumentation for a Python service
+datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --tracing inject --language python
 
 # Dry run of all updates
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> -d
 ```
 
-With `--apm-enabled`, `--language` selects a Single-Language SSI tracer for Java, Node.js, .NET, Python, Ruby, or PHP. Go enables Agent trace collection but does not install a tracer; instrument the application with `dd-trace-go`. The command rejects `--apm-enabled` with `--tracing false`, tracer options without `--apm-enabled`, and tracer image options for Go.
+`--tracing` controls APM instrumentation. Use `manual` when the application image already includes a tracer, `inject` with `--language` to install a Java, .NET, Python, or PHP tracer automatically, or `disabled` to turn tracing off. The existing values `true`/`1` and `false`/`0` remain aliases for `manual` and `disabled`. An unset value leaves `DD_TRACE_ENABLED` unchanged.
 
-Single-Language SSI targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
+`--tracing inject` without `--language` is reserved for future multi-language automatic instrumentation and currently returns an unsupported error. Go tracers cannot be injected; install `dd-trace-go` in the application and use `--tracing manual`. Node.js and Ruby injection remain unavailable until their tracer images can serve the Cloud Run startup probe.
 
-The tracer uses a memory-backed volume. Its default size is `768Mi`, and the tracer copy sidecar defaults to `1Gi`; `--tracer-sidecar-memory` must be at least `--tracer-volume-size`. Increase both limits for larger tracer images because Cloud Run charges the volume's contents against memory.
+`--language` continues to set `DD_SOURCE` for log parsing without enabling automatic instrumentation by itself. `--tracer-version`, `--tracer-registry`, and `--tracer-libc` only apply with `--tracing inject`.
+
+Automatic instrumentation targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
 ### `uninstrument`
 
@@ -79,7 +81,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
-| `--tracing` |  | Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`. |  |
+| `--tracing` |  | Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled". |  |
 | `--service-tag` or `--serviceTag` |  | The value for the service tag. Use this to group related Cloud Run services belonging to similar workloads. For example, `my-service`. If not provided, the Cloud Run service name is used. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
@@ -91,13 +93,10 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
-| `--language` |  | Set the application language. Sets DD_SOURCE for advanced log parsing and selects the tracer when --apm-enabled is set. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
-| `--apm-enabled` |  | Enable APM for the language given by --language. Single-Language SSI installs a tracer for supported runtimes; Go enables Agent collection but requires application instrumentation. | `false` |
-| `--tracer-version` |  | The tracer image tag to use with --apm-enabled. | `latest` |
-| `--tracer-registry` |  | The tracer image registry to use with --apm-enabled. Possible values: "gcr.io/datadoghq", "public.ecr.aws/datadog", "datadoghq.azurecr.io". | `gcr.io/datadoghq` |
-| `--libc` |  | The C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
-| `--tracer-volume-size` |  | The size limit of the in-memory tracer volume. | `768Mi` |
-| `--tracer-sidecar-memory` |  | The memory allocated to the tracer copy sidecar. | `1Gi` |
+| `--language` |  | Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Possible values: "java", "nodejs", "csharp", "python", "ruby", "php", "go". |  |
+| `--tracer-version` |  | The tracer image tag to use with --tracing inject. | `latest` |
+| `--tracer-registry` |  | The tracer image registry to use with --tracing inject. Possible values: "gcr.io/datadoghq", "public.ecr.aws/datadog", "datadoghq.azurecr.io". | `gcr.io/datadoghq` |
+| `--tracer-libc` |  | The C standard library used by the application image for automatic instrumentation. Possible values: "glibc", "musl". | `glibc` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`

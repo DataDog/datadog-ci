@@ -8,16 +8,18 @@ import {
   DEFAULT_SIDECAR_NAME,
   DEFAULT_VOLUME_NAME,
 } from '../../helpers/serverless/constants'
-import {
-  DEFAULT_TRACER_LIBC,
-  DEFAULT_TRACER_REGISTRY,
-  DEFAULT_TRACER_SIDECAR_MEMORY,
-  DEFAULT_TRACER_VERSION,
-  DEFAULT_TRACER_VOLUME_SIZE,
-} from '../../helpers/serverless/ssi/constants'
-import {SINGLE_LANGUAGE_TRACER_REGISTRIES} from '../../helpers/serverless/ssi/tracer'
+import {LIBCS} from '../../helpers/serverless/ssi/injection-spec'
+import {SINGLE_LANGUAGE_TRACER_REGISTRIES, TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
 
 import {BaseCommand} from '../..'
+
+import {
+  CLOUD_RUN_LANGUAGES,
+  DEFAULT_TRACER_LIBC,
+  DEFAULT_TRACER_REGISTRY,
+  DEFAULT_TRACER_VERSION,
+  TRACING_INPUTS,
+} from './constants'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
@@ -66,7 +68,8 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   })
   protected tracing = Option.String('--tracing', {
     description:
-      'Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`.',
+      'Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled".',
+    validator: t.isEnum(TRACING_INPUTS),
   })
   protected serviceTag = Option.String('--service-tag,--serviceTag', {
     description:
@@ -107,30 +110,26 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
   })
   protected language = Option.String('--language', {
-    description: `Set the application language. Sets DD_SOURCE for advanced log parsing and selects the tracer when --apm-enabled is set. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php".`,
+    description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Possible values: ${CLOUD_RUN_LANGUAGES.map(
+      (language) => `"${language}"`
+    ).join(', ')}.`,
+    validator: t.isEnum(CLOUD_RUN_LANGUAGES),
   })
-  protected apmEnabled = Option.Boolean('--apm-enabled', false, {
-    description:
-      'Enable APM for the language given by --language. Single-Language SSI installs a tracer for supported runtimes; Go enables Agent collection but requires application instrumentation.',
+  protected tracerVersion = Option.String('--tracer-version', {
+    description: `The tracer image tag to use with --tracing inject. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
+    validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
   })
-  protected tracerVersion = Option.String('--tracer-version', DEFAULT_TRACER_VERSION, {
-    description: `The tracer image tag to use with --apm-enabled. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
-  })
-  protected tracerRegistry = Option.String('--tracer-registry', DEFAULT_TRACER_REGISTRY, {
-    description: `The tracer image registry to use with --apm-enabled. Possible values: ${SINGLE_LANGUAGE_TRACER_REGISTRIES.map(
+  protected tracerRegistry = Option.String('--tracer-registry', {
+    description: `The tracer image registry to use with --tracing inject. Possible values: ${SINGLE_LANGUAGE_TRACER_REGISTRIES.map(
       (registry) => `"${registry}"`
     ).join(', ')}. Defaults to '${DEFAULT_TRACER_REGISTRY}'.`,
-    validator: t.isEnum([...SINGLE_LANGUAGE_TRACER_REGISTRIES]),
+    validator: t.isEnum(SINGLE_LANGUAGE_TRACER_REGISTRIES),
   })
-  protected libc = Option.String('--libc', DEFAULT_TRACER_LIBC, {
-    description: `The C standard library used by the application image. Possible values: "glibc", "musl". Defaults to '${DEFAULT_TRACER_LIBC}'.`,
-    validator: t.isEnum(['glibc', 'musl'] as const),
-  })
-  protected tracerVolumeSize = Option.String('--tracer-volume-size', DEFAULT_TRACER_VOLUME_SIZE, {
-    description: `The size limit of the in-memory tracer volume. Defaults to '${DEFAULT_TRACER_VOLUME_SIZE}'.`,
-  })
-  protected tracerSidecarMemory = Option.String('--tracer-sidecar-memory', DEFAULT_TRACER_SIDECAR_MEMORY, {
-    description: `The memory allocated to the tracer copy sidecar. Defaults to '${DEFAULT_TRACER_SIDECAR_MEMORY}'.`,
+  protected tracerLibc = Option.String('--tracer-libc', {
+    description: `The C standard library used by the application image for automatic instrumentation. Possible values: ${LIBCS.map(
+      (libc) => `"${libc}"`
+    ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
+    validator: t.isEnum(LIBCS),
   })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
