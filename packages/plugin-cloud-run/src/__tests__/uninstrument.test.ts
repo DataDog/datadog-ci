@@ -17,7 +17,7 @@ import * as cloudRunPromptModule from '../prompt'
 import {uninstrumentServiceConfig} from '../service-config'
 import * as utils from '../utils'
 
-const SSI_ADOPTED_INGRESS_CONTAINER_NAME = 'datadog-app'
+const SSI_ADOPTED_MAIN_CONTAINER_NAME = 'datadog-app'
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
 
@@ -285,10 +285,10 @@ describe('UninstrumentCommand', () => {
         template: {
           containers: [
             {
-              name: SSI_ADOPTED_INGRESS_CONTAINER_NAME,
+              name: SSI_ADOPTED_MAIN_CONTAINER_NAME,
               volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
             },
-            {name: 'worker', dependsOn: [SSI_ADOPTED_INGRESS_CONTAINER_NAME, 'database']},
+            {name: 'worker', dependsOn: [SSI_ADOPTED_MAIN_CONTAINER_NAME, 'database']},
           ],
         },
       }
@@ -310,7 +310,7 @@ describe('UninstrumentCommand', () => {
               ports: [{containerPort: 8080}],
               volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'}],
             },
-            {name: SSI_ADOPTED_INGRESS_CONTAINER_NAME},
+            {name: SSI_ADOPTED_MAIN_CONTAINER_NAME},
           ],
         },
       }
@@ -319,7 +319,7 @@ describe('UninstrumentCommand', () => {
 
       expect(result.template?.containers?.map((container) => container.name)).toEqual([
         'main',
-        SSI_ADOPTED_INGRESS_CONTAINER_NAME,
+        SSI_ADOPTED_MAIN_CONTAINER_NAME,
       ])
     })
 

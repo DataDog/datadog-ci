@@ -41,7 +41,7 @@ export interface SsiOptions {
 
 export type SsiConfigResult = (
   | {kind: 'errors'; errors: readonly string[]}
-  | {kind: 'no-injection'}
+  | {kind: 'no-injection'; tracing: Exclude<TracingMode, 'inject'> | undefined}
   | {
       kind: 'single-language'
       language: Language
@@ -61,7 +61,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
           errors: [`${unusedFlags.join(', ')} only applies with --tracing inject.`],
           warnings: [],
         }
-      : {kind: 'no-injection', warnings: []}
+      : {kind: 'no-injection', tracing: options.tracing, warnings: []}
   }
 
   if (options.language === undefined) {

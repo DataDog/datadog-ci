@@ -61,6 +61,7 @@ describe('resolveSsiConfig', () => {
   ])('does not inject when tracing is %s', (_description, tracing) => {
     expect(resolveSsiConfig({...defaultOptions, tracing, language: 'nodejs'})).toEqual({
       kind: 'no-injection',
+      tracing,
       warnings: [],
     })
   })
@@ -389,6 +390,66 @@ describe('SSI service preparation', () => {
     } as IContainer)
 
     expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(SsiConfigError)
+  })
+
+  test.each([
+    ['manual', 'true', false],
+    ['disabled', 'false', true],
+  ] as const)('removes owned SSI when tracing is %s', (tracing, traceEnabled, adoptsMainContainer) => {
+    const service = serviceWithWorker()
+    if (adoptsMainContainer) {
+      service.template!.containers![0].name = ''
+    }
+    const injected = instrumentServiceConfig(service, serviceConfigOptions())
+    const injectedApp = injected.template!.containers![0]
+    injectedApp.volumeMounts!.push({name: 'customer-volume', mountPath: '/customer'})
+    injectedApp.dependsOn!.push('database')
+    injected.template!.volumes!.push({name: 'customer-volume'})
+    if (adoptsMainContainer) {
+      injected.template!.containers![1].dependsOn = ['datadog-app', 'database']
+    }
+
+    const noInjectionOptions = serviceConfigOptions('none')
+    const result = instrumentServiceConfig(injected, {
+      ...noInjectionOptions,
+      ssiConfig: resolveSsiConfig({...defaultOptions, tracing, language: 'nodejs'}),
+      envVarsByName: {
+        ...noInjectionOptions.envVarsByName,
+        [DD_TRACE_ENABLED_ENV_VAR]: {name: DD_TRACE_ENABLED_ENV_VAR, value: traceEnabled},
+      },
+    })
+    const app = result.template!.containers![0]
+
+    expect(result.labels).not.toHaveProperty('dd_sls_injection_mode')
+    expect(result.template!.containers!.map((container) => container.name)).not.toContain('datadog-tracer-copy')
+    expect(result.template!.volumes!.map((volume) => volume.name)).toEqual(
+      expect.arrayContaining(['shared-volume', 'customer-volume'])
+    )
+    expect(result.template!.volumes!.map((volume) => volume.name)).not.toContain('datadog-tracer')
+    expect(app).toMatchObject({
+      name: adoptsMainContainer ? '' : 'app',
+      env: expect.arrayContaining([
+        {name: 'NODE_OPTIONS', value: '--inspect'},
+        {name: DD_TRACE_ENABLED_ENV_VAR, value: traceEnabled},
+      ]),
+      volumeMounts: expect.arrayContaining([
+        {name: 'shared-volume', mountPath: '/shared-volume'},
+        {name: 'customer-volume', mountPath: '/customer'},
+      ]),
+      dependsOn: ['datadog-sidecar', 'database'],
+    })
+    expect(app.env?.find((variable) => variable.name === 'DD_TAGS')).toBeUndefined()
+    expect(app.volumeMounts?.map((mount) => mount.name)).not.toContain('datadog-tracer')
+    expect(result.template!.containers![1].dependsOn).toEqual(adoptsMainContainer ? ['database'] : undefined)
+  })
+
+  test('omitting SSI configuration preserves owned SSI', () => {
+    const injected = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const result = instrumentServiceConfig(injected, {...serviceConfigOptions('none'), ssiConfig: undefined})
+
+    expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
+    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')).toBeDefined()
+    expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toBeDefined()
   })
 
   test('no-injection preserves unrelated containers and the requested tracing state', () => {
