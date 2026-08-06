@@ -118,7 +118,7 @@ describe('InstrumentCommand', () => {
     })
   })
 
-  describe('Single-Language SSI command wiring', () => {
+  describe('automatic APM instrumentation', () => {
     const service = {
       name: 'projects/test-project/locations/us-central1/services/test-service',
       template: {
@@ -137,12 +137,11 @@ describe('InstrumentCommand', () => {
     ]
 
     test.each([
-      [['--apm-enabled'], '--language'],
-      [['--apm-enabled', '--language', 'nodejs', '--tracing', 'false'], '--tracing false'],
-      [['--tracer-version', '1.2.3'], '--apm-enabled'],
-      [['--apm-enabled', '--language', 'go', '--tracer-version', '1.2.3'], '--language go'],
-      [['--apm-enabled', '--language', 'python', '--tracer-volume-size', '2Gi'], 'cannot be smaller'],
-    ])('rejects invalid local options before network calls: %s', async (flags, expected) => {
+      [['--tracing', 'inject'], 'requires --language'],
+      [['--tracer-version', 'latest'], 'require --tracing inject'],
+      [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
+      [['--tracing', 'inject', '--language', 'nodejs'], 'startup probe'],
+    ])('rejects incompatible options before network calls: %s', async (flags, expected) => {
       const {code, context} = await runCLI([...requiredFlags, ...flags])
 
       expect(code).toBe(1)
@@ -152,45 +151,114 @@ describe('InstrumentCommand', () => {
       expect(mockServicesClient.getService).not.toHaveBeenCalled()
     })
 
-    test('passes validated tracer options to service configuration', async () => {
+    test.each([
+      ['--tracing', 'automatic'],
+      ['--language', 'rust'],
+      ['--tracer-libc', 'bionic'],
+      ['--tracer-version', 'bad/tag'],
+    ])('rejects invalid %s values through Clipanion', async (flag, value) => {
+      const {code} = await runCLI([...requiredFlags, flag, value])
+
+      expect(code).toBe(1)
+      expect(apikey.newApiKeyValidator).not.toHaveBeenCalled()
+    })
+
+    test.each([
+      [undefined, undefined, 'no-injection'],
+      ['true', 'true', 'no-injection'],
+      ['1', 'true', 'no-injection'],
+      ['manual', 'true', 'no-injection'],
+      ['false', 'false', 'no-injection'],
+      ['0', 'false', 'no-injection'],
+      ['inject', 'true', 'single-language'],
+    ])('normalizes --tracing %s', async (tracing, traceEnabled, configKind) => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+      const tracingFlags = tracing === undefined ? [] : ['--tracing', tracing]
+      const languageFlags = tracing === 'inject' ? ['--language', 'python'] : []
+
+      const {code} = await runCLI([...requiredFlags, '--dry-run', ...tracingFlags, ...languageFlags])
+
+      expect(code).toBe(0)
+      const options = instrumentConfig.mock.calls[0][1]
+      expect(options.ssiConfig?.kind).toBe(configKind)
+      expect(options.envVarsByName.DD_TRACE_ENABLED?.value).toBe(traceEnabled)
+    })
+
+    test('--language alone only configures the log source', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+
+      const {code} = await runCLI([...requiredFlags, '--dry-run', '--language', 'python'])
+
+      expect(code).toBe(0)
+      const options = instrumentConfig.mock.calls[0][1]
+      expect(options.ssiConfig?.kind).toBe('no-injection')
+      expect(options.envVarsByName.DD_SOURCE?.value).toBe('python')
+      expect(options.envVarsByName.DD_TRACE_ENABLED).toBeUndefined()
+    })
+
+    test('passes tracer tuning options to the service configuration', async () => {
       mockServicesClient.getService.mockResolvedValue([service])
       const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
 
       const {code} = await runCLI([
         ...requiredFlags,
         '--dry-run',
-        '--apm-enabled',
+        '--tracing',
+        'inject',
         '--language',
         'python',
         '--tracer-version',
         '2.0.0',
-        '--tracer-volume-size',
-        '256Mi',
-        '--tracer-sidecar-memory',
-        '512Mi',
+        '--tracer-registry',
+        'public.ecr.aws/datadog',
+        '--tracer-libc',
+        'musl',
       ])
 
       expect(code).toBe(0)
       expect(instrumentConfig).toHaveBeenCalledWith(
         service,
         expect.objectContaining({
-          ssi: expect.objectContaining({
+          ssiConfig: expect.objectContaining({
             kind: 'single-language',
             language: 'python',
-            tracerVolumeSize: '256Mi',
-            tracerSidecarMemory: '512Mi',
+            libc: 'musl',
+            spec: expect.objectContaining({image: 'public.ecr.aws/datadog/dd-lib-python-init:2.0.0'}),
           }),
         })
       )
     })
 
-    test('warns that Go requires application instrumentation', async () => {
-      mockServicesClient.getService.mockResolvedValue([service])
+    test('renders service configuration failures once without a stack trace', async () => {
+      mockServicesClient.getService.mockResolvedValue([
+        {
+          ...service,
+          template: {
+            containers: [
+              {name: 'app', ports: [{containerPort: 8080}]},
+              {name: 'admin', ports: [{containerPort: 9090}]},
+            ],
+          },
+        },
+      ])
 
-      const {code, context} = await runCLI([...requiredFlags, '--dry-run', '--apm-enabled', '--language', 'go'])
+      const {code, context} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--tracing',
+        'inject',
+        '--language',
+        'python',
+      ])
+      const errorOutput = context.stderr.toString()
 
-      expect(code).toBe(0)
-      expect(context.stdout.toString()).toContain('dd-trace-go')
+      expect(code).toBe(1)
+      expect(errorOutput.match(/Instrumentation failed:/g)).toHaveLength(1)
+      expect(errorOutput).toContain('multiple containers declare ports')
+      expect(errorOutput).not.toContain('SsiConfigError')
+      expect(errorOutput).not.toContain('at PluginCommand')
     })
   })
 
