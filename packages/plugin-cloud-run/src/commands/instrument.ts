@@ -1,4 +1,4 @@
-import type {IContainer, IEnvVar, IService, IServiceTemplate} from '../types'
+import type {IEnvVar, IService} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
@@ -8,26 +8,19 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {
-  generateConfigDiff,
-  createInstrumentedTemplate,
-  getBaseEnvVars,
-} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
-  HEALTH_PORT_ENV_VAR,
   SERVICE_ENV_VAR,
   CI_SITE_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
-  DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
@@ -35,10 +28,8 @@ import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
+import {instrumentServiceConfig} from '../service-config'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
-
-// equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
-const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
 export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
@@ -214,48 +205,29 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
-    const envVarsByName = this.getEnvVarsByName({
-      service: ddService,
+    return instrumentServiceConfig(service, {
+      ddService,
       environment: this.environment,
       version: this.version,
-      logPath: this.logsPath,
-      extraTags: this.extraTags,
-      envVars: this.envVars,
+      envVarsByName: this.getEnvVarsByName({
+        service: ddService,
+        environment: this.environment,
+        version: this.version,
+        logPath: this.logsPath,
+        extraTags: this.extraTags,
+        envVars: this.envVars,
+      }),
+      healthCheckPort: this.healthCheckPort,
+      sidecarName: this.sidecarName,
+      sidecarImage: this.sidecarImage,
+      sidecarCpus: this.sidecarCpus,
+      sidecarMemory: this.sidecarMemory,
+      sharedVolumeName: this.sharedVolumeName,
+      sharedVolumePath: this.sharedVolumePath,
     })
-    const template: IServiceTemplate = createInstrumentedTemplate(
-      service.template || {},
-      this.buildBaseSidecarContainer(service.template?.containers?.find((c) => c.name === this.sidecarName)),
-      {
-        name: this.sharedVolumeName,
-        mountPath: this.sharedVolumePath,
-        mountOptions: {emptyDir: {medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY}},
-        volumeMountNameKey: 'name',
-      },
-      envVarsByName
-    )
-    // Let GCR generate the next revision name
-    template.revision = undefined
-    // Set unified service tag labels
-    const updatedLabels: Record<string, string> = {
-      ...service.labels,
-      service: ddService,
-      [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace(/\./g, '_'),
-    }
-    if (!!this.environment) {
-      updatedLabels.env = this.environment
-    }
-    if (!!this.version) {
-      updatedLabels.version = this.version
-    }
-
-    return {
-      ...service,
-      labels: updatedLabels,
-      template,
-    }
   }
+
   public getEnvVarsByName(config: ServerlessConfigOptions): Record<string, IEnvVar> {
-    // Get base environment variables
     const envVars = getBaseEnvVars(config)
 
     for (const [name, value] of [
@@ -277,35 +249,5 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
 
     return Object.fromEntries(Object.entries(envVars).map(([name, value]) => [name, {name, value}]))
-  }
-
-  public buildBaseSidecarContainer(existingSidecarContainer: IContainer | undefined): IContainer {
-    // We prioritize in this order: CLI flag, existing setup, default
-    let healthCheckPort = Number(
-      this.healthCheckPort ?? existingSidecarContainer?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
-    )
-    healthCheckPort = Number.isNaN(healthCheckPort) ? DEFAULT_HEALTH_CHECK_PORT : healthCheckPort
-
-    // Create sidecar container with volume mount and environment variables
-    return {
-      ...existingSidecarContainer,
-      name: this.sidecarName,
-      image: this.sidecarImage,
-      startupProbe: {
-        tcpSocket: {
-          port: healthCheckPort,
-        },
-        initialDelaySeconds: 0,
-        periodSeconds: 10,
-        failureThreshold: 3,
-        timeoutSeconds: 1,
-      },
-      resources: {
-        limits: {
-          memory: this.sidecarMemory,
-          cpu: this.sidecarCpus,
-        },
-      },
-    }
   }
 }

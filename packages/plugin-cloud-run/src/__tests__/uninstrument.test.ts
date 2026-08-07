@@ -12,6 +12,7 @@ import {
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import * as cloudRunPromptModule from '../prompt'
+import {uninstrumentServiceConfig} from '../service-config'
 import * as utils from '../utils'
 
 jest.mock('../utils', () => ({
@@ -156,14 +157,16 @@ describe('UninstrumentCommand', () => {
 
   describe('createUninstrumentedServiceConfig', () => {
     let command: UninstrumentCommand
+    let writeStdout: jest.Mock
 
     beforeEach(() => {
       command = new UninstrumentCommand()
+      writeStdout = jest.fn()
       ;(command as any).sidecarName = 'datadog-sidecar'
       ;(command as any).sharedVolumeName = 'shared-volume'
       ;(command as any).envVars = []
       ;(command as any).context = {
-        stdout: {write: jest.fn()},
+        stdout: {write: writeStdout},
         stderr: {write: jest.fn()},
       }
     })
@@ -225,6 +228,29 @@ describe('UninstrumentCommand', () => {
       const result = command.createUninstrumentedServiceConfig(service)
       expect(result.template?.containers).toHaveLength(1)
       expect(result.template?.volumes).toHaveLength(0)
+      expect(writeStdout).toHaveBeenCalledWith(expect.stringContaining("Sidecar container 'datadog-sidecar' not found"))
+      expect(writeStdout).toHaveBeenCalledWith(expect.stringContaining("Shared volume 'shared-volume' not found"))
+    })
+
+    test.each([[], undefined])('handles %p configured environment variables', (envVars) => {
+      ;(command as any).envVars = envVars
+      const service = {
+        template: {
+          containers: [
+            {
+              name: 'main',
+              env: [
+                {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+                {name: 'CUSTOM_VAR', value: 'custom-value'},
+              ],
+            },
+          ],
+        },
+      }
+
+      expect(command.createUninstrumentedServiceConfig(service).template?.containers?.[0].env).toEqual([
+        {name: 'CUSTOM_VAR', value: 'custom-value'},
+      ])
     })
 
     test('uses custom sidecar and volume names', () => {
@@ -248,18 +274,18 @@ describe('UninstrumentCommand', () => {
     })
   })
 
-  describe('updateAppContainer', () => {
-    let command: UninstrumentCommand
+  describe('application container cleanup', () => {
+    let envVarNames: ReadonlySet<string>
 
     beforeEach(() => {
-      command = new UninstrumentCommand()
-      ;(command as any).sharedVolumeName = 'shared-volume'
-      ;(command as any).envVars = []
-      ;(command as any).context = {
-        stdout: {write: jest.fn()},
-        stderr: {write: jest.fn()},
-      }
+      envVarNames = new Set()
     })
+
+    const cleanAppContainer = (appContainer: IContainer): IContainer =>
+      uninstrumentServiceConfig(
+        {template: {containers: [appContainer]}},
+        {sidecarName: 'datadog-sidecar', sharedVolumeName: 'shared-volume', envVarNames}
+      ).service.template!.containers![0]
 
     test('removes shared volume mount and DD_ environment variables', () => {
       const appContainer = {
@@ -276,7 +302,7 @@ describe('UninstrumentCommand', () => {
         ],
       }
 
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = cleanAppContainer(appContainer)
 
       expect(result.volumeMounts).toEqual([{name: 'other-volume', mountPath: '/other'}])
       expect(result.env).toEqual([
@@ -286,16 +312,14 @@ describe('UninstrumentCommand', () => {
     })
 
     test('handles container with undefined env and volumeMounts', () => {
-      const appContainer = {name: 'main'}
-      const result = (command as any).updateAppContainer(appContainer)
+      const result = cleanAppContainer({name: 'main'})
 
       expect(result.volumeMounts).toEqual([])
       expect(result.env).toEqual([])
     })
 
-    test('removes custom environment variables specified via envVars', () => {
-      ;(command as any).envVars = ['CUSTOM_VAR=value1', 'ANOTHER_VAR=value2']
-
+    test('removes configured environment variables', () => {
+      envVarNames = new Set(['CUSTOM_VAR', 'ANOTHER_VAR'])
       const appContainer = {
         name: 'main',
         env: [
@@ -308,50 +332,30 @@ describe('UninstrumentCommand', () => {
         volumeMounts: [],
       }
 
-      const result = (command as any).updateAppContainer(appContainer)
-
-      expect(result.env).toEqual([
+      expect(cleanAppContainer(appContainer).env).toEqual([
         {name: 'NODE_ENV', value: 'production'},
         {name: 'KEEP_THIS', value: 'keep-me'},
       ])
     })
 
-    test('handles empty envVars array', () => {
-      ;(command as any).envVars = []
+    test.each([
+      [false, false],
+      [true, false],
+      [false, true],
+      [true, true],
+    ])('reports sidecar=%s and volume=%s removal independently', (hasSidecar, hasVolume) => {
+      const result = uninstrumentServiceConfig(
+        {
+          template: {
+            containers: [{name: 'main'}, ...(hasSidecar ? [{name: 'datadog-sidecar'}] : [])],
+            volumes: hasVolume ? [{name: 'shared-volume'}] : [],
+          },
+        },
+        {sidecarName: 'datadog-sidecar', sharedVolumeName: 'shared-volume', envVarNames: new Set()}
+      )
 
-      const appContainer = {
-        name: 'main',
-        env: [
-          {name: 'NODE_ENV', value: 'production'},
-          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
-          {name: 'CUSTOM_VAR', value: 'custom-value'},
-        ],
-        volumeMounts: [],
-      }
-
-      const result = (command as any).updateAppContainer(appContainer)
-
-      expect(result.env).toEqual([
-        {name: 'NODE_ENV', value: 'production'},
-        {name: 'CUSTOM_VAR', value: 'custom-value'},
-      ])
-    })
-
-    test('handles undefined envVars', () => {
-      ;(command as any).envVars = undefined
-
-      const appContainer = {
-        name: 'main',
-        env: [
-          {name: 'NODE_ENV', value: 'production'},
-          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
-        ],
-        volumeMounts: [],
-      }
-
-      const result = (command as any).updateAppContainer(appContainer)
-
-      expect(result.env).toEqual([{name: 'NODE_ENV', value: 'production'}])
+      expect(result.sidecarRemoved).toBe(hasSidecar)
+      expect(result.sharedVolumeRemoved).toBe(hasVolume)
     })
   })
 })
