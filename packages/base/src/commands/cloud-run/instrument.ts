@@ -8,6 +8,7 @@ import {
   DEFAULT_SIDECAR_NAME,
   DEFAULT_VOLUME_NAME,
 } from '../../helpers/serverless/constants'
+import {TRACER_READINESS_PORT} from '../../helpers/serverless/ssi/constants'
 import {LIBCS} from '../../helpers/serverless/ssi/injection-spec'
 import {TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
 
@@ -118,6 +119,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
       (libc) => `"${libc}"`
     ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
     validator: t.isEnum(LIBCS),
+  })
+  protected tracerReadinessPort: number = Option.String('--tracer-readiness-port', String(TRACER_READINESS_PORT), {
+    description: `The tracer-copy readiness port. Must not conflict with the main application port or the Agent health-check port. Defaults to ${TRACER_READINESS_PORT}.`,
+    validator: t.cascade(t.isNumber(), t.isInteger(), t.isInInclusiveRange(1024, 65535)),
   })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
