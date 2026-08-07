@@ -68,7 +68,6 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
 
   let sourceTemplate: IServiceTemplate = service.template || {}
   let targetContainers: ReadonlySet<IContainer> | undefined
-  let mainContainerIndex: number | undefined
   const envVarsByName = {...options.envVarsByName}
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
@@ -95,7 +94,6 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
     )
-    mainContainerIndex = sourceTemplate.containers!.indexOf(updatedMainContainer)
     targetContainers = new Set([updatedMainContainer])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
   }
@@ -130,12 +128,18 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   }
 
   if (ssiConfig.kind === 'single-language') {
+    const mainContainer = selectMainContainer(
+      template.containers ?? [],
+      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+    )
+    const configuredMainContainer = {
+      ...mainContainer,
+      env: mergeLanguageInjectionEnv(mainContainer.env, ssiConfig.spec),
+    }
     template = {
       ...template,
-      containers: template.containers?.map((container, index) =>
-        index === mainContainerIndex
-          ? {...container, env: mergeLanguageInjectionEnv(container.env, ssiConfig.spec)}
-          : container
+      containers: template.containers?.map((container) =>
+        container === mainContainer ? configuredMainContainer : container
       ),
     }
     const runtimeCopy = buildRuntimeCopyPlan(
@@ -149,7 +153,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       },
       {kind: 'cloud-run-idling-sidecar', readinessPort: TRACER_READINESS_PORT}
     )
-    template = applyTracerCopy(template, runtimeCopy, mainContainerIndex!, [options.sidecarName])
+    template = applyTracerCopy(template, runtimeCopy, configuredMainContainer, [options.sidecarName])
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 
@@ -235,30 +239,26 @@ const buildTracerCopyContainer = (runtimeCopy: RuntimeCopyPlan): IContainer => (
 const applyTracerCopy = (
   template: IServiceTemplate,
   runtimeCopy: RuntimeCopyPlan,
-  mainContainerIndex: number,
+  mainContainer: IContainer,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
-  const containers = [...(template.containers ?? [])]
-  const mainContainer = containers[mainContainerIndex]
-  if (!mainContainer) {
-    throw new SsiConfigError(
-      'datadog-ci lost track of the main application container while preparing automatic instrumentation. Retry, and contact Datadog support if the problem persists.'
-    )
-  }
-
   const managedDependencies = new Set([runtimeCopy.containerName, ...dependencyNames])
-  containers[mainContainerIndex] = {
-    ...mainContainer,
-    volumeMounts: [
-      ...(mainContainer.volumeMounts ?? []).filter((mount) => mount.name !== runtimeCopy.volumeName),
-      {name: runtimeCopy.volumeName, mountPath: runtimeCopy.mountPath},
-    ],
-    dependsOn: [
-      ...(mainContainer.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
-      runtimeCopy.containerName,
-      ...dependencyNames,
-    ],
-  }
+  const containers = (template.containers ?? []).map((container) =>
+    container === mainContainer
+      ? {
+          ...container,
+          volumeMounts: [
+            ...(container.volumeMounts ?? []).filter((mount) => mount.name !== runtimeCopy.volumeName),
+            {name: runtimeCopy.volumeName, mountPath: runtimeCopy.mountPath},
+          ],
+          dependsOn: [
+            ...(container.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
+            runtimeCopy.containerName,
+            ...dependencyNames,
+          ],
+        }
+      : container
+  )
 
   containers.push(buildTracerCopyContainer(runtimeCopy))
 

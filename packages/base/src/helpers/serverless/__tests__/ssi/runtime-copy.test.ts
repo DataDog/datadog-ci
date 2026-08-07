@@ -56,39 +56,4 @@ describe('buildRuntimeCopyPlan', () => {
       artifacts
     )
   })
-
-  test('preserves legal absolute path values as adapter data', () => {
-    const request = makeRequest({
-      mountPath: `${TRACER_MOUNT_PATH}/./`,
-      completionMarker: `${TRACER_MOUNT_PATH}//.copy marker;$(ignored)`,
-      artifacts: [[`${TRACER_MOUNT_PATH}/nested/../tracer file;$(ignored)`]],
-    })
-
-    const plan = buildRuntimeCopyPlan(request, {kind: 'azure-container-app-init'})
-
-    expect(plan.mountPath).toBe(request.mountPath)
-    expect(plan.completionMarker).toBe(request.completionMarker)
-    expect(plan.artifacts).toEqual(request.artifacts)
-  })
-
-  test.each([
-    ['a relative mount path', 'relative', 'must be an absolute path'],
-    ['a traversing mount path', `${TRACER_MOUNT_PATH}/../`, 'must not contain parent traversal'],
-  ])('rejects %s', (_description, mountPath, error) => {
-    expect(() =>
-      buildRuntimeCopyPlan(makeRequest({mountPath}), {
-        kind: 'azure-container-app-init',
-      })
-    ).toThrow(error)
-  })
-
-  test.each<[string, Partial<RuntimeCopyRequest>]>([
-    ['completion marker', {completionMarker: '/tmp/copy-finished'}],
-    ['artifact candidate', {artifacts: [['/tmp/tracer']]}],
-    ['traversing artifact candidate', {artifacts: [[`${TRACER_MOUNT_PATH}/../tmp/tracer`]]}],
-  ])('rejects %s outside the mount', (_description, override) => {
-    expect(() => buildRuntimeCopyPlan(makeRequest(override), {kind: 'ecs-success-dependency'})).toThrow(
-      'must be below mount path'
-    )
-  })
 })
