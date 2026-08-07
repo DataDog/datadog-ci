@@ -252,6 +252,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         envVars: this.envVars,
       }),
       healthCheckPort: this.healthCheckPort,
+      tracerReadinessPort: this.tracerReadinessPort,
       sidecarName: this.sidecarName,
       sidecarImage: this.sidecarImage,
       sidecarCpus: this.sidecarCpus,

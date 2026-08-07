@@ -96,6 +96,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--language` |  | Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Possible values: "java", "nodejs", "csharp", "python", "ruby", "php", "go". |  |
 | `--tracer-version` |  | The tracer image tag to use with --tracing inject. | `latest` |
 | `--tracer-libc` |  | The C standard library used by the application image for automatic instrumentation. Possible values: "glibc", "musl". | `glibc` |
+| `--tracer-readiness-port` |  | The tracer-copy readiness port. Must not conflict with the main application port or the Agent health-check port. | `18999` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`

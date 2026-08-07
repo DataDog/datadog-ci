@@ -7,6 +7,7 @@ interface ParsedOptions {
   language: string | undefined
   tracerVersion: string | undefined
   tracerLibc: string | undefined
+  tracerReadinessPort: number
 }
 
 let parsedOptions: ParsedOptions | undefined
@@ -18,6 +19,7 @@ class TestCloudRunInstrumentCommand extends CloudRunInstrumentCommand {
       language: this.language,
       tracerVersion: this.tracerVersion,
       tracerLibc: this.tracerLibc,
+      tracerReadinessPort: this.tracerReadinessPort,
     }
 
     return 0
@@ -47,8 +49,30 @@ describe('CloudRunInstrumentCommand', () => {
       language: 'python',
       tracerVersion: '2.0.0',
       tracerLibc: 'musl',
+      tracerReadinessPort: 18999,
     })
   })
+
+  test.each([
+    [[], 18999],
+    [['--tracer-readiness-port', '1024'], 1024],
+    [['--tracer-readiness-port', '19000'], 19000],
+  ])('parses --tracer-readiness-port as a number', async (flags, expectedPort) => {
+    const {code} = await runCLI(flags)
+
+    expect(code).toBe(0)
+    expect(parsedOptions?.tracerReadinessPort).toBe(expectedPort)
+  })
+
+  test.each(['0', '1023', '65536', '18999.5', 'not-a-port'])(
+    'rejects invalid --tracer-readiness-port %s',
+    async (port) => {
+      const {code} = await runCLI(['--tracer-readiness-port', port])
+
+      expect(code).toBe(1)
+      expect(parsedOptions).toBeUndefined()
+    }
+  )
 
   test.each([
     ['--tracing', 'automatic'],

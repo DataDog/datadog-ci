@@ -212,12 +212,15 @@ describe('InstrumentCommand', () => {
         '2.0.0',
         '--tracer-libc',
         'musl',
+        '--tracer-readiness-port',
+        '19000',
       ])
 
       expect(code).toBe(0)
       expect(instrumentConfig).toHaveBeenCalledWith(
         service,
         expect.objectContaining({
+          tracerReadinessPort: 19000,
           ssiConfig: expect.objectContaining({
             kind: 'single-language',
             language: 'python',
