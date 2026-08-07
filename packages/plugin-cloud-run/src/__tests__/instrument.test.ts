@@ -210,8 +210,6 @@ describe('InstrumentCommand', () => {
         'python',
         '--tracer-version',
         '2.0.0',
-        '--tracer-registry',
-        'public.ecr.aws/datadog',
         '--tracer-libc',
         'musl',
       ])
@@ -224,7 +222,7 @@ describe('InstrumentCommand', () => {
             kind: 'single-language',
             language: 'python',
             libc: 'musl',
-            spec: expect.objectContaining({image: 'public.ecr.aws/datadog/dd-lib-python-init:2.0.0'}),
+            spec: expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:2.0.0'}),
           }),
         })
       )

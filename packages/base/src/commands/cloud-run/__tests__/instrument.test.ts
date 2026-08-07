@@ -6,7 +6,6 @@ interface ParsedOptions {
   tracing: string | undefined
   language: string | undefined
   tracerVersion: string | undefined
-  tracerRegistry: string | undefined
   tracerLibc: string | undefined
 }
 
@@ -18,7 +17,6 @@ class TestCloudRunInstrumentCommand extends CloudRunInstrumentCommand {
       tracing: this.tracing,
       language: this.language,
       tracerVersion: this.tracerVersion,
-      tracerRegistry: this.tracerRegistry,
       tracerLibc: this.tracerLibc,
     }
 
@@ -41,23 +39,13 @@ describe('CloudRunInstrumentCommand', () => {
   })
 
   test('accepts automatic instrumentation options', async () => {
-    const {code} = await runCLI([
-      '--language',
-      'python',
-      '--tracer-version',
-      '2.0.0',
-      '--tracer-registry',
-      'public.ecr.aws/datadog',
-      '--tracer-libc',
-      'musl',
-    ])
+    const {code} = await runCLI(['--language', 'python', '--tracer-version', '2.0.0', '--tracer-libc', 'musl'])
 
     expect(code).toBe(0)
     expect(parsedOptions).toEqual({
       tracing: undefined,
       language: 'python',
       tracerVersion: '2.0.0',
-      tracerRegistry: 'public.ecr.aws/datadog',
       tracerLibc: 'musl',
     })
   })
@@ -66,7 +54,7 @@ describe('CloudRunInstrumentCommand', () => {
     ['--tracing', 'automatic'],
     ['--language', 'rust'],
     ['--tracer-version', 'bad/tag'],
-    ['--tracer-registry', 'registry.example.com/datadog'],
+    ['--tracer-registry', 'gcr.io/datadoghq'],
     ['--tracer-libc', 'bionic'],
   ])('rejects %s %s', async (flag, value) => {
     const {code} = await runCLI([flag, value])

@@ -2,11 +2,11 @@ import type {IContainer, IEnvVar} from './types'
 import type {CloudRunLanguage, TracingInput, TracingMode} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
-import type {Language, SingleLanguageTracerRegistry} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {
+  CLOUD_RUN_TRACER_REGISTRY,
   DEFAULT_TRACER_LIBC,
-  DEFAULT_TRACER_REGISTRY,
   DEFAULT_TRACER_VERSION,
   TRACING_MODE_BY_INPUT,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
@@ -30,7 +30,6 @@ export interface SsiOptions {
   readonly language: CloudRunLanguage | undefined
   readonly tracing: TracingMode | undefined
   readonly tracerVersion: string | undefined
-  readonly tracerRegistry: SingleLanguageTracerRegistry | undefined
   readonly tracerLibc: Libc | undefined
 }
 
@@ -80,7 +79,6 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
   }
 
   const tracerVersion = options.tracerVersion ?? DEFAULT_TRACER_VERSION
-  const tracerRegistry = options.tracerRegistry ?? DEFAULT_TRACER_REGISTRY
   const tracerLibc = options.tracerLibc ?? DEFAULT_TRACER_LIBC
   const errors = getLanguageCompatibilityErrors({
     language: options.language,
@@ -93,7 +91,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
 
   const spec = getLanguageInjectionSpec({
     language: options.language,
-    registry: tracerRegistry,
+    registry: CLOUD_RUN_TRACER_REGISTRY,
     version: tracerVersion,
     libc: tracerLibc,
     root: TRACER_MOUNT_PATH,
@@ -238,7 +236,7 @@ const LANGUAGE_ENV_FRAGMENTS: readonly EnvFragment[] = TRACER_INJECTION_LANGUAGE
       getLanguageInjectionSpec({
         language,
         libc,
-        registry: DEFAULT_TRACER_REGISTRY,
+        registry: CLOUD_RUN_TRACER_REGISTRY,
         version: DEFAULT_TRACER_VERSION,
         root: TRACER_MOUNT_PATH,
       }).env
@@ -248,7 +246,6 @@ const LANGUAGE_ENV_FRAGMENTS: readonly EnvFragment[] = TRACER_INJECTION_LANGUAGE
 const tracerFlags = (options: SsiOptions): string[] =>
   [
     options.tracerVersion !== undefined ? '--tracer-version' : undefined,
-    options.tracerRegistry !== undefined ? '--tracer-registry' : undefined,
     options.tracerLibc !== undefined ? '--tracer-libc' : undefined,
   ].filter((flag): flag is string => flag !== undefined)
 

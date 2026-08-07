@@ -172,7 +172,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       language: this.language,
       tracing: normalizeTracingMode(this.tracing),
       tracerVersion: this.tracerVersion,
-      tracerRegistry: this.tracerRegistry,
       tracerLibc: this.tracerLibc,
     })
 

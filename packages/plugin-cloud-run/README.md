@@ -27,7 +27,7 @@ datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name
 
 `--tracing inject` without `--language` is reserved for future multi-language automatic instrumentation and currently returns an unsupported error. Go tracers cannot be injected; install `dd-trace-go` in the application and use `--tracing manual`.
 
-`--language` continues to set `DD_SOURCE` for log parsing without enabling automatic instrumentation by itself. `--tracer-version`, `--tracer-registry`, and `--tracer-libc` only apply with `--tracing inject`.
+`--language` continues to set `DD_SOURCE` for log parsing without enabling automatic instrumentation by itself. `--tracer-version` and `--tracer-libc` only apply with `--tracing inject`.
 
 Automatic instrumentation targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
@@ -95,7 +95,6 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
 | `--language` |  | Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Possible values: "java", "nodejs", "csharp", "python", "ruby", "php", "go". |  |
 | `--tracer-version` |  | The tracer image tag to use with --tracing inject. | `latest` |
-| `--tracer-registry` |  | The tracer image registry to use with --tracing inject. Possible values: "gcr.io/datadoghq", "public.ecr.aws/datadog", "datadoghq.azurecr.io". | `gcr.io/datadoghq` |
 | `--tracer-libc` |  | The C standard library used by the application image for automatic instrumentation. Possible values: "glibc", "musl". | `glibc` |
 <!-- END_USAGE:instrument -->
 
