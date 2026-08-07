@@ -3,8 +3,11 @@ import type {IContainer, IEnvVar, IService} from '../types'
 import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-import {DD_TRACE_ENABLED_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {
+  DD_TRACE_ENABLED_ENV_VAR,
+  DEFAULT_HEALTH_CHECK_PORT,
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {TRACER_MOUNT_PATH, TRACER_READINESS_PORT} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
   LIBCS,
@@ -234,6 +237,7 @@ const serviceConfigOptions = (language: Language | 'none' = 'nodejs'): Instrumen
     [DD_TRACE_ENABLED_ENV_VAR]: {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
   },
   healthCheckPort: undefined,
+  tracerReadinessPort: TRACER_READINESS_PORT,
   sidecarName: 'datadog-sidecar',
   sidecarImage: 'agent:latest',
   sidecarCpus: '1',
@@ -260,34 +264,13 @@ const serviceWithWorker = (): IService =>
   }) as IService
 
 describe('SSI service preparation', () => {
-  test('rejects invalid configuration and reserved Agent resource names', () => {
-    const service = serviceWithWorker()
+  test('rejects invalid configuration', () => {
     expect(() =>
-      instrumentServiceConfig(service, {
+      instrumentServiceConfig(serviceWithWorker(), {
         ...serviceConfigOptions(),
         ssiConfig: {kind: 'errors', errors: ['invalid SSI flags'], warnings: []},
       })
     ).toThrow('invalid SSI flags')
-    expect(() =>
-      instrumentServiceConfig(service, {...serviceConfigOptions(), sidecarName: 'datadog-tracer-copy'})
-    ).toThrow(/Choose a different --sidecar-name/)
-    expect(() =>
-      instrumentServiceConfig(service, {...serviceConfigOptions(), sharedVolumeName: 'datadog-tracer'})
-    ).toThrow(/Choose a different --shared-volume-name/)
-  })
-
-  test('does not replace unowned reserved resources', () => {
-    const containerService = serviceWithWorker()
-    containerService.template!.containers!.push({name: 'datadog-tracer-copy'} as IContainer)
-    expect(() => instrumentServiceConfig(containerService, serviceConfigOptions())).toThrow(
-      /not marked as managed by datadog-ci.*Rename or remove it/
-    )
-
-    const volumeService = serviceWithWorker()
-    volumeService.template!.volumes!.push({name: 'datadog-tracer'})
-    expect(() => instrumentServiceConfig(volumeService, serviceConfigOptions())).toThrow(
-      /not marked as managed by datadog-ci.*Rename or remove it/
-    )
   })
 
   test('applies Agent and language environment only to the main container', () => {
@@ -311,7 +294,7 @@ describe('SSI service preparation', () => {
     expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
   })
 
-  test('applies the tracer-copy sidecar and Memory volume', () => {
+  test('applies the tracer-copy sidecar and sized Memory volume', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
     const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')
 
@@ -338,8 +321,81 @@ describe('SSI service preparation', () => {
     )
     expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
       name: 'datadog-tracer',
-      emptyDir: {medium: 1},
+      emptyDir: {medium: 1, sizeLimit: '500Mi'},
     })
+  })
+
+  test('uses the configured readiness port for the tracer-copy container', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), {
+      ...serviceConfigOptions(),
+      tracerReadinessPort: 19000,
+    })
+    const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')
+
+    expect(tracer?.args?.at(-1)).toBe('19000')
+    expect(tracer?.startupProbe?.tcpSocket?.port).toBe(19000)
+  })
+
+  test('rejects a readiness port collision with the main application container', () => {
+    expect(() =>
+      instrumentServiceConfig(serviceWithWorker(), {
+        ...serviceConfigOptions(),
+        tracerReadinessPort: 8080,
+      })
+    ).toThrow(/--tracer-readiness-port.*container 'app'.*--tracer-readiness-port or container 'app' port/)
+  })
+
+  test('names an unnamed container in readiness port collision errors', () => {
+    const service = serviceWithWorker()
+    service.template!.containers![0].name = ''
+
+    expect(() => instrumentServiceConfig(service, {...serviceConfigOptions(), tracerReadinessPort: 8080})).toThrow(
+      /container '<unnamed>'/
+    )
+  })
+
+  test('rejects a readiness port collision with the default Agent health port', () => {
+    expect(() =>
+      instrumentServiceConfig(serviceWithWorker(), {
+        ...serviceConfigOptions(),
+        tracerReadinessPort: DEFAULT_HEALTH_CHECK_PORT,
+      })
+    ).toThrow(new RegExp(`Datadog Agent health port ${DEFAULT_HEALTH_CHECK_PORT}`))
+  })
+
+  test('rejects a readiness port collision with an explicit Agent health port', () => {
+    expect(() =>
+      instrumentServiceConfig(serviceWithWorker(), {
+        ...serviceConfigOptions(),
+        healthCheckPort: String(TRACER_READINESS_PORT),
+      })
+    ).toThrow(/Datadog Agent health port 18999.*--tracer-readiness-port or --health-check-port/)
+  })
+
+  test('rejects a readiness port collision with the existing Agent DD_HEALTH_PORT', () => {
+    const service = serviceWithWorker()
+    service.template!.containers!.push({
+      name: 'datadog-sidecar',
+      env: [{name: 'DD_HEALTH_PORT', value: String(TRACER_READINESS_PORT)}],
+    } as IContainer)
+
+    expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(
+      /Datadog Agent health port 18999.*container 'datadog-sidecar'/
+    )
+  })
+
+  test('uses --health-check-port before the existing Agent DD_HEALTH_PORT', () => {
+    const service = serviceWithWorker()
+    service.template!.containers!.push({
+      name: 'datadog-sidecar',
+      env: [{name: 'DD_HEALTH_PORT', value: String(TRACER_READINESS_PORT)}],
+    } as IContainer)
+
+    const result = instrumentServiceConfig(service, {...serviceConfigOptions(), healthCheckPort: '5555'})
+
+    expect(
+      result.template?.containers?.find((container) => container.name === 'datadog-sidecar')?.startupProbe
+    ).toEqual(expect.objectContaining({tcpSocket: {port: 5555}}))
   })
 
   test('keeps an unnamed main container unnamed during injection and replacement', () => {

@@ -16,11 +16,12 @@ export interface RuntimeCopyRequest {
   resources?: {memory?: string; cpu?: string}
 }
 
-export interface RuntimeCopyPlan extends RuntimeCopyRequest {
-  ordering: RuntimeCopyOrderingStrategy
+export interface RuntimeCopyPlan<TOrdering extends RuntimeCopyOrderingStrategy = RuntimeCopyOrderingStrategy>
+  extends RuntimeCopyRequest {
+  ordering: TOrdering
 }
 
-export const buildRuntimeCopyPlan = (
+export const buildRuntimeCopyPlan = <TOrdering extends RuntimeCopyOrderingStrategy>(
   request: RuntimeCopyRequest,
-  ordering: RuntimeCopyOrderingStrategy
-): RuntimeCopyPlan => ({...request, ordering})
+  ordering: TOrdering
+): RuntimeCopyPlan<TOrdering> => ({...request, ordering})

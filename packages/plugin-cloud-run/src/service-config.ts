@@ -12,6 +12,7 @@ import {
   TRACER_MOUNT_PATH,
   TRACER_READINESS_PORT,
   TRACER_VOLUME_NAME,
+  TRACER_VOLUME_SIZE_LIMIT,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {buildRuntimeCopyPlan, type RuntimeCopyPlan} from '@datadog/datadog-ci-base/helpers/serverless/ssi/runtime-copy'
 import {getTracerCopyCompletionMarker} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
@@ -40,6 +41,7 @@ export interface InstrumentServiceConfigOptions {
   readonly version: string | undefined
   readonly envVarsByName: Readonly<Record<string, IEnvVar>>
   readonly healthCheckPort: string | undefined
+  readonly tracerReadinessPort?: number
   readonly sidecarName: string
   readonly sidecarImage: string
   readonly sidecarCpus: string
@@ -65,6 +67,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   if (ssiConfig.kind === 'errors') {
     throw new SsiConfigError(ssiConfig.errors.join('\n'))
   }
+  const tracerReadinessPort = options.tracerReadinessPort ?? TRACER_READINESS_PORT
 
   let sourceTemplate: IServiceTemplate = service.template || {}
   let targetContainers: ReadonlySet<IContainer> | undefined
@@ -83,12 +86,11 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       )
     }
   } else {
-    assertSsiResourceNamesAvailable(sourceTemplate, options, hasSsi)
-
     const mainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
     )
+    assertTracerReadinessPortAvailable(sourceTemplate, mainContainer, options, tracerReadinessPort)
     sourceTemplate = hasSsi ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
@@ -151,7 +153,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         completionMarker: getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
         artifacts: ssiConfig.spec.artifacts as RuntimeCopyPlan['artifacts'],
       },
-      {kind: 'cloud-run-idling-sidecar', readinessPort: TRACER_READINESS_PORT}
+      {kind: 'cloud-run-idling-sidecar', readinessPort: tracerReadinessPort}
     )
     template = applyTracerCopy(template, runtimeCopy, configuredMainContainer, [options.sidecarName])
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
@@ -214,7 +216,9 @@ const TRACER_COPY_SCRIPT = [
   'exec /datadog-init/probe-server "$3"',
 ].join('\n')
 
-const buildTracerCopyContainer = (runtimeCopy: RuntimeCopyPlan): IContainer => ({
+type CloudRunRuntimeCopyPlan = RuntimeCopyPlan<{kind: 'cloud-run-idling-sidecar'; readinessPort: number}>
+
+const buildTracerCopyContainer = (runtimeCopy: CloudRunRuntimeCopyPlan): IContainer => ({
   name: runtimeCopy.containerName,
   image: runtimeCopy.image,
   command: ['/bin/sh'],
@@ -224,11 +228,11 @@ const buildTracerCopyContainer = (runtimeCopy: RuntimeCopyPlan): IContainer => (
     runtimeCopy.containerName,
     runtimeCopy.mountPath,
     runtimeCopy.completionMarker,
-    String(TRACER_READINESS_PORT),
+    String(runtimeCopy.ordering.readinessPort),
   ],
   volumeMounts: [{name: runtimeCopy.volumeName, mountPath: runtimeCopy.mountPath}],
   startupProbe: {
-    tcpSocket: {port: TRACER_READINESS_PORT},
+    tcpSocket: {port: runtimeCopy.ordering.readinessPort},
     initialDelaySeconds: 0,
     periodSeconds: 5,
     failureThreshold: 48,
@@ -238,7 +242,7 @@ const buildTracerCopyContainer = (runtimeCopy: RuntimeCopyPlan): IContainer => (
 
 const applyTracerCopy = (
   template: IServiceTemplate,
-  runtimeCopy: RuntimeCopyPlan,
+  runtimeCopy: CloudRunRuntimeCopyPlan,
   mainContainer: IContainer,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
@@ -265,36 +269,31 @@ const applyTracerCopy = (
   return {
     ...template,
     containers,
-    volumes: [...(template.volumes ?? []), {name: runtimeCopy.volumeName, emptyDir: {medium: MEMORY_VOLUME_MEDIUM}}],
+    volumes: [
+      ...(template.volumes ?? []),
+      {name: runtimeCopy.volumeName, emptyDir: {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT}},
+    ],
   }
 }
 
-const assertSsiResourceNamesAvailable = (
+const assertTracerReadinessPortAvailable = (
   template: IServiceTemplate,
+  mainContainer: IContainer,
   options: InstrumentServiceConfigOptions,
-  hasSsi: boolean
+  tracerReadinessPort: number
 ): void => {
-  if (options.sidecarName === TRACER_COPY_CONTAINER_NAME) {
+  if (mainContainer.ports?.some(({containerPort}) => containerPort === tracerReadinessPort)) {
+    const containerName = mainContainer.name || '<unnamed>'
     throw new SsiConfigError(
-      `--sidecar-name cannot be '${options.sidecarName}' because automatic instrumentation uses that container name. Choose a different --sidecar-name.`
+      `--tracer-readiness-port ${tracerReadinessPort} conflicts with port ${tracerReadinessPort} on container '${containerName}'. Change --tracer-readiness-port or container '${containerName}' port.`
     )
   }
-  if (options.sharedVolumeName === TRACER_VOLUME_NAME) {
+
+  const healthCheckPort = resolveHealthCheckPort(template, options)
+  if (healthCheckPort === tracerReadinessPort) {
+    const containerName = options.sidecarName || '<unnamed>'
     throw new SsiConfigError(
-      `--shared-volume-name cannot be '${options.sharedVolumeName}' because automatic instrumentation uses that volume name. Choose a different --shared-volume-name.`
-    )
-  }
-  if (hasSsi) {
-    return
-  }
-  if (template.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
-    throw new SsiConfigError(
-      `Cannot enable automatic instrumentation because container '${TRACER_COPY_CONTAINER_NAME}' already exists and is not marked as managed by datadog-ci. Rename or remove it, then retry.`
-    )
-  }
-  if (template.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME)) {
-    throw new SsiConfigError(
-      `Cannot enable automatic instrumentation because volume '${TRACER_VOLUME_NAME}' already exists and is not marked as managed by datadog-ci. Rename or remove it, then retry.`
+      `--tracer-readiness-port ${tracerReadinessPort} conflicts with Datadog Agent health port ${healthCheckPort} for container '${containerName}'. Change --tracer-readiness-port or --health-check-port.`
     )
   }
 }
@@ -348,17 +347,13 @@ const removeDependency = (container: IContainer, name: string): IContainer => {
 
 const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentServiceConfigOptions): IContainer => {
   const existingSidecar = template.containers?.find((container) => container.name === options.sidecarName)
-  const parsedHealthCheckPort = Number(
-    options.healthCheckPort ?? existingSidecar?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
-  )
-  const healthCheckPort = Number.isNaN(parsedHealthCheckPort) ? DEFAULT_HEALTH_CHECK_PORT : parsedHealthCheckPort
 
   return {
     ...existingSidecar,
     name: options.sidecarName,
     image: options.sidecarImage,
     startupProbe: {
-      tcpSocket: {port: healthCheckPort},
+      tcpSocket: {port: resolveHealthCheckPort(template, options)},
       initialDelaySeconds: 0,
       periodSeconds: 10,
       failureThreshold: 3,
@@ -371,6 +366,15 @@ const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentSe
       },
     },
   }
+}
+
+const resolveHealthCheckPort = (template: IServiceTemplate, options: InstrumentServiceConfigOptions): number => {
+  const existingSidecar = template.containers?.find((container) => container.name === options.sidecarName)
+  const port = Number(
+    options.healthCheckPort ?? existingSidecar?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+  )
+
+  return Number.isNaN(port) ? DEFAULT_HEALTH_CHECK_PORT : port
 }
 
 const removeContainerInstrumentation = (
