@@ -2,7 +2,7 @@ import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR} from '../../helpers/
 import type {Language} from '../../helpers/serverless/ssi/tracer'
 import {LANGUAGE_METADATA} from '../../helpers/serverless/ssi/tracer'
 
-export const DEFAULT_TRACER_REGISTRY = 'gcr.io/datadoghq' as const
+export const CLOUD_RUN_TRACER_REGISTRY = 'gcr.io/datadoghq' as const
 export const DEFAULT_TRACER_VERSION = 'latest' as const
 export const DEFAULT_TRACER_LIBC = 'glibc' as const
 

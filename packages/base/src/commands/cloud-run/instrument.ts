@@ -9,17 +9,11 @@ import {
   DEFAULT_VOLUME_NAME,
 } from '../../helpers/serverless/constants'
 import {LIBCS} from '../../helpers/serverless/ssi/injection-spec'
-import {SINGLE_LANGUAGE_TRACER_REGISTRIES, TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
+import {TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
 
 import {BaseCommand} from '../..'
 
-import {
-  CLOUD_RUN_LANGUAGES,
-  DEFAULT_TRACER_LIBC,
-  DEFAULT_TRACER_REGISTRY,
-  DEFAULT_TRACER_VERSION,
-  TRACING_INPUTS,
-} from './constants'
+import {CLOUD_RUN_LANGUAGES, DEFAULT_TRACER_LIBC, DEFAULT_TRACER_VERSION, TRACING_INPUTS} from './constants'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
@@ -118,12 +112,6 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   protected tracerVersion = Option.String('--tracer-version', {
     description: `The tracer image tag to use with --tracing inject. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
     validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
-  })
-  protected tracerRegistry = Option.String('--tracer-registry', {
-    description: `The tracer image registry to use with --tracing inject. Possible values: ${SINGLE_LANGUAGE_TRACER_REGISTRIES.map(
-      (registry) => `"${registry}"`
-    ).join(', ')}. Defaults to '${DEFAULT_TRACER_REGISTRY}'.`,
-    validator: t.isEnum(SINGLE_LANGUAGE_TRACER_REGISTRIES),
   })
   protected tracerLibc = Option.String('--tracer-libc', {
     description: `The C standard library used by the application image for automatic instrumentation. Possible values: ${LIBCS.map(

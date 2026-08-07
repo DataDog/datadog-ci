@@ -32,7 +32,6 @@ const defaultOptions: SsiOptions = {
   language: undefined,
   tracing: undefined,
   tracerVersion: undefined,
-  tracerRegistry: undefined,
   tracerLibc: undefined,
 }
 
