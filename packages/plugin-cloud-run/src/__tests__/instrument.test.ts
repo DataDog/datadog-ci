@@ -30,6 +30,7 @@ const mockRevisionsClient = {
   getRevision: jest.fn(),
 }
 jest.mock('@google-cloud/run', () => ({
+  ...jest.requireActual('@google-cloud/run'),
   RevisionsClient: jest.fn(() => mockRevisionsClient),
   ServicesClient: jest.fn(() => mockServicesClient),
 }))
@@ -295,8 +296,8 @@ describe('InstrumentCommand', () => {
           conditions: [
             {
               type: 'Ready',
-              state: 'CONDITION_FAILED',
-              revisionReason: 'HEALTH_CHECK_CONTAINER_ERROR',
+              state: 3,
+              revisionReason: 6,
               message: 'The tracer copy container failed its startup probe.',
             },
           ],
@@ -312,9 +313,37 @@ describe('InstrumentCommand', () => {
       expect(mockRevisionsClient.getRevision).toHaveBeenCalledWith({
         name: `${existingService.name}/revisions/test-service-00002`,
       })
+      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('CONDITION_FAILED')
       expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('HEALTH_CHECK_CONTAINER_ERROR')
       expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('https://console.cloud.google.com/logs')
       expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('gcloud run revisions describe')
+    })
+
+    test('does not diagnose the previous revision when no revision was created', async () => {
+      const updateError = new Error('update failed')
+      const previousRevision =
+        'projects/test-project/locations/us-central1/services/test-service/revisions/test-service-00001'
+      const existingService = {
+        name: 'projects/test-project/locations/us-central1/services/test-service',
+        latestCreatedRevision: previousRevision,
+        template: {containers: [{name: 'app'}]},
+      }
+      const generatedService = {
+        name: existingService.name,
+        template: {containers: [{name: 'app'}, {name: TRACER_COPY_CONTAINER_NAME}]},
+      }
+      mockServicesClient.updateService.mockResolvedValue([{promise: jest.fn().mockRejectedValue(updateError)}])
+      mockServicesClient.getService.mockResolvedValue([{...generatedService, latestCreatedRevision: previousRevision}])
+      jest.spyOn(command, 'createInstrumentedServiceConfig').mockReturnValue(generatedService)
+
+      await expect(
+        command.instrumentService(mockServicesClient as any, existingService, 'test-service', 'test-service')
+      ).rejects.toBe(updateError)
+
+      expect(mockRevisionsClient.getRevision).not.toHaveBeenCalled()
+      const diagnosticOutput = stderr.mock.calls.map(([message]) => message).join('')
+      expect(diagnosticOutput).toContain('did not report a new revision')
+      expect(diagnosticOutput).toContain('gcloud run services describe')
     })
 
     test('preserves the update error when revision diagnosis fails', async () => {

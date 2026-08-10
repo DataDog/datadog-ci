@@ -26,7 +26,7 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serv
 import {TRACER_COPY_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
-import {RevisionsClient, ServicesClient} from '@google-cloud/run'
+import {protos, RevisionsClient, ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
@@ -214,7 +214,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         `Instrumented service ${chalk.bold(serviceName)}`
       )
     } catch (error) {
-      await this.diagnoseLatestRevision(client, updatedService, serviceName)
+      await this.diagnoseLatestRevision(client, existingService, updatedService, serviceName)
       throw error
     }
   }
@@ -266,8 +266,13 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     return Object.fromEntries(Object.entries(envVars).map(([name, value]) => [name, {name, value}]))
   }
 
-  private async diagnoseLatestRevision(client: ServicesClient, service: IService, serviceName: string): Promise<void> {
-    const hasTracerContainer = service.template?.containers?.some(
+  private async diagnoseLatestRevision(
+    client: ServicesClient,
+    existingService: IService,
+    updatedService: IService,
+    serviceName: string
+  ): Promise<void> {
+    const hasTracerContainer = updatedService.template?.containers?.some(
       (container) => container.name === TRACER_COPY_CONTAINER_NAME
     )
     if (!hasTracerContainer) {
@@ -278,35 +283,39 @@ export class PluginCommand extends CloudRunInstrumentCommand {
 
     this.context.stderr.write(chalk.yellow('\nDiagnosing the latest Cloud Run revision...\n'))
     try {
-      if (!service.name) {
+      if (!updatedService.name) {
         throw new Error('The service resource name is unavailable.')
       }
 
-      const [latestService] = await client.getService({name: service.name})
-      revisionName = latestService.latestCreatedRevision || undefined
-      if (!revisionName) {
-        throw new Error('Cloud Run did not report a latest created revision.')
-      }
-
-      const [revision] = await new RevisionsClient().getRevision({name: revisionName})
-      this.context.stderr.write(`Latest revision: ${revisionName}\n`)
-      if (revision.conditions?.length) {
-        this.context.stderr.write('Conditions:\n')
-        for (const condition of revision.conditions) {
-          const reason = condition.revisionReason ?? condition.reason
-          const details = [
-            condition.type ?? 'Unknown',
-            typeof condition.state === 'undefined' ? undefined : `state=${condition.state}`,
-            typeof reason === 'undefined' ? undefined : `reason=${reason}`,
-            condition.message ?? undefined,
-          ].filter((detail): detail is string => detail !== undefined)
-          this.context.stderr.write(`  - ${details.join(': ')}\n`)
-        }
+      const [latestService] = await client.getService({name: updatedService.name})
+      const latestRevision = latestService.latestCreatedRevision || undefined
+      if (!latestRevision || latestRevision === existingService.latestCreatedRevision) {
+        this.context.stderr.write('Cloud Run did not report a new revision.\n')
       } else {
-        this.context.stderr.write('Conditions: none reported\n')
-      }
-      if (revision.logUri) {
-        this.context.stderr.write(`Logs: ${revision.logUri}\n`)
+        revisionName = latestRevision
+        const [revision] = await new RevisionsClient().getRevision({name: revisionName})
+        this.context.stderr.write(`Latest revision: ${revisionName}\n`)
+        if (revision.conditions?.length) {
+          this.context.stderr.write('Conditions:\n')
+          for (const condition of revision.conditions) {
+            const state = formatEnum(condition.state, protos.google.cloud.run.v2.Condition.State)
+            const reason =
+              formatEnum(condition.revisionReason, protos.google.cloud.run.v2.Condition.RevisionReason) ??
+              formatEnum(condition.reason, protos.google.cloud.run.v2.Condition.CommonReason)
+            const details = [
+              condition.type ?? 'Unknown',
+              state === undefined ? undefined : `state=${state}`,
+              reason === undefined ? undefined : `reason=${reason}`,
+              condition.message ?? undefined,
+            ].filter((detail): detail is string => detail !== undefined)
+            this.context.stderr.write(`  - ${details.join(': ')}\n`)
+          }
+        } else {
+          this.context.stderr.write('Conditions: none reported\n')
+        }
+        if (revision.logUri) {
+          this.context.stderr.write(`Logs: ${revision.logUri}\n`)
+        }
       }
     } catch (diagnosticError) {
       this.context.stderr.write(
@@ -340,3 +349,6 @@ const servicesAreEqual = (left: IService, right: IService): boolean =>
 const getErrorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 const getRevisionId = (revisionName: string) => revisionName.split('/').pop() ?? revisionName
+
+const formatEnum = (value: number | string | null | undefined, values: Record<number, string>): string | undefined =>
+  typeof value === 'number' ? (values[value] ?? String(value)) : (value ?? undefined)

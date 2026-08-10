@@ -97,7 +97,9 @@ const sortObject = (obj: any): any => {
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(sortObject)
+    return obj.map(sortObject).sort((a, b) => {
+      return JSON.stringify(a).localeCompare(JSON.stringify(b))
+    })
   }
 
   if (typeof obj === 'object') {
