@@ -398,6 +398,12 @@ describe('UninstrumentCommand', () => {
       expect(result.env).toEqual([])
     })
 
+    test('removes dependencies on the Agent container without an SSI label', () => {
+      expect(cleanAppContainer({name: 'main', dependsOn: ['datadog-sidecar', 'database']}).dependsOn).toEqual([
+        'database',
+      ])
+    })
+
     test('removes configured environment variables', () => {
       envVarNames = new Set(['CUSTOM_VAR', 'ANOTHER_VAR'])
       const appContainer = {

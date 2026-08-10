@@ -151,7 +151,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         volumeName: TRACER_VOLUME_NAME,
         mountPath: TRACER_MOUNT_PATH,
         completionMarker: getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
-        artifacts: ssiConfig.spec.artifacts as RuntimeCopyPlan['artifacts'],
+        artifacts: ssiConfig.spec.artifacts,
       },
       {kind: 'cloud-run-idling-sidecar', readinessPort: tracerReadinessPort}
     )
@@ -385,10 +385,8 @@ const removeContainerInstrumentation = (
   hasSsi: boolean
 ): IContainer => {
   const hasTracerMount = container.volumeMounts?.some((mount) => mount.name === TRACER_VOLUME_NAME) ?? false
-  let updated = hasSsi && hasTracerMount ? removeExistingSsiContainer(container, true) : container
-  if (hasSsi) {
-    updated = removeDependency(updated, agentContainerName)
-  }
+  const withoutSsi = hasSsi && hasTracerMount ? removeExistingSsiContainer(container, true) : container
+  const updated = removeDependency(withoutSsi, agentContainerName)
 
   return {
     ...updated,

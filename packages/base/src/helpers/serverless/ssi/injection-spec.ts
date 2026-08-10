@@ -14,7 +14,7 @@ export type RequiredArtifact = readonly [string, ...string[]]
 
 export interface LanguageInjectionSpec {
   readonly image: string
-  readonly artifacts: readonly RequiredArtifact[]
+  readonly artifacts: readonly [RequiredArtifact, ...RequiredArtifact[]]
   readonly env: readonly EnvFragment[]
 }
 
