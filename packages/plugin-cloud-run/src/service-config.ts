@@ -14,7 +14,6 @@ import {
   TRACER_VOLUME_NAME,
   TRACER_VOLUME_SIZE_LIMIT,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
-import {buildRuntimeCopyPlan, type RuntimeCopyPlan} from '@datadog/datadog-ci-base/helpers/serverless/ssi/runtime-copy'
 import {getTracerCopyCompletionMarker} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
@@ -144,18 +143,16 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         container === mainContainer ? configuredMainContainer : container
       ),
     }
-    const runtimeCopy = buildRuntimeCopyPlan(
+    template = applyTracerCopy(
+      template,
       {
         image: ssiConfig.spec.image,
-        containerName: TRACER_COPY_CONTAINER_NAME,
-        volumeName: TRACER_VOLUME_NAME,
-        mountPath: TRACER_MOUNT_PATH,
         completionMarker: getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
-        artifacts: ssiConfig.spec.artifacts,
+        readinessPort: tracerReadinessPort,
       },
-      {kind: 'cloud-run-idling-sidecar', readinessPort: tracerReadinessPort}
+      configuredMainContainer,
+      [options.sidecarName]
     )
-    template = applyTracerCopy(template, runtimeCopy, configuredMainContainer, [options.sidecarName])
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 
@@ -216,23 +213,27 @@ const TRACER_COPY_SCRIPT = [
   'exec /datadog-init/probe-server "$3"',
 ].join('\n')
 
-type CloudRunRuntimeCopyPlan = RuntimeCopyPlan<{kind: 'cloud-run-idling-sidecar'; readinessPort: number}>
+interface TracerCopyConfig {
+  image: string
+  completionMarker: string
+  readinessPort: number
+}
 
-const buildTracerCopyContainer = (runtimeCopy: CloudRunRuntimeCopyPlan): IContainer => ({
-  name: runtimeCopy.containerName,
-  image: runtimeCopy.image,
+const buildTracerCopyContainer = (config: TracerCopyConfig): IContainer => ({
+  name: TRACER_COPY_CONTAINER_NAME,
+  image: config.image,
   command: ['/bin/sh'],
   args: [
     '-c',
     TRACER_COPY_SCRIPT,
-    runtimeCopy.containerName,
-    runtimeCopy.mountPath,
-    runtimeCopy.completionMarker,
-    String(runtimeCopy.ordering.readinessPort),
+    TRACER_COPY_CONTAINER_NAME,
+    TRACER_MOUNT_PATH,
+    config.completionMarker,
+    String(config.readinessPort),
   ],
-  volumeMounts: [{name: runtimeCopy.volumeName, mountPath: runtimeCopy.mountPath}],
+  volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
   startupProbe: {
-    tcpSocket: {port: runtimeCopy.ordering.readinessPort},
+    tcpSocket: {port: config.readinessPort},
     initialDelaySeconds: 0,
     periodSeconds: 5,
     failureThreshold: 48,
@@ -242,36 +243,39 @@ const buildTracerCopyContainer = (runtimeCopy: CloudRunRuntimeCopyPlan): IContai
 
 const applyTracerCopy = (
   template: IServiceTemplate,
-  runtimeCopy: CloudRunRuntimeCopyPlan,
+  config: TracerCopyConfig,
   mainContainer: IContainer,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
-  const managedDependencies = new Set([runtimeCopy.containerName, ...dependencyNames])
+  const managedDependencies = new Set([TRACER_COPY_CONTAINER_NAME, ...dependencyNames])
   const containers = (template.containers ?? []).map((container) =>
     container === mainContainer
       ? {
           ...container,
           volumeMounts: [
-            ...(container.volumeMounts ?? []).filter((mount) => mount.name !== runtimeCopy.volumeName),
-            {name: runtimeCopy.volumeName, mountPath: runtimeCopy.mountPath},
+            ...(container.volumeMounts ?? []).filter((mount) => mount.name !== TRACER_VOLUME_NAME),
+            {name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH},
           ],
           dependsOn: [
             ...(container.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
-            runtimeCopy.containerName,
+            TRACER_COPY_CONTAINER_NAME,
             ...dependencyNames,
           ],
         }
       : container
   )
 
-  containers.push(buildTracerCopyContainer(runtimeCopy))
+  containers.push(buildTracerCopyContainer(config))
 
   return {
     ...template,
     containers,
     volumes: [
       ...(template.volumes ?? []),
-      {name: runtimeCopy.volumeName, emptyDir: {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT}},
+      {
+        name: TRACER_VOLUME_NAME,
+        emptyDir: {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT},
+      },
     ],
   }
 }
