@@ -11,8 +11,6 @@ import {
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
-  EnvFragmentConflictError,
-  EnvFragmentLengthError,
   mergeEnvFragment,
   mergeInjectionModeTag,
   removeEnvFragment,
@@ -221,19 +219,6 @@ const mergeLanguageEnvFragment = (currentValue: string | undefined, fragment: En
   try {
     return mergeEnvFragment(currentValue, fragment)
   } catch (error) {
-    if (error instanceof EnvFragmentConflictError) {
-      throw new SsiConfigError(
-        `Cannot enable automatic instrumentation because ${fragment.name} has a conflicting value. Set ${fragment.name} to ${JSON.stringify(
-          fragment.value
-        )} or use --tracing manual.`
-      )
-    }
-    if (error instanceof EnvFragmentLengthError) {
-      throw new SsiConfigError(
-        `Cannot enable automatic instrumentation because adding to ${fragment.name} would exceed its allowed length. Shorten ${fragment.name} or use --tracing manual.`
-      )
-    }
-
     throw new SsiConfigError(
       `Cannot enable automatic instrumentation while updating ${fragment.name}: ${error instanceof Error ? error.message : String(error)}`
     )

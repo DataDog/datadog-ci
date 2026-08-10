@@ -135,16 +135,9 @@ export class EnvFragmentConflictError extends Error {
   }
 }
 
-export class EnvFragmentLengthError extends Error {
-  constructor(name: string, maxLength: number) {
-    super(`${name} exceeds its ${maxLength}-byte limit`)
-    this.name = 'EnvFragmentLengthError'
-  }
-}
-
 const assertWithinMaxLength = (value: string, fragment: EnvFragment): void => {
   if (fragment.maxLength !== undefined && Buffer.byteLength(value) > fragment.maxLength) {
-    throw new EnvFragmentLengthError(fragment.name, fragment.maxLength)
+    throw new Error(`${fragment.name} exceeds its ${fragment.maxLength}-byte limit`)
   }
 }
 

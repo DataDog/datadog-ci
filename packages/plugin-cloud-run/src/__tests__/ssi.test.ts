@@ -137,10 +137,10 @@ describe('language injection environment', () => {
     ).toThrow(/more than once/)
   })
 
-  test('explains how to resolve a conflicting scalar value', () => {
+  test('reports a conflicting scalar value', () => {
     expect(() =>
       mergeLanguageInjectionEnv([{name: 'CORECLR_ENABLE_PROFILING', value: '0'}], getSpec('csharp'))
-    ).toThrow(/Set CORECLR_ENABLE_PROFILING to "1" or use --tracing manual/)
+    ).toThrow(/CORECLR_ENABLE_PROFILING is already set to "0"; expected "1"/)
   })
 
   test.each(supportedLanguageVariants)('removes the %s/%s tracer environment', (language, libc) => {
