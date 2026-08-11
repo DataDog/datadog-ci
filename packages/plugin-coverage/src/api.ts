@@ -24,6 +24,7 @@ export const uploadCodeCoverageReport =
       basepath: payload.basePath,
       ...payload.spanTags,
       ...(payload.flags ? {'report.flags': payload.flags} : {}),
+      ...(payload.ignoredSourcePaths ? {'report.ignored_source_paths': payload.ignoredSourcePaths} : {}),
     }
 
     if (payload.codeowners) {
