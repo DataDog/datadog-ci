@@ -103,7 +103,15 @@ jobs:
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
-    needs: [build-and-test, check-container-app-changes, check-aas-changes, check-cloud-run-changes, check-version-bump-only, check-lambda-changes]
+    needs:
+      [
+        build-and-test,
+        check-container-app-changes,
+        check-aas-changes,
+        check-cloud-run-changes,
+        check-version-bump-only,
+        check-lambda-changes,
+      ]
     permissions:
       contents: read
       id-token: write
@@ -212,6 +220,13 @@ jobs:
       should_run: ${{ steps.filter.outputs.container-app }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # Full history for all branches is needed so `dorny/paths-filter` can compute the merge-base locally
+          # without re-fetching the head branch by name, which fails for throwaway `*--headless-tmp-*` branches
+          # when they are deleted just before `dorny/paths-filter`, making the job flaky.
+          #
+          # This happens on ADMS PRs for dependency bumps, which uses: https://github.com/DataDog/commit-headless/blob/5bcf62a22b222221c0d01ce11f6129a7c48ddd9d/github.go#L208-L209
+          fetch-depth: 0
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -234,6 +249,9 @@ jobs:
       should_run: ${{ steps.filter.outputs.cloud-run }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
+          fetch-depth: 0
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -256,6 +274,9 @@ jobs:
       should_run: ${{ steps.filter.outputs.aas }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
+          fetch-depth: 0
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -279,6 +300,9 @@ jobs:
       should_run: ${{ steps.filter.outputs.lambda }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
+          fetch-depth: 0
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
