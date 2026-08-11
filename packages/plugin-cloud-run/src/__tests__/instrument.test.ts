@@ -29,6 +29,12 @@ const mockServicesClient = {
 const mockRevisionsClient = {
   getRevision: jest.fn(),
 }
+const mockLoggingClient = {
+  getEntries: jest.fn(),
+}
+jest.mock('@google-cloud/logging', () => ({
+  Logging: jest.fn(() => mockLoggingClient),
+}))
 jest.mock('@google-cloud/run', () => ({
   ...jest.requireActual('@google-cloud/run'),
   RevisionsClient: jest.fn(() => mockRevisionsClient),
@@ -46,6 +52,7 @@ describe('InstrumentCommand', () => {
     }
     ;(apikey.newApiKeyValidator as jest.Mock).mockReturnValue(mockValidator)
     ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(true)
+    mockLoggingClient.getEntries.mockResolvedValue([[]])
 
     // Reset mock client
     mockServicesClient.servicePath.mockImplementation(
@@ -277,7 +284,7 @@ describe('InstrumentCommand', () => {
       expect(promise).toHaveBeenCalled()
     })
 
-    test('diagnoses the latest revision for a markerless tracer update failure', async () => {
+    test('diagnoses a failed tracer update', async () => {
       const updateError = new Error('revision failed to become ready')
       const existingService = {
         name: 'projects/test-project/locations/us-central1/services/test-service',
@@ -304,6 +311,14 @@ describe('InstrumentCommand', () => {
           logUri: 'https://console.cloud.google.com/logs/viewer?revision=test-service-00002',
         },
       ])
+      mockLoggingClient.getEntries.mockResolvedValue([
+        [
+          {
+            data: 'The tracer copy container failed its startup probe.',
+            metadata: {timestamp: '2025-01-01T00:00:00Z', severity: 'ERROR'},
+          },
+        ],
+      ])
       jest.spyOn(command, 'createInstrumentedServiceConfig').mockReturnValue(generatedService)
 
       await expect(
@@ -313,10 +328,18 @@ describe('InstrumentCommand', () => {
       expect(mockRevisionsClient.getRevision).toHaveBeenCalledWith({
         name: `${existingService.name}/revisions/test-service-00002`,
       })
-      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('CONDITION_FAILED')
-      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('HEALTH_CHECK_CONTAINER_ERROR')
-      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('https://console.cloud.google.com/logs')
-      expect(stderr.mock.calls.map(([message]) => message).join('')).toContain('gcloud run revisions describe')
+      expect(mockLoggingClient.getEntries).toHaveBeenCalledWith({
+        filter:
+          'resource.type="cloud_run_revision" AND resource.labels.location="us-central1" AND resource.labels.service_name="test-service" AND resource.labels.revision_name="test-service-00002"',
+        orderBy: 'timestamp desc',
+        maxResults: 50,
+      })
+      const diagnosticOutput = stderr.mock.calls.flat().join('')
+      expect(diagnosticOutput).toContain('CONDITION_FAILED')
+      expect(diagnosticOutput).toContain('HEALTH_CHECK_CONTAINER_ERROR')
+      expect(diagnosticOutput).toContain('https://console.cloud.google.com/logs')
+      expect(diagnosticOutput).toContain('The tracer copy container failed its startup probe.')
+      expect(diagnosticOutput).not.toContain('gcloud')
     })
 
     test('does not diagnose the previous revision when no revision was created', async () => {
@@ -341,9 +364,8 @@ describe('InstrumentCommand', () => {
       ).rejects.toBe(updateError)
 
       expect(mockRevisionsClient.getRevision).not.toHaveBeenCalled()
-      const diagnosticOutput = stderr.mock.calls.map(([message]) => message).join('')
-      expect(diagnosticOutput).toContain('did not report a new revision')
-      expect(diagnosticOutput).toContain('gcloud run services describe')
+      expect(mockLoggingClient.getEntries).not.toHaveBeenCalled()
+      expect(stderr.mock.calls.flat().join('')).toContain('did not report a new revision')
     })
 
     test('preserves the update error when revision diagnosis fails', async () => {
@@ -364,9 +386,9 @@ describe('InstrumentCommand', () => {
         command.instrumentService(mockServicesClient as any, existingService, 'test-service', 'test-service')
       ).rejects.toBe(updateError)
 
-      const diagnosticOutput = stderr.mock.calls.map(([message]) => message).join('')
-      expect(diagnosticOutput).toContain('Unable to read the latest revision details: revision read denied')
-      expect(diagnosticOutput).toContain('gcloud run services describe')
+      expect(stderr.mock.calls.flat().join('')).toContain(
+        'Unable to diagnose the latest revision: revision read denied'
+      )
     })
   })
 
