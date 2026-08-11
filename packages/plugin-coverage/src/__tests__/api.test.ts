@@ -262,6 +262,9 @@ describe('uploadCodeCoverageReport', () => {
     const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
     const eventJson = JSON.parse(eventCall[1])
 
+    // Must be a JSON array: the intake rejects a joined string against the event schema and
+    // drops the whole upload, not just this field.
+    expect(Array.isArray(eventJson['report.ignored_source_paths'])).toBe(true)
     expect(eventJson['report.ignored_source_paths']).toEqual(['**/generated/**', 'src/gen/**'])
     expect(eventJson['report.flags']).toEqual(['type:unit-tests'])
   })
