@@ -427,7 +427,7 @@ The proxy to be used for outgoing connections to Datadog. `host` and `port` keys
 
 Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic [test configuration files](#test-files).
 
-A public ID can refer to a test, a specific version of a test (e.g. `aaa-aaa-aaa@2`) or to a [Test Suite](https://docs.datadoghq.com/synthetics/test_suites/), in which case all tests in the suite are run.
+A public ID can refer to a test, a specific version of a test (e.g. `aaa-aaa-aaa@2`) or to a [Test Suite][20], in which case all tests in the suite are run.
 
 **Configuration options**
 
