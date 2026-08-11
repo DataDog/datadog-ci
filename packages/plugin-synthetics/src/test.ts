@@ -68,10 +68,12 @@ export const getTestConfigs = async (
 
   const testConfigs = suites
     .map((suite) =>
-      suite.content.tests.map((test) => {
+      suite.content.tests.map<TriggerConfig>((test) => {
+        const suiteFileName = suite.name
+
         return {
           testOverrides: test.testOverrides,
-          suite: suite.name,
+          suite: suiteFileName,
           ...(isLocalTriggerConfig(test)
             ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
             : {
@@ -251,7 +253,7 @@ const getTest = async (
     return {test}
   }
 
-  const {id: publicId, suite, version} = triggerConfig
+  const {id: publicId, suite: suiteFileName, version} = triggerConfig
 
   if (version !== undefined) {
     try {
@@ -278,12 +280,18 @@ const getTest = async (
   try {
     const test = {
       ...(await api.getTest(publicId)),
-      suite,
+      suite: suiteFileName,
     }
 
     return {test}
   } catch (error) {
     if (isNotFoundError(error)) {
+      // The public ID might refer to a test suite rather than a test. In that case, the `/trigger/ci` endpoint fans out the suite into its member tests in the CI batch.
+      const suiteAsTest = await getSuiteAsTest(api, publicId, suiteFileName)
+      if (suiteAsTest) {
+        return {test: suiteAsTest}
+      }
+
       const errorMessage = formatBackendErrors(error)
 
       return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
@@ -296,6 +304,27 @@ const getTest = async (
     }
 
     throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
+  }
+}
+
+const getSuiteAsTest = async (api: APIHelper, publicId: string, suite?: string): Promise<Test | undefined> => {
+  try {
+    const {data} = await api.getSyntheticsSuite(publicId)
+
+    // Placeholder test representing the test suite.
+    return {
+      config: {assertions: [], variables: []},
+      locations: [],
+      name: data.attributes.name,
+      options: {},
+      public_id: data.id,
+      type: 'suite',
+      memberPublicIds: data.attributes.tests.map((t) => t.public_id),
+      suite,
+    }
+  } catch (error) {
+    // In most cases, the publicId won't refer to a suite, so we return undefined to favor the "Test not found" error.
+    return undefined
   }
 }
 

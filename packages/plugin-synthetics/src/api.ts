@@ -15,6 +15,7 @@ import type {
   RawPollResultTest,
   RawPollResult,
   ServerBatch,
+  ServerSuiteResponse,
   ServerTest,
   SyntheticsOrgSettings,
   TestSearchResult,
@@ -117,6 +118,19 @@ const getTest =
         url: testType
           ? datadogRoute('/synthetics/tests/:testType/:testId', {testId, testType})
           : datadogRoute('/synthetics/tests/:testId', {testId}),
+      },
+      request,
+      {retryOn429: true}
+    )
+
+    return resp.data
+  }
+
+const getSyntheticsSuite =
+  (request: (args: RequestConfig) => Promise<RequestResponse<ServerSuiteResponse>>) => async (suiteId: string) => {
+    const resp = await retryRequest(
+      {
+        url: datadogRoute('/synthetics/suites/:suiteId', {suiteId}),
       },
       request,
       {retryOn429: true}
@@ -470,6 +484,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
   return {
     getBatch: getBatch(requestV1),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
+    getSyntheticsSuite: getSyntheticsSuite(requestV2),
     getTest: getTest(requestV1),
     getTestVersion: getTestVersion(requestV2),
     getLocalTestDefinition: getLocalTestDefinition(requestV1),

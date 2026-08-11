@@ -29,6 +29,7 @@ export const DATADOG_ROUTE_PATHS = [
   '/synthetics/mobile/applications/:applicationId/multipart-upload-complete',
   '/synthetics/mobile/applications/validation-job-status/:jobId',
   '/synthetics/settings',
+  '/synthetics/suites/:suiteId',
   '/synthetics/tests/:testId',
   '/synthetics/tests/:testId/version_history/:version?only_check_existence=true',
   '/synthetics/tests/:testType/:testId',

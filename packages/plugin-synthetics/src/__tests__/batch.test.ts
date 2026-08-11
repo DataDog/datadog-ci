@@ -243,6 +243,38 @@ describe('waitForResults', () => {
     ).toEqual([result])
   })
 
+  test('should match a batch result to a triggered suite by membership', async () => {
+    // The polled result carries no `test` details of its own here, to isolate the suite-membership matching
+    // (in reality the member test's own details would come back via `pollResult.test` and get merged in).
+    mockApi({
+      pollResultsImplementation: async () => [{...deepExtend({}, pollResult), test: {}} as PollResult],
+    })
+
+    const suiteTest: Test = {
+      ...apiTest,
+      public_id: 'suite-pid',
+      type: 'suite',
+      memberPublicIds: [apiTest.public_id],
+    } as Test
+
+    const results = await waitForResults(
+      api,
+      trigger,
+      [suiteTest],
+      {
+        batchTimeout: 120000,
+        datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+        failOnCriticalErrors: false,
+        subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+      },
+      mockReporter
+    )
+
+    const memberTest = {...suiteTest, public_id: apiTest.public_id}
+    expect(results).toEqual([{...result, test: memberTest}])
+    expect(mockReporter.testsWait).toHaveBeenCalledWith([memberTest], expect.anything(), 'bid')
+  })
+
   test('should show results as they arrive', async () => {
     jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
