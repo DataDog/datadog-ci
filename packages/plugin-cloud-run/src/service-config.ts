@@ -235,6 +235,7 @@ const buildTracerCopyContainer = (config: TracerCopyConfig): IContainer => ({
   startupProbe: {
     tcpSocket: {port: config.readinessPort},
     initialDelaySeconds: 0,
+    // Poll every 5 seconds (48 times) for Cloud Run's maximum 240-second startup window.
     periodSeconds: 5,
     failureThreshold: 48,
     timeoutSeconds: 1,
