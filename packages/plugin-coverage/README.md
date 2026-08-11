@@ -42,6 +42,7 @@ datadog-ci coverage upload --ignored-source-paths "**/generated/**,src/gen/**" .
 ```
 
 - Patterns are separated by commas or newlines. Commas inside a brace group are **not** separators, so `**/*.{js,ts}` and regex quantifiers such as `.{2,4}` can be used as-is. A newline-separated list is convenient for long lists passed through `DD_COVERAGE_IGNORED_SOURCE_PATHS`.
+- Only brace groups protect a comma. A comma inside a character class is still a separator, so a pattern like `^src/[a,b]/.*$` is split in two; write it as `^src/[ab]/.*$`, or put it in `code-coverage.datadog.yml`. The same applies to any other pattern that needs a literal comma outside a brace group.
 - The list **replaces** the `ignore` list of `code-coverage.datadog.yml` for this upload; the two are not merged. When the option is not passed (or its value contains no patterns, for instance because the environment variable is unset), the configured `ignore` list applies as usual.
 - Scope is per-upload: the list only affects the reports uploaded by this invocation.
 - Up to 2,000 patterns and 256 KB are accepted, and the command warns above 1,000 patterns or 100 KB. Note that Windows `cmd.exe` caps a whole command line at 8,191 characters; use `code-coverage.datadog.yml` for long lists there.

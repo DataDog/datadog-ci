@@ -46,6 +46,10 @@ describe('splitPatternList', () => {
     expect(splitPatternList('a},b')).toStrictEqual(['a}', 'b'])
   })
 
+  it('splits a comma inside a character class (known limitation: only braces are tracked)', () => {
+    expect(splitPatternList('^src/[a,b]/.*$')).toStrictEqual(['^src/[a', 'b]/.*$'])
+  })
+
   it('keeps negation and other glob characters verbatim', () => {
     expect(splitPatternList('!**/*.test.ts,**/*.ts')).toStrictEqual(['!**/*.test.ts', '**/*.ts'])
   })

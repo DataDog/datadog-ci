@@ -3,7 +3,8 @@
  *
  * Commas at brace depth 0 and newlines are separators. Commas inside a brace group are not,
  * so that brace expansion (`**\/*.{js,ts}`) and bounded regex quantifiers (`.{2,4}`) survive
- * the split. Unbalanced braces fall back to a plain comma split.
+ * the split. Unbalanced braces fall back to a plain comma split. Only braces are tracked: a
+ * comma inside a character class (`^src/[a,b]/.*$`) still splits.
  *
  * Unlike `parsePathsList` in `./glob`, patterns are never expanded against the local
  * filesystem: they are meant to be interpreted elsewhere and must be preserved verbatim.
