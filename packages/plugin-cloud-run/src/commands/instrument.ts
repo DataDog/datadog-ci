@@ -131,7 +131,8 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     try {
       await this.instrumentSidecar(this.project, this.services, this.region, ddService)
     } catch (error) {
-      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${error}\n`))
+      const message = error instanceof Error ? error.message : String(error)
+      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Instrumentation failed: ${message}\n`))
 
       return 1
     }
@@ -161,10 +162,8 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         const actualDDService = ddService ?? serviceName
         await this.instrumentService(client, serviceConfig, serviceName, actualDDService)
       } catch (error) {
-        this.context.stderr.write(
-          dryRunPrefix(this.dryRun) + renderError(`Failed to instrument service ${serviceName}: ${error}\n`)
-        )
-        throw error
+        const message = error instanceof Error ? error.message : String(error)
+        throw new Error(`Failed to instrument service ${serviceName}: ${message}`)
       }
     }
   }

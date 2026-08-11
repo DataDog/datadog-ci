@@ -86,7 +86,7 @@ describe('InstrumentCommand', () => {
       const mockInstrumentSidecar = jest.fn().mockRejectedValue(new Error('Failed to instrument sidecar'))
       jest.spyOn(InstrumentCommand.prototype as any, 'instrumentSidecar').mockImplementation(mockInstrumentSidecar)
 
-      const {code} = await runCLI([
+      const {code, context} = await runCLI([
         '--project',
         'test-project',
         '--services',
@@ -95,6 +95,8 @@ describe('InstrumentCommand', () => {
         'us-central1',
       ])
       expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('Instrumentation failed: Failed to instrument sidecar')
+      expect(context.stderr.toString()).not.toContain('Uninstrumentation failed')
     })
 
     test('should succeed with valid parameters', async () => {

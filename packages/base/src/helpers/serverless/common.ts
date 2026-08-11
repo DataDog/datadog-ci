@@ -208,14 +208,14 @@ interface SharedVolumeOptions {
   volumeMountNameKey: 'name' | 'volumeName'
 }
 
-/**
- * Given the configuration, an app template, the base sidecar configuration, and base shared volume,
- */
+/** Adds the Datadog sidecar, shared volume, and environment to an app template. */
 export const createInstrumentedTemplate = (
   template: FullyOptional<AppTemplate>,
   baseSidecar: FullyOptional<Container>,
   sharedVolumeOptions: SharedVolumeOptions,
-  envVarsByName: Record<string, FullyOptional<EnvVar>>
+  envVarsByName: Record<string, FullyOptional<EnvVar>>,
+  /** Limits app instrumentation by container identity. An empty set targets none; undefined targets all. */
+  targetContainers?: ReadonlySet<FullyOptional<Container>>
 ): AppTemplate => {
   const sharedVolumeMount: VolumeMount = {
     [sharedVolumeOptions.volumeMountNameKey]: sharedVolumeOptions.name,
@@ -257,10 +257,13 @@ export const createInstrumentedTemplate = (
     volumeMounts: ensureSharedVolumeMount(existingSidecarContainer?.volumeMounts ?? baseSidecar.volumeMounts),
   } as Container
 
-  // Update all app containers to add volume mounts and env vars if they don't have them
   const updatedContainers = containers.map((container) => {
     if (container.name === baseSidecar.name) {
       return newSidecarContainer
+    }
+
+    if (targetContainers && !targetContainers.has(container)) {
+      return container
     }
 
     return {

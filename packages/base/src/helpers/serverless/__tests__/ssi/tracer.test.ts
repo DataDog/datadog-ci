@@ -1,6 +1,7 @@
 import {
   SINGLE_LANGUAGE_TRACER_REGISTRIES,
   buildSingleLanguageTracerImage,
+  getTracerCopyCompletionMarker,
   type Language,
   type SingleLanguageTracerRegistry,
   type TracerLanguage,
@@ -9,13 +10,14 @@ import {
 const languageCases: {
   language: Language
   tracerLanguage: TracerLanguage
+  repository: string
 }[] = [
-  {language: 'java', tracerLanguage: 'java'},
-  {language: 'nodejs', tracerLanguage: 'js'},
-  {language: 'csharp', tracerLanguage: 'dotnet'},
-  {language: 'python', tracerLanguage: 'python'},
-  {language: 'ruby', tracerLanguage: 'ruby'},
-  {language: 'php', tracerLanguage: 'php'},
+  {language: 'java', tracerLanguage: 'java', repository: 'dd-trace-java'},
+  {language: 'nodejs', tracerLanguage: 'js', repository: 'dd-trace-js'},
+  {language: 'csharp', tracerLanguage: 'dotnet', repository: 'dd-trace-dotnet'},
+  {language: 'python', tracerLanguage: 'python', repository: 'dd-trace-py'},
+  {language: 'ruby', tracerLanguage: 'ruby', repository: 'dd-trace-rb'},
+  {language: 'php', tracerLanguage: 'php', repository: 'dd-trace-php'},
 ]
 
 describe('language and image metadata', () => {
@@ -27,6 +29,10 @@ describe('language and image metadata', () => {
     expect(buildSingleLanguageTracerImage(registry, language, '1.2.3')).toBe(
       `${registry}/dd-lib-${tracerLanguage}-init:1.2.3`
     )
+  })
+
+  test.each(languageCases)('builds the $repository completion marker for $language', ({language, repository}) => {
+    expect(getTracerCopyCompletionMarker(language, '/datadog-lib')).toBe(`/datadog-lib/.${repository}-copy-finished`)
   })
 
   test.each(['go', 'toString', 'constructor', '__proto__'])(
