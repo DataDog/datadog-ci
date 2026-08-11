@@ -46,7 +46,12 @@ datadog-ci coverage upload --ignored-source-paths "**/generated/**,src/gen/**" .
 - The list **replaces** the `ignore` list of `code-coverage.datadog.yml` for this upload; the two are not merged. When the option is not passed (or its value contains no patterns, for instance because the environment variable is unset), the configured `ignore` list applies as usual.
 - Scope is per-upload: the list only affects the reports uploaded by this invocation.
 - Up to 2,000 patterns, 1,000 characters per pattern, and 256 KB in total are accepted; anything larger fails with an error naming what was exceeded. The total-size limit is a backstop: on most systems the operating system rejects a value that large first (see below). Above 1,000 patterns or 100 KB the upload still happens and the command prints a warning. The per-pattern limit matches the backend's, so a pattern that would be silently discarded there is rejected here instead — otherwise discarding the last pattern would empty the list and quietly bring the configured `ignore` list back.
-- The operating system limits the value long before the 256 KB cap does. On Linux a single argument or environment variable cannot exceed 128 KB (`MAX_ARG_STRLEN`), and exceeding it fails with `Argument list too long` before `datadog-ci` starts; Windows `cmd.exe` caps a whole command line at 8,191 characters. Use `code-coverage.datadog.yml` for lists that large. For scale, 500 patterns of 80 characters is about 40 KB, well inside every limit.
+- On most systems the operating system rejects an oversized value before `datadog-ci` runs, and the limit differs per platform:
+  - **Linux**: 128 KB for any single argument or environment variable (`MAX_ARG_STRLEN`). Exceeding it fails with `Argument list too long`, and the environment variable is bound by the same limit, so it is not a way around it.
+  - **macOS**: no per-argument limit, but roughly 256 KB for all arguments *plus* the entire environment, so a large environment leaves less room for the list.
+  - **Windows**: 32,767 characters for the whole command line, and only 8,191 through `cmd.exe` — which is what the `npm`/`yarn` shims use, so 8,191 is the practical limit.
+
+  Use `code-coverage.datadog.yml` for lists that approach these. For scale, 500 patterns of 80 characters is about 40 KB, well inside every platform's limit.
 - Do not confuse this with `--ignored-paths`, which excludes coverage *report files* from local reports discovery.
 
 #### Environment variables
