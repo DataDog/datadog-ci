@@ -71,7 +71,7 @@ export class CoverageUploadCommand extends BaseCommand {
 
   protected ignoredPaths = Option.String('--ignored-paths', {
     description:
-      'A comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported.',
+      'A comma-separated list of paths to skip while the given directories are searched for coverage report files (it does not apply to report files passed explicitly). Glob patterns are supported. Not to be confused with `--ignored-source-paths`, which excludes source files from the coverage computation.',
   })
 
   protected ignoredSourcePaths = Option.String('--ignored-source-paths', {

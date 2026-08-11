@@ -21,7 +21,7 @@ datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 unit-tests/cov
 ```
 
 - The positional arguments are directories, files, or glob patterns that will be used when looking for coverage report files. If you pass a folder, the CLI will do a recursive search looking for supported coverage reports.
-- `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported. This filters **coverage report files** on your machine, and has no effect on which source files are covered.
+- `--ignored-paths` a comma-separated list of paths to skip while the directories you passed are searched for coverage report files. Glob patterns are supported, and a path matches if it appears anywhere in the file path. It does not apply to report files you passed explicitly. This filters **coverage report files** on your machine, and has no effect on which source files are covered.
 - `--ignored-source-paths` a list of **source file** patterns to exclude from the coverage computation. This is the command-line equivalent of the `ignore` list in `code-coverage.datadog.yml`, and it **replaces** that list for this upload (the two are not merged). See [Ignoring source paths](#ignoring-source-paths) below.
 - `--base-path` a string specifying the base (relative to repository root) for the file paths inside the coverage reports. If not specified, the paths inside the reports are considered relative to repository root.
 - `--flags` (repeatable): flags to mark coverage reports for grouping and filtering (e.g., `type:unit-tests`, `jvm-21`). Maximum 32 flags per report. Can be specified multiple times: `--flags type:unit-tests --flags jvm-21`.
