@@ -262,15 +262,15 @@ describe('uploadCodeCoverageReport', () => {
     const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
     const eventJson = JSON.parse(eventCall[1])
 
-    // Must be a JSON array: the intake rejects a joined string against the event schema and
-    // drops the whole upload, not just this field.
+    // Must be a JSON array: a joined string is not the canonical wire form and the intake
+    // will not read it as a list of patterns.
     expect(Array.isArray(eventJson['report.ignored_source_paths'])).toBe(true)
     expect(eventJson['report.ignored_source_paths']).toEqual(['**/generated/**', 'src/gen/**'])
     expect(eventJson['report.flags']).toEqual(['type:unit-tests'])
   })
 
   // A single pattern is the case a refactor is most likely to "simplify" into a bare string,
-  // which the intake rejects by dropping the whole event.
+  // which the intake would then ignore, silently reinstating the configured `ignore` list.
   it('sends a single ignored source path as an array, not a string', async () => {
     const requestMock = jest.fn().mockResolvedValue({status: 200})
 
@@ -361,7 +361,7 @@ describe('uploadCodeCoverageReport', () => {
     const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
     const eventJson = JSON.parse(eventCall[1])
 
-    // Dropping the tag keeps the upload alive; sending a string would lose the whole report.
+    // The rest of the event is unaffected: dropping the tag must not disturb the upload.
     expect(eventJson).not.toHaveProperty('report.ignored_source_paths')
     expect(eventJson.type).toBe('coverage_report')
   })

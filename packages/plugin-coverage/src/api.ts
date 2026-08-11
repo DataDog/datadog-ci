@@ -24,10 +24,10 @@ export const uploadCodeCoverageReport =
       basepath: payload.basePath,
       ...payload.spanTags,
       ...(payload.flags ? {'report.flags': payload.flags} : {}),
-      // Must stay an array of strings: the intake enforces the type and drops the whole event
-      // when it does not match, losing the entire upload rather than just this tag. Omitting
-      // the tag instead is the safe degradation — the report is still uploaded, though the
-      // `ignore` list of code-coverage.datadog.yml then applies, so the user's override is
+      // Must stay an array of strings — the canonical wire form. The intake ignores a
+      // wrong-typed value (and older versions dropped the whole upload for it), so omitting the
+      // tag is the equivalent but explicit degradation: the report is still uploaded, though
+      // the `ignore` list of code-coverage.datadog.yml then applies, so the user's override is
       // silently lost. Only a bug can reach that branch; the type forbids it.
       ...(Array.isArray(payload.ignoredSourcePaths) && payload.ignoredSourcePaths.length > 0
         ? {'report.ignored_source_paths': payload.ignoredSourcePaths}
