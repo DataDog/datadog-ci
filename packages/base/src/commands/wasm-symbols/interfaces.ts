@@ -11,7 +11,6 @@ export interface MappingMetadata {
   git_repository_url?: string
   // Toolchain-provided `build_id` custom section.
   build_id: string
-  symbol_source: string
   filename: string
   type: string
   overwrite: boolean

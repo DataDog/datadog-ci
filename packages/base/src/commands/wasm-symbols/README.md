@@ -38,7 +38,7 @@ datadog-ci wasm-symbols upload ~/your/build/output/
 
 If location is a directory, the command will scan it recursively looking for `.wasm` files. If location is a file, only that file is uploaded.
 
-A `.wasm` file is only uploaded if it carries debug information: either embedded DWARF debug sections (produced by e.g. `emcc -g`, `wasm-pack build --dev`) or a custom `external_debug_info` section pointing at a separate debug artifact.
+A `.wasm` file is only uploaded if it carries embedded DWARF debug sections (produced by e.g. `emcc -g`, `wasm-pack build --dev`). A file that only has a custom `external_debug_info` section pointing at a separate debug artifact is skipped, since that reference isn't resolved or uploaded.
 
 The module's identifier is read from a `build_id` custom section. A `.wasm` file without one is skipped, since there is no key to look up its symbols by.
 
@@ -48,4 +48,4 @@ The module's identifier is read from a `build_id` custom section. A `.wasm` file
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
-| `--replace-existing` | Optional | If symbol information with the same build ID is already present on Datadog side, discard it and use the newly uploaded information.<br>Default behavior is to only replace existing debug information if the newly uploaded information is considered a better source with the following ordering: embedded debug info > external debug info reference. |
+| `--replace-existing` | Optional | If symbol information with the same build ID is already present on Datadog side, discard it and use the newly uploaded information.<br>Default behavior is to keep the first-seen file for a given build ID and skip the rest. |

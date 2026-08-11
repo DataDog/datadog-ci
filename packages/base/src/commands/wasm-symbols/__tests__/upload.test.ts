@@ -123,23 +123,33 @@ describe('wasm-symbols upload', () => {
       const command = createCommand(WasmSymbolsUploadCommand)
       await expect(command['getWasmSymbolFiles'](filePath)).rejects.toThrow()
     })
-  })
 
-  describe('removeBuildIdDuplicates', () => {
-    test('prefers the entry that has embedded debug info', async () => {
+    test('skips wasm files with only external debug info', async () => {
       writeWasmFile('external.wasm', [
         buildCustomSection('build_id', Buffer.from('aabbcc', 'hex')),
         buildCustomSection('external_debug_info', Buffer.from('external.debug.wasm')),
         buildSection(WasmSectionId.CODE, Buffer.from([0x01])),
       ])
-      writeWasmFile('embedded.wasm', withDebugInfo('aabbcc', Buffer.from([0x02])))
+      writeWasmFile('with-debug.wasm', withDebugInfo('ddeeff', Buffer.from([0x02])))
+
+      const command = createCommand(WasmSymbolsUploadCommand)
+      const files = await command['getWasmSymbolFiles'](fixtureDir)
+
+      expect(files.map((f) => f.filename)).toEqual([upath.join(fixtureDir, 'with-debug.wasm')])
+    })
+  })
+
+  describe('removeBuildIdDuplicates', () => {
+    test('keeps the first-seen entry for a duplicate build id', async () => {
+      writeWasmFile('a.wasm', withDebugInfo('aabbcc', Buffer.from([0x01])))
+      writeWasmFile('b.wasm', withDebugInfo('aabbcc', Buffer.from([0x02])))
 
       const command = createCommand(WasmSymbolsUploadCommand)
       const files = await command['getWasmSymbolFiles'](fixtureDir)
       const deduped = command['removeBuildIdDuplicates'](files)
 
       expect(deduped).toHaveLength(1)
-      expect(deduped[0].filename).toBe(upath.join(fixtureDir, 'embedded.wasm'))
+      expect(deduped[0].filename).toBe(upath.join(fixtureDir, 'a.wasm'))
     })
   })
 
@@ -167,7 +177,6 @@ describe('wasm-symbols upload', () => {
         build_id: 'fake-build-id',
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
-        symbol_source: 'debug_info',
         filename: 'fake-filename.wasm',
       })
 
@@ -202,13 +211,11 @@ describe('wasm-symbols upload', () => {
           ...commonMetadata,
           build_id: 'aabbcc',
           filename: 'a.wasm',
-          symbol_source: 'debug_info',
         },
         {
           ...commonMetadata,
           build_id: 'ddeeff',
           filename: 'b.wasm',
-          symbol_source: 'debug_info',
         },
       ])
     })

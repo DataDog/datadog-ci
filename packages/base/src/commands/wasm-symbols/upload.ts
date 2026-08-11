@@ -167,17 +167,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
     return undefined
   }
 
-  private getWasmSymbolSource(wasmFileMetadata: WasmFileMetadata): string {
-    if (wasmFileMetadata.hasDebugInfo) {
-      return 'debug_info'
-    }
-    if (wasmFileMetadata.hasExternalDebugInfo) {
-      return 'external_debug_info'
-    }
-
-    return 'none'
-  }
-
   private getMappingMetadata(wasmFileMetadata: WasmFileMetadata): MappingMetadata {
     return {
       cli_version: this.cliVersion,
@@ -186,7 +175,6 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
       build_id: wasmFileMetadata.buildId,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
-      symbol_source: this.getWasmSymbolSource(wasmFileMetadata),
       filename: upath.basename(wasmFileMetadata.filename),
       overwrite: this.replaceExisting,
       type: TYPE_WASM_DEBUG_INFOS,
@@ -252,8 +240,14 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
           reportFailure(`Skipped ${p} because it has no build_id custom section`)
           continue
         }
-        if (!metadata.hasDebugInfo && !metadata.hasExternalDebugInfo) {
-          reportFailure(`Skipped ${p} because it has no embedded debug info, nor an external debug info reference`)
+        if (!metadata.hasDebugInfo) {
+          if (metadata.hasExternalDebugInfo) {
+            reportFailure(
+              `Skipped ${p} because it only references external debug info, which is not resolved or uploaded`
+            )
+          } else {
+            reportFailure(`Skipped ${p} because it has no embedded debug info`)
+          }
           continue
         }
         filesMetadata.push(metadata)
@@ -272,21 +266,11 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
       const buildId = metadata.buildId
       const existing = buildIds.get(buildId)
       if (existing) {
-        if (metadata.hasDebugInfo && !existing.hasDebugInfo) {
-          // if we have a duplicate build_id, we keep the one with embedded debug info
-          this.context.stderr.write(
-            renderWarning(
-              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - skipping ${existing.filename} because it has no embedded debug info`
-            )
+        this.context.stderr.write(
+          renderWarning(
+            `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - skipping ${metadata.filename}`
           )
-          buildIds.set(buildId, metadata)
-        } else {
-          this.context.stderr.write(
-            renderWarning(
-              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - skipping ${metadata.filename}`
-            )
-          )
-        }
+        )
       } else {
         buildIds.set(buildId, metadata)
       }
