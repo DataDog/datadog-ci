@@ -386,9 +386,25 @@ describe('upload', () => {
       )
     })
 
+    test('should accept a pattern of exactly 1000 characters', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = 'x'.repeat(1000)
+      expect(command['getIgnoredSourcePaths']()).toEqual(['x'.repeat(1000)])
+    })
+
+    test('should throw when a single pattern exceeds 1000 characters', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = `src/**,${'y'.repeat(1500)},lib/**`
+
+      expect(() => command['getIgnoredSourcePaths']()).toThrow(
+        `Ignored source path #2 is 1500 characters long, but the maximum is 1000: "${'y'.repeat(60)}..."`
+      )
+    })
+
+    // Patterns stay under the per-pattern limit so this exercises the total-size cap.
     test('should throw above 256KB', () => {
       const command = createCommand(CoverageUploadCommand)
-      command['ignoredSourcePaths'] = Array.from({length: 100}, (_, i) => `${'x'.repeat(3000)}${i}/**`).join(',')
+      command['ignoredSourcePaths'] = Array.from({length: 300}, (_, i) => `${'x'.repeat(890)}${i}/**`).join(',')
 
       expect(() => command['getIgnoredSourcePaths']()).toThrow('must not exceed 262144 bytes')
     })

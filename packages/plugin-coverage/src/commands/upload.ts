@@ -61,7 +61,15 @@ const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 7 // backend supports 10 attachments, to keep the logic simple we subtract 3: for PR diff, commit diff, and file fixes
 
-const MAX_IGNORED_SOURCE_PATHS = {warnCount: 1000, warnBytes: 100 * 1024, errorCount: 2000, errorBytes: 256 * 1024}
+// errorPatternLength matches the backend's per-pattern limit, so anything the backend would
+// drop is rejected here instead.
+const MAX_IGNORED_SOURCE_PATHS = {
+  warnCount: 1000,
+  warnBytes: 100 * 1024,
+  errorCount: 2000,
+  errorBytes: 256 * 1024,
+  errorPatternLength: 1000,
+}
 
 const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml']
 
@@ -400,6 +408,18 @@ export class PluginCommand extends CoverageUploadCommand {
     if (patterns.length > MAX_IGNORED_SOURCE_PATHS.errorCount) {
       throw new Error(
         `Maximum of ${MAX_IGNORED_SOURCE_PATHS.errorCount} ignored source paths allowed, but ${patterns.length} were provided`
+      )
+    }
+    // A pattern over this length is dropped by the backend. Rejecting it here keeps the
+    // "the list replaces the config" promise: a dropped pattern would empty the list and
+    // silently reinstate the `ignore` list of code-coverage.datadog.yml.
+    const tooLong = patterns.findIndex((pattern) => pattern.length > MAX_IGNORED_SOURCE_PATHS.errorPatternLength)
+    if (tooLong >= 0) {
+      const pattern = patterns[tooLong]
+      throw new Error(
+        `Ignored source path #${tooLong + 1} is ${pattern.length} characters long, but the maximum is ${
+          MAX_IGNORED_SOURCE_PATHS.errorPatternLength
+        }: "${pattern.slice(0, 60)}..."`
       )
     }
     if (bytes > MAX_IGNORED_SOURCE_PATHS.errorBytes) {
