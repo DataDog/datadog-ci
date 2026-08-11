@@ -24,7 +24,12 @@ export const uploadCodeCoverageReport =
       basepath: payload.basePath,
       ...payload.spanTags,
       ...(payload.flags ? {'report.flags': payload.flags} : {}),
-      ...(payload.ignoredSourcePaths ? {'report.ignored_source_paths': payload.ignoredSourcePaths} : {}),
+      // Must stay an array of strings: the intake enforces the type and drops the whole event
+      // when it does not match, losing the entire upload rather than just this tag. Omitting
+      // the tag instead is the safe degradation — the report is still uploaded.
+      ...(Array.isArray(payload.ignoredSourcePaths) && payload.ignoredSourcePaths.length > 0
+        ? {'report.ignored_source_paths': payload.ignoredSourcePaths}
+        : {}),
     }
 
     if (payload.codeowners) {
