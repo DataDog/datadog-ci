@@ -39,5 +39,6 @@ module.exports = {
     ],
   },
   roots: ['e2e'],
+  setupFilesAfterEnv: ['<rootDir>/e2e/setup.ts'],
   testTimeout: 300_000,
 }
