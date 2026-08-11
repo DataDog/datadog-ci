@@ -1,5 +1,3 @@
-
-
 import type {SsiConfigResult} from '../ssi'
 import type {IEnvVar, IService} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
