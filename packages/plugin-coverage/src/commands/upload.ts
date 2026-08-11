@@ -433,7 +433,11 @@ export class PluginCommand extends CoverageUploadCommand {
       )
     }
 
-    this.logger.debug(`Excluding ${patterns.length} source path pattern(s) from coverage: ${patterns.join(', ')}`)
+    // Quoted individually: patterns can themselves contain a comma (`**/*.{js,ts}`), so an
+    // unquoted list cannot be read back reliably — which matters most when diagnosing a
+    // pattern that was split where the user did not expect it.
+    const quoted = patterns.map((pattern) => JSON.stringify(pattern)).join(', ')
+    this.logger.debug(`Excluding ${patterns.length} source path pattern(s) from coverage: ${quoted}`)
 
     return patterns
   }

@@ -520,7 +520,7 @@ describe('execute', () => {
     const {context, code} = await runCLIWithOption(['src/__tests__/fixtures'])
     expect(code).toBe(0)
     expect(context.stdout.toString()).toContain(
-      'Excluding 2 source path pattern(s) from coverage: **/generated/**, **/*.{js,ts}'
+      'Excluding 2 source path pattern(s) from coverage: "**/generated/**", "**/*.{js,ts}"'
     )
   })
 
