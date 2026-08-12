@@ -49,7 +49,7 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
   public static paths = [['wasm-symbols', 'upload']]
 
   public static usage = Command.Usage({
-    category: 'Profiling',
+    category: 'RUM',
     description: 'Upload WASM debug info files to Datadog.',
     details: `
             This command will upload debug info from all WebAssembly (.wasm) files found recursively in the given
