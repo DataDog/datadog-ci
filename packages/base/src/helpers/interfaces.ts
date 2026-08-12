@@ -5,6 +5,7 @@ import type {
   CI_JOB_URL,
   CI_NODE_LABELS,
   CI_NODE_NAME,
+  CI_PIPELINE_DISPLAY_NAME,
   CI_PIPELINE_ID,
   CI_PIPELINE_NAME,
   CI_PIPELINE_NUMBER,
@@ -92,6 +93,7 @@ export type SpanTag =
   | typeof CI_JOB_ID
   | typeof CI_PIPELINE_ID
   | typeof CI_PIPELINE_NAME
+  | typeof CI_PIPELINE_DISPLAY_NAME
   | typeof CI_PIPELINE_NUMBER
   | typeof CI_PIPELINE_URL
   | typeof CI_PROVIDER_NAME

@@ -13,6 +13,7 @@ import {
   CI_JOB_URL,
   CI_NODE_NAME,
   CI_NODE_LABELS,
+  CI_PIPELINE_DISPLAY_NAME,
   CI_PIPELINE_ID,
   CI_PIPELINE_NAME,
   CI_PIPELINE_NUMBER,
@@ -147,6 +148,7 @@ export const parseLevels = (input: string | undefined): {levels: CILevel[]; erro
 }
 
 export const githubWellKnownDiagnosticDirsUnix = [
+  '/home/runner/_diag',
   '/home/runner/actions-runner/_diag', // for self-hosted
   '/opt/actions-runner/_diag', // self-hosted in some cases
 ]
@@ -212,6 +214,12 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
     dirs.push(`${runnerRoot}/actions-runner/*/_diag`)
     dirs.push(`${runnerRoot}/actions-runner/*/*/_diag`)
     dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
+  }
+
+  const home = process.env.HOME
+  if (home) {
+    dirs.push(upath.join(home, '_diag'))
+    dirs.push(upath.join(home, 'actions-runner', '_diag'))
   }
 
   return uniq(dirs.filter(Boolean))
@@ -603,6 +611,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       BUILDKITE_TAG,
       BUILDKITE_BUILD_ID,
       BUILDKITE_PIPELINE_SLUG,
+      BUILDKITE_PIPELINE_NAME,
       BUILDKITE_BUILD_NUMBER,
       BUILDKITE_BUILD_URL,
       BUILDKITE_JOB_ID,
@@ -627,6 +636,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       [CI_PROVIDER_NAME]: CI_ENGINES.BUILDKITE,
       [CI_PIPELINE_ID]: BUILDKITE_BUILD_ID,
       [CI_PIPELINE_NAME]: BUILDKITE_PIPELINE_SLUG,
+      [CI_PIPELINE_DISPLAY_NAME]: BUILDKITE_PIPELINE_NAME,
       [CI_PIPELINE_NUMBER]: BUILDKITE_BUILD_NUMBER,
       [CI_PIPELINE_URL]: BUILDKITE_BUILD_URL,
       [CI_JOB_URL]: `${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}`,

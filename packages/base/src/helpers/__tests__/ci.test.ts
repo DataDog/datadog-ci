@@ -35,6 +35,7 @@ import {
   CI_ENV_VARS,
   CI_NODE_LABELS,
   CI_NODE_NAME,
+  CI_PIPELINE_DISPLAY_NAME,
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
@@ -202,6 +203,8 @@ describe('getCIMetadata', () => {
       delete ciMetadata?.[CI_NODE_NAME]
       delete ciMetadata?.[PR_NUMBER]
       delete ciMetadata?.[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]
+      // there is no DD_CI_PIPELINE_DISPLAY_NAME override, so this tag cannot be overridden by DD env variables
+      delete ciMetadata?.[CI_PIPELINE_DISPLAY_NAME]
       expect(ciMetadata).toEqual(expectedMetadata)
     })
   })
@@ -680,6 +683,66 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     expect(jobName).toBe(sampleJobDisplayName)
     expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
     expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find the job display name at <runnerRoot>/_diag derived from RUNNER_TEMP', () => {
+    process.env.RUNNER_TEMP = '/home/runner/_work/_temp'
+    const targetDir = '/home/runner/_diag'
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find the job display name at /home/runner/_diag when RUNNER_TEMP resolves to root', () => {
+    process.env.RUNNER_TEMP = '/__w/_temp'
+    const targetDir = '/home/runner/_diag'
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+  })
+
+  test('should find the job display name at $HOME/_diag on a non-standard runner home', () => {
+    process.env.HOME = '/custom/runner-home'
+    const targetDir = '/custom/runner-home/_diag'
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+  })
+
+  test('should read a duplicated candidate directory only once', () => {
+    process.env.RUNNER_TEMP = '/home/runner/_work/_temp'
+    process.env.HOME = '/home/runner'
+
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
+      if (String(pathToRead) === '/home/runner/_diag') {
+        return []
+      }
+      throw getNotFoundFsError()
+    })
+
+    getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    const reads = mockedFs.readdirSync.mock.calls.filter((call) => String(call[0]) === '/home/runner/_diag')
+    expect(reads).toHaveLength(1)
   })
 
   test('should find and return the job display name windows (SaaS)', () => {

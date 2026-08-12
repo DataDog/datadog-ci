@@ -626,13 +626,21 @@ export class DefaultReporter implements MainReporter {
     this.testWaitSpinner.start()
   }
 
-  public testTrigger(
-    test: Pick<Test, 'name'>,
-    testId: string,
-    executionRule: ExecutionRule,
-    testOverrides: UserConfigOverride
-  ) {
+  public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
+
+    if (test.type === 'suite') {
+      const testCount = test.memberPublicIds?.length ?? 0
+
+      this.write(
+        `${idDisplay} Found suite "${chalk.green.bold(test.name)}" containing ${testCount} ${pluralize(
+          'test',
+          testCount
+        )}\n`
+      )
+
+      return
+    }
 
     const getMessage = () => {
       if (executionRule === ExecutionRule.SKIPPED) {

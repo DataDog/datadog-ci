@@ -1,3 +1,8 @@
+---
+name: create-plugin
+description: Scaffold a new datadog-ci plugin end-to-end using repository conventions.
+---
+
 # Create Plugin
 
 Scaffold a new datadog-ci plugin end-to-end. Walk the user through each step, confirming the scope name and whether the plugin should be built-in or separately installable.

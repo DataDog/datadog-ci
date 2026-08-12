@@ -49,7 +49,7 @@ export const isRequestError = (error: unknown): error is RequestError =>
 
 const dispatcherCache = new Map<string, ProxyAgent>()
 
-export const getProxyDispatcher = (proxyUrl: string): EnvHttpProxyAgent | ProxyAgent => {
+export const getProxyDispatcher = (proxyUrl = ''): EnvHttpProxyAgent | ProxyAgent => {
   // EnvHttpProxyAgent reads env vars at construction, so never cache it
   if (!proxyUrl) {
     return new EnvHttpProxyAgent()

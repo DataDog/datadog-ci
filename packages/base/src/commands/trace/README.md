@@ -14,6 +14,8 @@ For example:
 datadog-ci trace --name "Say Hello" -- echo "Hello World"
 ```
 
+> To report a standalone span with a name and a duration (or start/end time) instead of wrapping a command, use the [`trace span`](../span) subcommand.
+
 - The positional arguments are the command which will be launched and traced.
 - `--name` (default: same as <command>) is a human-friendly name for the reported span.
 - `--tags` is an array of key-value pairs with the format `key:value`. These tags are added to the custom span.

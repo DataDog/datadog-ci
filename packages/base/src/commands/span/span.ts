@@ -27,6 +27,10 @@ export class SpanCommand extends CustomSpanCommand {
         'Create span with name "Get Dependencies" and duration of 10s and report to Datadog with tags and measures',
         'datadog-ci trace span --name "Get Dependencies" --duration 10000 --tags "dependency-set:notify" --measures "n-dependencies:42"',
       ],
+      [
+        'Create a span nested under another custom span by referencing its span ID',
+        'datadog-ci trace span --name "Plan" --duration 10000 --span-id 0a1b2c3d4e --parent-id 5f6a7b8c9d',
+      ],
     ],
   })
 
@@ -40,6 +44,9 @@ export class SpanCommand extends CustomSpanCommand {
   private endTimeInMs: number | undefined = Option.String('--end-time', {
     validator: validation.isInteger(),
   })
+  // Optional explicit IDs so callers can assemble a span tree.
+  private spanId = Option.String('--span-id')
+  private parentId = Option.String('--parent-id')
 
   public async execute() {
     this.tryEnableFips()
@@ -76,14 +83,32 @@ export class SpanCommand extends CustomSpanCommand {
       return 1
     }
 
+    const hexPattern = /^[0-9a-f]+$/i
+    if (this.spanId !== undefined && !hexPattern.test(this.spanId)) {
+      this.context.stderr.write(`The span ID must be a hexadecimal string.\n`)
+
+      return 1
+    }
+    if (this.parentId !== undefined && !hexPattern.test(this.parentId)) {
+      this.context.stderr.write(`The parent ID must be a hexadecimal string.\n`)
+
+      return 1
+    }
+
     const endTime = this.endTimeInMs ? new Date(this.endTimeInMs) : new Date()
     const startTime = new Date(endTime.getTime() - this.durationInMs)
 
-    return this.executeReportCustomSpan(this.generateSpanId(), startTime, endTime, {
-      name: this.name,
-      error_message: '',
-      exit_code: 0,
-      command: 'datadog-ci trace span',
-    })
+    return this.executeReportCustomSpan(
+      this.spanId ?? this.generateSpanId(),
+      startTime,
+      endTime,
+      {
+        name: this.name,
+        error_message: '',
+        exit_code: 0,
+        command: 'datadog-ci trace span',
+      },
+      this.parentId
+    )
   }
 }

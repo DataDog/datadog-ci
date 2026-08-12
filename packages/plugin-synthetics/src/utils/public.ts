@@ -167,12 +167,12 @@ export const getSuites = async (pattern: string, reporter: MainReporter): Promis
   }
 
   return Promise.all(
-    files.map(async (file) => {
+    files.map<Promise<Suite>>(async (file) => {
       try {
         const content = await promisify(fs.readFile)(file, 'utf8')
-        const suiteName = await getFilePathRelativeToRepo(file)
+        const suiteFileName = await getFilePathRelativeToRepo(file)
 
-        return {name: suiteName, content: JSON.parse(content)}
+        return {name: suiteFileName, content: JSON.parse(content)}
       } catch (e) {
         throw new Error(`Unable to read and parse the test file ${file}`)
       }

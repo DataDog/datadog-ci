@@ -3,7 +3,7 @@ import type {BufferedMetricsLogger} from 'datadog-metrics'
 import chalk from 'chalk'
 
 import {InvalidConfigurationError} from './errors'
-import {httpRequest, isRequestError} from './request'
+import {getProxyDispatcher, httpRequest, isRequestError} from './request'
 import {datadogRoute} from './request/datadog-route'
 
 /** ApiKeyValidator is an helper interface to interpret Datadog error responses and possibly check the
@@ -77,6 +77,7 @@ class ApiKeyValidatorImplem {
         method: 'GET',
         baseURL: `https://api.${this.datadogSite}`,
         url: datadogRoute('/api/v1/validate'),
+        dispatcher: getProxyDispatcher(),
       })
 
       return response.data.valid

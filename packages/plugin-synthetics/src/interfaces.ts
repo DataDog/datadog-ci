@@ -133,21 +133,6 @@ export type PollResult = {
   device?: Device
 }
 
-/**
- * Information required to convert a `PollResult` to a `Result`.
- */
-export type ResultDisplayInfo = {
-  getLocation: (datacenterId: string, test: Test) => string
-  options: {
-    batchTimeout: number
-    datadogSite: string
-    failOnCriticalErrors?: boolean
-    failOnTimeout?: boolean
-    subdomain: string
-  }
-  tests: Test[]
-}
-
 export type SelectiveRerunDecision =
   | {
       decision: 'run'
@@ -436,8 +421,25 @@ export interface ServerTest extends LocalTestDefinitionWithUnsupportedFields {
   public_id: string
 }
 
-export type Test = (ServerTest | LocalTestDefinitionWithUnsupportedFields) & {
+export interface ServerSuite extends Omit<LocalTestDefinitionWithUnsupportedFields, 'type'> {
+  public_id: string
+  type: 'suite'
+  memberPublicIds: string[]
+}
+
+export type Test = (ServerTest | ServerSuite | LocalTestDefinitionWithUnsupportedFields) & {
   suite?: string
+}
+
+/** Response shape of `GET /api/v2/synthetics/suites/:public_id`. */
+export interface ServerSuiteResponse {
+  data: {
+    id: string
+    attributes: {
+      name: string
+      tests: {public_id: string}[]
+    }
+  }
 }
 
 export interface Assertion {
@@ -677,7 +679,7 @@ export interface BasicAuthCredentials {
 interface BaseTriggerConfig {
   /** Overrides for this Synthetic test only. This takes precedence over all other overrides. */
   testOverrides?: UserConfigOverride
-  /** Name of a test suite (for JUnit reports). */
+  /** Defaults to the file path relative to the repository root, and it only shows in JUnit reports. */
   suite?: string
 }
 export interface RemoteTriggerConfig extends BaseTriggerConfig {
@@ -700,8 +702,15 @@ export enum ExecutionRule {
   SKIPPED = 'skipped',
 }
 
+/**
+ * Represents a "test configuration file", also known as "test file", "Test Config", or `*.synthetics.json` file.
+ *
+ * This can be compared to a "test suite" in other testing frameworks because it's a collection of tests, but it **does not** represent a [Synthetic Test Suite](https://docs.datadoghq.com/synthetics/test_suites/).
+ */
 export interface Suite {
+  /** The parsed JSON content of the file. */
   content: TestConfig
+  /** Defaults to the file path relative to the repository root, and it only shows in JUnit reports. */
   name?: string
 }
 

@@ -7,7 +7,6 @@ import type {
   Payload,
   PollResult,
   Result,
-  ResultDisplayInfo,
   ResultInBatch,
   ServerResult,
   Test,
@@ -36,6 +35,22 @@ import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
 export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
 
 const POLLING_INTERVAL = 5000 // In ms
+
+/**
+ * Information required to convert a `PollResult` to a `Result`.
+ */
+type ResultDisplayInfo = {
+  getLocation: (datacenterId: string, test: Test) => string
+  options: {
+    batchTimeout: number
+    datadogSite: string
+    failOnCriticalErrors?: boolean
+    failOnTimeout?: boolean
+    subdomain: string
+  }
+  /** All tests, including suite members. With preserved order, and not deduplicated. */
+  tests: Test[]
+}
 
 export const runTests = async (
   api: APIHelper,
@@ -128,7 +143,9 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
-  reporter.testsWait(tests, getAppBaseURL(options), trigger.batchId)
+  const allTests = tests.flatMap(expandSuiteMembers)
+
+  reporter.testsWait(allTests, getAppBaseURL(options), trigger.batchId)
 
   const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
     mapping[location.name] = location.display_name
@@ -145,7 +162,7 @@ export const waitForResults = async (
   const resultDisplayInfo = {
     getLocation,
     options,
-    tests,
+    tests: allTests,
   }
 
   const results = await waitForBatchToFinish(api, trigger.batchId, options.batchTimeout, resultDisplayInfo, reporter)
@@ -321,8 +338,8 @@ const reportWaitingTests = (
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
   const {tests} = resultDisplayInfo
 
-  const inProgressPublicIds = new Set()
-  const skippedBySelectiveRerunPublicIds = new Set()
+  const inProgressPublicIds = new Set<string>()
+  const skippedBySelectiveRerunPublicIds = new Set<string>()
 
   for (const result of batch.results) {
     if (result.status === 'in_progress') {
@@ -337,10 +354,10 @@ const reportWaitingTests = (
   let skippedCount = 0
 
   for (const test of tests) {
-    if (inProgressPublicIds.has(test.public_id)) {
+    if (inProgressPublicIds.has(test.public_id!)) {
       remainingTests.push(test)
     }
-    if (skippedBySelectiveRerunPublicIds.has(test.public_id)) {
+    if (skippedBySelectiveRerunPublicIds.has(test.public_id!)) {
       skippedCount++
     }
   }
@@ -354,8 +371,7 @@ const getResultFromBatch = (
   resultDisplayInfo: ResultDisplayInfo,
   safeDeadlineReached = false
 ): Result => {
-  const {tests} = resultDisplayInfo
-  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
+  const test = resultDisplayInfo.tests.find((t) => t.public_id === resultInBatch.test_public_id)!
 
   const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
   const timedOutRetry = isTimedOutRetry(resultInBatch.retries, resultInBatch.max_retries, resultInBatch.timed_out)
@@ -498,7 +514,12 @@ const isResidualResult = (
   return false
 }
 
-const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
+// The backend fans out a Test Suite into its member tests at trigger time, so a batch result's `test_public_id` may be a suite member
+// rather than one of the top-level triggered public IDs. For display purposes, a suite is represented by its member tests rather than as a single entry.
+const expandSuiteMembers = (test: Test): Test[] =>
+  'memberPublicIds' in test
+    ? test.memberPublicIds.map((memberPublicId) => ({...test, public_id: memberPublicId}))
+    : [test]
 
 const getResultIds = (results: ResultInBatch[]): string[] => excludeSkipped(results).map((r) => r.result_id)
 

@@ -36,7 +36,7 @@ In 5.0, we moved the `synthetics` commands into the `@datadog/datadog-ci-plugin-
 
 By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
-More information in the [README](/#installing-a-plugin).
+More information in the [README](/packages/datadog-ci/README.md#installing-a-plugin).
 
 ## 3.0 to 4.0
 
@@ -63,7 +63,7 @@ In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/
 
 By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
-More information in the [README](/#installing-a-plugin).
+More information in the [README](/packages/datadog-ci/README.md#installing-a-plugin).
 
 ### Library API changes
 

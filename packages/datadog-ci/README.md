@@ -45,24 +45,25 @@ yarn dlx @datadog/datadog-ci@v5 [scope]
 
 ## Installing a plugin
 
-Plugins are separate packages that were split from the `@datadog/datadog-ci` package to reduce its installation size.
+Plugins are NPM packages that were split from the main `@datadog/datadog-ci` NPM package to reduce its installation size.
 
-Use `datadog-ci plugin list` to list the available plugins:
-
+If you are using the NPM package, you can manage plugins with the following commands:
 ```sh
+# List available plugins
 datadog-ci plugin list
-```
 
-Use `datadog-ci plugin install` to install a plugin:
-
-```sh
+# Install a plugin
 datadog-ci plugin install <scope>
 ```
 
-For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed by default.
+If you are using the [standalone binary](#standalone-binary), all plugins are already included, so you don't need to install them separately.
+
+### Plugin auto-installation
+
+For backward compatibility, running a command that requires a plugin automatically installs the plugin if it is not already installed.
 
 > [!WARNING]
-> Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>`. To disable auto-installation, set `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+> Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>` to skip auto-installation. You can also disable auto-installation with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
 ## Usage
 
@@ -219,6 +220,7 @@ The following `<scope>` and `<command>` values are available.
 <sub>**README:** [📚](/packages/base/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>
 
 - Add custom commands to a CI Visibility pipeline in Datadog.
+- `span` ([📚](/packages/base/src/commands/span)): Report a custom span to a CI Visibility pipeline in Datadog without wrapping a command.
 
 #### `unity-symbols`
 
@@ -287,7 +289,9 @@ Every invocation prints a `datadog-ci v<version>` banner to `stderr`. To silence
 
 ### Standalone binary
 
-If installing Node.js in the CI is an issue, standalone binaries are attached to each [GitHub release](https://github.com/DataDog/datadog-ci/releases).
+If installing Node.js in the CI is an issue, you can download `datadog-ci` as a standalone binary:
+- It's built against the official Node.js distribution for supported architectures and attached to [GitHub releases](https://github.com/DataDog/datadog-ci/releases).
+- It includes all plugins, so you don't need to install them separately.
 
 Supported architectures:
 - `linux-x64`
