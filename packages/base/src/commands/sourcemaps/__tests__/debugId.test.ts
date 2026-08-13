@@ -1,6 +1,13 @@
 import fs from 'fs'
+import {Writable} from 'stream'
 
-import {addDebugIdToPayloads, extractDebugId} from '../debugId'
+import {
+  addDebugIdToPayloads,
+  extractDebugId,
+  generateAndInjectMissingDebugIds,
+  generateDebugId,
+  injectDebugIdSnippet,
+} from '../debugId'
 import {Sourcemap} from '../interfaces'
 
 const DEBUG_ID = '2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91'
@@ -80,5 +87,158 @@ describe('addDebugIdToPayloads', () => {
 
     expect(addDebugIdToPayloads(payloads)).toBe(false)
     expect(payloads.every((p) => p.debugId === undefined)).toBe(true)
+  })
+})
+
+describe('generateDebugId', () => {
+  const js = 'var x = 1;'
+  const sourcemap = '{"version":3,"sources":[],"mappings":""}'
+
+  test('is deterministic for the same inputs', () => {
+    expect(generateDebugId(js, sourcemap)).toBe(generateDebugId(js, sourcemap))
+  })
+
+  test('changes when the JS content changes', () => {
+    expect(generateDebugId(js, sourcemap)).not.toBe(generateDebugId('var x = 2;', sourcemap))
+  })
+
+  test('changes when the sourcemap content changes', () => {
+    expect(generateDebugId(js, sourcemap)).not.toBe(generateDebugId(js, '{"version":3,"sources":[],"mappings":";;"}'))
+  })
+
+  test('produces a UUID with version 5 and RFC4122 variant bits forced', () => {
+    const id = generateDebugId(js, sourcemap)
+    expect(id).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-5[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/)
+  })
+})
+
+describe('injectDebugIdSnippet', () => {
+  const DEBUG_ID_2 = '5c1d7f52-4e1b-5f7c-8c0d-2f4a5f6d8e91'
+
+  test('prepends the DD_SOURCE_CODE_CONTEXT snippet as the new first line and appends the debugId comment', () => {
+    const js = 'var x = 1;\nconsole.log(x);'
+    const sourcemap = JSON.stringify({version: 3, sources: [], mappings: 'AAAA'})
+
+    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const lines = result.js.split('\n')
+
+    expect(lines[0]).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(lines[0]).toContain(`"ddDebugId":"${DEBUG_ID_2}"`)
+    expect(result.js).toContain(js)
+    expect(result.js.trimEnd().endsWith(`//# debugId=${DEBUG_ID_2}`)).toBe(true)
+  })
+
+  test('round-trips through extractDebugId', () => {
+    jest.spyOn(fs, 'readFileSync').mockImplementation(() => injectDebugIdSnippet('var x = 1;', '{}', DEBUG_ID_2).js)
+    expect(extractDebugId('bundle.js')).toBe(DEBUG_ID_2)
+    jest.restoreAllMocks()
+  })
+
+  test('shifts the sourcemap by exactly one leading `;` and sets debugId', () => {
+    const sourcemap = JSON.stringify({version: 3, sources: [], mappings: 'AAAA'})
+    const result = injectDebugIdSnippet('var x = 1;', sourcemap, DEBUG_ID_2)
+    const parsed = JSON.parse(result.sourcemap)
+
+    expect(parsed.mappings).toBe(';AAAA')
+    expect(parsed.debugId).toBe(DEBUG_ID_2)
+  })
+
+  test('keeps a leading hashbang first', () => {
+    const js = '#!/usr/bin/env node\nvar x = 1;'
+    const result = injectDebugIdSnippet(js, '{}', DEBUG_ID_2)
+
+    expect(result.js.startsWith('#!/usr/bin/env node\n')).toBe(true)
+    expect(result.js).toContain('DD_SOURCE_CODE_CONTEXT')
+  })
+
+  test('repeats a leading "use strict" directive before the snippet', () => {
+    const js = '"use strict";\nvar x = 1;'
+    const result = injectDebugIdSnippet(js, '{}', DEBUG_ID_2)
+    const firstLine = result.js.split('\n')[0]
+
+    expect(firstLine.startsWith('"use strict";')).toBe(true)
+    expect(firstLine).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(result.js).toContain(js)
+  })
+})
+
+describe('generateAndInjectMissingDebugIds', () => {
+  const makeStdout = () => {
+    const chunks: string[] = []
+    const stdout = new Writable({
+      write: (chunk, _enc, callback) => {
+        chunks.push(chunk.toString())
+        callback()
+      },
+    })
+
+    return {stdout, chunks}
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('generates and injects a debug ID for payloads missing one', async () => {
+    const files: Record<string, string> = {
+      'a.min.js': 'var x = 1;',
+      'a.min.js.map': JSON.stringify({version: 3, sources: [], mappings: 'AAAA'}),
+    }
+    jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
+    const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation((path: unknown, content: unknown) => {
+      files[path as string] = content as string
+    })
+
+    const payload = makeSourcemap('a.min.js')
+    const {stdout, chunks} = makeStdout()
+
+    await generateAndInjectMissingDebugIds([payload], false, stdout)
+
+    expect(payload.debugId).toBeDefined()
+    expect(chunks.join('')).toContain(payload.debugId)
+    expect(writeSpy).toHaveBeenCalledTimes(2)
+    expect(files['a.min.js']).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(JSON.parse(files['a.min.js.map']).debugId).toBe(payload.debugId)
+  })
+
+  test('computes and sets debugId but does not write files on dry run', async () => {
+    const files: Record<string, string> = {
+      'a.min.js': 'var x = 1;',
+      'a.min.js.map': JSON.stringify({version: 3, sources: [], mappings: 'AAAA'}),
+    }
+    jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
+    const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined)
+
+    const payload = makeSourcemap('a.min.js')
+    const {stdout} = makeStdout()
+
+    await generateAndInjectMissingDebugIds([payload], true, stdout)
+
+    expect(payload.debugId).toBeDefined()
+    expect(writeSpy).not.toHaveBeenCalled()
+  })
+
+  test('skips payloads that already have a debug ID', async () => {
+    const readSpy = jest.spyOn(fs, 'readFileSync')
+    const payload = makeSourcemap('a.min.js')
+    payload.debugId = 'existing-id'
+    const {stdout} = makeStdout()
+
+    await generateAndInjectMissingDebugIds([payload], false, stdout)
+
+    expect(payload.debugId).toBe('existing-id')
+    expect(readSpy).not.toHaveBeenCalled()
+  })
+
+  test('leaves debugId undefined when files cannot be read', async () => {
+    jest.spyOn(fs, 'readFileSync').mockImplementation(() => {
+      throw new Error('ENOENT')
+    })
+    const payload = makeSourcemap('a.min.js')
+    const {stdout} = makeStdout()
+
+    await generateAndInjectMissingDebugIds([payload], false, stdout)
+
+    expect(payload.debugId).toBeUndefined()
   })
 })

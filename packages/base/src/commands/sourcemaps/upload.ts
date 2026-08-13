@@ -32,7 +32,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {addDebugIdToPayloads} from './debugId'
+import {addDebugIdToPayloads, generateAndInjectMissingDebugIds} from './debugId'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -42,7 +42,6 @@ import {
   renderGitDataNotAttachedWarning,
   renderGitWarning,
   renderInvalidPrefix,
-  renderNoDebugIdFound,
   renderRetriedUpload,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
@@ -140,10 +139,9 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
 
-    if (this.debugId && payloads.length > 0 && !addDebugIdToPayloads(payloads)) {
-      this.context.stderr.write(renderNoDebugIdFound())
-
-      return 1
+    if (this.debugId && payloads.length > 0) {
+      addDebugIdToPayloads(payloads)
+      await generateAndInjectMissingDebugIds(payloads, this.dryRun, this.context.stdout)
     }
 
     const requestBuilder = this.getRequestBuilder()

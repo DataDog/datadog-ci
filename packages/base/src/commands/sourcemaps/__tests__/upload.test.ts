@@ -1,3 +1,5 @@
+import fs from 'fs'
+
 import chalk from 'chalk'
 import upath from 'upath'
 
@@ -313,11 +315,19 @@ describe('execute', () => {
     )
   })
 
-  test('debug id missing in all files aborts with exit 1', async () => {
+  test('debug id missing in all files generates and injects one instead of aborting', async () => {
+    const jsPath = './src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js'
+    const originalJs = fs.readFileSync(jsPath, 'utf-8')
+
     const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
-    expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('No debug ID found in any minified file')
-    expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+
+    expect(code).toBe(0)
+    const stdout = context.stdout.toString()
+    expect(context.stderr.toString()).not.toContain('No debug ID found')
+    expect(stdout).toContain('Generated debug ID for')
+    expect(stdout).toMatch(/\[DRYRUN\] Uploading sourcemap .*common\.min\.js\.map.*\(debug ID: [a-f0-9-]{36}\)/)
+    // Dry run: the on-disk fixture must be left untouched.
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
   })
 
   test('debug id with no sourcemaps found succeeds with exit 0', async () => {
@@ -326,7 +336,7 @@ describe('execute', () => {
     expect(context.stderr.toString()).not.toContain('No debug ID found')
   })
 
-  test('debug id missing in some files skips only those files', async () => {
+  test('debug id missing in some files generates one for those, keeps the existing one for others', async () => {
     const {context, code} = await runCLIWithDebugId([
       './src/commands/sourcemaps/__tests__/fixtures/bundle-with-partial-debug-id',
     ])
@@ -334,8 +344,10 @@ describe('execute', () => {
     const stdout = context.stdout.toString()
     expect(stdout).toContain('[DRYRUN] Uploading sourcemap')
     expect(stdout).toContain('a.min.js.map')
-    expect(stdout).toContain('because no debug ID was found')
     expect(stdout).toContain('b.min.js.map')
+    expect(stdout).toContain('(debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)') // a.min.js: pre-existing ID, unchanged
+    expect(stdout).toContain('Generated debug ID for') // b.min.js: newly generated
+    expect(stdout).not.toContain('because no debug ID was found')
   })
 
   test('relative path with double dots', async () => {

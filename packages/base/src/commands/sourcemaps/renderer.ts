@@ -38,8 +38,6 @@ export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) =
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderNoDebugIdFound = () => 'No debug ID found in any minified file. Aborting upload.\n'
-
 export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 
