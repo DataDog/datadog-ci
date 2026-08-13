@@ -1,6 +1,6 @@
 ## Overview
 
-Upload WebAssembly debug info files (`.wasm`)  to Datadog to symbolicate WASM stack traces reported by the Datadog Browser SDK.
+Upload WebAssembly debug info files (`.wasm`) to Datadog to symbolicate WASM stack traces reported by the Datadog Browser SDK.
 
 ## Setup
 
