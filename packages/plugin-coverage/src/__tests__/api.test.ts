@@ -220,6 +220,197 @@ describe('uploadCodeCoverageReport', () => {
     expect(eventJson).not.toHaveProperty('report.flags')
   })
 
+  it('includes report.ignored_source_paths in event when ignored source paths provided', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: ['type:unit-tests'],
+      ignoredSourcePaths: ['**/generated/**', 'src/gen/**'],
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+
+    // Must be a JSON array: a joined string is not the canonical wire form and the intake
+    // will not read it as a list of patterns.
+    expect(Array.isArray(eventJson['report.ignored_source_paths'])).toBe(true)
+    expect(eventJson['report.ignored_source_paths']).toEqual(['**/generated/**', 'src/gen/**'])
+    expect(eventJson['report.flags']).toEqual(['type:unit-tests'])
+  })
+
+  // A single pattern is the case a refactor is most likely to "simplify" into a bare string,
+  // which the intake would then ignore, silently reinstating the configured `ignore` list.
+  it('sends a single ignored source path as an array, not a string', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      ignoredSourcePaths: ['**/generated/**'],
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    expect(eventCall[1]).toContain('"report.ignored_source_paths":["**/generated/**"]')
+
+    const eventJson = JSON.parse(eventCall[1])
+    expect(Array.isArray(eventJson['report.ignored_source_paths'])).toBe(true)
+    expect(eventJson['report.ignored_source_paths']).toEqual(['**/generated/**'])
+  })
+
+  it('omits report.ignored_source_paths when it is not an array', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      // Only reachable by a bug or a refactor: the type forbids it, hence the cast.
+      ignoredSourcePaths: '**/generated/**,src/gen/**' as unknown as string[],
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+
+    // The rest of the event is unaffected: dropping the tag must not disturb the upload.
+    expect(eventJson).not.toHaveProperty('report.ignored_source_paths')
+    expect(eventJson.type).toBe('coverage_report')
+  })
+
+  it('does not include report.ignored_source_paths when ignored source paths not provided', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      ignoredSourcePaths: undefined,
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+
+    expect(eventJson).not.toHaveProperty('report.ignored_source_paths')
+  })
+
   it('sends file_fixes as gzipped attachment when fileFixesCompressed provided', async () => {
     const requestMock = jest.fn().mockResolvedValue({status: 200})
 

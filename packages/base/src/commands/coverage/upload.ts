@@ -30,6 +30,10 @@ export class CoverageUploadCommand extends BaseCommand {
       ],
       ['Upload coverage with flags', 'datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 .'],
       [
+        'Upload all code coverage report files in current directory, excluding generated source files from the coverage computation',
+        'datadog-ci coverage upload --ignored-source-paths "**/generated/**,**/*.{g,freezed}.dart" .',
+      ],
+      [
         'Upload all code coverage report files in current directory to the datadoghq.eu site',
         'DD_SITE=datadoghq.eu datadog-ci coverage upload .',
       ],
@@ -67,7 +71,13 @@ export class CoverageUploadCommand extends BaseCommand {
 
   protected ignoredPaths = Option.String('--ignored-paths', {
     description:
-      'A comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported.',
+      'A comma-separated list of paths to skip while the given directories are searched for coverage report files (it does not apply to report files passed explicitly). Glob patterns are supported. Not to be confused with `--ignored-source-paths`, which excludes source files from the coverage computation.',
+  })
+
+  protected ignoredSourcePaths = Option.String('--ignored-source-paths', {
+    env: 'DD_COVERAGE_IGNORED_SOURCE_PATHS',
+    description:
+      'A comma-separated (or newline-separated) list of source file patterns to exclude from the coverage computation. Replaces the `ignore` list of `code-coverage.datadog.yml` for this upload. Not to be confused with `--ignored-paths`, which excludes coverage report files from local reports discovery.',
   })
 
   protected fips = Option.Boolean('--fips', false, {description: 'Enable FIPS mode for the command'})

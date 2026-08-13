@@ -8,6 +8,7 @@ export interface Payload {
   hostname: string
   spanTags: SpanTags
   flags?: string[]
+  ignoredSourcePaths?: string[]
   paths: string[]
   format: string
   basePath: string | undefined

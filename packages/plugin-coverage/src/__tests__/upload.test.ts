@@ -326,6 +326,116 @@ describe('upload', () => {
       expect(command['getFlags']()).toHaveLength(32)
     })
   })
+
+  describe('getIgnoredSourcePaths', () => {
+    test('should return undefined when option not provided', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = undefined
+      expect(command['getIgnoredSourcePaths']()).toBeUndefined()
+    })
+
+    test('should return undefined when option provided without any pattern', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = ' , \n '
+      expect(command['getIgnoredSourcePaths']()).toBeUndefined()
+    })
+
+    test('should split patterns without expanding them', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = 'src/__tests__/fixtures/*.xml, **/*.{js,ts}\n!src/keep.ts'
+      expect(command['getIgnoredSourcePaths']()).toEqual([
+        'src/__tests__/fixtures/*.xml',
+        '**/*.{js,ts}',
+        '!src/keep.ts',
+      ])
+    })
+
+    test('should warn above 1000 patterns', () => {
+      const write = jest.fn()
+      const command = createCommand(CoverageUploadCommand, {stdout: {write}})
+      command['ignoredSourcePaths'] = Array.from({length: 1001}, (_, i) => `path${i}/**`).join(',')
+
+      expect(command['getIgnoredSourcePaths']()).toHaveLength(1001)
+      expect(write.mock.calls.map((call: string[]) => call[0]).join('')).toContain('1001 patterns')
+    })
+
+    test('should warn above 100KB', () => {
+      const write = jest.fn()
+      const command = createCommand(CoverageUploadCommand, {stdout: {write}})
+      command['ignoredSourcePaths'] = Array.from({length: 200}, (_, i) => `${'x'.repeat(600)}${i}/**`).join(',')
+
+      expect(command['getIgnoredSourcePaths']()).toHaveLength(200)
+      expect(write.mock.calls.map((call: string[]) => call[0]).join('')).toContain('200 patterns')
+    })
+
+    test('should not warn below the caps', () => {
+      const write = jest.fn()
+      const command = createCommand(CoverageUploadCommand, {stdout: {write}})
+      command['ignoredSourcePaths'] = Array.from({length: 500}, (_, i) => `path${i}/**`).join(',')
+
+      expect(command['getIgnoredSourcePaths']()).toHaveLength(500)
+      expect(write).not.toHaveBeenCalled()
+    })
+
+    test('should throw above 2000 patterns', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = Array.from({length: 2001}, (_, i) => `path${i}/**`).join(',')
+
+      expect(() => command['getIgnoredSourcePaths']()).toThrow(
+        'Maximum of 2000 ignored source paths allowed, but 2001 were provided'
+      )
+    })
+
+    test('should accept a pattern of exactly 1000 characters', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = 'x'.repeat(1000)
+      expect(command['getIgnoredSourcePaths']()).toEqual(['x'.repeat(1000)])
+    })
+
+    test('should throw when a single pattern exceeds 1000 characters', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = `src/**,${'y'.repeat(1500)},lib/**`
+
+      expect(() => command['getIgnoredSourcePaths']()).toThrow(
+        `Ignored source path #2 is 1500 characters long, but the maximum is 1000: "${'y'.repeat(60)}..."`
+      )
+    })
+
+    // Patterns stay under the per-pattern limit so this exercises the total-size cap.
+    test('should throw above 256KB', () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = Array.from({length: 300}, (_, i) => `${'x'.repeat(890)}${i}/**`).join(',')
+
+      expect(() => command['getIgnoredSourcePaths']()).toThrow('must not exceed 262144 bytes')
+    })
+  })
+
+  describe('generatePayloads', () => {
+    test('should thread ignored source paths into every payload', async () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['ignoredSourcePaths'] = '**/generated/**,src/gen/**'
+      command['reportPaths'] = ['src/__tests__/fixtures']
+
+      const payloads = await command['generatePayloads']({})
+
+      expect(payloads.length).toBeGreaterThan(1)
+      for (const payload of payloads) {
+        expect(payload.ignoredSourcePaths).toEqual(['**/generated/**', 'src/gen/**'])
+      }
+    })
+
+    test('should leave ignored source paths unset when option not provided', async () => {
+      const command = createCommand(CoverageUploadCommand)
+      command['reportPaths'] = ['src/__tests__/fixtures']
+
+      const payloads = await command['generatePayloads']({})
+
+      expect(payloads.length).toBeGreaterThan(0)
+      for (const payload of payloads) {
+        expect(payload.ignoredSourcePaths).toBeUndefined()
+      }
+    })
+  })
 })
 
 describe('execute', () => {
@@ -396,6 +506,36 @@ describe('execute', () => {
     const output = context.stdout.toString()
     expect(output).toContain('type:unit-tests')
     expect(output).toContain('jvm-21')
+  })
+
+  test('should parse --ignored-source-paths in dry-run mode', async () => {
+    const runCLIWithOption = makeRunCLI(CoverageUploadCommand, [
+      'coverage',
+      'upload',
+      '--dry-run',
+      '--verbose',
+      '--ignored-source-paths',
+      '**/generated/**,**/*.{js,ts}',
+    ])
+    const {context, code} = await runCLIWithOption(['src/__tests__/fixtures'])
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain(
+      'Excluding 2 source path pattern(s) from coverage: "**/generated/**", "**/*.{js,ts}"'
+    )
+  })
+
+  test('should fail before uploading anything when --ignored-source-paths exceeds the cap', async () => {
+    const runCLIWithOption = makeRunCLI(CoverageUploadCommand, [
+      'coverage',
+      'upload',
+      '--dry-run',
+      '--ignored-source-paths',
+      Array.from({length: 2001}, (_, i) => `path${i}/**`).join(','),
+    ])
+    const {context, code} = await runCLIWithOption(['src/__tests__/fixtures'])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('Maximum of 2000 ignored source paths allowed')
+    expect(context.stdout.toString()).not.toContain('Starting upload')
   })
 })
 

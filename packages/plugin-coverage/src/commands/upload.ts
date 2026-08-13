@@ -24,6 +24,7 @@ import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-sp
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {splitPatternList} from '@datadog/datadog-ci-base/helpers/pattern-list'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {
   GIT_HEAD_SHA,
@@ -60,6 +61,16 @@ const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 7 // backend supports 10 attachments, to keep the logic simple we subtract 3: for PR diff, commit diff, and file fixes
 
+// errorPatternLength matches the backend's per-pattern limit, so anything the backend would
+// drop is rejected here instead.
+const MAX_IGNORED_SOURCE_PATHS = {
+  warnCount: 1000,
+  warnBytes: 100 * 1024,
+  errorCount: 2000,
+  errorBytes: 256 * 1024,
+  errorPatternLength: 1000,
+}
+
 const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml']
 
 const CODEOWNERS_PATHS = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
@@ -77,6 +88,7 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private git: simpleGit.SimpleGit | undefined = undefined
+  private ignoredSourcePathsPatterns: string[] | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -94,6 +106,14 @@ export class PluginCommand extends CoverageUploadCommand {
       this.context.stderr.write(
         `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
       )
+
+      return 1
+    }
+
+    try {
+      this.getIgnoredSourcePaths()
+    } catch (error) {
+      this.context.stderr.write(`${error.message}\n`)
 
       return 1
     }
@@ -183,6 +203,7 @@ export class PluginCommand extends CoverageUploadCommand {
 
   private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
     const flags = this.getFlags()
+    const ignoredSourcePaths = this.getIgnoredSourcePaths()
 
     const reportedCommit = getReportedCommitSha(spanTags)
     const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS, reportedCommit)
@@ -208,6 +229,7 @@ export class PluginCommand extends CoverageUploadCommand {
           paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
           spanTags,
           flags,
+          ignoredSourcePaths,
           hostname: os.hostname(),
           commitDiff,
           prDiff,
@@ -364,6 +386,60 @@ export class PluginCommand extends CoverageUploadCommand {
     }
 
     return this.flags
+  }
+
+  private getIgnoredSourcePaths(): string[] | undefined {
+    // Parsed at most once: `execute()` validates upfront, `generatePayloads()` reads the result.
+    this.ignoredSourcePathsPatterns ??= this.parseIgnoredSourcePaths()
+
+    // A value that parses to nothing is much more likely to be an unset CI variable than a
+    // deliberate "ignore nothing", so it is treated as if the option was not passed at all.
+    return this.ignoredSourcePathsPatterns.length ? this.ignoredSourcePathsPatterns : undefined
+  }
+
+  private parseIgnoredSourcePaths(): string[] {
+    const patterns = splitPatternList(this.ignoredSourcePaths)
+    if (patterns.length === 0) {
+      return patterns
+    }
+
+    const bytes = Buffer.byteLength(JSON.stringify(patterns), 'utf8')
+
+    if (patterns.length > MAX_IGNORED_SOURCE_PATHS.errorCount) {
+      throw new Error(
+        `Maximum of ${MAX_IGNORED_SOURCE_PATHS.errorCount} ignored source paths allowed, but ${patterns.length} were provided`
+      )
+    }
+    // A pattern over this length is dropped by the backend. Rejecting it here keeps the
+    // "the list replaces the config" promise: a dropped pattern would empty the list and
+    // silently reinstate the `ignore` list of code-coverage.datadog.yml.
+    const tooLong = patterns.findIndex((pattern) => pattern.length > MAX_IGNORED_SOURCE_PATHS.errorPatternLength)
+    if (tooLong >= 0) {
+      const pattern = patterns[tooLong]
+      throw new Error(
+        `Ignored source path #${tooLong + 1} is ${pattern.length} characters long, but the maximum is ${
+          MAX_IGNORED_SOURCE_PATHS.errorPatternLength
+        }: "${pattern.slice(0, 60)}..."`
+      )
+    }
+    if (bytes > MAX_IGNORED_SOURCE_PATHS.errorBytes) {
+      throw new Error(
+        `Ignored source paths must not exceed ${MAX_IGNORED_SOURCE_PATHS.errorBytes} bytes, but ${bytes} bytes were provided`
+      )
+    }
+    if (patterns.length > MAX_IGNORED_SOURCE_PATHS.warnCount || bytes > MAX_IGNORED_SOURCE_PATHS.warnBytes) {
+      this.logger.warn(
+        `Uploading a large ignored source paths list (${patterns.length} patterns, ${bytes} bytes); consider using the \`ignore\` list of code-coverage.datadog.yml instead`
+      )
+    }
+
+    // Quoted individually: patterns can themselves contain a comma (`**/*.{js,ts}`), so an
+    // unquoted list cannot be read back reliably — which matters most when diagnosing a
+    // pattern that was split where the user did not expect it.
+    const quoted = patterns.map((pattern) => JSON.stringify(pattern)).join(', ')
+    this.logger.debug(`Excluding ${patterns.length} source path pattern(s) from coverage: ${quoted}`)
+
+    return patterns
   }
 
   private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
