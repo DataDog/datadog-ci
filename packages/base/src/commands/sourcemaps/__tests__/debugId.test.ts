@@ -1,6 +1,8 @@
 import fs from 'fs'
 import {Writable} from 'stream'
 
+import {originalPositionFor, TraceMap} from '@jridgewell/trace-mapping'
+
 import {
   addDebugIdToPayloads,
   extractDebugId,
@@ -114,12 +116,23 @@ describe('generateDebugId', () => {
 
 describe('injectDebugIdSnippet', () => {
   const DEBUG_ID_2 = '5c1d7f52-4e1b-5f7c-8c0d-2f4a5f6d8e91'
+  const ORIGINAL_SOURCE_NAME = 'original.js'
 
-  test('prepends the DD_SOURCE_CODE_CONTEXT snippet as the new first line and appends the debugId comment', () => {
+  // Builds an identity sourcemap (as if `js` went through minification with no
+  // actual transform) naming `original.js` as its one source, so tests can assert
+  // that a known original-source position still resolves correctly after injection.
+  const buildIdentitySourcemap = async (js: string): Promise<string> => {
+    const {default: MagicString} = await import('magic-string')
+    const ms = new MagicString(js)
+
+    return ms.generateMap({source: ORIGINAL_SOURCE_NAME, includeContent: true, hires: true}).toString()
+  }
+
+  test('prepends the DD_SOURCE_CODE_CONTEXT snippet as the new first line and appends the debugId comment', async () => {
     const js = 'var x = 1;\nconsole.log(x);'
-    const sourcemap = JSON.stringify({version: 3, sources: [], mappings: 'AAAA'})
+    const sourcemap = await buildIdentitySourcemap(js)
 
-    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const lines = result.js.split('\n')
 
     expect(lines[0]).toContain('DD_SOURCE_CODE_CONTEXT')
@@ -128,37 +141,90 @@ describe('injectDebugIdSnippet', () => {
     expect(result.js.trimEnd().endsWith(`//# debugId=${DEBUG_ID_2}`)).toBe(true)
   })
 
-  test('round-trips through extractDebugId', () => {
-    jest.spyOn(fs, 'readFileSync').mockImplementation(() => injectDebugIdSnippet('var x = 1;', '{}', DEBUG_ID_2).js)
+  test('round-trips through extractDebugId', async () => {
+    const injected = await injectDebugIdSnippet('var x = 1;', await buildIdentitySourcemap('var x = 1;'), DEBUG_ID_2)
+    jest.spyOn(fs, 'readFileSync').mockImplementation(() => injected.js)
     expect(extractDebugId('bundle.js')).toBe(DEBUG_ID_2)
     jest.restoreAllMocks()
   })
 
-  test('shifts the sourcemap by exactly one leading `;` and sets debugId', () => {
-    const sourcemap = JSON.stringify({version: 3, sources: [], mappings: 'AAAA'})
-    const result = injectDebugIdSnippet('var x = 1;', sourcemap, DEBUG_ID_2)
-    const parsed = JSON.parse(result.sourcemap)
+  test('sets debugId on the recomposed sourcemap and still resolves a known original position', async () => {
+    const js = 'var x = 1;\nconsole.log(x);'
+    const sourcemap = await buildIdentitySourcemap(js)
 
-    expect(parsed.mappings).toBe(';AAAA')
+    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const parsed = JSON.parse(result.sourcemap)
     expect(parsed.debugId).toBe(DEBUG_ID_2)
+
+    // `console.log(x);` is the second line of `js` (0-based line 1). After
+    // injection it becomes the third generated line (1-based line 3, column 0).
+    const tracer = new TraceMap(result.sourcemap)
+    const position = originalPositionFor(tracer, {line: 3, column: 0})
+
+    expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
+    expect(position.line).toBe(2)
+    expect(position.column).toBe(0)
   })
 
-  test('keeps a leading hashbang first', () => {
+  test('still resolves positions when the original sourcemap has no mapping at column 0 of its line', async () => {
+    // Real minifiers/bundlers routinely emit an unmapped IIFE/wrapper prefix before the
+    // first real token on an otherwise fully-packed single line (this is exactly what
+    // esbuild does). A lo-res adjustment map anchors each line at column 0, so if that
+    // exact column has no mapping in the underlying sourcemap, the whole line's
+    // composition is silently dropped. This guards against that regression.
+    const {default: MagicString} = await import('magic-string')
+    const original = new MagicString('console.log(x);')
+    original.prepend('(function(){')
+    original.append('})();')
+    const js = original.toString()
+    const sourcemap = original.generateMap({source: ORIGINAL_SOURCE_NAME, includeContent: true, hires: true}).toString()
+
+    // Column 0 is inside the prepended wrapper text, which has no mapping back to
+    // `original.js` — confirms the fixture actually reproduces the real-world gap.
+    const originalTracer = new TraceMap(sourcemap)
+    expect(originalPositionFor(originalTracer, {line: 1, column: 0}).source).toBeNull()
+
+    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+
+    // `console.log` starts right after the prepended `(function(){` wrapper, on what
+    // is now the second generated line (after the injected snippet).
+    const wrapperLength = '(function(){'.length
+    const tracer = new TraceMap(result.sourcemap)
+    const position = originalPositionFor(tracer, {line: 2, column: wrapperLength})
+
+    expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
+    expect(position.line).toBe(1)
+    expect(position.column).toBe(0)
+  })
+
+  test('keeps a leading hashbang first', async () => {
     const js = '#!/usr/bin/env node\nvar x = 1;'
-    const result = injectDebugIdSnippet(js, '{}', DEBUG_ID_2)
+    const result = await injectDebugIdSnippet(js, await buildIdentitySourcemap(js), DEBUG_ID_2)
 
     expect(result.js.startsWith('#!/usr/bin/env node\n')).toBe(true)
     expect(result.js).toContain('DD_SOURCE_CODE_CONTEXT')
   })
 
-  test('repeats a leading "use strict" directive before the snippet', () => {
-    const js = '"use strict";\nvar x = 1;'
-    const result = injectDebugIdSnippet(js, '{}', DEBUG_ID_2)
+  test('repeats a leading "use strict" directive before the snippet and still resolves original positions', async () => {
+    const js = '"use strict";\nvar x = 1;\nconsole.log(x);'
+    const sourcemap = await buildIdentitySourcemap(js)
+
+    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const firstLine = result.js.split('\n')[0]
 
     expect(firstLine.startsWith('"use strict";')).toBe(true)
     expect(firstLine).toContain('DD_SOURCE_CODE_CONTEXT')
     expect(result.js).toContain(js)
+
+    // `console.log(x);` is the third line of `js` (1-based line 3). The whole,
+    // unstripped original source is preserved verbatim starting one generated
+    // line after the injected snippet, so it becomes 1-based generated line 4.
+    const tracer = new TraceMap(result.sourcemap)
+    const position = originalPositionFor(tracer, {line: 4, column: 0})
+
+    expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
+    expect(position.line).toBe(3)
+    expect(position.column).toBe(0)
   })
 })
 
@@ -182,7 +248,7 @@ describe('generateAndInjectMissingDebugIds', () => {
   test('generates and injects a debug ID for payloads missing one', async () => {
     const files: Record<string, string> = {
       'a.min.js': 'var x = 1;',
-      'a.min.js.map': JSON.stringify({version: 3, sources: [], mappings: 'AAAA'}),
+      'a.min.js.map': JSON.stringify({version: 3, sources: ['a.min.js'], mappings: 'AAAA'}),
     }
     jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
     const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation((path: unknown, content: unknown) => {
@@ -204,7 +270,7 @@ describe('generateAndInjectMissingDebugIds', () => {
   test('computes and sets debugId but does not write files on dry run', async () => {
     const files: Record<string, string> = {
       'a.min.js': 'var x = 1;',
-      'a.min.js.map': JSON.stringify({version: 3, sources: [], mappings: 'AAAA'}),
+      'a.min.js.map': JSON.stringify({version: 3, sources: ['a.min.js'], mappings: 'AAAA'}),
     }
     jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
     const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined)

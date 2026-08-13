@@ -80,21 +80,31 @@ export const generateDebugId = (jsContent: string, sourcemapContent: string): st
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-// Since exactly one new generated line is inserted before the original code, the
-// sourcemap only needs a single leading `;` (one empty generated line) prepended to
-// its `mappings` field to stay in sync.
-const injectDebugIdIntoSourcemap = (sourcemapContent: string, debugId: string): string => {
-  const sourcemap = JSON.parse(sourcemapContent)
-  sourcemap.mappings = `;${sourcemap.mappings ?? ''}`
-  sourcemap.debugId = debugId
+const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
 
-  return JSON.stringify(sourcemap)
-}
+// `@ampproject/remapping`'s conditional-exports/types shape confuses TS's `node16`
+// module resolution for a dynamic `import()` of a CJS-consumed ESM-only default
+// export, so the callable is re-declared locally rather than relying on its
+// inferred type from the dynamic import.
+type RemappingFn = (
+  input: string | Record<string, unknown>,
+  loader: (file: string) => Record<string, unknown> | undefined
+) => {toString(): string}
 
 // The snippet is inserted as early as possible (after an optional hashbang and/or
 // leading "use ...;" directive, which are kept first since they must remain the first
 // statement in the file), and a `//# debugId=` comment is appended at the very end.
-const injectDebugIdIntoJs = (jsContent: string, debugId: string): string => {
+// Built via MagicString (rather than plain string concatenation) so the resulting
+// position map can be composed with the original sourcemap through `remapping`,
+// instead of hand-deriving how many lines/characters the injection shifted.
+export const injectDebugIdSnippet = async (
+  jsContent: string,
+  sourcemapContent: string,
+  debugId: string
+): Promise<{js: string; sourcemap: string}> => {
+  const {default: MagicString} = await import('magic-string')
+  const remapping = (await import('@ampproject/remapping')).default as unknown as RemappingFn
+
   const hashbangMatch = jsContent.match(HASHBANG_REGEX)
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
   const sourceWithoutHashbang = jsContent.slice(hashbangPortion.length)
@@ -104,17 +114,29 @@ const injectDebugIdIntoJs = (jsContent: string, debugId: string): string => {
 
   const debugIdComment = `${DEBUG_ID_COMMENT_PREFIX}=${debugId}`
 
-  return `${hashbangPortion}${useDirective}${buildSnippet(debugId)}\n${sourceWithoutHashbang}\n${debugIdComment}\n`
-}
+  const ms = new MagicString(jsContent)
+  ms.appendLeft(hashbangPortion.length, `${useDirective}${buildSnippet(debugId)}\n`)
+  ms.append(`\n${debugIdComment}\n`)
 
-export const injectDebugIdSnippet = (
-  jsContent: string,
-  sourcemapContent: string,
-  debugId: string
-): {js: string; sourcemap: string} => ({
-  js: injectDebugIdIntoJs(jsContent, debugId),
-  sourcemap: injectDebugIdIntoSourcemap(sourcemapContent, debugId),
-})
+  // hires is required: with per-line (lo-res) mappings, magic-string emits a single
+  // anchor segment at column 0 of each unedited line. Real minified output frequently
+  // has no mapping at column 0 of its packed line (e.g. unmapped bundler/IIFE
+  // boilerplate before the first real token), so that anchor falls in a gap in the
+  // original sourcemap and the whole line's mapping is silently dropped on composition.
+  const adjustmentMap = ms.generateMap({source: PRE_INJECTION_SOURCE_NAME, includeContent: false, hires: true})
+  const originalSourcemap: Record<string, unknown> = JSON.parse(sourcemapContent)
+  const combinedMap = remapping(adjustmentMap.toString(), (file: string) =>
+    file === PRE_INJECTION_SOURCE_NAME ? originalSourcemap : undefined
+  )
+  const combinedMapJson: Record<string, unknown> = JSON.parse(combinedMap.toString())
+  combinedMapJson.debugId = debugId
+  combinedMapJson.debug_id = debugId
+
+  return {
+    js: ms.toString(),
+    sourcemap: JSON.stringify(combinedMapJson),
+  }
+}
 
 /**
  * For every payload with no extracted debug ID, generates one from the minified file
@@ -150,7 +172,7 @@ export const generateAndInjectMissingDebugIds = async (
       continue
     }
 
-    const {js, sourcemap} = injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
+    const {js, sourcemap} = await injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
     fs.writeFileSync(payload.minifiedFilePath, js)
     fs.writeFileSync(payload.sourcemapPath, sourcemap)
   }
