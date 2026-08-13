@@ -115,12 +115,16 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
 export const normalizeTracingMode = (tracing: TracingInput | undefined): TracingMode | undefined =>
   tracing === undefined ? undefined : TRACING_MODE_BY_INPUT[tracing]
 
-export const getTracingEnvValue = (tracing: TracingMode | undefined): 'true' | 'false' | undefined => {
+export const getTracingEnvValue = (tracing: TracingInput | undefined): 'true' | 'false' | '1' | '0' | undefined => {
   if (tracing === undefined) {
     return undefined
   }
 
-  return tracing === 'disabled' ? 'false' : 'true'
+  if (tracing === '1' || tracing === '0') {
+    return tracing
+  }
+
+  return tracing === 'false' || tracing === 'disabled' ? 'false' : 'true'
 }
 
 /** Selects the main application container or rejects an ambiguous layout. */

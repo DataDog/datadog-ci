@@ -165,10 +165,11 @@ describe('InstrumentCommand', () => {
     test.each([
       [undefined, undefined, 'no-injection'],
       ['true', 'true', 'no-injection'],
-      ['1', 'true', 'no-injection'],
+      ['1', '1', 'no-injection'],
       ['manual', 'true', 'no-injection'],
       ['false', 'false', 'no-injection'],
-      ['0', 'false', 'no-injection'],
+      ['0', '0', 'no-injection'],
+      ['disabled', 'false', 'no-injection'],
       ['inject', 'true', 'single-language'],
     ])('normalizes --tracing %s', async (tracing, traceEnabled, configKind) => {
       mockServicesClient.getService.mockResolvedValue([service])
@@ -184,7 +185,7 @@ describe('InstrumentCommand', () => {
       expect(options.envVarsByName.DD_TRACE_ENABLED?.value).toBe(traceEnabled)
     })
 
-    test('--language alone only configures the log source', async () => {
+    test('--language sets the log source without automatic instrumentation', async () => {
       mockServicesClient.getService.mockResolvedValue([service])
       const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
 
@@ -209,7 +210,7 @@ describe('InstrumentCommand', () => {
         '--language',
         'python',
         '--tracer-version',
-        '2.0.0',
+        '4.13.1',
         '--tracer-libc',
         'musl',
         '--tracer-readiness-port',
@@ -225,7 +226,7 @@ describe('InstrumentCommand', () => {
             kind: 'single-language',
             language: 'python',
             libc: 'musl',
-            spec: expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:2.0.0'}),
+            spec: expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:4.13.1'}),
           }),
         })
       )
