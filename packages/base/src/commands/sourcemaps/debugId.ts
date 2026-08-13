@@ -45,12 +45,11 @@ const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
 const USE_DIRECTIVE_REGEX =
   /^(?:\s|\/\*[\s\S]*?\*\/|\/\/.*(?:\r\n|\r|\n))*(?<useDirective>"use [^"]*"|'use [^']*');?(?:\r\n|\r|\n)?/
 
-// Mirrors sentry-cli's `debug_id_from_js_and_sourcemap_bytes_hashed`: SHA-1 over
-// "js" + 8-byte little-endian length + JS bytes + "sourcemap" + 8-byte little-endian
-// length + sourcemap bytes, truncated to 16 bytes, formatted as a UUID with the
-// version nibble forced to 5 and variant bits forced to RFC4122
-// (uuid::Builder::from_sha1_bytes), NOT the v4-style forcing used by RN's own
-// generateDebugId, which is an unrelated convention specific to RN's MD5 scheme.
+// SHA-1 over "js" + 8-byte little-endian length + JS bytes + "sourcemap" + 8-byte
+// little-endian length + sourcemap bytes, truncated to 16 bytes, formatted as a UUID
+// with the version nibble forced to 5 and variant bits forced to RFC4122. NOT the
+// v4-style forcing used by RN's own generateDebugId, which is an unrelated convention
+// specific to RN's MD5 scheme.
 export const generateDebugId = (jsContent: string, sourcemapContent: string): string => {
   const jsBytes = Buffer.from(jsContent, 'utf-8')
   const sourcemapBytes = Buffer.from(sourcemapContent, 'utf-8')
@@ -81,9 +80,9 @@ export const generateDebugId = (jsContent: string, sourcemapContent: string): st
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-// Mirrors sentry-cli's `inject_at_start`: since exactly one new generated line is
-// inserted before the original code, the sourcemap only needs a single leading `;`
-// (one empty generated line) prepended to its `mappings` field to stay in sync.
+// Since exactly one new generated line is inserted before the original code, the
+// sourcemap only needs a single leading `;` (one empty generated line) prepended to
+// its `mappings` field to stay in sync.
 const injectDebugIdIntoSourcemap = (sourcemapContent: string, debugId: string): string => {
   const sourcemap = JSON.parse(sourcemapContent)
   sourcemap.mappings = `;${sourcemap.mappings ?? ''}`
@@ -92,10 +91,9 @@ const injectDebugIdIntoSourcemap = (sourcemapContent: string, debugId: string): 
   return JSON.stringify(sourcemap)
 }
 
-// Mirrors sentry-cli's `inject_at_start`: the snippet is inserted as early as possible
-// (after an optional hashbang and/or leading "use ...;" directive, which are kept first
-// since they must remain the first statement in the file), and a `//# debugId=` comment
-// is appended at the very end.
+// The snippet is inserted as early as possible (after an optional hashbang and/or
+// leading "use ...;" directive, which are kept first since they must remain the first
+// statement in the file), and a `//# debugId=` comment is appended at the very end.
 const injectDebugIdIntoJs = (jsContent: string, debugId: string): string => {
   const hashbangMatch = jsContent.match(HASHBANG_REGEX)
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
