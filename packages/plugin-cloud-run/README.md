@@ -23,7 +23,7 @@ datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> -d
 ```
 
-`--tracing` controls APM instrumentation. Use `manual` when the application image already includes a tracer, `inject` with `--language` to install a Java, Node.js, .NET, Python, Ruby, or PHP tracer automatically, or `disabled` to turn tracing off. The existing values `true`/`1` and `false`/`0` remain aliases for `manual` and `disabled`. An unset value leaves `DD_TRACE_ENABLED` unchanged.
+`--tracing` controls APM instrumentation. Use `manual` when the application image already includes a tracer, `inject` with `--language` to install a Java, Node.js, .NET, Python, Ruby, or PHP tracer automatically, or `disabled` to turn tracing off. The existing values `true`/`1` and `false`/`0` remain aliases for `manual` and `disabled`. If omitted, the command preserves an existing `DD_TRACE_ENABLED` value or enables tracing when none is set.
 
 `--tracing inject` without `--language` is reserved for future multi-language automatic instrumentation and currently returns an unsupported error. Go tracers cannot be injected; install `dd-trace-go` in the application and use `--tracing manual`.
 

@@ -2,6 +2,8 @@ import path from 'node:path'
 
 import type {EnvFragment} from './env'
 
+import {gt, valid} from 'semver'
+
 import {buildSingleLanguageTracerImage, type Language, type SingleLanguageTracerRegistry} from './tracer'
 
 export const DEFAULT_TRACER_ROOT = '/datadog-lib'
@@ -47,9 +49,33 @@ export const getLanguageInjectionSpec = (options: LanguageInjectionOptions): Lan
   return {image, ...LANGUAGE_CONFIG[options.language].getSpec(root, options.libc)}
 }
 
+const PROBE_SERVER_VERSION_BASELINES: Record<Language, string> = {
+  java: '1.65.1',
+  nodejs: '6.10.0',
+  csharp: '3.51.1',
+  python: '4.13.0',
+  ruby: '2.41.0',
+  php: '1.23.3',
+}
+
 /** Returns domain compatibility errors after individual CLI arguments have been validated. */
-export const getLanguageCompatibilityErrors = (options: LanguageCompatibilityOptions): readonly string[] =>
-  LANGUAGE_CONFIG[options.language].getCompatibilityErrors?.(options) ?? []
+export const getLanguageCompatibilityErrors = (options: LanguageCompatibilityOptions): readonly string[] => [
+  ...(LANGUAGE_CONFIG[options.language].getCompatibilityErrors?.(options) ?? []),
+  ...getProbeServerCompatibilityErrors(options.language, options.version),
+]
+
+const getProbeServerCompatibilityErrors = (language: Language, version: string): readonly string[] => {
+  if (version === 'latest') {
+    return []
+  }
+
+  const baseline = PROBE_SERVER_VERSION_BASELINES[language]
+  const parsedVersion = valid(version) ?? undefined
+
+  return parsedVersion !== undefined && gt(parsedVersion, baseline)
+    ? []
+    : [`Automatic instrumentation requires tracer version later than ${baseline} or "latest".`]
+}
 
 type LanguageConfig = {
   getSpec: (root: string, libc: Libc) => Pick<LanguageInjectionSpec, 'artifacts' | 'env'>

@@ -14,6 +14,7 @@ const TRACING_INPUT_METADATA = [
   {input: '1', mode: 'manual'},
   {input: 'manual', mode: 'manual'},
   {input: 'false', mode: 'disabled'},
+  {input: 'disabled', mode: 'disabled'},
   {input: '0', mode: 'disabled'},
   {input: 'inject', mode: 'inject'},
 ] as const

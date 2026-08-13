@@ -33,7 +33,7 @@ describe('CloudRunInstrumentCommand', () => {
     parsedOptions = undefined
   })
 
-  test.each(['true', '1', 'manual', 'false', '0', 'inject'])('accepts --tracing %s', async (tracing) => {
+  test.each(['true', '1', 'manual', 'false', '0', 'disabled', 'inject'])('accepts --tracing %s', async (tracing) => {
     const {code} = await runCLI(['--tracing', tracing])
 
     expect(code).toBe(0)

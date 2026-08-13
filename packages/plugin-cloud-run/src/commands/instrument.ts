@@ -264,7 +264,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     const envVars = getBaseEnvVars(config)
 
     for (const [name, value] of [
-      [DD_TRACE_ENABLED_ENV_VAR, getTracingEnvValue(normalizeTracingMode(this.tracing))],
+      [DD_TRACE_ENABLED_ENV_VAR, getTracingEnvValue(this.tracing)],
       [DD_LOG_LEVEL_ENV_VAR, this.logLevel],
       [DD_SOURCE_ENV_VAR, this.language],
       ...(this.llmobs
