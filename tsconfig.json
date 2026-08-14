@@ -13,6 +13,7 @@
     {"path": "./packages/plugin-coverage"},
     {"path": "./packages/plugin-deployment"},
     {"path": "./packages/plugin-dora"},
+    {"path": "./packages/plugin-ecs"},
     {"path": "./packages/plugin-gate"},
     {"path": "./packages/plugin-junit"},
     {"path": "./packages/plugin-lambda"},

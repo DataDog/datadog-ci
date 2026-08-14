@@ -11,6 +11,7 @@ import {commands as coverageCommands} from './commands/coverage/cli'
 import {commands as deploymentCommands} from './commands/deployment/cli'
 import {commands as doraCommands} from './commands/dora/cli'
 import {commands as dsymsCommands} from './commands/dsyms/cli'
+import {commands as ecsCommands} from './commands/ecs/cli'
 import {commands as elfSymbolsCommands} from './commands/elf-symbols/cli'
 import {commands as flutterSymbolsCommands} from './commands/flutter-symbols/cli'
 import {commands as gateCommands} from './commands/gate/cli'
@@ -46,6 +47,7 @@ export const commands = {
   'deployment': deploymentCommands,
   'dora': doraCommands,
   'dsyms': dsymsCommands,
+  'ecs': ecsCommands,
   'elf-symbols': elfSymbolsCommands,
   'flutter-symbols': flutterSymbolsCommands,
   'gate': gateCommands,

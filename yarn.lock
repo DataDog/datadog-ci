@@ -1447,6 +1447,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-coverage": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
+    "@datadog/datadog-ci-plugin-ecs": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
     "@datadog/datadog-ci-plugin-junit": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
@@ -1467,6 +1468,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-deployment":
       optional: true
     "@datadog/datadog-ci-plugin-dora":
+      optional: true
+    "@datadog/datadog-ci-plugin-ecs":
       optional: true
     "@datadog/datadog-ci-plugin-gate":
       optional: true
@@ -1556,6 +1559,12 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.36.0"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-ecs@workspace:packages/plugin-ecs":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-ecs@workspace:packages/plugin-ecs"
   languageName: unknown
   linkType: soft
 
