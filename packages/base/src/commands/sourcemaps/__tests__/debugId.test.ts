@@ -226,6 +226,18 @@ describe('injectDebugIdSnippet', () => {
     expect(position.line).toBe(3)
     expect(position.column).toBe(0)
   })
+
+  test('repeats every leading directive, not just the first, before the snippet', async () => {
+    const js = '"use asm";\n"use strict";\nvar x = 1;\nconsole.log(x);'
+    const sourcemap = await buildIdentitySourcemap(js)
+
+    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const firstLine = result.js.split('\n')[0]
+
+    expect(firstLine.startsWith('"use asm";"use strict";')).toBe(true)
+    expect(firstLine).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(result.js).toContain(js)
+  })
 })
 
 describe('generateAndInjectMissingDebugIds', () => {
@@ -306,5 +318,29 @@ describe('generateAndInjectMissingDebugIds', () => {
     await generateAndInjectMissingDebugIds([payload], false, stdout)
 
     expect(payload.debugId).toBeUndefined()
+  })
+
+  test('logs a warning and skips the payload, without aborting the batch, when its sourcemap is malformed', async () => {
+    const files: Record<string, string> = {
+      'a.min.js': 'var x = 1;',
+      'a.min.js.map': 'not valid json',
+      'b.min.js': 'var y = 2;',
+      'b.min.js.map': JSON.stringify({version: 3, sources: ['b.min.js'], mappings: 'AAAA'}),
+    }
+    jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
+    jest.spyOn(fs, 'writeFileSync').mockImplementation((path: unknown, content: unknown) => {
+      files[path as string] = content as string
+    })
+
+    const badPayload = makeSourcemap('a.min.js')
+    const goodPayload = makeSourcemap('b.min.js')
+    const {stdout, chunks} = makeStdout()
+
+    await generateAndInjectMissingDebugIds([badPayload, goodPayload], false, stdout)
+
+    expect(badPayload.debugId).toBeUndefined()
+    expect(chunks.join('')).toContain(`WARN: Failed to inject debug ID into a.min.js`)
+    expect(goodPayload.debugId).toBeDefined()
+    expect(files['b.min.js']).toContain('DD_SOURCE_CODE_CONTEXT')
   })
 })

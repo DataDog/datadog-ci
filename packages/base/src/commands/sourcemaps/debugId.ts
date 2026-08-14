@@ -45,6 +45,26 @@ const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
 const USE_DIRECTIVE_REGEX =
   /^(?:\s|\/\*[\s\S]*?\*\/|\/\/.*(?:\r\n|\r|\n))*(?<useDirective>"use [^"]*"|'use [^']*');?(?:\r\n|\r|\n)?/
 
+// A directive prologue can hold more than one directive (e.g. `"use strict"; "use asm";`), and
+// every one of them must be repeated ahead of the injected snippet: once the injected statement
+// is inserted, it ends the prologue, so any directive left behind after it is a no-op instead of
+// an active directive. Matches greedily from the front, one directive at a time, to capture the
+// full leading run rather than just the first.
+const extractLeadingUseDirectives = (source: string): string => {
+  let offset = 0
+  let directives = ''
+  for (;;) {
+    const match = source.slice(offset).match(USE_DIRECTIVE_REGEX)
+    if (!match?.groups?.useDirective) {
+      break
+    }
+    directives += `${match.groups.useDirective};`
+    offset += match[0].length
+  }
+
+  return directives
+}
+
 // SHA-1 over "js" + 8-byte little-endian length + JS bytes + "sourcemap" + 8-byte
 // little-endian length + sourcemap bytes, truncated to 16 bytes, formatted as a UUID
 // with the version nibble forced to 5 and variant bits forced to RFC4122. NOT the
@@ -92,8 +112,8 @@ type RemappingFn = (
 ) => Record<string, unknown>
 
 // The snippet is inserted as early as possible (after an optional hashbang and/or
-// leading "use ...;" directive, which are kept first since they must remain the first
-// statement in the file), and a `//# debugId=` comment is appended at the very end.
+// leading "use ...;" directives, which are kept first since they must remain the first
+// statements in the file), and a `//# debugId=` comment is appended at the very end.
 // Built via MagicString (rather than plain string concatenation) so the resulting
 // position map can be composed with the original sourcemap through `remapping`,
 // instead of hand-deriving how many lines/characters the injection shifted.
@@ -109,13 +129,12 @@ export const injectDebugIdSnippet = async (
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
   const sourceWithoutHashbang = jsContent.slice(hashbangPortion.length)
 
-  const useDirectiveMatch = sourceWithoutHashbang.match(USE_DIRECTIVE_REGEX)
-  const useDirective = useDirectiveMatch?.groups?.useDirective ? `${useDirectiveMatch.groups.useDirective};` : ''
+  const useDirectives = extractLeadingUseDirectives(sourceWithoutHashbang)
 
   const debugIdComment = `${DEBUG_ID_COMMENT_PREFIX}=${debugId}`
 
   const ms = new MagicString(jsContent)
-  ms.appendLeft(hashbangPortion.length, `${useDirective}${buildSnippet(debugId)}\n`)
+  ms.appendLeft(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
   ms.append(`\n${debugIdComment}\n`)
 
   // hires is required: with per-line (lo-res) mappings, magic-string emits a single
@@ -140,8 +159,9 @@ export const injectDebugIdSnippet = async (
 /**
  * For every payload with no extracted debug ID, generates one from the minified file
  * and sourcemap contents and injects it into both (unless `dryRun`). Payloads whose
- * files can't be read are left without a debug ID, which `validatePayload` treats as
- * a skip further downstream.
+ * files can't be read, or whose sourcemap can't be recomposed (e.g. malformed JSON),
+ * are left without a debug ID, which `validatePayload` treats as a skip further
+ * downstream, instead of aborting the whole batch.
  */
 export const generateAndInjectMissingDebugIds = async (
   payloads: Sourcemap[],
@@ -164,15 +184,20 @@ export const generateAndInjectMissingDebugIds = async (
 
     const debugId = generateDebugId(jsContent, sourcemapContent)
     stdout.write(`Generated debug ID for ${payload.minifiedFilePath}: ${debugId}\n`)
-    payload.debugId = debugId
 
     if (dryRun) {
+      payload.debugId = debugId
       stdout.write('Dry run: no files modified.\n')
       continue
     }
 
-    const {js, sourcemap} = await injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
-    fs.writeFileSync(payload.minifiedFilePath, js)
-    fs.writeFileSync(payload.sourcemapPath, sourcemap)
+    try {
+      const {js, sourcemap} = await injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
+      fs.writeFileSync(payload.minifiedFilePath, js)
+      fs.writeFileSync(payload.sourcemapPath, sourcemap)
+      payload.debugId = debugId
+    } catch (error) {
+      stdout.write(`WARN: Failed to inject debug ID into ${payload.minifiedFilePath}: ${error}\n`)
+    }
   }
 }
