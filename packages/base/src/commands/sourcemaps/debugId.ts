@@ -89,7 +89,7 @@ const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
 type RemappingFn = (
   input: string | Record<string, unknown>,
   loader: (file: string) => Record<string, unknown> | undefined
-) => {toString(): string}
+) => Record<string, unknown>
 
 // The snippet is inserted as early as possible (after an optional hashbang and/or
 // leading "use ...;" directive, which are kept first since they must remain the first
@@ -125,16 +125,15 @@ export const injectDebugIdSnippet = async (
   // original sourcemap and the whole line's mapping is silently dropped on composition.
   const adjustmentMap = ms.generateMap({source: PRE_INJECTION_SOURCE_NAME, includeContent: false, hires: true})
   const originalSourcemap: Record<string, unknown> = JSON.parse(sourcemapContent)
-  const combinedMap = remapping(adjustmentMap.toString(), (file: string) =>
+  const combinedMap = remapping(adjustmentMap as unknown as Record<string, unknown>, (file: string) =>
     file === PRE_INJECTION_SOURCE_NAME ? originalSourcemap : undefined
   )
-  const combinedMapJson: Record<string, unknown> = JSON.parse(combinedMap.toString())
-  combinedMapJson.debugId = debugId
-  combinedMapJson.debug_id = debugId
+  combinedMap.debugId = debugId
+  combinedMap.debug_id = debugId
 
   return {
     js: ms.toString(),
-    sourcemap: JSON.stringify(combinedMapJson),
+    sourcemap: JSON.stringify(combinedMap),
   }
 }
 
