@@ -96,7 +96,7 @@ if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 		while IFS= read -r reviewer; do
 			[ -z "$reviewer" ] && continue
 			REVIEWER_IS_ADMIN=$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
-				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '.user.permissions.maintain // false')
+				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '(.user.permissions.admin or .user.permissions.maintain) // false')
 			if [ "$REVIEWER_IS_ADMIN" = "true" ]; then
 				ADMIN_PR_APPROVALS=$((ADMIN_PR_APPROVALS + 1))
 			fi
