@@ -95,9 +95,11 @@ if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 		ADMIN_PR_APPROVALS=0
 		while IFS= read -r reviewer; do
 			[ -z "$reviewer" ] && continue
-			REVIEWER_PERMISSION=$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
-				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '.permission // empty')
-			if [ "$REVIEWER_PERMISSION" = "admin" ]; then
+			# `role_name` reflects custom roles built on top of "maintain" (e.g. datadog-ci-admins'
+			# "dd-repo-owner" role), unlike the legacy `permission` field which collapses those down to "write".
+			REVIEWER_ROLE=$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
+				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '.role_name // empty')
+			if [ "$REVIEWER_ROLE" = "admin" ] || [ "$REVIEWER_ROLE" = "maintain" ]; then
 				ADMIN_PR_APPROVALS=$((ADMIN_PR_APPROVALS + 1))
 			fi
 		done <<< "$APPROVING_REVIEWERS"
