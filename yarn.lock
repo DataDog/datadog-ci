@@ -5,7 +5,7 @@ __metadata:
   version: 8
   cacheKey: 10
 
-"@ampproject/remapping@npm:^2.2.0, @ampproject/remapping@npm:^2.3.0":
+"@ampproject/remapping@npm:^2.2.0":
   version: 2.3.0
   resolution: "@ampproject/remapping@npm:2.3.0"
   dependencies:
@@ -1409,9 +1409,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-base@workspace:packages/base"
   dependencies:
-    "@ampproject/remapping": "npm:^2.3.0"
     "@antfu/install-pkg": "npm:^1.1.0"
-    "@jridgewell/trace-mapping": "npm:^0.3.31"
     "@types/async-retry": "npm:^1.4.8"
     "@types/datadog-metrics": "npm:^0.6.1"
     "@types/debug": "npm:^4.1.12"
@@ -1434,15 +1432,16 @@ __metadata:
     jest-diff: "npm:^30.2.0"
     js-yaml: "npm:^4.3.1"
     jszip: "npm:^3.10.1"
-    magic-string: "npm:^1.2.0"
     proxy-agent: "npm:^6.4.0"
     semver: "npm:^7.6.3"
     simple-git: "npm:^3.36.0"
+    source-map: "npm:^0.7.4"
     terminal-link: "npm:^2.1.1"
     tiny-async-pool: "npm:^2.1.0"
     typanion: "npm:^3.14.0"
     undici: "npm:^7.29.0"
     upath: "npm:^2.0.1"
+    webpack-sources: "npm:^3.5.1"
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
@@ -3063,14 +3062,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jridgewell/sourcemap-codec@npm:^1.4.14, @jridgewell/sourcemap-codec@npm:^1.5.0, @jridgewell/sourcemap-codec@npm:^1.5.5":
+"@jridgewell/sourcemap-codec@npm:^1.4.14, @jridgewell/sourcemap-codec@npm:^1.5.0":
   version: 1.5.5
   resolution: "@jridgewell/sourcemap-codec@npm:1.5.5"
   checksum: 10/5d9d207b462c11e322d71911e55e21a4e2772f71ffe8d6f1221b8eb5ae6774458c1d242f897fb0814e8714ca9a6b498abfa74dfe4f434493342902b1a48b33a5
   languageName: node
   linkType: hard
 
-"@jridgewell/trace-mapping@npm:^0.3.12, @jridgewell/trace-mapping@npm:^0.3.18, @jridgewell/trace-mapping@npm:^0.3.24, @jridgewell/trace-mapping@npm:^0.3.28, @jridgewell/trace-mapping@npm:^0.3.31":
+"@jridgewell/trace-mapping@npm:^0.3.12, @jridgewell/trace-mapping@npm:^0.3.18, @jridgewell/trace-mapping@npm:^0.3.24, @jridgewell/trace-mapping@npm:^0.3.28":
   version: 0.3.31
   resolution: "@jridgewell/trace-mapping@npm:0.3.31"
   dependencies:
@@ -9263,15 +9262,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "magic-string@npm:1.2.0"
-  dependencies:
-    "@jridgewell/sourcemap-codec": "npm:^1.5.5"
-  checksum: 10/02158f92f806accd4cc1c7981e1ab54f959f6e56124a6288d55b249b6613ff9d978847ee47a588b933400296c7c51dab7715f79412ba044a1f2b4b2a6e3408bc
-  languageName: node
-  linkType: hard
-
 "make-dir@npm:^4.0.0":
   version: 4.0.0
   resolution: "make-dir@npm:4.0.0"
@@ -12098,6 +12088,13 @@ __metadata:
   version: 3.0.1
   resolution: "webidl-conversions@npm:3.0.1"
   checksum: 10/b65b9f8d6854572a84a5c69615152b63371395f0c5dcd6729c45789052296df54314db2bc3e977df41705eacb8bc79c247cee139a63fa695192f95816ed528ad
+  languageName: node
+  linkType: hard
+
+"webpack-sources@npm:^3.5.1":
+  version: 3.5.1
+  resolution: "webpack-sources@npm:3.5.1"
+  checksum: 10/50b9699a3ab9a698e117d8a6b816235576f17e60aeca0a44269041773f960c3beb2ad10d07bc5f2ef8eebde3db5275c6a23566dad475db8f840a34a7bfabd2c3
   languageName: node
   linkType: hard
 

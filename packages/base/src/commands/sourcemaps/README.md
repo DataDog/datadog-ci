@@ -17,9 +17,28 @@ It is also possible to override the full URL for the intake endpoint by defining
 
 ## Commands
 
+### `inject`
+
+This command injects a deterministic debug ID into each JavaScript bundle and adjusts its sourcemap so existing mappings continue to point to the original source positions. Run it after building and before deploying the bundles:
+
+```bash
+datadog-ci sourcemaps inject ./build
+```
+
+The command modifies the JavaScript bundles and sourcemaps in place. Deploy and upload those same modified artifacts:
+
+```bash
+datadog-ci sourcemaps inject ./build
+datadog-ci sourcemaps upload ./build --debug-id
+```
+
+Bundles that already contain a debug ID are left unchanged. Use `--dry-run` to preview injection without modifying files.
+
 ### `upload`
 
 This command will upload all JavaScript sourcemaps and their corresponding JavaScript bundles to Datadog in order to un-minify front-end stack traces received by Datadog.
+
+With `--debug-id`, this command uploads only bundles that already contain a debug ID. It does not modify build artifacts; run `sourcemaps inject` first when debug IDs are missing.
 
 To upload the sourcemaps in the build folder, this command should be run:
 

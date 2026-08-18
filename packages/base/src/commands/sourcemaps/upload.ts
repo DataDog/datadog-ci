@@ -24,7 +24,6 @@ import {
   newSimpleGit,
   normalizeSources,
 } from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
@@ -32,7 +31,8 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {addDebugIdToPayloads, generateAndInjectMissingDebugIds} from './debugId'
+import {addDebugIdToPayloads} from './debugId'
+import {findSourcemaps} from './discovery'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
@@ -47,7 +47,6 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getMinifiedFilePath, readLastLine} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class SourcemapsUploadCommand extends BaseCommand {
@@ -141,7 +140,6 @@ export class SourcemapsUploadCommand extends BaseCommand {
 
     if (this.debugId && payloads.length > 0) {
       addDebugIdToPayloads(payloads)
-      await generateAndInjectMissingDebugIds(payloads, this.dryRun, this.context.stdout)
     }
 
     const requestBuilder = this.getRequestBuilder()
@@ -213,62 +211,11 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'))
+    return findSourcemaps(this.basePath, this.maxConcurrency, (minifiedFilePath, sourcemapPath) => {
+      const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
 
-    const sourcemaps = (
-      await doWithMaxConcurrency(this.maxConcurrency, jsFiles, async (minifiedFilePath) => {
-        try {
-          const lastLine = await readLastLine(minifiedFilePath)
-
-          // Look for sourceMappingURL comment
-          const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)
-
-          if (sourceMappingMatch) {
-            // mert: nextjs/turbopack uses url-percent encoding
-            const sourcemapUrl = decodeURIComponent(sourceMappingMatch[1].trim())
-
-            // Skip absolute URLs and absolute paths — they can't be resolved to local files
-            if (sourcemapUrl.includes('://') || upath.isAbsolute(sourcemapUrl)) {
-              return undefined
-            }
-
-            // Join the sourcemap path relative to the minified file's directory
-            const minifiedFileDir = upath.dirname(minifiedFilePath)
-            const sourcemapPath = upath.join(minifiedFileDir, sourcemapUrl)
-
-            const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
-
-            return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
-          }
-        } catch (error) {
-          return undefined
-        }
-
-        return undefined
-      })
-    ).filter((sourcemap): sourcemap is Sourcemap => sourcemap !== undefined)
-
-    // Fall back to legacy method if no sourcemaps were found
-    if (sourcemaps.length === 0) {
-      return this.getLegacyMatchingSourcemapFiles()
-    }
-
-    return sourcemaps
-  }
-
-  // Looks for the sourcemaps and minified files on disk and returns
-  // the associated payloads.
-  private getLegacyMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
-
-    return Promise.all(
-      sourcemapFiles.map(async (sourcemapPath) => {
-        const minifiedFilePath = getMinifiedFilePath(sourcemapPath)
-        const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
-
-        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
-      })
-    )
+      return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
+    })
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {

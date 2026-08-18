@@ -132,6 +132,7 @@ describe('cli', () => {
       'junit upload': [NONEXISTENT_FILE],
       'sarif upload': [NONEXISTENT_FILE],
       'sbom upload': [NONEXISTENT_FILE],
+      'sourcemaps inject': [NONEXISTENT_FILE],
       'sourcemaps upload': [NONEXISTENT_FILE],
       'terraform upload': ['plan', NONEXISTENT_FILE],
       trace: ['id'],

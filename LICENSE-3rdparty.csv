@@ -94,6 +94,5 @@ typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contrib
 @yao-pkg/pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 syncpack,dev,MIT,Copyright (c) 2017-2023 Jamie Mason
 tsdown,dev,MIT,Copyright (c) 2025-present VoidZero Inc. & Contributors
-@ampproject/remapping,import,Apache-2.0,Copyright 2019 Justin Ridgewell <jridgewell@google.com>
-magic-string,import,MIT,Copyright 2018 Rich Harris
-@jridgewell/trace-mapping,dev,MIT,Copyright 2024 Justin Ridgewell <justin@ridgewell.name>
+webpack-sources,import,MIT,Copyright (c) 2017 JS Foundation and other contributors
+source-map,dev,BSD-3-Clause,Copyright 2009-2011 Mozilla Foundation and contributors

@@ -315,7 +315,7 @@ describe('execute', () => {
     )
   })
 
-  test('debug id missing in all files generates and injects one instead of aborting', async () => {
+  test('debug id missing in all files is skipped without mutating build artifacts', async () => {
     const jsPath = './src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js'
     const originalJs = fs.readFileSync(jsPath, 'utf-8')
 
@@ -323,10 +323,9 @@ describe('execute', () => {
 
     expect(code).toBe(0)
     const stdout = context.stdout.toString()
-    expect(context.stderr.toString()).not.toContain('No debug ID found')
-    expect(stdout).toContain('Generated debug ID for')
-    expect(stdout).toMatch(/\[DRYRUN\] Uploading sourcemap .*common\.min\.js\.map.*\(debug ID: [a-f0-9-]{36}\)/)
-    // Dry run: the on-disk fixture must be left untouched.
+    expect(stdout).toContain('because no debug ID was found')
+    expect(stdout).not.toContain('Generated debug ID for')
+    expect(stdout).not.toContain('[DRYRUN] Uploading sourcemap')
     expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
   })
 
@@ -336,7 +335,7 @@ describe('execute', () => {
     expect(context.stderr.toString()).not.toContain('No debug ID found')
   })
 
-  test('debug id missing in some files generates one for those, keeps the existing one for others', async () => {
+  test('debug id missing in some files uploads existing IDs and skips missing IDs', async () => {
     const {context, code} = await runCLIWithDebugId([
       './src/commands/sourcemaps/__tests__/fixtures/bundle-with-partial-debug-id',
     ])
@@ -346,8 +345,8 @@ describe('execute', () => {
     expect(stdout).toContain('a.min.js.map')
     expect(stdout).toContain('b.min.js.map')
     expect(stdout).toContain('(debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)') // a.min.js: pre-existing ID, unchanged
-    expect(stdout).toContain('Generated debug ID for') // b.min.js: newly generated
-    expect(stdout).not.toContain('because no debug ID was found')
+    expect(stdout).not.toContain('Generated debug ID for')
+    expect(stdout).toContain('because no debug ID was found')
   })
 
   test('relative path with double dots', async () => {

@@ -1,13 +1,13 @@
 import fs from 'fs'
 import {Writable} from 'stream'
 
-import {originalPositionFor, TraceMap} from '@jridgewell/trace-mapping'
+import {SourceMapConsumer, SourceMapGenerator} from 'source-map'
 
 import {
   addDebugIdToPayloads,
   extractDebugId,
-  generateAndInjectMissingDebugIds,
   generateDebugId,
+  injectMissingDebugIds,
   injectDebugIdSnippet,
 } from '../debugId'
 import {Sourcemap} from '../interfaces'
@@ -121,16 +121,28 @@ describe('injectDebugIdSnippet', () => {
   // Builds an identity sourcemap (as if `js` went through minification with no
   // actual transform) naming `original.js` as its one source, so tests can assert
   // that a known original-source position still resolves correctly after injection.
-  const buildIdentitySourcemap = async (js: string): Promise<string> => {
-    const {default: MagicString} = await import('magic-string')
-    const ms = new MagicString(js)
+  const buildIdentitySourcemap = (js: string): string => {
+    const generator = new SourceMapGenerator()
+    js.split('\n').forEach((line, lineIndex) => {
+      for (let column = 0; column < line.length; column++) {
+        generator.addMapping({
+          generated: {line: lineIndex + 1, column},
+          original: {line: lineIndex + 1, column},
+          source: ORIGINAL_SOURCE_NAME,
+        })
+      }
+    })
+    generator.setSourceContent(ORIGINAL_SOURCE_NAME, js)
 
-    return ms.generateMap({source: ORIGINAL_SOURCE_NAME, includeContent: true, hires: true}).toString()
+    return generator.toString()
   }
+
+  const originalPositionFor = async (sourcemap: string, line: number, column: number) =>
+    SourceMapConsumer.with(sourcemap, undefined, (consumer) => consumer.originalPositionFor({line, column}))
 
   test('prepends the DD_SOURCE_CODE_CONTEXT snippet as the new first line and appends the debugId comment', async () => {
     const js = 'var x = 1;\nconsole.log(x);'
-    const sourcemap = await buildIdentitySourcemap(js)
+    const sourcemap = buildIdentitySourcemap(js)
 
     const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const lines = result.js.split('\n')
@@ -142,7 +154,7 @@ describe('injectDebugIdSnippet', () => {
   })
 
   test('round-trips through extractDebugId', async () => {
-    const injected = await injectDebugIdSnippet('var x = 1;', await buildIdentitySourcemap('var x = 1;'), DEBUG_ID_2)
+    const injected = await injectDebugIdSnippet('var x = 1;', buildIdentitySourcemap('var x = 1;'), DEBUG_ID_2)
     jest.spyOn(fs, 'readFileSync').mockImplementation(() => injected.js)
     expect(extractDebugId('bundle.js')).toBe(DEBUG_ID_2)
     jest.restoreAllMocks()
@@ -150,7 +162,7 @@ describe('injectDebugIdSnippet', () => {
 
   test('sets debugId on the recomposed sourcemap and still resolves a known original position', async () => {
     const js = 'var x = 1;\nconsole.log(x);'
-    const sourcemap = await buildIdentitySourcemap(js)
+    const sourcemap = buildIdentitySourcemap(js)
 
     const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const parsed = JSON.parse(result.sourcemap)
@@ -158,8 +170,7 @@ describe('injectDebugIdSnippet', () => {
 
     // `console.log(x);` is the second line of `js` (0-based line 1). After
     // injection it becomes the third generated line (1-based line 3, column 0).
-    const tracer = new TraceMap(result.sourcemap)
-    const position = originalPositionFor(tracer, {line: 3, column: 0})
+    const position = await originalPositionFor(result.sourcemap, 3, 0)
 
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
     expect(position.line).toBe(2)
@@ -172,25 +183,30 @@ describe('injectDebugIdSnippet', () => {
     // esbuild does). A lo-res adjustment map anchors each line at column 0, so if that
     // exact column has no mapping in the underlying sourcemap, the whole line's
     // composition is silently dropped. This guards against that regression.
-    const {default: MagicString} = await import('magic-string')
-    const original = new MagicString('console.log(x);')
-    original.prepend('(function(){')
-    original.append('})();')
-    const js = original.toString()
-    const sourcemap = original.generateMap({source: ORIGINAL_SOURCE_NAME, includeContent: true, hires: true}).toString()
+    const originalSource = 'console.log(x);'
+    const wrapper = '(function(){'
+    const js = `${wrapper}${originalSource}})();`
+    const generator = new SourceMapGenerator()
+    for (let column = 0; column < originalSource.length; column++) {
+      generator.addMapping({
+        generated: {line: 1, column: wrapper.length + column},
+        original: {line: 1, column},
+        source: ORIGINAL_SOURCE_NAME,
+      })
+    }
+    generator.setSourceContent(ORIGINAL_SOURCE_NAME, originalSource)
+    const sourcemap = generator.toString()
 
     // Column 0 is inside the prepended wrapper text, which has no mapping back to
     // `original.js` — confirms the fixture actually reproduces the real-world gap.
-    const originalTracer = new TraceMap(sourcemap)
-    expect(originalPositionFor(originalTracer, {line: 1, column: 0}).source).toBeNull()
+    expect((await originalPositionFor(sourcemap, 1, 0)).source).toBeNull()
 
     const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
 
     // `console.log` starts right after the prepended `(function(){` wrapper, on what
     // is now the second generated line (after the injected snippet).
-    const wrapperLength = '(function(){'.length
-    const tracer = new TraceMap(result.sourcemap)
-    const position = originalPositionFor(tracer, {line: 2, column: wrapperLength})
+    const wrapperLength = wrapper.length
+    const position = await originalPositionFor(result.sourcemap, 2, wrapperLength)
 
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
     expect(position.line).toBe(1)
@@ -199,7 +215,7 @@ describe('injectDebugIdSnippet', () => {
 
   test('keeps a leading hashbang first', async () => {
     const js = '#!/usr/bin/env node\nvar x = 1;'
-    const result = await injectDebugIdSnippet(js, await buildIdentitySourcemap(js), DEBUG_ID_2)
+    const result = await injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
 
     expect(result.js.startsWith('#!/usr/bin/env node\n')).toBe(true)
     expect(result.js).toContain('DD_SOURCE_CODE_CONTEXT')
@@ -207,7 +223,7 @@ describe('injectDebugIdSnippet', () => {
 
   test('repeats a leading "use strict" directive before the snippet and still resolves original positions', async () => {
     const js = '"use strict";\nvar x = 1;\nconsole.log(x);'
-    const sourcemap = await buildIdentitySourcemap(js)
+    const sourcemap = buildIdentitySourcemap(js)
 
     const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const firstLine = result.js.split('\n')[0]
@@ -219,8 +235,7 @@ describe('injectDebugIdSnippet', () => {
     // `console.log(x);` is the third line of `js` (1-based line 3). The whole,
     // unstripped original source is preserved verbatim starting one generated
     // line after the injected snippet, so it becomes 1-based generated line 4.
-    const tracer = new TraceMap(result.sourcemap)
-    const position = originalPositionFor(tracer, {line: 4, column: 0})
+    const position = await originalPositionFor(result.sourcemap, 4, 0)
 
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
     expect(position.line).toBe(3)
@@ -229,7 +244,7 @@ describe('injectDebugIdSnippet', () => {
 
   test('repeats every leading directive, not just the first, before the snippet', async () => {
     const js = '"use asm";\n"use strict";\nvar x = 1;\nconsole.log(x);'
-    const sourcemap = await buildIdentitySourcemap(js)
+    const sourcemap = buildIdentitySourcemap(js)
 
     const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const firstLine = result.js.split('\n')[0]
@@ -240,7 +255,7 @@ describe('injectDebugIdSnippet', () => {
   })
 })
 
-describe('generateAndInjectMissingDebugIds', () => {
+describe('injectMissingDebugIds', () => {
   const makeStdout = () => {
     const chunks: string[] = []
     const stdout = new Writable({
@@ -270,7 +285,7 @@ describe('generateAndInjectMissingDebugIds', () => {
     const payload = makeSourcemap('a.min.js')
     const {stdout, chunks} = makeStdout()
 
-    await generateAndInjectMissingDebugIds([payload], false, stdout)
+    await injectMissingDebugIds([payload], false, stdout)
 
     expect(payload.debugId).toBeDefined()
     expect(chunks.join('')).toContain(payload.debugId)
@@ -290,7 +305,7 @@ describe('generateAndInjectMissingDebugIds', () => {
     const payload = makeSourcemap('a.min.js')
     const {stdout} = makeStdout()
 
-    await generateAndInjectMissingDebugIds([payload], true, stdout)
+    await injectMissingDebugIds([payload], true, stdout)
 
     expect(payload.debugId).toBeDefined()
     expect(writeSpy).not.toHaveBeenCalled()
@@ -302,7 +317,7 @@ describe('generateAndInjectMissingDebugIds', () => {
     payload.debugId = 'existing-id'
     const {stdout} = makeStdout()
 
-    await generateAndInjectMissingDebugIds([payload], false, stdout)
+    await injectMissingDebugIds([payload], false, stdout)
 
     expect(payload.debugId).toBe('existing-id')
     expect(readSpy).not.toHaveBeenCalled()
@@ -315,7 +330,7 @@ describe('generateAndInjectMissingDebugIds', () => {
     const payload = makeSourcemap('a.min.js')
     const {stdout} = makeStdout()
 
-    await generateAndInjectMissingDebugIds([payload], false, stdout)
+    await injectMissingDebugIds([payload], false, stdout)
 
     expect(payload.debugId).toBeUndefined()
   })
@@ -336,7 +351,7 @@ describe('generateAndInjectMissingDebugIds', () => {
     const goodPayload = makeSourcemap('b.min.js')
     const {stdout, chunks} = makeStdout()
 
-    await generateAndInjectMissingDebugIds([badPayload, goodPayload], false, stdout)
+    await injectMissingDebugIds([badPayload, goodPayload], false, stdout)
 
     expect(badPayload.debugId).toBeUndefined()
     expect(chunks.join('')).toContain(`WARN: Failed to inject debug ID into a.min.js`)

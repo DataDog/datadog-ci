@@ -3,6 +3,9 @@ import fs from 'fs'
 
 import type {Sourcemap} from './interfaces'
 import type {Writable} from 'stream'
+import type {RawSourceMap} from 'webpack-sources'
+
+import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
 const DD_DEBUG_ID_REGEX =
   /["']ddDebugId["']\s*:\s*["']([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})["']/
@@ -42,6 +45,7 @@ const buildSnippet = (debugId: string): string =>
 const DEBUG_ID_COMMENT_PREFIX = '//# debugId'
 
 const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
+const SOURCE_MAPPING_URL_REGEX = /\/\/[#@] sourceMappingURL=.*(?:\r\n|\r|\n)?$/
 const USE_DIRECTIVE_REGEX =
   /^(?:\s|\/\*[\s\S]*?\*\/|\/\/.*(?:\r\n|\r|\n))*(?<useDirective>"use [^"]*"|'use [^']*');?(?:\r\n|\r|\n)?/
 
@@ -102,29 +106,18 @@ export const generateDebugId = (jsContent: string, sourcemapContent: string): st
 
 const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
 
-// `@ampproject/remapping`'s conditional-exports/types shape confuses TS's `node16`
-// module resolution for a dynamic `import()` of a CJS-consumed ESM-only default
-// export, so the callable is re-declared locally rather than relying on its
-// inferred type from the dynamic import.
-type RemappingFn = (
-  input: string | Record<string, unknown>,
-  loader: (file: string) => Record<string, unknown> | undefined
-) => Record<string, unknown>
-
 // The snippet is inserted as early as possible (after an optional hashbang and/or
 // leading "use ...;" directives, which are kept first since they must remain the first
-// statements in the file), and a `//# debugId=` comment is appended at the very end.
-// Built via MagicString (rather than plain string concatenation) so the resulting
-// position map can be composed with the original sourcemap through `remapping`,
-// instead of hand-deriving how many lines/characters the injection shifted.
+// statements in the file), and a `//# debugId=` comment is appended near the end,
+// ahead of a final sourceMappingURL directive when one is present.
+// SourceMapSource starts with the original generated code and its map. ReplaceSource
+// applies insertions directly to that mapped source, preserving existing mappings
+// while shifting their generated positions.
 export const injectDebugIdSnippet = async (
   jsContent: string,
   sourcemapContent: string,
   debugId: string
 ): Promise<{js: string; sourcemap: string}> => {
-  const {default: MagicString} = await import('magic-string')
-  const remapping = (await import('@ampproject/remapping')).default as unknown as RemappingFn
-
   const hashbangMatch = jsContent.match(HASHBANG_REGEX)
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
   const sourceWithoutHashbang = jsContent.slice(hashbangPortion.length)
@@ -132,28 +125,32 @@ export const injectDebugIdSnippet = async (
   const useDirectives = extractLeadingUseDirectives(sourceWithoutHashbang)
 
   const debugIdComment = `${DEBUG_ID_COMMENT_PREFIX}=${debugId}`
+  const sourceMappingURLMatch = jsContent.match(SOURCE_MAPPING_URL_REGEX)
+  const debugIdCommentPosition = sourceMappingURLMatch?.index ?? jsContent.length
 
-  const ms = new MagicString(jsContent)
-  ms.appendLeft(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
-  ms.append(`\n${debugIdComment}\n`)
+  const originalSourcemap = JSON.parse(sourcemapContent) as RawSourceMap
+  const source = new SourceMapSource(jsContent, PRE_INJECTION_SOURCE_NAME, originalSourcemap)
+  const injected = new ReplaceSource(source)
+  injected.insert(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
+  injected.insert(debugIdCommentPosition, `\n${debugIdComment}\n`)
 
-  // hires is required: with per-line (lo-res) mappings, magic-string emits a single
-  // anchor segment at column 0 of each unedited line. Real minified output frequently
-  // has no mapping at column 0 of its packed line (e.g. unmapped bundler/IIFE
-  // boilerplate before the first real token), so that anchor falls in a gap in the
-  // original sourcemap and the whole line's mapping is silently dropped on composition.
-  const adjustmentMap = ms.generateMap({source: PRE_INJECTION_SOURCE_NAME, includeContent: false, hires: true})
-  const originalSourcemap: Record<string, unknown> = JSON.parse(sourcemapContent)
-  const combinedMap = remapping(adjustmentMap as unknown as Record<string, unknown>, (file: string) =>
-    file === PRE_INJECTION_SOURCE_NAME ? originalSourcemap : undefined
-  )
-  combinedMap.debugId = debugId
-  combinedMap.debug_id = debugId
+  const {source: injectedSource, map} = injected.sourceAndMap({columns: true})
+  if (!map) {
+    throw new Error('Failed to generate the adjusted sourcemap')
+  }
+
+  const combinedMap = {...map, debugId, debug_id: debugId}
 
   return {
-    js: ms.toString(),
+    js: injectedSource.toString(),
     sourcemap: JSON.stringify(combinedMap),
   }
+}
+
+export interface InjectionResult {
+  failed: number
+  injected: number
+  skipped: number
 }
 
 /**
@@ -163,13 +160,16 @@ export const injectDebugIdSnippet = async (
  * are left without a debug ID, which `validatePayload` treats as a skip further
  * downstream, instead of aborting the whole batch.
  */
-export const generateAndInjectMissingDebugIds = async (
+export const injectMissingDebugIds = async (
   payloads: Sourcemap[],
   dryRun: boolean,
   stdout: Writable
-): Promise<void> => {
+): Promise<InjectionResult> => {
+  const result: InjectionResult = {failed: 0, injected: 0, skipped: 0}
+
   for (const payload of payloads) {
     if (payload.debugId !== undefined) {
+      result.skipped++
       continue
     }
 
@@ -178,7 +178,9 @@ export const generateAndInjectMissingDebugIds = async (
     try {
       jsContent = fs.readFileSync(payload.minifiedFilePath, 'utf-8')
       sourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
-    } catch {
+    } catch (error) {
+      result.failed++
+      stdout.write(`WARN: Failed to read ${payload.minifiedFilePath} or its sourcemap: ${error}\n`)
       continue
     }
 
@@ -187,6 +189,7 @@ export const generateAndInjectMissingDebugIds = async (
 
     if (dryRun) {
       payload.debugId = debugId
+      result.injected++
       stdout.write('Dry run: no files modified.\n')
       continue
     }
@@ -196,8 +199,12 @@ export const generateAndInjectMissingDebugIds = async (
       fs.writeFileSync(payload.minifiedFilePath, js)
       fs.writeFileSync(payload.sourcemapPath, sourcemap)
       payload.debugId = debugId
+      result.injected++
     } catch (error) {
+      result.failed++
       stdout.write(`WARN: Failed to inject debug ID into ${payload.minifiedFilePath}: ${error}\n`)
     }
   }
+
+  return result
 }
