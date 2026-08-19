@@ -59,7 +59,7 @@ export class SourcemapsInjectCommand extends BaseCommand {
     }
 
     addDebugIdToPayloads(payloads)
-    const result = await injectMissingDebugIds(payloads, this.dryRun, this.context.stdout)
+    const result = injectMissingDebugIds(payloads, this.dryRun, this.context.stdout)
     this.context.stdout.write(
       `${this.dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s) with existing debug IDs; failed ${result.failed} file(s).\n`
     )

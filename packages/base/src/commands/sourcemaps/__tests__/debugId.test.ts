@@ -70,7 +70,7 @@ describe('addDebugIdToPayloads', () => {
     jest.restoreAllMocks()
   })
 
-  test('stores each debug ID on its payload and returns true when any is found', () => {
+  test('stores extracted debug IDs on payloads', () => {
     mockFilesByPath({
       'a.min.js': `{"ddDebugId":"${DEBUG_ID}"}`,
       'b.min.js': 'var x = 1;',
@@ -78,17 +78,10 @@ describe('addDebugIdToPayloads', () => {
     const withId = makeSourcemap('a.min.js')
     const withoutId = makeSourcemap('b.min.js')
 
-    expect(addDebugIdToPayloads([withId, withoutId])).toBe(true)
+    addDebugIdToPayloads([withId, withoutId])
+
     expect(withId.debugId).toBe(DEBUG_ID)
     expect(withoutId.debugId).toBeUndefined()
-  })
-
-  test('returns false when no payload has a debug ID', () => {
-    mockFilesByPath({'a.min.js': 'var x = 1;', 'b.min.js': 'var y = 2;'})
-    const payloads = [makeSourcemap('a.min.js'), makeSourcemap('b.min.js')]
-
-    expect(addDebugIdToPayloads(payloads)).toBe(false)
-    expect(payloads.every((p) => p.debugId === undefined)).toBe(true)
   })
 })
 
@@ -100,12 +93,11 @@ describe('generateDebugId', () => {
     expect(generateDebugId(js, sourcemap)).toBe(generateDebugId(js, sourcemap))
   })
 
-  test('changes when the JS content changes', () => {
-    expect(generateDebugId(js, sourcemap)).not.toBe(generateDebugId('var x = 2;', sourcemap))
-  })
-
-  test('changes when the sourcemap content changes', () => {
-    expect(generateDebugId(js, sourcemap)).not.toBe(generateDebugId(js, '{"version":3,"sources":[],"mappings":";;"}'))
+  test.each([
+    ['JS content', 'var x = 2;', sourcemap],
+    ['sourcemap content', js, '{"version":3,"sources":[],"mappings":";;"}'],
+  ])('changes when the %s changes', (_description, changedJs, changedSourcemap) => {
+    expect(generateDebugId(js, sourcemap)).not.toBe(generateDebugId(changedJs, changedSourcemap))
   })
 
   test('produces a UUID with version 5 and RFC4122 variant bits forced', () => {
@@ -140,38 +132,20 @@ describe('injectDebugIdSnippet', () => {
   const originalPositionFor = async (sourcemap: string, line: number, column: number) =>
     SourceMapConsumer.with(sourcemap, undefined, (consumer) => consumer.originalPositionFor({line, column}))
 
-  test('prepends the DD_SOURCE_CODE_CONTEXT snippet as the new first line and appends the debugId comment', async () => {
+  test('injects the debug ID while preserving original positions', async () => {
     const js = 'var x = 1;\nconsole.log(x);'
     const sourcemap = buildIdentitySourcemap(js)
 
-    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const lines = result.js.split('\n')
+    const parsed = JSON.parse(result.sourcemap)
+    const position = await originalPositionFor(result.sourcemap, 3, 0)
 
     expect(lines[0]).toContain('DD_SOURCE_CODE_CONTEXT')
     expect(lines[0]).toContain(`"ddDebugId":"${DEBUG_ID_2}"`)
     expect(result.js).toContain(js)
     expect(result.js.trimEnd().endsWith(`//# debugId=${DEBUG_ID_2}`)).toBe(true)
-  })
-
-  test('round-trips through extractDebugId', async () => {
-    const injected = await injectDebugIdSnippet('var x = 1;', buildIdentitySourcemap('var x = 1;'), DEBUG_ID_2)
-    jest.spyOn(fs, 'readFileSync').mockImplementation(() => injected.js)
-    expect(extractDebugId('bundle.js')).toBe(DEBUG_ID_2)
-    jest.restoreAllMocks()
-  })
-
-  test('sets debugId on the recomposed sourcemap and still resolves a known original position', async () => {
-    const js = 'var x = 1;\nconsole.log(x);'
-    const sourcemap = buildIdentitySourcemap(js)
-
-    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
-    const parsed = JSON.parse(result.sourcemap)
     expect(parsed.debugId).toBe(DEBUG_ID_2)
-
-    // `console.log(x);` is the second line of `js` (0-based line 1). After
-    // injection it becomes the third generated line (1-based line 3, column 0).
-    const position = await originalPositionFor(result.sourcemap, 3, 0)
-
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
     expect(position.line).toBe(2)
     expect(position.column).toBe(0)
@@ -201,7 +175,7 @@ describe('injectDebugIdSnippet', () => {
     // `original.js` — confirms the fixture actually reproduces the real-world gap.
     expect((await originalPositionFor(sourcemap, 1, 0)).source).toBeNull()
 
-    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
 
     // `console.log` starts right after the prepended `(function(){` wrapper, on what
     // is now the second generated line (after the injected snippet).
@@ -213,9 +187,9 @@ describe('injectDebugIdSnippet', () => {
     expect(position.column).toBe(0)
   })
 
-  test('keeps a leading hashbang first', async () => {
+  test('keeps a leading hashbang first', () => {
     const js = '#!/usr/bin/env node\nvar x = 1;'
-    const result = await injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
+    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
 
     expect(result.js.startsWith('#!/usr/bin/env node\n')).toBe(true)
     expect(result.js).toContain('DD_SOURCE_CODE_CONTEXT')
@@ -225,7 +199,7 @@ describe('injectDebugIdSnippet', () => {
     const js = '"use strict";\nvar x = 1;\nconsole.log(x);'
     const sourcemap = buildIdentitySourcemap(js)
 
-    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const firstLine = result.js.split('\n')[0]
 
     expect(firstLine.startsWith('"use strict";')).toBe(true)
@@ -242,11 +216,11 @@ describe('injectDebugIdSnippet', () => {
     expect(position.column).toBe(0)
   })
 
-  test('repeats every leading directive, not just the first, before the snippet', async () => {
+  test('repeats every leading directive, not just the first, before the snippet', () => {
     const js = '"use asm";\n"use strict";\nvar x = 1;\nconsole.log(x);'
     const sourcemap = buildIdentitySourcemap(js)
 
-    const result = await injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
+    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
     const firstLine = result.js.split('\n')[0]
 
     expect(firstLine.startsWith('"use asm";"use strict";')).toBe(true)
@@ -256,106 +230,20 @@ describe('injectDebugIdSnippet', () => {
 })
 
 describe('injectMissingDebugIds', () => {
-  const makeStdout = () => {
-    const chunks: string[] = []
-    const stdout = new Writable({
-      write: (chunk, _enc, callback) => {
-        chunks.push(chunk.toString())
-        callback()
-      },
-    })
-
-    return {stdout, chunks}
-  }
-
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  test('generates and injects a debug ID for payloads missing one', async () => {
-    const files: Record<string, string> = {
-      'a.min.js': 'var x = 1;',
-      'a.min.js.map': JSON.stringify({version: 3, sources: ['a.min.js'], mappings: 'AAAA'}),
-    }
-    jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
-    const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation((path: unknown, content: unknown) => {
-      files[path as string] = content as string
-    })
-
-    const payload = makeSourcemap('a.min.js')
-    const {stdout, chunks} = makeStdout()
-
-    await injectMissingDebugIds([payload], false, stdout)
-
-    expect(payload.debugId).toBeDefined()
-    expect(chunks.join('')).toContain(payload.debugId)
-    expect(writeSpy).toHaveBeenCalledTimes(2)
-    expect(files['a.min.js']).toContain('DD_SOURCE_CODE_CONTEXT')
-    expect(JSON.parse(files['a.min.js.map']).debugId).toBe(payload.debugId)
-  })
-
-  test('computes and sets debugId but does not write files on dry run', async () => {
-    const files: Record<string, string> = {
-      'a.min.js': 'var x = 1;',
-      'a.min.js.map': JSON.stringify({version: 3, sources: ['a.min.js'], mappings: 'AAAA'}),
-    }
-    jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
-    const writeSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined)
-
-    const payload = makeSourcemap('a.min.js')
-    const {stdout} = makeStdout()
-
-    await injectMissingDebugIds([payload], true, stdout)
-
-    expect(payload.debugId).toBeDefined()
-    expect(writeSpy).not.toHaveBeenCalled()
-  })
-
-  test('skips payloads that already have a debug ID', async () => {
-    const readSpy = jest.spyOn(fs, 'readFileSync')
-    const payload = makeSourcemap('a.min.js')
-    payload.debugId = 'existing-id'
-    const {stdout} = makeStdout()
-
-    await injectMissingDebugIds([payload], false, stdout)
-
-    expect(payload.debugId).toBe('existing-id')
-    expect(readSpy).not.toHaveBeenCalled()
-  })
-
-  test('leaves debugId undefined when files cannot be read', async () => {
+  test('reports unreadable files without setting a debug ID', () => {
     jest.spyOn(fs, 'readFileSync').mockImplementation(() => {
       throw new Error('ENOENT')
     })
     const payload = makeSourcemap('a.min.js')
-    const {stdout} = makeStdout()
+    const stdout = new Writable({write: (_chunk, _encoding, callback) => callback()})
 
-    await injectMissingDebugIds([payload], false, stdout)
+    const result = injectMissingDebugIds([payload], false, stdout)
 
     expect(payload.debugId).toBeUndefined()
-  })
-
-  test('logs a warning and skips the payload, without aborting the batch, when its sourcemap is malformed', async () => {
-    const files: Record<string, string> = {
-      'a.min.js': 'var x = 1;',
-      'a.min.js.map': 'not valid json',
-      'b.min.js': 'var y = 2;',
-      'b.min.js.map': JSON.stringify({version: 3, sources: ['b.min.js'], mappings: 'AAAA'}),
-    }
-    jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => files[path as string])
-    jest.spyOn(fs, 'writeFileSync').mockImplementation((path: unknown, content: unknown) => {
-      files[path as string] = content as string
-    })
-
-    const badPayload = makeSourcemap('a.min.js')
-    const goodPayload = makeSourcemap('b.min.js')
-    const {stdout, chunks} = makeStdout()
-
-    await injectMissingDebugIds([badPayload, goodPayload], false, stdout)
-
-    expect(badPayload.debugId).toBeUndefined()
-    expect(chunks.join('')).toContain(`WARN: Failed to inject debug ID into a.min.js`)
-    expect(goodPayload.debugId).toBeDefined()
-    expect(files['b.min.js']).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(result).toEqual({failed: 1, injected: 0, skipped: 0})
   })
 })

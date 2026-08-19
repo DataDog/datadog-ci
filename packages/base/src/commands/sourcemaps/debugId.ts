@@ -21,20 +21,11 @@ export const extractDebugId = (filePath: string): string | undefined => {
   }
 }
 
-/**
- * Adds the debug ID extracted from each payload's minified file onto the
- * payload. Returns true if at least one payload has a debug ID.
- */
-export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
-  let hasAnyDebugId = false
+/** Adds the extracted debug ID to each payload whose minified file contains one. */
+export const addDebugIdToPayloads = (payloads: Sourcemap[]): void => {
   for (const payload of payloads) {
     payload.debugId = extractDebugId(payload.minifiedFilePath)
-    if (payload.debugId !== undefined) {
-      hasAnyDebugId = true
-    }
   }
-
-  return hasAnyDebugId
 }
 
 // The runtime snippet read by the browser RUM SDK (packages/browser-core/src/domain/sourceCodeContext.ts),
@@ -113,11 +104,11 @@ const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
 // SourceMapSource starts with the original generated code and its map. ReplaceSource
 // applies insertions directly to that mapped source, preserving existing mappings
 // while shifting their generated positions.
-export const injectDebugIdSnippet = async (
+export const injectDebugIdSnippet = (
   jsContent: string,
   sourcemapContent: string,
   debugId: string
-): Promise<{js: string; sourcemap: string}> => {
+): {js: string; sourcemap: string} => {
   const hashbangMatch = jsContent.match(HASHBANG_REGEX)
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
   const sourceWithoutHashbang = jsContent.slice(hashbangPortion.length)
@@ -153,6 +144,79 @@ export interface InjectionResult {
   skipped: number
 }
 
+const removeTemporaryFile = (filePath: string): void => {
+  try {
+    fs.rmSync(filePath, {force: true})
+  } catch {
+    // Best-effort cleanup. A failure here must not hide the injection or rollback result.
+  }
+}
+
+/**
+ * Replaces a bundle and sourcemap as one rollback-safe operation. Both new files are
+ * fully staged beside their destinations before the originals are moved. If either
+ * staged file cannot be promoted, every original that was moved is restored.
+ */
+const replaceArtifactPair = (
+  minifiedFilePath: string,
+  jsContent: string,
+  sourcemapPath: string,
+  sourcemapContent: string
+): void => {
+  const transactionId = `${process.pid}-${crypto.randomUUID()}`
+  const replacements = [
+    {
+      backupPath: `${minifiedFilePath}.${transactionId}.backup`,
+      content: jsContent,
+      filePath: minifiedFilePath,
+      stagedPath: `${minifiedFilePath}.${transactionId}.tmp`,
+    },
+    {
+      backupPath: `${sourcemapPath}.${transactionId}.backup`,
+      content: sourcemapContent,
+      filePath: sourcemapPath,
+      stagedPath: `${sourcemapPath}.${transactionId}.tmp`,
+    },
+  ]
+
+  let backedUpCount = 0
+  try {
+    for (const replacement of replacements) {
+      const mode = fs.statSync(replacement.filePath).mode
+      fs.writeFileSync(replacement.stagedPath, replacement.content, {mode})
+    }
+
+    for (const replacement of replacements) {
+      fs.renameSync(replacement.filePath, replacement.backupPath)
+      backedUpCount++
+      fs.renameSync(replacement.stagedPath, replacement.filePath)
+    }
+  } catch (error) {
+    const rollbackErrors: string[] = []
+    for (const replacement of replacements.slice(0, backedUpCount).reverse()) {
+      try {
+        fs.rmSync(replacement.filePath, {force: true})
+        fs.renameSync(replacement.backupPath, replacement.filePath)
+      } catch (rollbackError) {
+        rollbackErrors.push(`${replacement.filePath}: ${rollbackError}`)
+      }
+    }
+
+    if (rollbackErrors.length > 0) {
+      throw new Error(`${error}; rollback also failed for ${rollbackErrors.join(', ')}`)
+    }
+    throw error
+  } finally {
+    for (const replacement of replacements) {
+      removeTemporaryFile(replacement.stagedPath)
+    }
+  }
+
+  for (const replacement of replacements) {
+    removeTemporaryFile(replacement.backupPath)
+  }
+}
+
 /**
  * For every payload with no extracted debug ID, generates one from the minified file
  * and sourcemap contents and injects it into both (unless `dryRun`). Payloads whose
@@ -160,11 +224,7 @@ export interface InjectionResult {
  * are left without a debug ID, which `validatePayload` treats as a skip further
  * downstream, instead of aborting the whole batch.
  */
-export const injectMissingDebugIds = async (
-  payloads: Sourcemap[],
-  dryRun: boolean,
-  stdout: Writable
-): Promise<InjectionResult> => {
+export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, stdout: Writable): InjectionResult => {
   const result: InjectionResult = {failed: 0, injected: 0, skipped: 0}
 
   for (const payload of payloads) {
@@ -187,17 +247,16 @@ export const injectMissingDebugIds = async (
     const debugId = generateDebugId(jsContent, sourcemapContent)
     stdout.write(`Generated debug ID for ${payload.minifiedFilePath}: ${debugId}\n`)
 
-    if (dryRun) {
-      payload.debugId = debugId
-      result.injected++
-      stdout.write('Dry run: no files modified.\n')
-      continue
-    }
-
     try {
-      const {js, sourcemap} = await injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
-      fs.writeFileSync(payload.minifiedFilePath, js)
-      fs.writeFileSync(payload.sourcemapPath, sourcemap)
+      const {js, sourcemap} = injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
+      if (dryRun) {
+        payload.debugId = debugId
+        result.injected++
+        stdout.write('Dry run: no files modified.\n')
+        continue
+      }
+
+      replaceArtifactPair(payload.minifiedFilePath, js, payload.sourcemapPath, sourcemap)
       payload.debugId = debugId
       result.injected++
     } catch (error) {

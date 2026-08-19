@@ -34,6 +34,17 @@ datadog-ci sourcemaps upload ./build --debug-id
 
 Bundles that already contain a debug ID are left unchanged. Use `--dry-run` to preview injection without modifying files.
 
+Run your application's normal build again before reinjecting whenever its source code or build configuration changes. The build may reuse the same output filenames, but it must recreate the JavaScript bundles and sourcemaps without the previous injection (a clean build is recommended). Then run `sourcemaps inject` and `sourcemaps upload --debug-id` again. Changed bundle or sourcemap contents receive a new debug ID, while unchanged rebuilt artifacts reproduce the same deterministic ID. Do not modify generated artifacts between injection, upload, and deployment: rerunning `inject` preserves an existing debug ID and does not detect post-injection changes.
+
+For example, using your project's own build script:
+
+```bash
+npm run clean # If your build does not clean its output itself.
+npm run build
+datadog-ci sourcemaps inject ./build
+datadog-ci sourcemaps upload ./build --debug-id
+```
+
 ### `upload`
 
 This command will upload all JavaScript sourcemaps and their corresponding JavaScript bundles to Datadog in order to un-minify front-end stack traces received by Datadog.
