@@ -46,20 +46,30 @@ export class SourcemapsInjectCommand extends BaseCommand {
       return 1
     }
 
-    const payloads = await findSourcemaps(this.basePath, 20, (minifiedFilePath, sourcemapPath) => {
-      const relativePath = upath.relative(this.basePath, minifiedFilePath)
+    let discoveryFailures = 0
+    const payloads = await findSourcemaps(
+      this.basePath,
+      20,
+      (minifiedFilePath, sourcemapPath) => {
+        const relativePath = upath.relative(this.basePath, minifiedFilePath)
 
-      return new Sourcemap(minifiedFilePath, relativePath, sourcemapPath, relativePath)
-    })
+        return new Sourcemap(minifiedFilePath, relativePath, sourcemapPath, relativePath)
+      },
+      (message) => {
+        discoveryFailures++
+        this.context.stdout.write(`WARN: ${message}\n`)
+      }
+    )
 
     if (payloads.length === 0) {
       this.context.stdout.write(`No JavaScript sourcemaps found in ${this.basePath}.\n`)
 
-      return 0
+      return discoveryFailures === 0 ? 0 : 1
     }
 
     addDebugIdToPayloads(payloads)
     const result = injectMissingDebugIds(payloads, this.dryRun, this.context.stdout)
+    result.failed += discoveryFailures
     this.context.stdout.write(
       `${this.dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s) with existing debug IDs; failed ${result.failed} file(s).\n`
     )

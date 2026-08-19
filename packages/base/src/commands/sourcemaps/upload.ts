@@ -211,11 +211,16 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    return findSourcemaps(this.basePath, this.maxConcurrency, (minifiedFilePath, sourcemapPath) => {
-      const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
+    return findSourcemaps(
+      this.basePath,
+      this.maxConcurrency,
+      (minifiedFilePath, sourcemapPath) => {
+        const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
 
-      return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
-    })
+        return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
+      },
+      (message) => this.context.stdout.write(`WARN: ${message}\n`)
+    )
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {

@@ -8,6 +8,7 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import {SourcemapsInjectCommand} from '../inject'
 
 const runCLI = makeRunCLI(SourcemapsInjectCommand, ['sourcemaps', 'inject'])
+const OTHER_DEBUG_ID = '5c1d7f52-4e1b-5f7c-8c0d-2f4a5f6d8e91'
 
 describe('sourcemaps inject', () => {
   let directory: string
@@ -67,6 +68,24 @@ describe('sourcemaps inject', () => {
     expect(context.stdout.toString()).toContain('skipped 1 file(s) with existing debug IDs')
   })
 
+  test.each([
+    ['missing', undefined, '<missing>'],
+    ['different', OTHER_DEBUG_ID, OTHER_DEBUG_ID],
+  ])('fails when an existing bundle debug ID is %s in its sourcemap', async (_, mapDebugId, expectedMapId) => {
+    expect((await runCLI([directory])).code).toBe(0)
+    const sourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as Record<string, unknown>
+    sourcemap.debugId = mapDebugId
+    sourcemap.debug_id = mapDebugId
+    fs.writeFileSync(sourcemapPath, JSON.stringify(sourcemap))
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(1)
+    expect(context.stdout.toString()).toContain('Existing debug ID validation failed')
+    expect(context.stdout.toString()).toContain(`sourcemap debug ID ${expectedMapId}`)
+    expect(context.stdout.toString()).toContain('Rebuild the bundle and sourcemap before reinjecting')
+  })
+
   test('does not modify files in dry-run mode', async () => {
     const originalJs = fs.readFileSync(jsPath, 'utf-8')
     const originalSourcemap = fs.readFileSync(sourcemapPath, 'utf-8')
@@ -90,6 +109,46 @@ describe('sourcemaps inject', () => {
     expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe('not valid JSON')
     expect(context.stdout.toString()).toContain('WARN: Failed to inject debug ID')
     expect(context.stdout.toString()).toContain('failed 1 file(s)')
+  })
+
+  test('reports indexed sourcemaps as unsupported', async () => {
+    fs.writeFileSync(
+      sourcemapPath,
+      JSON.stringify({
+        version: 3,
+        sections: [
+          {
+            offset: {line: 0, column: 0},
+            map: {version: 3, sources: ['original.js'], names: [], mappings: 'AAAA'},
+          },
+        ],
+      })
+    )
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(1)
+    expect(context.stdout.toString()).toContain(
+      'Indexed sourcemaps with "sections" are not supported by sourcemaps inject'
+    )
+  })
+
+  test('does not follow sourcemap references outside the requested directory', async () => {
+    const outsideSourcemapPath = `${directory}-outside.map`
+    const originalOutsideSourcemap = JSON.stringify({version: 3, sources: ['outside.js'], mappings: 'AAAA'})
+    fs.writeFileSync(outsideSourcemapPath, originalOutsideSourcemap)
+    fs.writeFileSync(jsPath, `console.log("hello");\n//# sourceMappingURL=../${upath.basename(outsideSourcemapPath)}`)
+
+    try {
+      const {context, code} = await runCLI([directory])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('resolves outside')
+      expect(fs.readFileSync(outsideSourcemapPath, 'utf-8')).toBe(originalOutsideSourcemap)
+      expect(fs.readFileSync(jsPath, 'utf-8')).not.toContain('DD_SOURCE_CODE_CONTEXT')
+    } finally {
+      fs.rmSync(outsideSourcemapPath, {force: true})
+    }
   })
 
   test('restores both originals when promoting the sourcemap fails and succeeds on retry', async () => {

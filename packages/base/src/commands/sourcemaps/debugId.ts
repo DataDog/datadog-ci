@@ -9,16 +9,68 @@ import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
 const DD_DEBUG_ID_REGEX =
   /["']ddDebugId["']\s*:\s*["']([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})["']/
+const DEBUG_ID_COMMENT_REGEX = /\/\/[#@] debugId=([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/
+const DEBUG_ID_VALUE_REGEX = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
+const DEBUG_ID_PREFIX_SCAN_BYTES = 1024 * 1024
+const DEBUG_ID_SUFFIX_SCAN_BYTES = 64 * 1024
+
+const extractDebugIdFromSource = (source: string): string | undefined =>
+  source.match(DD_DEBUG_ID_REGEX)?.[1] ?? source.match(DEBUG_ID_COMMENT_REGEX)?.[1]
 
 export const extractDebugId = (filePath: string): string | undefined => {
   try {
-    const source = fs.readFileSync(filePath, 'utf-8')
+    const fileDescriptor = fs.openSync(filePath, 'r')
+    try {
+      const fileSize = fs.fstatSync(fileDescriptor).size
+      const prefixSize = Math.min(fileSize, DEBUG_ID_PREFIX_SCAN_BYTES)
+      const prefix = Buffer.alloc(prefixSize)
+      const prefixBytesRead = fs.readSync(fileDescriptor, prefix, 0, prefixSize, 0)
+      const prefixDebugId = extractDebugIdFromSource(prefix.toString('utf-8', 0, prefixBytesRead))
+      if (prefixDebugId !== undefined || fileSize <= prefixSize) {
+        return prefixDebugId
+      }
 
-    return source.match(DD_DEBUG_ID_REGEX)?.[1]
+      const suffixSize = Math.min(fileSize - prefixSize, DEBUG_ID_SUFFIX_SCAN_BYTES)
+      const suffix = Buffer.alloc(suffixSize)
+      const suffixBytesRead = fs.readSync(fileDescriptor, suffix, 0, suffixSize, fileSize - suffixSize)
+
+      return extractDebugIdFromSource(suffix.toString('utf-8', 0, suffixBytesRead))
+    } finally {
+      fs.closeSync(fileDescriptor)
+    }
   } catch {
     // Unreadable file: treated as having no debug ID.
     return undefined
   }
+}
+
+type ParsedSourcemap = RawSourceMap & Record<string, unknown>
+
+const parseSourcemap = (sourcemapContent: string): ParsedSourcemap => {
+  const parsed = JSON.parse(sourcemapContent) as unknown
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Sourcemap must be a JSON object')
+  }
+
+  return parsed as ParsedSourcemap
+}
+
+export const extractSourcemapDebugId = (sourcemapContent: string): string | undefined => {
+  const sourcemap = parseSourcemap(sourcemapContent)
+  const debugId = sourcemap.debugId
+  const legacyDebugId = sourcemap.debug_id
+
+  for (const value of [debugId, legacyDebugId]) {
+    if (value !== undefined && (typeof value !== 'string' || !DEBUG_ID_VALUE_REGEX.test(value))) {
+      throw new Error(`Invalid sourcemap debug ID: ${String(value)}`)
+    }
+  }
+
+  if (debugId !== undefined && legacyDebugId !== undefined && debugId !== legacyDebugId) {
+    throw new Error(`Sourcemap debugId (${debugId}) and debug_id (${legacyDebugId}) do not match`)
+  }
+
+  return (debugId ?? legacyDebugId) as string | undefined
 }
 
 /** Adds the extracted debug ID to each payload whose minified file contains one. */
@@ -119,7 +171,10 @@ export const injectDebugIdSnippet = (
   const sourceMappingURLMatch = jsContent.match(SOURCE_MAPPING_URL_REGEX)
   const debugIdCommentPosition = sourceMappingURLMatch?.index ?? jsContent.length
 
-  const originalSourcemap = JSON.parse(sourcemapContent) as RawSourceMap
+  const originalSourcemap = parseSourcemap(sourcemapContent)
+  if (originalSourcemap.sections !== undefined) {
+    throw new Error('Indexed sourcemaps with "sections" are not supported by sourcemaps inject')
+  }
   const source = new SourceMapSource(jsContent, PRE_INJECTION_SOURCE_NAME, originalSourcemap)
   const injected = new ReplaceSource(source)
   injected.insert(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
@@ -130,7 +185,16 @@ export const injectDebugIdSnippet = (
     throw new Error('Failed to generate the adjusted sourcemap')
   }
 
-  const combinedMap = {...map, debugId, debug_id: debugId}
+  const combinedMap: Record<string, unknown> = {...originalSourcemap, ...map, debugId, debug_id: debugId}
+  // webpack-sources resolves sourceRoot into each source path. Keeping sourceRoot
+  // would apply it a second time. Its generated `file: "x"` placeholder is also
+  // replaced with the original value (or omitted when the input had none).
+  delete combinedMap.sourceRoot
+  if (originalSourcemap.file === undefined) {
+    delete combinedMap.file
+  } else {
+    combinedMap.file = originalSourcemap.file
+  }
 
   return {
     js: injectedSource.toString(),
@@ -229,7 +293,21 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
 
   for (const payload of payloads) {
     if (payload.debugId !== undefined) {
-      result.skipped++
+      try {
+        const existingSourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
+        const sourcemapDebugId = extractSourcemapDebugId(existingSourcemapContent)
+        if (sourcemapDebugId !== payload.debugId) {
+          throw new Error(
+            `bundle debug ID ${payload.debugId} does not match sourcemap debug ID ${sourcemapDebugId ?? '<missing>'}`
+          )
+        }
+        result.skipped++
+      } catch (error) {
+        result.failed++
+        stdout.write(
+          `WARN: Existing debug ID validation failed for ${payload.minifiedFilePath}: ${error}. Rebuild the bundle and sourcemap before reinjecting.\n`
+        )
+      }
       continue
     }
 

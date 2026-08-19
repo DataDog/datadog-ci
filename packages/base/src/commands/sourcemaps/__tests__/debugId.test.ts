@@ -1,11 +1,14 @@
 import fs from 'fs'
+import os from 'os'
 import {Writable} from 'stream'
 
 import {SourceMapConsumer, SourceMapGenerator} from 'source-map'
+import upath from 'upath'
 
 import {
   addDebugIdToPayloads,
   extractDebugId,
+  extractSourcemapDebugId,
   generateDebugId,
   injectMissingDebugIds,
   injectDebugIdSnippet,
@@ -17,16 +20,13 @@ const DEBUG_ID = '2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91'
 const makeSourcemap = (minifiedFilePath: string) =>
   new Sourcemap(minifiedFilePath, `https://static.com/${minifiedFilePath}`, `${minifiedFilePath}.map`, minifiedFilePath)
 
-// Mocks fs.readFileSync to return the given content keyed by minified file path.
-const mockFilesByPath = (contentByPath: Record<string, string>) => {
-  jest.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => {
-    const content = contentByPath[path as string]
-    if (content === undefined) {
-      throw new Error(`ENOENT: ${String(path)}`)
-    }
-
-    return content
-  })
+const withTempDirectory = (callback: (directory: string) => void): void => {
+  const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-debug-id-'))
+  try {
+    callback(directory)
+  } finally {
+    fs.rmSync(directory, {recursive: true, force: true})
+  }
 }
 
 describe('extractDebugId', () => {
@@ -45,21 +45,32 @@ describe('extractDebugId', () => {
       [`var x=1;({"ddDebugId":"${DEBUG_ID}"});var y=2;`],
       [`var x=1;\n{"ddDebugId": "${DEBUG_ID}"}\nvar y=2;`],
     ])('%s', (content: string) => {
-      jest.spyOn(fs, 'readFileSync').mockReturnValueOnce(content)
-      expect(extractDebugId('bundle.js')).toBe(DEBUG_ID)
+      withTempDirectory((directory) => {
+        const filePath = upath.join(directory, 'bundle.js')
+        fs.writeFileSync(filePath, content)
+        expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+      })
+    })
+
+    test('finds the trailing debug ID comment without reading a whole large bundle into memory', () => {
+      withTempDirectory((directory) => {
+        const filePath = upath.join(directory, 'bundle.js')
+        fs.writeFileSync(filePath, `${'x'.repeat(1024 * 1024 + 1)}\n//# debugId=${DEBUG_ID}`)
+        expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+      })
     })
   })
 
   describe('missing or unreadable', () => {
     test('returns undefined when snippet is absent', () => {
-      jest.spyOn(fs, 'readFileSync').mockReturnValueOnce('var x = 1; console.log("hello");')
-      expect(extractDebugId('bundle.js')).toBeUndefined()
+      withTempDirectory((directory) => {
+        const filePath = upath.join(directory, 'bundle.js')
+        fs.writeFileSync(filePath, 'var x = 1; console.log("hello");')
+        expect(extractDebugId(filePath)).toBeUndefined()
+      })
     })
 
     test('returns undefined when file cannot be read', () => {
-      jest.spyOn(fs, 'readFileSync').mockImplementationOnce(() => {
-        throw new Error('ENOENT: no such file or directory')
-      })
       expect(extractDebugId('nonexistent.js')).toBeUndefined()
     })
   })
@@ -71,17 +82,33 @@ describe('addDebugIdToPayloads', () => {
   })
 
   test('stores extracted debug IDs on payloads', () => {
-    mockFilesByPath({
-      'a.min.js': `{"ddDebugId":"${DEBUG_ID}"}`,
-      'b.min.js': 'var x = 1;',
+    withTempDirectory((directory) => {
+      const withIdPath = upath.join(directory, 'a.min.js')
+      const withoutIdPath = upath.join(directory, 'b.min.js')
+      fs.writeFileSync(withIdPath, `{"ddDebugId":"${DEBUG_ID}"}`)
+      fs.writeFileSync(withoutIdPath, 'var x = 1;')
+      const withId = makeSourcemap(withIdPath)
+      const withoutId = makeSourcemap(withoutIdPath)
+
+      addDebugIdToPayloads([withId, withoutId])
+
+      expect(withId.debugId).toBe(DEBUG_ID)
+      expect(withoutId.debugId).toBeUndefined()
     })
-    const withId = makeSourcemap('a.min.js')
-    const withoutId = makeSourcemap('b.min.js')
+  })
+})
 
-    addDebugIdToPayloads([withId, withoutId])
+describe('extractSourcemapDebugId', () => {
+  test.each(['debugId', 'debug_id'])('extracts the %s field', (field) => {
+    expect(extractSourcemapDebugId(JSON.stringify({version: 3, [field]: DEBUG_ID}))).toBe(DEBUG_ID)
+  })
 
-    expect(withId.debugId).toBe(DEBUG_ID)
-    expect(withoutId.debugId).toBeUndefined()
+  test('rejects mismatched debug ID fields', () => {
+    expect(() =>
+      extractSourcemapDebugId(
+        JSON.stringify({version: 3, debugId: DEBUG_ID, debug_id: '5c1d7f52-4e1b-5f7c-8c0d-2f4a5f6d8e91'})
+      )
+    ).toThrow('do not match')
   })
 })
 
@@ -185,6 +212,39 @@ describe('injectDebugIdSnippet', () => {
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
     expect(position.line).toBe(1)
     expect(position.column).toBe(0)
+  })
+
+  test('preserves the original file and extension metadata while resolving sourceRoot', () => {
+    const original = JSON.parse(buildIdentitySourcemap('var x = 1;')) as Record<string, unknown>
+    const sourcemap = JSON.stringify({
+      ...original,
+      file: 'bundle.js',
+      sourceRoot: '/src',
+      x_google_ignoreList: [0],
+      customField: 'preserved',
+    })
+
+    const result = JSON.parse(injectDebugIdSnippet('var x = 1;', sourcemap, DEBUG_ID_2).sourcemap) as Record<
+      string,
+      unknown
+    >
+
+    expect(result.file).toBe('bundle.js')
+    expect(result.sourceRoot).toBeUndefined()
+    expect(result.sources).toEqual(['/src/original.js'])
+    expect(result.x_google_ignoreList).toEqual([0])
+    expect(result.customField).toBe('preserved')
+  })
+
+  test('rejects indexed sourcemaps with a clear error', () => {
+    const indexedSourcemap = JSON.stringify({
+      version: 3,
+      sections: [{offset: {line: 0, column: 0}, map: JSON.parse(buildIdentitySourcemap('var x = 1;'))}],
+    })
+
+    expect(() => injectDebugIdSnippet('var x = 1;', indexedSourcemap, DEBUG_ID_2)).toThrow(
+      'Indexed sourcemaps with "sections" are not supported by sourcemaps inject'
+    )
   })
 
   test('keeps a leading hashbang first', () => {

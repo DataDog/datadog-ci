@@ -1,4 +1,5 @@
 import fs from 'fs'
+import os from 'os'
 
 import chalk from 'chalk'
 import upath from 'upath'
@@ -313,6 +314,26 @@ describe('execute', () => {
     expect(context.stdout.toString()).toContain(
       '[DRYRUN] Uploading sourcemap src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id/common.min.js.map for JS file available at common.min.js (debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)'
     )
+  })
+
+  test('debug id mode skips a bundle whose sourcemap has no matching debug ID', async () => {
+    const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-sourcemaps-upload-'))
+    const jsPath = upath.join(directory, 'bundle.js')
+    fs.writeFileSync(
+      jsPath,
+      `(function() {})({"ddDebugId":"2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91"});\n//# sourceMappingURL=bundle.js.map`
+    )
+    fs.writeFileSync(`${jsPath}.map`, JSON.stringify({version: 3, sources: ['original.js'], mappings: 'AAAA'}))
+
+    try {
+      const {context, code} = await runCLIWithDebugId([directory])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('debug ID is inconsistent')
+      expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+    } finally {
+      fs.rmSync(directory, {recursive: true, force: true})
+    }
   })
 
   test('debug id missing in all files is skipped without mutating build artifacts', async () => {
