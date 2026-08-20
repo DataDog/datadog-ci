@@ -392,7 +392,7 @@ describe('SSI service preparation', () => {
     expect(() =>
       instrumentServiceConfig(serviceWithWorker(), {
         ...serviceConfigOptions(),
-        healthCheckPort: String(TRACER_READINESS_PORT),
+        healthCheckPort: TRACER_READINESS_PORT,
       })
     ).toThrow(/Datadog Agent health port 18999.*--tracer-readiness-port or --health-check-port/)
   })
@@ -409,18 +409,40 @@ describe('SSI service preparation', () => {
     )
   })
 
-  test('uses --health-check-port before the existing Agent DD_HEALTH_PORT', () => {
+  test('uses an explicit health port for the Agent environment and startup probe', () => {
     const service = serviceWithWorker()
     service.template!.containers!.push({
       name: 'datadog-sidecar',
-      env: [{name: 'DD_HEALTH_PORT', value: String(TRACER_READINESS_PORT)}],
+      env: [{name: 'DD_HEALTH_PORT', value: '8128'}],
     } as IContainer)
 
-    const result = instrumentServiceConfig(service, {...serviceConfigOptions(), healthCheckPort: '5555'})
+    const result = instrumentServiceConfig(service, {...serviceConfigOptions(), healthCheckPort: 8127})
+    const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
 
-    expect(
-      result.template?.containers?.find((container) => container.name === 'datadog-sidecar')?.startupProbe
-    ).toEqual(expect.objectContaining({tcpSocket: {port: 5555}}))
+    expect(sidecar?.startupProbe?.tcpSocket?.port).toBe(8127)
+    expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: '8127'})
+  })
+
+  test('uses the existing Agent DD_HEALTH_PORT when there is no explicit port', () => {
+    const service = serviceWithWorker()
+    service.template!.containers!.push({
+      name: 'datadog-sidecar',
+      env: [{name: 'DD_HEALTH_PORT', value: '8127'}],
+    } as IContainer)
+
+    const result = instrumentServiceConfig(service, serviceConfigOptions())
+    const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
+
+    expect(sidecar?.startupProbe?.tcpSocket?.port).toBe(8127)
+    expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: '8127'})
+  })
+
+  test('uses the default Agent health port when no port is configured', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
+
+    expect(sidecar?.startupProbe?.tcpSocket?.port).toBe(DEFAULT_HEALTH_CHECK_PORT)
+    expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: String(DEFAULT_HEALTH_CHECK_PORT)})
   })
 
   test('keeps an unnamed main container unnamed during injection and replacement', () => {
