@@ -6,6 +6,17 @@ import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {pluralize} from '@datadog/datadog-ci-base/helpers/utils'
 
+type InjectionResult = {failed: number; injected: number; skipped: number}
+
+export const renderPathNotFound = (path: string) => `Path does not exist: ${path}\n`
+
+export const renderDiscoveryWarning = (message: string) => `WARN: ${message}\n`
+
+export const renderNoSourcemapsFound = (basePath: string) => `No JavaScript sourcemaps found in ${basePath}.\n`
+
+export const renderInjectionSummary = (result: InjectionResult, dryRun: boolean) =>
+  `${dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s) with existing debug IDs; failed ${result.failed} file(s).\n`
+
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}
 Make sure the command is running within your git repository to fully leverage Datadog's git integration.
@@ -37,6 +48,8 @@ export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) =
 
   return chalk.red(`${ICONS.FAILED} Failed upload sourcemap for ${sourcemapPathBold}: ${errorMessage}\n`)
 }
+
+export const renderNoDebugIdFound = () => 'No debug ID found in any minified file. Aborting upload.\n'
 
 export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`

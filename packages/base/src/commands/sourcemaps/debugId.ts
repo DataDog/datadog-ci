@@ -7,34 +7,46 @@ import type {RawSourceMap} from 'webpack-sources'
 
 import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
-const DD_DEBUG_ID_REGEX =
-  /["']ddDebugId["']\s*:\s*["']([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})["']/
-const DEBUG_ID_COMMENT_REGEX = /\/\/[#@] debugId=([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/
-const DEBUG_ID_VALUE_REGEX = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
-const DEBUG_ID_PREFIX_SCAN_BYTES = 1024 * 1024
-const DEBUG_ID_SUFFIX_SCAN_BYTES = 64 * 1024
+const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
 
-const extractDebugIdFromSource = (source: string): string | undefined =>
-  source.match(DD_DEBUG_ID_REGEX)?.[1] ?? source.match(DEBUG_ID_COMMENT_REGEX)?.[1]
+// Keep this progressive scanner in sync with build-plugins PR #489:
+// https://github.com/DataDog/build-plugins/pull/489
+// Read progressively so the common case only needs the first KiB, while still supporting
+// bundlers or transforms that place the injected snippet later in the artifact.
+export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
 
+// Keep enough content from the previous chunk to match a debug ID literal split across a read
+// boundary. The longest supported literal is shorter than this overlap.
+const DEBUG_ID_SEARCH_OVERLAP_CHARACTERS = 64
+const VARIANT_CHARS = ['8', '9', 'a', 'b'] as const
+
+const matchDebugId = (fileContent: string): string | undefined => DEBUG_ID_REGEX.exec(fileContent)?.[1]
+
+// Search in fixed-size reads and stop as soon as the debug ID is found. Only a small overlap is
+// retained between reads, so even the worst case (scanning to EOF) uses bounded memory.
 export const extractDebugId = (filePath: string): string | undefined => {
   try {
     const fileDescriptor = fs.openSync(filePath, 'r')
     try {
-      const fileSize = fs.fstatSync(fileDescriptor).size
-      const prefixSize = Math.min(fileSize, DEBUG_ID_PREFIX_SCAN_BYTES)
-      const prefix = Buffer.alloc(prefixSize)
-      const prefixBytesRead = fs.readSync(fileDescriptor, prefix, 0, prefixSize, 0)
-      const prefixDebugId = extractDebugIdFromSource(prefix.toString('utf-8', 0, prefixBytesRead))
-      if (prefixDebugId !== undefined || fileSize <= prefixSize) {
-        return prefixDebugId
+      const buffer = Buffer.alloc(DEBUG_ID_SEARCH_CHUNK_BYTES)
+      let overlap = ''
+      let position = 0
+
+      while (true) {
+        const bytesRead = fs.readSync(fileDescriptor, buffer, 0, DEBUG_ID_SEARCH_CHUNK_BYTES, position)
+        if (bytesRead === 0) {
+          return undefined
+        }
+
+        const searchableContent = overlap + buffer.toString('utf-8', 0, bytesRead)
+        const debugId = matchDebugId(searchableContent)
+        if (debugId) {
+          return debugId
+        }
+
+        overlap = searchableContent.slice(-DEBUG_ID_SEARCH_OVERLAP_CHARACTERS)
+        position += bytesRead
       }
-
-      const suffixSize = Math.min(fileSize - prefixSize, DEBUG_ID_SUFFIX_SCAN_BYTES)
-      const suffix = Buffer.alloc(suffixSize)
-      const suffixBytesRead = fs.readSync(fileDescriptor, suffix, 0, suffixSize, fileSize - suffixSize)
-
-      return extractDebugIdFromSource(suffix.toString('utf-8', 0, suffixBytesRead))
     } finally {
       fs.closeSync(fileDescriptor)
     }
@@ -55,40 +67,25 @@ const parseSourcemap = (sourcemapContent: string): ParsedSourcemap => {
   return parsed as ParsedSourcemap
 }
 
-export const extractSourcemapDebugId = (sourcemapContent: string): string | undefined => {
-  const sourcemap = parseSourcemap(sourcemapContent)
-  const debugId = sourcemap.debugId
-  const legacyDebugId = sourcemap.debug_id
-
-  for (const value of [debugId, legacyDebugId]) {
-    if (value !== undefined && (typeof value !== 'string' || !DEBUG_ID_VALUE_REGEX.test(value))) {
-      throw new Error(`Invalid sourcemap debug ID: ${String(value)}`)
+/** Adds extracted IDs to payloads and reports whether at least one was found. */
+export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
+  let hasAnyDebugId = false
+  for (const payload of payloads) {
+    payload.debugId = extractDebugId(payload.minifiedFilePath)
+    if (payload.debugId !== undefined) {
+      hasAnyDebugId = true
     }
   }
 
-  if (debugId !== undefined && legacyDebugId !== undefined && debugId !== legacyDebugId) {
-    throw new Error(`Sourcemap debugId (${debugId}) and debug_id (${legacyDebugId}) do not match`)
-  }
-
-  return (debugId ?? legacyDebugId) as string | undefined
+  return hasAnyDebugId
 }
 
-/** Adds the extracted debug ID to each payload whose minified file contains one. */
-export const addDebugIdToPayloads = (payloads: Sourcemap[]): void => {
-  for (const payload of payloads) {
-    payload.debugId = extractDebugId(payload.minifiedFilePath)
-  }
-}
-
-// The runtime snippet read by the browser RUM SDK (packages/browser-core/src/domain/sourceCodeContext.ts),
-// matching the shape build-plugins already injects via getSourceCodeContextSnippet.ts.
+// Keep this runtime snippet in sync with build-plugins:
+// https://github.com/DataDog/build-plugins/blob/c9384d115d53578f220cd5e1f29994acb96a1782/packages/plugins/rum/src/getSourceCodeContextSnippet.ts#L55
 const buildSnippet = (debugId: string): string =>
   `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},s=new Error().stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"DD_SOURCE_CODE_CONTEXT");`
 
-const DEBUG_ID_COMMENT_PREFIX = '//# debugId'
-
 const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
-const SOURCE_MAPPING_URL_REGEX = /\/\/[#@] sourceMappingURL=.*(?:\r\n|\r|\n)?$/
 const USE_DIRECTIVE_REGEX =
   /^(?:\s|\/\*[\s\S]*?\*\/|\/\/.*(?:\r\n|\r|\n))*(?<useDirective>"use [^"]*"|'use [^']*');?(?:\r\n|\r|\n)?/
 
@@ -112,47 +109,28 @@ const extractLeadingUseDirectives = (source: string): string => {
   return directives
 }
 
-// SHA-1 over "js" + 8-byte little-endian length + JS bytes + "sourcemap" + 8-byte
-// little-endian length + sourcemap bytes, truncated to 16 bytes, formatted as a UUID
-// with the version nibble forced to 5 and variant bits forced to RFC4122. NOT the
-// v4-style forcing used by RN's own generateDebugId, which is an unrelated convention
-// specific to RN's MD5 scheme.
-export const generateDebugId = (jsContent: string, sourcemapContent: string): string => {
-  const jsBytes = Buffer.from(jsContent, 'utf-8')
-  const sourcemapBytes = Buffer.from(sourcemapContent, 'utf-8')
+// Keep this deterministic SHA-256 strategy in sync with build-plugins:
+// https://github.com/DataDog/build-plugins/blob/3eb123ebd22be37d5ef624f0ffa455bf13309874/packages/plugins/rum/src/debugId.ts#L11
+export const generateDebugId = (jsContent: string): string => {
+  const hash = crypto.createHash('sha256').update(jsContent).digest('hex').slice(0, 32)
+  const withVersion = `${hash.slice(0, 12)}4${hash.slice(13)}`
+  const variantIndex = withVersion.charCodeAt(16) % 4
+  const withVariant = `${withVersion.slice(0, 16)}${VARIANT_CHARS[variantIndex]}${withVersion.slice(17)}`
 
-  const lengthPrefix = (length: number): Buffer => {
-    const buf = Buffer.alloc(8)
-    buf.writeBigUInt64LE(BigInt(length))
-
-    return buf
-  }
-
-  const hash = crypto.createHash('sha1')
-  hash.update('js')
-  hash.update(lengthPrefix(jsBytes.length))
-  hash.update(jsBytes)
-  hash.update('sourcemap')
-  hash.update(lengthPrefix(sourcemapBytes.length))
-  hash.update(sourcemapBytes)
-
-  const bytes = hash.digest().subarray(0, 16)
-  // eslint-disable-next-line no-bitwise
-  bytes[6] = (bytes[6] & 0x0f) | 0x50
-  // eslint-disable-next-line no-bitwise
-  bytes[8] = (bytes[8] & 0x3f) | 0x80
-
-  const hex = bytes.toString('hex')
-
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  return [
+    withVariant.slice(0, 8),
+    withVariant.slice(8, 12),
+    withVariant.slice(12, 16),
+    withVariant.slice(16, 20),
+    withVariant.slice(20, 32),
+  ].join('-')
 }
 
 const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
 
 // The snippet is inserted as early as possible (after an optional hashbang and/or
 // leading "use ...;" directives, which are kept first since they must remain the first
-// statements in the file), and a `//# debugId=` comment is appended near the end,
-// ahead of a final sourceMappingURL directive when one is present.
+// statements in the file).
 // SourceMapSource starts with the original generated code and its map. ReplaceSource
 // applies insertions directly to that mapped source, preserving existing mappings
 // while shifting their generated positions.
@@ -167,10 +145,6 @@ export const injectDebugIdSnippet = (
 
   const useDirectives = extractLeadingUseDirectives(sourceWithoutHashbang)
 
-  const debugIdComment = `${DEBUG_ID_COMMENT_PREFIX}=${debugId}`
-  const sourceMappingURLMatch = jsContent.match(SOURCE_MAPPING_URL_REGEX)
-  const debugIdCommentPosition = sourceMappingURLMatch?.index ?? jsContent.length
-
   const originalSourcemap = parseSourcemap(sourcemapContent)
   if (originalSourcemap.sections !== undefined) {
     throw new Error('Indexed sourcemaps with "sections" are not supported by sourcemaps inject')
@@ -178,14 +152,16 @@ export const injectDebugIdSnippet = (
   const source = new SourceMapSource(jsContent, PRE_INJECTION_SOURCE_NAME, originalSourcemap)
   const injected = new ReplaceSource(source)
   injected.insert(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
-  injected.insert(debugIdCommentPosition, `\n${debugIdComment}\n`)
 
   const {source: injectedSource, map} = injected.sourceAndMap({columns: true})
   if (!map) {
     throw new Error('Failed to generate the adjusted sourcemap')
   }
 
-  const combinedMap: Record<string, unknown> = {...originalSourcemap, ...map, debugId, debug_id: debugId}
+  // The inject command keeps the sourcemap metadata aligned with the runtime snippet.
+  // Upload matching remains based on ddDebugId in the JavaScript so build-plugin maps
+  // without this field continue to work.
+  const combinedMap: Record<string, unknown> = {...originalSourcemap, ...map, debug_id: debugId}
   // webpack-sources resolves sourceRoot into each source path. Keeping sourceRoot
   // would apply it a second time. Its generated `file: "x"` placeholder is also
   // replaced with the original value (or omitted when the input had none).
@@ -217,31 +193,18 @@ const removeTemporaryFile = (filePath: string): void => {
 }
 
 /**
- * Replaces a bundle and sourcemap as one rollback-safe operation. Both new files are
- * fully staged beside their destinations before the originals are moved. If either
- * staged file cannot be promoted, every original that was moved is restored.
+ * Replaces one or more artifacts as one rollback-safe operation. Every new file is
+ * fully staged beside its destination before the originals are moved. If any staged
+ * file cannot be promoted, every original that was moved is restored.
  */
-const replaceArtifactPair = (
-  minifiedFilePath: string,
-  jsContent: string,
-  sourcemapPath: string,
-  sourcemapContent: string
-): void => {
+const replaceArtifacts = (artifacts: {content: string; filePath: string}[]): void => {
   const transactionId = `${process.pid}-${crypto.randomUUID()}`
-  const replacements = [
-    {
-      backupPath: `${minifiedFilePath}.${transactionId}.backup`,
-      content: jsContent,
-      filePath: minifiedFilePath,
-      stagedPath: `${minifiedFilePath}.${transactionId}.tmp`,
-    },
-    {
-      backupPath: `${sourcemapPath}.${transactionId}.backup`,
-      content: sourcemapContent,
-      filePath: sourcemapPath,
-      stagedPath: `${sourcemapPath}.${transactionId}.tmp`,
-    },
-  ]
+  const replacements = artifacts.map(({content, filePath}) => ({
+    backupPath: `${filePath}.${transactionId}.backup`,
+    content,
+    filePath,
+    stagedPath: `${filePath}.${transactionId}.tmp`,
+  }))
 
   let backedUpCount = 0
   try {
@@ -282,11 +245,9 @@ const replaceArtifactPair = (
 }
 
 /**
- * For every payload with no extracted debug ID, generates one from the minified file
- * and sourcemap contents and injects it into both (unless `dryRun`). Payloads whose
- * files can't be read, or whose sourcemap can't be recomposed (e.g. malformed JSON),
- * are left without a debug ID, which `validatePayload` treats as a skip further
- * downstream, instead of aborting the whole batch.
+ * For every payload with no extracted debug ID, generates one from the original
+ * minified file, injects its runtime snippet, and adjusts the sourcemap mappings
+ * (unless `dryRun`). A payload failure does not abort the rest of the batch.
  */
 export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, stdout: Writable): InjectionResult => {
   const result: InjectionResult = {failed: 0, injected: 0, skipped: 0}
@@ -295,18 +256,25 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
     if (payload.debugId !== undefined) {
       try {
         const existingSourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
-        const sourcemapDebugId = extractSourcemapDebugId(existingSourcemapContent)
-        if (sourcemapDebugId !== payload.debugId) {
-          throw new Error(
-            `bundle debug ID ${payload.debugId} does not match sourcemap debug ID ${sourcemapDebugId ?? '<missing>'}`
-          )
+        const sourcemap = parseSourcemap(existingSourcemapContent)
+        if (sourcemap.debug_id === payload.debugId) {
+          result.skipped++
+          continue
         }
-        result.skipped++
+
+        const updatedSourcemap = JSON.stringify({...sourcemap, debug_id: payload.debugId})
+        stdout.write(`Recorded existing debug ID in ${payload.sourcemapPath}: ${payload.debugId}\n`)
+        if (dryRun) {
+          result.injected++
+          stdout.write('Dry run: no files modified.\n')
+          continue
+        }
+
+        replaceArtifacts([{content: updatedSourcemap, filePath: payload.sourcemapPath}])
+        result.injected++
       } catch (error) {
         result.failed++
-        stdout.write(
-          `WARN: Existing debug ID validation failed for ${payload.minifiedFilePath}: ${error}. Rebuild the bundle and sourcemap before reinjecting.\n`
-        )
+        stdout.write(`WARN: Failed to record debug ID in ${payload.sourcemapPath}: ${error}\n`)
       }
       continue
     }
@@ -322,7 +290,7 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
       continue
     }
 
-    const debugId = generateDebugId(jsContent, sourcemapContent)
+    const debugId = generateDebugId(jsContent)
     stdout.write(`Generated debug ID for ${payload.minifiedFilePath}: ${debugId}\n`)
 
     try {
@@ -334,7 +302,10 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
         continue
       }
 
-      replaceArtifactPair(payload.minifiedFilePath, js, payload.sourcemapPath, sourcemap)
+      replaceArtifacts([
+        {content: js, filePath: payload.minifiedFilePath},
+        {content: sourcemap, filePath: payload.sourcemapPath},
+      ])
       payload.debugId = debugId
       result.injected++
     } catch (error) {

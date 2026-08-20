@@ -316,7 +316,7 @@ describe('execute', () => {
     )
   })
 
-  test('debug id mode skips a bundle whose sourcemap has no matching debug ID', async () => {
+  test('debug id mode uploads a build-plugin bundle whose sourcemap has no debug_id', async () => {
     const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-sourcemaps-upload-'))
     const jsPath = upath.join(directory, 'bundle.js')
     fs.writeFileSync(
@@ -329,22 +329,22 @@ describe('execute', () => {
       const {context, code} = await runCLIWithDebugId([directory])
 
       expect(code).toBe(0)
-      expect(context.stdout.toString()).toContain('debug ID is inconsistent')
-      expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+      expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
+      expect(context.stdout.toString()).toContain('(debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)')
     } finally {
       fs.rmSync(directory, {recursive: true, force: true})
     }
   })
 
-  test('debug id missing in all files is skipped without mutating build artifacts', async () => {
+  test('debug id missing in all files aborts without mutating build artifacts', async () => {
     const jsPath = './src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js'
     const originalJs = fs.readFileSync(jsPath, 'utf-8')
 
     const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
 
-    expect(code).toBe(0)
+    expect(code).toBe(1)
     const stdout = context.stdout.toString()
-    expect(stdout).toContain('because no debug ID was found')
+    expect(context.stderr.toString()).toContain('No debug ID found in any minified file. Aborting upload.')
     expect(stdout).not.toContain('Generated debug ID for')
     expect(stdout).not.toContain('[DRYRUN] Uploading sourcemap')
     expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)

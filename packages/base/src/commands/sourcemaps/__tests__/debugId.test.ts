@@ -7,8 +7,8 @@ import upath from 'upath'
 
 import {
   addDebugIdToPayloads,
+  DEBUG_ID_SEARCH_CHUNK_BYTES,
   extractDebugId,
-  extractSourcemapDebugId,
   generateDebugId,
   injectMissingDebugIds,
   injectDebugIdSnippet,
@@ -34,45 +34,82 @@ describe('extractDebugId', () => {
     jest.restoreAllMocks()
   })
 
-  describe('snippet formats', () => {
-    test.each([
-      [`{"ddDebugId":"${DEBUG_ID}"}`],
-      [`{"ddDebugId": "${DEBUG_ID}"}`],
-      [`{"ddDebugId" : "${DEBUG_ID}"}`],
-      [`{"ddDebugId"   :   "${DEBUG_ID}"}`],
-      [`{"ddDebugId"\t:\t"${DEBUG_ID}"}`],
-      [`{'ddDebugId': '${DEBUG_ID}'}`],
-      [`var x=1;({"ddDebugId":"${DEBUG_ID}"});var y=2;`],
-      [`var x=1;\n{"ddDebugId": "${DEBUG_ID}"}\nvar y=2;`],
-    ])('%s', (content: string) => {
-      withTempDirectory((directory) => {
-        const filePath = upath.join(directory, 'bundle.js')
-        fs.writeFileSync(filePath, content)
-        expect(extractDebugId(filePath)).toBe(DEBUG_ID)
-      })
-    })
+  test('extracts a quoted debug ID key', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'quoted.min.js')
+      fs.writeFileSync(
+        filePath,
+        `!function(){}({"service":"app","version":"1.0.0","ddDebugId":"${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT");`
+      )
 
-    test('finds the trailing debug ID comment without reading a whole large bundle into memory', () => {
-      withTempDirectory((directory) => {
-        const filePath = upath.join(directory, 'bundle.js')
-        fs.writeFileSync(filePath, `${'x'.repeat(1024 * 1024 + 1)}\n//# debugId=${DEBUG_ID}`)
-        expect(extractDebugId(filePath)).toBe(DEBUG_ID)
-      })
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
     })
   })
 
-  describe('missing or unreadable', () => {
-    test('returns undefined when snippet is absent', () => {
-      withTempDirectory((directory) => {
-        const filePath = upath.join(directory, 'bundle.js')
-        fs.writeFileSync(filePath, 'var x = 1; console.log("hello");')
-        expect(extractDebugId(filePath)).toBeUndefined()
-      })
-    })
+  test('extracts an unquoted debug ID key', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'unquoted.min.js')
+      fs.writeFileSync(
+        filePath,
+        `!function(){}({service:"app",version:"1.0.0",ddDebugId:"${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT");`
+      )
 
-    test('returns undefined when file cannot be read', () => {
-      expect(extractDebugId('nonexistent.js')).toBeUndefined()
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
     })
+  })
+
+  test('stops reading after finding the debug ID in the first chunk', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'first-chunk.min.js')
+      fs.writeFileSync(filePath, `ddDebugId:"${DEBUG_ID}"${'x'.repeat(DEBUG_ID_SEARCH_CHUNK_BYTES * 2)}`)
+      const readSync = fs.readSync
+      const readSpy = jest.spyOn(fs, 'readSync').mockImplementation(readSync)
+
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+      expect(readSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  test('returns undefined when the snippet is absent', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'no-debug-id.min.js')
+      fs.writeFileSync(filePath, '!function(){}({service:"app",version:"1.0.0"},"DD_SOURCE_CODE_CONTEXT");')
+
+      expect(extractDebugId(filePath)).toBeUndefined()
+    })
+  })
+
+  test('progressively finds a debug ID after the first chunk', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'later-debug-id.min.js')
+      fs.writeFileSync(filePath, `${'x'.repeat(DEBUG_ID_SEARCH_CHUNK_BYTES + 100)}ddDebugId:"${DEBUG_ID}"`)
+
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+    })
+  })
+
+  test('finds a debug ID split across two chunks', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'split-debug-id.min.js')
+      const literal = `ddDebugId:"${DEBUG_ID}"`
+      const literalPrefixBytes = 20
+      fs.writeFileSync(filePath, `${'x'.repeat(DEBUG_ID_SEARCH_CHUNK_BYTES - literalPrefixBytes)}${literal}`)
+
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+    })
+  })
+
+  test('scans to EOF and returns undefined when a large file has no debug ID', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'large-no-debug-id.min.js')
+      fs.writeFileSync(filePath, 'x'.repeat(DEBUG_ID_SEARCH_CHUNK_BYTES * 3 + 100))
+
+      expect(extractDebugId(filePath)).toBeUndefined()
+    })
+  })
+
+  test('returns undefined when the file cannot be read', () => {
+    expect(extractDebugId('nonexistent.js')).toBeUndefined()
   })
 })
 
@@ -90,46 +127,37 @@ describe('addDebugIdToPayloads', () => {
       const withId = makeSourcemap(withIdPath)
       const withoutId = makeSourcemap(withoutIdPath)
 
-      addDebugIdToPayloads([withId, withoutId])
+      const hasAnyDebugId = addDebugIdToPayloads([withId, withoutId])
 
+      expect(hasAnyDebugId).toBe(true)
       expect(withId.debugId).toBe(DEBUG_ID)
       expect(withoutId.debugId).toBeUndefined()
     })
   })
-})
 
-describe('extractSourcemapDebugId', () => {
-  test.each(['debugId', 'debug_id'])('extracts the %s field', (field) => {
-    expect(extractSourcemapDebugId(JSON.stringify({version: 3, [field]: DEBUG_ID}))).toBe(DEBUG_ID)
-  })
+  test('returns false when no payload contains a debug ID', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'bundle.js')
+      fs.writeFileSync(filePath, 'var x = 1;')
 
-  test('rejects mismatched debug ID fields', () => {
-    expect(() =>
-      extractSourcemapDebugId(
-        JSON.stringify({version: 3, debugId: DEBUG_ID, debug_id: '5c1d7f52-4e1b-5f7c-8c0d-2f4a5f6d8e91'})
-      )
-    ).toThrow('do not match')
+      expect(addDebugIdToPayloads([makeSourcemap(filePath)])).toBe(false)
+    })
   })
 })
 
 describe('generateDebugId', () => {
   const js = 'var x = 1;'
-  const sourcemap = '{"version":3,"sources":[],"mappings":""}'
 
-  test('is deterministic for the same inputs', () => {
-    expect(generateDebugId(js, sourcemap)).toBe(generateDebugId(js, sourcemap))
+  test('matches the build-plugins strategy', () => {
+    expect(generateDebugId(js)).toBe('f677d6b7-70cd-4f5e-a8fa-d6423f762295')
   })
 
-  test.each([
-    ['JS content', 'var x = 2;', sourcemap],
-    ['sourcemap content', js, '{"version":3,"sources":[],"mappings":";;"}'],
-  ])('changes when the %s changes', (_description, changedJs, changedSourcemap) => {
-    expect(generateDebugId(js, sourcemap)).not.toBe(generateDebugId(changedJs, changedSourcemap))
+  test('changes when the JavaScript changes', () => {
+    expect(generateDebugId(js)).not.toBe(generateDebugId('var x = 2;'))
   })
 
-  test('produces a UUID with version 5 and RFC4122 variant bits forced', () => {
-    const id = generateDebugId(js, sourcemap)
-    expect(id).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-5[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/)
+  test('produces a UUID with version 4 and RFC4122 variant bits forced', () => {
+    expect(generateDebugId(js)).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/)
   })
 })
 
@@ -171,8 +199,9 @@ describe('injectDebugIdSnippet', () => {
     expect(lines[0]).toContain('DD_SOURCE_CODE_CONTEXT')
     expect(lines[0]).toContain(`"ddDebugId":"${DEBUG_ID_2}"`)
     expect(result.js).toContain(js)
-    expect(result.js.trimEnd().endsWith(`//# debugId=${DEBUG_ID_2}`)).toBe(true)
-    expect(parsed.debugId).toBe(DEBUG_ID_2)
+    expect(result.js).not.toContain('//# debugId=')
+    expect(parsed.debugId).toBeUndefined()
+    expect(parsed.debug_id).toBe(DEBUG_ID_2)
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
     expect(position.line).toBe(2)
     expect(position.column).toBe(0)
@@ -234,6 +263,7 @@ describe('injectDebugIdSnippet', () => {
     expect(result.sources).toEqual(['/src/original.js'])
     expect(result.x_google_ignoreList).toEqual([0])
     expect(result.customField).toBe('preserved')
+    expect(result.debug_id).toBe(DEBUG_ID_2)
   })
 
   test('rejects indexed sourcemaps with a clear error', () => {

@@ -8,7 +8,6 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import {SourcemapsInjectCommand} from '../inject'
 
 const runCLI = makeRunCLI(SourcemapsInjectCommand, ['sourcemaps', 'inject'])
-const OTHER_DEBUG_ID = '5c1d7f52-4e1b-5f7c-8c0d-2f4a5f6d8e91'
 
 describe('sourcemaps inject', () => {
   let directory: string
@@ -37,7 +36,7 @@ describe('sourcemaps inject', () => {
     fs.rmSync(directory, {recursive: true, force: true})
   })
 
-  test('injects the same debug ID into a bundle and its sourcemap', async () => {
+  test('injects a debug ID into the bundle and records it in sourcemap metadata', async () => {
     const {context, code} = await runCLI([directory])
 
     expect(code).toBe(0)
@@ -49,41 +48,64 @@ describe('sourcemaps inject', () => {
     const debugId = js.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
 
     expect(debugId).toBeDefined()
-    expect(js).toContain(`//# debugId=${debugId}`)
+    expect(js).not.toContain('//# debugId=')
     expect(js.trimEnd().endsWith('//# sourceMappingURL=bundle.js.map')).toBe(true)
-    expect(sourcemap.debugId).toBe(debugId)
+    expect(sourcemap.debugId).toBeUndefined()
     expect(sourcemap.debug_id).toBe(debugId)
     expect(context.stdout.toString()).toContain('Injected debug IDs into 1 file(s)')
     expect(context.stdout.toString()).toContain('failed 0 file(s)')
   })
 
-  test('is idempotent when a bundle already contains a debug ID', async () => {
+  test('records an existing build-plugin debug ID when the sourcemap has no debug_id', async () => {
     expect((await runCLI([directory])).code).toBe(0)
     const injectedJs = fs.readFileSync(jsPath, 'utf-8')
+    const debugId = injectedJs.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
+    const sourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as Record<string, unknown>
+    delete sourcemap.debug_id
+    fs.writeFileSync(sourcemapPath, JSON.stringify(sourcemap))
 
     const {context, code} = await runCLI([directory])
 
     expect(code).toBe(0)
     expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injectedJs)
-    expect(context.stdout.toString()).toContain('skipped 1 file(s) with existing debug IDs')
+    const updatedSourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {debug_id?: string}
+    expect(updatedSourcemap.debug_id).toBe(debugId)
+    expect(context.stdout.toString()).toContain('Injected debug IDs into 1 file(s)')
   })
 
-  test.each([
-    ['missing', undefined, '<missing>'],
-    ['different', OTHER_DEBUG_ID, OTHER_DEBUG_ID],
-  ])('fails when an existing bundle debug ID is %s in its sourcemap', async (_, mapDebugId, expectedMapId) => {
+  test('replaces a mismatched sourcemap debug_id with the existing bundle debug ID', async () => {
     expect((await runCLI([directory])).code).toBe(0)
+    const injectedJs = fs.readFileSync(jsPath, 'utf-8')
+    const debugId = injectedJs.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
     const sourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as Record<string, unknown>
-    sourcemap.debugId = mapDebugId
-    sourcemap.debug_id = mapDebugId
+    sourcemap.debug_id = '00000000-0000-4000-8000-000000000000'
     fs.writeFileSync(sourcemapPath, JSON.stringify(sourcemap))
 
-    const {context, code} = await runCLI([directory])
+    expect((await runCLI([directory])).code).toBe(0)
 
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('Existing debug ID validation failed')
-    expect(context.stdout.toString()).toContain(`sourcemap debug ID ${expectedMapId}`)
-    expect(context.stdout.toString()).toContain('Rebuild the bundle and sourcemap before reinjecting')
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injectedJs)
+    const updatedSourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {debug_id?: string}
+    expect(updatedSourcemap.debug_id).toBe(debugId)
+  })
+
+  test('validates but does not record an existing bundle debug ID during dry-run', async () => {
+    expect((await runCLI([directory])).code).toBe(0)
+    const injectedJs = fs.readFileSync(jsPath, 'utf-8')
+    const sourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as Record<string, unknown>
+    delete sourcemap.debug_id
+    fs.writeFileSync(sourcemapPath, JSON.stringify(sourcemap))
+    const sourcemapWithoutDebugId = fs.readFileSync(sourcemapPath, 'utf-8')
+
+    const {context, code} = await runCLI([directory, '--dry-run'])
+
+    expect(code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injectedJs)
+    expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe(sourcemapWithoutDebugId)
+    expect(context.stdout.toString()).toContain('Would inject debug IDs into 1 file(s)')
+  })
+
+  test('accepts --max-concurrency', async () => {
+    expect((await runCLI([directory, '--max-concurrency', '1'])).code).toBe(0)
   })
 
   test('does not modify files in dry-run mode', async () => {
@@ -177,10 +199,10 @@ describe('sourcemaps inject', () => {
 
     expect(secondRun.code).toBe(0)
     const injectedJs = fs.readFileSync(jsPath, 'utf-8')
-    const injectedSourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {debugId?: string}
+    const injectedSourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {debug_id?: string}
     const debugId = injectedJs.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
     expect(debugId).toBeDefined()
-    expect(injectedSourcemap.debugId).toBe(debugId)
+    expect(injectedSourcemap.debug_id).toBe(debugId)
   })
 
   test('continues processing other bundles but exits nonzero when one sourcemap is malformed', async () => {

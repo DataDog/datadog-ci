@@ -7,10 +7,12 @@ import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
 import {addDebugIdToPayloads, injectMissingDebugIds} from './debugId'
-import {findSourcemaps} from './discovery'
+import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
+import {renderDiscoveryWarning, renderInjectionSummary, renderNoSourcemapsFound, renderPathNotFound} from './renderer'
 
 export class SourcemapsInjectCommand extends BaseCommand {
   public static paths = [['sourcemaps', 'inject']]
@@ -29,6 +31,7 @@ export class SourcemapsInjectCommand extends BaseCommand {
 
   private basePath = Option.String({required: true})
   private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private fipsConfig = {
@@ -41,7 +44,7 @@ export class SourcemapsInjectCommand extends BaseCommand {
     this.basePath = upath.normalize(this.basePath)
 
     if (!fs.existsSync(this.basePath)) {
-      this.context.stderr.write(`Path does not exist: ${this.basePath}\n`)
+      this.context.stderr.write(renderPathNotFound(this.basePath))
 
       return 1
     }
@@ -49,7 +52,7 @@ export class SourcemapsInjectCommand extends BaseCommand {
     let discoveryFailures = 0
     const payloads = await findSourcemaps(
       this.basePath,
-      20,
+      this.maxConcurrency,
       (minifiedFilePath, sourcemapPath) => {
         const relativePath = upath.relative(this.basePath, minifiedFilePath)
 
@@ -57,12 +60,12 @@ export class SourcemapsInjectCommand extends BaseCommand {
       },
       (message) => {
         discoveryFailures++
-        this.context.stdout.write(`WARN: ${message}\n`)
+        this.context.stdout.write(renderDiscoveryWarning(message))
       }
     )
 
     if (payloads.length === 0) {
-      this.context.stdout.write(`No JavaScript sourcemaps found in ${this.basePath}.\n`)
+      this.context.stdout.write(renderNoSourcemapsFound(this.basePath))
 
       return discoveryFailures === 0 ? 0 : 1
     }
@@ -70,9 +73,7 @@ export class SourcemapsInjectCommand extends BaseCommand {
     addDebugIdToPayloads(payloads)
     const result = injectMissingDebugIds(payloads, this.dryRun, this.context.stdout)
     result.failed += discoveryFailures
-    this.context.stdout.write(
-      `${this.dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s) with existing debug IDs; failed ${result.failed} file(s).\n`
-    )
+    this.context.stdout.write(renderInjectionSummary(result, this.dryRun))
 
     return result.failed === 0 ? 0 : 1
   }

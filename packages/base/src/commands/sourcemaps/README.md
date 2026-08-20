@@ -32,9 +32,11 @@ datadog-ci sourcemaps inject ./build
 datadog-ci sourcemaps upload ./build --debug-id
 ```
 
-Bundles that already contain a debug ID are left unchanged. Use `--dry-run` to preview injection without modifying files.
+Bundles that already contain a debug ID are not reinjected. The command still adds or corrects the sourcemap's top-level `debug_id` field so it matches the bundle. Use `--dry-run` to preview injection without modifying files, and `--max-concurrency` to control concurrent artifact discovery.
 
-Run your application's normal build again before reinjecting whenever its source code or build configuration changes. The build may reuse the same output filenames, but it must recreate the JavaScript bundles and sourcemaps without the previous injection (a clean build is recommended). Then run `sourcemaps inject` and `sourcemaps upload --debug-id` again. Changed bundle or sourcemap contents receive a new debug ID, while unchanged rebuilt artifacts reproduce the same deterministic ID. Do not modify generated artifacts between injection, upload, and deployment: rerunning `inject` preserves an existing debug ID and does not detect post-injection changes.
+The inject command always records the ID in the sourcemap's top-level `debug_id` field. The upload command reads the authoritative ID from the JavaScript bundle and sends it as upload metadata; upload matching does not depend on the sourcemap field, so artifacts produced directly by Datadog build plugins remain compatible.
+
+Run your application's normal build again before reinjecting whenever its source code or build configuration changes. The build may reuse the same output filenames, but it must recreate the JavaScript bundles and sourcemaps without the previous injection (a clean build is recommended). Then run `sourcemaps inject` and `sourcemaps upload --debug-id` again. Changed bundle contents receive a new debug ID, while unchanged rebuilt bundles reproduce the same deterministic ID. Do not modify generated artifacts between injection, upload, and deployment: rerunning `inject` preserves an existing debug ID and does not detect post-injection changes.
 
 Injection changes the JavaScript bundle bytes. Run it before any byte-dependent post-processing such as generating Subresource Integrity (SRI) hashes, compressed `.gz`/`.br` assets, signatures, or checksum manifests. If your build creates those outputs automatically, regenerate them after injection. Upload and deploy the exact same injected JavaScript and sourcemap files.
 

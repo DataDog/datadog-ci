@@ -9,13 +9,13 @@ import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import {getMinifiedFilePath, readLastLine} from './utils'
 
 type CreateSourcemap = (minifiedFilePath: string, sourcemapPath: string) => Sourcemap
-type ReportDiscoveryError = (message: string) => void
+type ReportDiscoveryWarning = (message: string) => void
 
 export const findSourcemaps = async (
   basePath: string,
   maxConcurrency: number,
   createSourcemap: CreateSourcemap,
-  reportError?: ReportDiscoveryError
+  reportError?: ReportDiscoveryWarning
 ): Promise<Sourcemap[]> => {
   const jsFiles = globSync(buildPath(basePath, '**/*.js'))
   const resolvedBasePath = upath.resolve(basePath)

@@ -32,16 +32,18 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {addDebugIdToPayloads} from './debugId'
-import {findSourcemaps} from './discovery'
+import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
   renderAbsolutePathWarning,
   renderConfigurationError,
+  renderDiscoveryWarning,
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderGitWarning,
   renderInvalidPrefix,
+  renderNoDebugIdFound,
   renderRetriedUpload,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
@@ -138,8 +140,10 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
 
-    if (this.debugId && payloads.length > 0) {
-      addDebugIdToPayloads(payloads)
+    if (this.debugId && payloads.length > 0 && !addDebugIdToPayloads(payloads)) {
+      this.context.stderr.write(renderNoDebugIdFound())
+
+      return 1
     }
 
     const requestBuilder = this.getRequestBuilder()
@@ -219,7 +223,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
 
         return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
       },
-      (message) => this.context.stdout.write(`WARN: ${message}\n`)
+      (message) => this.context.stdout.write(renderDiscoveryWarning(message))
     )
   }
 

@@ -1,11 +1,8 @@
-import fs from 'fs'
-
 import type {Sourcemap} from './interfaces'
 import type {Writable} from 'stream'
 
 import {checkFile} from '@datadog/datadog-ci-base/helpers/validation'
 
-import {extractSourcemapDebugId} from './debugId'
 import {renderMinifiedPathPrefixMisusage} from './renderer'
 import {extractRepeatedPath} from './utils'
 
@@ -49,22 +46,6 @@ export const validatePayload = (sourcemap: Sourcemap, stdout: Writable, debugIdR
       'missing_debug_id',
       `Skipping sourcemap ${sourcemap.sourcemapPath} because no debug ID was found in ${sourcemap.minifiedFilePath}`
     )
-  }
-
-  if (debugIdRequired) {
-    try {
-      const sourcemapDebugId = extractSourcemapDebugId(fs.readFileSync(sourcemap.sourcemapPath, 'utf-8'))
-      if (sourcemapDebugId !== sourcemap.debugId) {
-        throw new Error(
-          `bundle debug ID ${sourcemap.debugId} does not match sourcemap debug ID ${sourcemapDebugId ?? '<missing>'}`
-        )
-      }
-    } catch (error) {
-      throw new InvalidPayload(
-        'invalid_debug_id_pair',
-        `Skipping sourcemap ${sourcemap.sourcemapPath} because its debug ID is inconsistent: ${error}`
-      )
-    }
   }
 
   // Check for --minified-path-prefix flag misuages.
