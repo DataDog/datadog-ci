@@ -5,6 +5,7 @@ import {executePluginCommand} from '../../helpers/plugin'
 import {
   DEFAULT_VOLUME_PATH,
   DEFAULT_LOGS_PATH,
+  DEFAULT_HEALTH_CHECK_PORT,
   DEFAULT_SIDECAR_NAME,
   DEFAULT_VOLUME_NAME,
 } from '../../helpers/serverless/constants'
@@ -82,7 +83,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description:
       'If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name.',
   })
-  protected healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
+  protected healthCheckPort: number | undefined = Option.String('--port,--health-check-port,--healthCheckPort', {
+    description: `Set the Datadog Agent health port. The Agent listens on this port, and its Cloud Run startup probe checks it. If omitted, the command uses the existing sidecar DD_HEALTH_PORT, or ${DEFAULT_HEALTH_CHECK_PORT}.`,
+    validator: t.cascade(t.isNumber(), t.isInteger(), t.isInInclusiveRange(1, 65535)),
+  })
   protected sidecarImage = Option.String('--image,--sidecar-image', DEFAULT_SIDECAR_IMAGE, {
     description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,
   })

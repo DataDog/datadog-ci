@@ -39,7 +39,7 @@ export interface InstrumentServiceConfigOptions {
   readonly environment: string | undefined
   readonly version: string | undefined
   readonly envVarsByName: Readonly<Record<string, IEnvVar>>
-  readonly healthCheckPort: string | undefined
+  readonly healthCheckPort: number | undefined
   readonly tracerReadinessPort?: number
   readonly sidecarName: string
   readonly sidecarImage: string
@@ -70,7 +70,11 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
 
   let sourceTemplate: IServiceTemplate = service.template || {}
   let targetContainers: ReadonlySet<IContainer> | undefined
-  const envVarsByName = {...options.envVarsByName}
+  const healthCheckPort = resolveHealthCheckPort(sourceTemplate, options)
+  const envVarsByName: Record<string, IEnvVar> = {
+    ...options.envVarsByName,
+    [HEALTH_PORT_ENV_VAR]: {name: HEALTH_PORT_ENV_VAR, value: String(healthCheckPort)},
+  }
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
@@ -89,7 +93,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
     )
-    assertTracerReadinessPortAvailable(sourceTemplate, mainContainer, options, tracerReadinessPort)
+    assertTracerReadinessPortAvailable(mainContainer, options.sidecarName, tracerReadinessPort, healthCheckPort)
     sourceTemplate = hasSsi ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
@@ -101,7 +105,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
 
   let template = createInstrumentedTemplate(
     sourceTemplate,
-    buildSidecarContainer(sourceTemplate, options),
+    buildSidecarContainer(sourceTemplate, options, healthCheckPort),
     {
       name: options.sharedVolumeName,
       mountPath: options.sharedVolumePath,
@@ -281,10 +285,10 @@ const applyTracerCopy = (
 }
 
 const assertTracerReadinessPortAvailable = (
-  template: IServiceTemplate,
   mainContainer: IContainer,
-  options: InstrumentServiceConfigOptions,
-  tracerReadinessPort: number
+  sidecarName: string,
+  tracerReadinessPort: number,
+  healthCheckPort: number
 ): void => {
   if (mainContainer.ports?.some(({containerPort}) => containerPort === tracerReadinessPort)) {
     const containerName = mainContainer.name || '<unnamed>'
@@ -293,9 +297,8 @@ const assertTracerReadinessPortAvailable = (
     )
   }
 
-  const healthCheckPort = resolveHealthCheckPort(template, options)
   if (healthCheckPort === tracerReadinessPort) {
-    const containerName = options.sidecarName || '<unnamed>'
+    const containerName = sidecarName || '<unnamed>'
     throw new SsiConfigError(
       `--tracer-readiness-port ${tracerReadinessPort} conflicts with Datadog Agent health port ${healthCheckPort} for container '${containerName}'. Change --tracer-readiness-port or --health-check-port.`
     )
@@ -349,7 +352,11 @@ const removeDependency = (container: IContainer, name: string): IContainer => {
   return {...container, dependsOn}
 }
 
-const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentServiceConfigOptions): IContainer => {
+const buildSidecarContainer = (
+  template: IServiceTemplate,
+  options: InstrumentServiceConfigOptions,
+  healthCheckPort: number
+): IContainer => {
   const existingSidecar = template.containers?.find((container) => container.name === options.sidecarName)
 
   return {
@@ -357,7 +364,7 @@ const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentSe
     name: options.sidecarName,
     image: options.sidecarImage,
     startupProbe: {
-      tcpSocket: {port: resolveHealthCheckPort(template, options)},
+      tcpSocket: {port: healthCheckPort},
       initialDelaySeconds: 0,
       periodSeconds: 10,
       failureThreshold: 3,

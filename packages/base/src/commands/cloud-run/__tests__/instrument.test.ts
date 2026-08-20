@@ -7,6 +7,7 @@ interface ParsedOptions {
   language: string | undefined
   tracerVersion: string | undefined
   tracerLibc: string | undefined
+  healthCheckPort: number | undefined
   tracerReadinessPort: number
 }
 
@@ -19,6 +20,7 @@ class TestCloudRunInstrumentCommand extends CloudRunInstrumentCommand {
       language: this.language,
       tracerVersion: this.tracerVersion,
       tracerLibc: this.tracerLibc,
+      healthCheckPort: this.healthCheckPort,
       tracerReadinessPort: this.tracerReadinessPort,
     }
 
@@ -49,8 +51,23 @@ describe('CloudRunInstrumentCommand', () => {
       language: 'python',
       tracerVersion: '2.0.0',
       tracerLibc: 'musl',
+      healthCheckPort: undefined,
       tracerReadinessPort: 18999,
     })
+  })
+
+  test.each([1, 8127, 65535])('parses --health-check-port %s as a number', async (port) => {
+    const {code} = await runCLI(['--health-check-port', String(port)])
+
+    expect(code).toBe(0)
+    expect(parsedOptions?.healthCheckPort).toBe(port)
+  })
+
+  test.each(['0', '65536', '8127.5', 'not-a-port'])('rejects invalid --health-check-port %s', async (port) => {
+    const {code} = await runCLI(['--health-check-port', port])
+
+    expect(code).toBe(1)
+    expect(parsedOptions).toBeUndefined()
   })
 
   test.each([
