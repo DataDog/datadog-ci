@@ -4,16 +4,12 @@ import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
 
-export class EcsInstrumentCommand extends BaseCommand {
-  public static paths = [['ecs', 'instrument']]
+export class EcsFargateInstrumentCommand extends BaseCommand {
+  public static paths = [['ecs-fargate', 'instrument']]
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Apply Datadog instrumentation to an AWS ECS Task Definition.',
-  })
-
-  protected static launchType = Option.String('--launch-type', {
-    description: 'Used to manually specify the ECS launch type (Fargate or EC2)',
+    description: 'Apply Datadog instrumentation to an AWS ECS Fargate Task Definition.',
   })
   protected appsecEnabled = Option.Boolean('--appsec', false, {
     description: `Enable Application Security Monitoring for the service. Defaults to 'false'`,

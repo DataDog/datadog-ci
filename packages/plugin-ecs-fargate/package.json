@@ -1,18 +1,18 @@
 {
-  "name": "@datadog/datadog-ci-plugin-ecs",
+  "name": "@datadog/datadog-ci-plugin-ecs-fargate",
   "version": "5.22.0",
-  "description": "Datadog CI plugin for `ecs` commands",
+  "description": "Datadog CI plugin for `ecs-fargate` commands",
   "license": "Apache-2.0",
   "keywords": [
     "datadog",
     "datadog-ci",
     "plugin"
   ],
-  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-ecs",
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-ecs-fargate",
   "repository": {
     "type": "git",
     "url": "https://github.com/DataDog/datadog-ci.git",
-    "directory": "packages/plugin-ecs"
+    "directory": "packages/plugin-ecs-fargate"
   },
   "main": "dist/bundle.js",
   "types": "dist/bundle.d.ts",

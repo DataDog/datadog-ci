@@ -8,7 +8,7 @@ RUN npm install -g @datadog/datadog-ci@$VERSION \
     @datadog/datadog-ci-plugin-aas@$VERSION \
     @datadog/datadog-ci-plugin-cloud-run@$VERSION \
     @datadog/datadog-ci-plugin-container-app@$VERSION \
-    @datadog/datadog-ci-plugin-ecs@$VERSION \
+    @datadog/datadog-ci-plugin-ecs-fargate@$VERSION \
     @datadog/datadog-ci-plugin-lambda@$VERSION \
     @datadog/datadog-ci-plugin-stepfunctions@$VERSION \
     @datadog/datadog-ci-plugin-synthetics@$VERSION \
