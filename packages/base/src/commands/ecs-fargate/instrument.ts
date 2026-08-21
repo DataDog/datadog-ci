@@ -16,6 +16,10 @@ export type EcsFargateConfigOptions = Partial<{
   region: string
   profile: string
 
+  // Rollout options
+  ecsServices: string[]
+  cluster: string
+
   // Configuration options
   apiKeySecretArn: string
   agentImage: string
@@ -56,6 +60,14 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   })
   private profile = Option.String('--profile', {
     description: `Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles`,
+  })
+  private ecsServices = Option.Array('--ecs-service,--ecsService', {
+    description:
+      'The name of an ECS service to update to the newly instrumented revision, so that the change rolls out without a manual deployment. Can be specified multiple times.',
+  })
+  private cluster = Option.String('--cluster', {
+    description:
+      'The ECS cluster the services named by `--ecs-service` run in. Omit it for the `default` cluster of the region.',
   })
   private apiKeySecretArn = Option.String('--api-key-secret-arn,--apiKeySecretArn', {
     description: `The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text`,
@@ -136,6 +148,8 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       taskDefinitions: this.taskDefinitions,
       region: this.region,
       profile: this.profile,
+      ecsServices: this.ecsServices,
+      cluster: this.cluster,
       apiKeySecretArn: this.apiKeySecretArn,
       agentImage: this.agentImage,
       service: this.service,
@@ -177,6 +191,9 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
     }
     if (config.tracing !== undefined && toBoolean(config.tracing) === undefined) {
       errors.push('--tracing must be either `true` or `false`.')
+    }
+    if (config.cluster && !config.ecsServices?.length) {
+      errors.push('--cluster names the cluster of the services to update, so it only applies with --ecs-service.')
     }
 
     return [config, errors]

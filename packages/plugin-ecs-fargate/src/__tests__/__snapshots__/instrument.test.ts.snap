@@ -2,8 +2,13 @@
 
 exports[`ecs-fargate instrument prints the diff and registers nothing on a dry run 1`] = `
 "[Dry Run] Instrumenting my-app:
-@@ -3,10 +3,22 @@
+@@ -1,12 +1,27 @@
+  {
+    "containerDefinitions": [
       {
++       "dockerLabels": {
++         "com.datadoghq.tags.service": "my-app"
++       },
         "environment": [
           {
             "name": "PORT",
@@ -25,7 +30,7 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -16,18 +28,82 @@
+@@ -16,18 +31,82 @@
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
           }

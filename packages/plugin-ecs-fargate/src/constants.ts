@@ -18,8 +18,26 @@ export const LAUNCH_TYPE_FARGATE = 'FARGATE'
  */
 export const AWSVPC_NETWORK_MODE = 'awsvpc'
 
+/**
+ * ECS spells the Windows operating system families `WINDOWS_SERVER_2019_CORE`,
+ * `WINDOWS_SERVER_2022_FULL`, and so on, so they are matched by prefix. Anything else, `LINUX` and
+ * declaring no family at all included, runs Linux.
+ */
+export const WINDOWS_OS_FAMILY_PREFIX = 'WINDOWS_SERVER'
+
 // Agent sidecar defaults
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
+
+/**
+ * The tag suffix for the Windows build of the Agent image. Datadog publishes it as a manifest list
+ * covering Windows Server 2019, 2022, and 2025, so ECS pulls the one matching the task's platform.
+ */
+export const WINDOWS_AGENT_IMAGE_SUFFIX = '-servercore'
+
+/**
+ * The working directory the Agent requires on Windows, which its image does not set itself.
+ */
+export const WINDOWS_WORKING_DIRECTORY = 'C:\\'
 
 /**
  * The task definition tag keys for the unified service tags, which name the same three concepts as
@@ -30,8 +48,20 @@ export const ENVIRONMENT_TAG_KEY = 'env'
 export const VERSION_TAG_KEY = 'version'
 
 /**
+ * Docker labels the Agent reads to attach the unified service tags to the metrics it collects about
+ * a container. The `DD_SERVICE` family of environment variables covers what the tracer inside the
+ * container sends; these cover what the Agent observes from the outside.
+ */
+export const DOCKER_LABEL_SERVICE = 'com.datadoghq.tags.service'
+export const DOCKER_LABEL_ENV = 'com.datadoghq.tags.env'
+export const DOCKER_LABEL_VERSION = 'com.datadoghq.tags.version'
+
+/**
  * The Agent's own health probe. Shipping it means application containers can gate their startup on
  * the Agent being ready through a `dependsOn` HEALTHY condition.
+ *
+ * Linux only: `/probe.sh` is a shell script shipped in the Linux image, and the Windows image has
+ * no equivalent on its `PATH`, so Windows tasks get no health check at all.
  */
 export const AGENT_HEALTH_CHECK_COMMAND = ['CMD-SHELL', '/probe.sh']
 export const AGENT_HEALTH_CHECK_INTERVAL = 15

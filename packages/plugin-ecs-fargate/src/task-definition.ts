@@ -10,6 +10,7 @@ import type {
 
 import {sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
+  AGENT_IMAGE,
   API_KEY_ENV_VAR,
   DD_APPSEC_ENABLED_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
@@ -39,19 +40,29 @@ import {
   DD_APM_ENABLED_ENV_VAR,
   DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR,
   DD_USE_DOGSTATSD_ENV_VAR,
+  DOCKER_LABEL_ENV,
+  DOCKER_LABEL_SERVICE,
+  DOCKER_LABEL_VERSION,
   ECS_FARGATE_ENV_VAR,
   ENVIRONMENT_TAG_KEY,
   LAUNCH_TYPE_FARGATE,
   READ_ONLY_TASK_DEFINITION_FIELDS,
   SERVICE_TAG_KEY,
   VERSION_TAG_KEY,
+  WINDOWS_AGENT_IMAGE_SUFFIX,
+  WINDOWS_OS_FAMILY_PREFIX,
+  WINDOWS_WORKING_DIRECTORY,
 } from './constants'
 
 /**
  * What the user asked for, resolved into the decisions the transform needs.
  */
 export type InstrumentSettings = {
-  agentImage: string
+  /**
+   * The Agent image to run. Absent leaves the choice to the transform, which picks the default build
+   * for the task's platform.
+   */
+  agentImage?: string
   site: string
   /** The API key, when it is written to the task definition in plain text. */
   apiKey?: string
@@ -79,13 +90,38 @@ export type InstrumentResult = {
 }
 
 /**
- * Environment variables to write to a container, split by how strongly the command owns them.
+ * Values to write to a container, split by how strongly the command owns them.
  */
-type ManagedEnvironment = {
+type ManagedValues = {
   /** Owned by the command: these replace what the task definition had. */
   managed: Record<string, string>
   /** Suggested by the command: a value already on the container wins. */
   defaults: Record<string, string>
+}
+
+/**
+ * Merges the values the command writes into the ones already on the container, by name: defaults
+ * fill in what is missing, managed values replace what is there.
+ *
+ * Existing entries keep their position, so that re-running produces an identical result rather than
+ * a reordered one that would show up as a diff. Shared by the environment variables and the Docker
+ * labels, so the two can never disagree on what overrides what.
+ */
+const mergeManaged = <T>(
+  {managed, defaults}: ManagedValues,
+  existing: Iterable<readonly [string, T]>
+): Map<string, string | T> => {
+  const merged = new Map<string, string | T>(existing)
+  for (const [name, value] of Object.entries(defaults)) {
+    if (!merged.has(name)) {
+      merged.set(name, value)
+    }
+  }
+  for (const [name, value] of Object.entries(managed)) {
+    merged.set(name, value)
+  }
+
+  return merged
 }
 
 /**
@@ -95,7 +131,7 @@ type ManagedEnvironment = {
  * An explicit `--service` is authoritative. The family the task definition is named after is only a
  * fallback, since a container that sets `DD_SERVICE` itself knows better than a name we guessed.
  */
-const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): ManagedEnvironment => {
+const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
   const managed: Record<string, string> = {}
   const defaults: Record<string, string> = {}
 
@@ -121,9 +157,39 @@ const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): Ma
 }
 
 /**
+ * The unified service tags as Docker labels, which the application containers carry so that the
+ * metrics the Agent collects about them are tagged like the telemetry their tracers send.
+ *
+ * Only the three tags have labels: `DD_TAGS` and the log level have no equivalent, since the Agent
+ * applies its own global tags to what it collects.
+ *
+ * Authority follows the environment variables: an explicit `--service` is the command's to set,
+ * while the family the task definition is named after is only a fallback, since a container that
+ * labels itself knows better than a name we guessed.
+ */
+const getUstDockerLabels = (settings: InstrumentSettings, family?: string): ManagedValues => {
+  const managed: Record<string, string> = {}
+  const defaults: Record<string, string> = {}
+
+  if (settings.service) {
+    managed[DOCKER_LABEL_SERVICE] = settings.service
+  } else if (family) {
+    defaults[DOCKER_LABEL_SERVICE] = family
+  }
+  if (settings.environment) {
+    managed[DOCKER_LABEL_ENV] = settings.environment
+  }
+  if (settings.version) {
+    managed[DOCKER_LABEL_VERSION] = settings.version
+  }
+
+  return {managed, defaults}
+}
+
+/**
  * Builds the environment the Agent sidecar runs with.
  */
-const getAgentEnvVars = (settings: InstrumentSettings, family?: string): ManagedEnvironment => {
+const getAgentEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
   const serviceTags = getServiceTagEnvVars(settings, family)
 
   return {
@@ -149,7 +215,7 @@ const getAgentEnvVars = (settings: InstrumentSettings, family?: string): Managed
  * Tracing and log injection are defaults rather than managed values, so a task definition that has
  * already made a choice about either keeps it. The products the user turns on explicitly are managed.
  */
-const getAppContainerEnvVars = (settings: InstrumentSettings, family?: string): ManagedEnvironment => {
+const getAppContainerEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
   const serviceTags = getServiceTagEnvVars(settings, family)
   const managed: Record<string, string> = {...serviceTags.managed}
 
@@ -178,34 +244,72 @@ const getAppContainerEnvVars = (settings: InstrumentSettings, family?: string): 
 }
 
 /**
- * Merges the environment variables the command writes into the ones already on the container, by
- * name: defaults fill in what is missing, managed values replace what is there.
- *
- * Existing variables keep their position so that re-running produces an identical array rather than
- * a reordered one that would show up as a diff.
+ * The environment to give a container: what the command writes, merged into what the container
+ * already declares.
  */
-const toEnvironment = (environment: ManagedEnvironment, existing?: KeyValuePair[]): KeyValuePair[] => {
-  const merged = new Map<string, string | undefined>()
+const toEnvironment = (values: ManagedValues, existing?: KeyValuePair[]): KeyValuePair[] => {
+  const declared: [string, string | undefined][] = []
   for (const {name, value} of existing ?? []) {
     if (name !== undefined) {
-      merged.set(name, value)
+      declared.push([name, value])
     }
-  }
-  for (const [name, value] of Object.entries(environment.defaults)) {
-    if (!merged.has(name)) {
-      merged.set(name, value)
-    }
-  }
-  for (const [name, value] of Object.entries(environment.managed)) {
-    merged.set(name, value)
   }
 
-  return [...merged].map(([name, value]) => ({name, value}))
+  return [...mergeManaged(values, declared)].map(([name, value]) => ({name, value}))
+}
+
+/**
+ * The Docker labels to give a container: what the command writes, merged into what the container
+ * already carries.
+ *
+ * Absent when there is nothing to write and the container carried none, so that a task definition
+ * without labels does not gain an empty map. `isUpToDate` compares structurally, so an empty map
+ * where there was previously nothing would read as a change and register a revision.
+ */
+const toDockerLabels = (
+  values: ManagedValues,
+  existing?: Record<string, string>
+): Record<string, string> | undefined => {
+  const merged = mergeManaged(values, Object.entries(existing ?? {}))
+
+  return merged.size > 0 ? Object.fromEntries(merged) : undefined
 }
 
 export type AgentContainerResult = {
   container: ContainerDefinition
   warnings: string[]
+}
+
+/**
+ * Whether the task runs Windows containers, which the Agent sidecar has to be built differently
+ * for. A task definition that declares no `runtimePlatform`, or declares `LINUX`, runs Linux.
+ */
+const isWindowsTask = (taskDefinition: TaskDefinition): boolean =>
+  taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
+
+/**
+ * The Agent image to run: the one the user asked for, or the default build for the task's platform.
+ *
+ * An explicit `--agent-image` is used verbatim on either platform, since pinning a version or
+ * pointing at a mirrored registry is the user's call. Only the default varies, because only then is
+ * the image ours to choose.
+ */
+const agentImage = (settings: InstrumentSettings, windows: boolean): string =>
+  settings.agentImage ?? (windows ? `${AGENT_IMAGE}${WINDOWS_AGENT_IMAGE_SUFFIX}` : AGENT_IMAGE)
+
+/**
+ * What the Agent sidecar is built from.
+ */
+type AgentContainerContext = {
+  settings: InstrumentSettings
+  /** Whether the task runs Windows containers. */
+  windows: boolean
+  /** The task definition family, used to name the service when the user did not. */
+  family?: string
+  /** The Agent container already on the task definition, if any. */
+  existing?: ContainerDefinition
+  /** A log configuration borrowed from an application container, when the Agent has none. */
+  logConfiguration?: LogConfiguration
 }
 
 /**
@@ -221,12 +325,13 @@ export type AgentContainerResult = {
  * the Agent is already reachable on `127.0.0.1` without one; a mapping would only publish DogStatsD
  * and the trace intake on the task's network interface.
  */
-const buildAgentContainer = (
-  settings: InstrumentSettings,
-  family?: string,
-  existing?: ContainerDefinition,
-  logConfiguration?: LogConfiguration
-): AgentContainerResult => {
+const buildAgentContainer = ({
+  settings,
+  windows,
+  family,
+  existing,
+  logConfiguration,
+}: AgentContainerContext): AgentContainerResult => {
   const warnings: string[] = []
 
   // The API key lives either in `secrets` or in `environment`, never both, so switching between the
@@ -250,27 +355,37 @@ const buildAgentContainer = (
     )
   }
 
-  const healthCheck = {
-    command: [...AGENT_HEALTH_CHECK_COMMAND],
-    interval: AGENT_HEALTH_CHECK_INTERVAL,
-    timeout: AGENT_HEALTH_CHECK_TIMEOUT,
-    retries: AGENT_HEALTH_CHECK_RETRIES,
-    startPeriod: AGENT_HEALTH_CHECK_START_PERIOD,
-  }
-  if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
+  // The Agent's probe is a shell script that only exists in the Linux image, so a Windows task gets
+  // no health check rather than one that can never pass.
+  const healthCheck = windows
+    ? undefined
+    : {
+        command: [...AGENT_HEALTH_CHECK_COMMAND],
+        interval: AGENT_HEALTH_CHECK_INTERVAL,
+        timeout: AGENT_HEALTH_CHECK_TIMEOUT,
+        retries: AGENT_HEALTH_CHECK_RETRIES,
+        startPeriod: AGENT_HEALTH_CHECK_START_PERIOD,
+      }
+  if (windows) {
+    warnings.push(
+      `Leaving the ${AGENT_CONTAINER_NAME} container without a health check: the Agent's probe is a shell script that only its Linux image ships. Nothing will report whether the Agent is ready on this task.`
+    )
+  } else if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
     warnings.push(`Replacing the health check on the ${AGENT_CONTAINER_NAME} container with the Agent's own probe.`)
   }
 
   const container = removeUndefinedValues({
     ...existing,
     name: AGENT_CONTAINER_NAME,
-    image: settings.agentImage,
+    image: agentImage(settings, windows),
     // The Agent must not be able to take the task down: a crashed Agent should cost telemetry, not
     // availability.
     essential: false,
     environment: toEnvironment(getAgentEnvVars(settings, family), inheritedEnvironment),
     secrets,
     healthCheck,
+    // The Windows Agent image leaves the working directory unset, and the Agent needs one.
+    workingDirectory: windows ? WINDOWS_WORKING_DIRECTORY : existing?.workingDirectory,
     // Without one, a Fargate container's output goes nowhere, which would leave an Agent that
     // cannot pull its image or reach Datadog impossible to diagnose.
     logConfiguration: existing?.logConfiguration ?? logConfiguration,
@@ -348,12 +463,13 @@ export const instrumentTaskDefinition = (
 
   const containers = taskDefinition.containerDefinitions ?? []
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
-  const {container: agentContainer, warnings} = buildAgentContainer(
+  const {container: agentContainer, warnings} = buildAgentContainer({
     settings,
+    windows: isWindowsTask(taskDefinition),
     family,
-    existingAgent,
-    borrowedLogConfiguration(containers)
-  )
+    existing: existingAgent,
+    logConfiguration: borrowedLogConfiguration(containers),
+  })
 
   if (!agentContainer.logConfiguration) {
     warnings.push(
@@ -369,11 +485,19 @@ export const instrumentTaskDefinition = (
     )
   }
 
+  // The Agent is left out of the Docker labels on purpose: they tag the metrics collected about the
+  // container carrying them, so an Agent labelled with the application's service would report its
+  // own resource usage under that service.
   const appEnvironment = getAppContainerEnvVars(settings, family)
+  const appLabels = getUstDockerLabels(settings, family)
   const containerDefinitions = containers.map((container) =>
     container.name === AGENT_CONTAINER_NAME
       ? agentContainer
-      : {...container, environment: toEnvironment(appEnvironment, container.environment)}
+      : removeUndefinedValues({
+          ...container,
+          environment: toEnvironment(appEnvironment, container.environment),
+          dockerLabels: toDockerLabels(appLabels, container.dockerLabels),
+        })
   )
   if (!existingAgent) {
     containerDefinitions.push(agentContainer)

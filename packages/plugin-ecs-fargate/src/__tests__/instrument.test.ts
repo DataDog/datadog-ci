@@ -22,7 +22,13 @@ jest.mock('@aws-sdk/credential-providers', () => ({
 
 import type {ContainerDefinition} from '@aws-sdk/client-ecs'
 
-import {DescribeTaskDefinitionCommand, ECSClient, RegisterTaskDefinitionCommand} from '@aws-sdk/client-ecs'
+import {
+  DescribeServicesCommand,
+  DescribeTaskDefinitionCommand,
+  ECSClient,
+  RegisterTaskDefinitionCommand,
+  UpdateServiceCommand,
+} from '@aws-sdk/client-ecs'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
@@ -36,10 +42,15 @@ import {
   INSTRUMENTATION_TAGS,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
+  MOCK_CLUSTER,
+  MOCK_FAMILY,
   MOCK_REGION,
+  MOCK_SERVICE,
   MOCK_SETTINGS,
   SERVICE_TAG,
+  fargateService,
   fargateTaskDefinition,
+  taskDefinitionArn,
 } from './fixtures'
 
 const ecsMock = mockClient(ECSClient)
@@ -69,6 +80,8 @@ describe('ecs-fargate instrument', () => {
     ecsMock.reset()
     ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: fargateTaskDefinition(), tags: []})
     ecsMock.on(RegisterTaskDefinitionCommand).resolves({taskDefinition: fargateTaskDefinition({revision: 2})})
+    ecsMock.on(DescribeServicesCommand).resolves({services: [fargateService()], failures: []})
+    ecsMock.on(UpdateServiceCommand).resolves({})
     validateApiKey.mockClear().mockResolvedValue(true)
     handleSourceCodeIntegration.mockClear().mockResolvedValue(undefined)
     fromIni
@@ -195,6 +208,13 @@ describe('ecs-fargate instrument', () => {
         DD_ENV: 'prod',
         DD_VERSION: '1.0.0',
         DD_TAGS: 'team:intake',
+      })
+      expect(
+        registered.containerDefinitions?.find((container) => container.name === 'my-app')?.dockerLabels
+      ).toStrictEqual({
+        'com.datadoghq.tags.service': 'payments',
+        'com.datadoghq.tags.env': 'prod',
+        'com.datadoghq.tags.version': '1.0.0',
       })
       expect(registered.tags).toStrictEqual([
         {key: 'service', value: 'payments'},
@@ -333,6 +353,13 @@ describe('ecs-fargate instrument', () => {
       expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
     })
 
+    test('reports a cluster given without a service to update', async () => {
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--cluster', MOCK_CLUSTER])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('--cluster names the cluster of the services to update')
+    })
+
     test('uses the named AWS profile it is given', async () => {
       await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--profile', 'my-profile'])
 
@@ -368,6 +395,178 @@ describe('ecs-fargate instrument', () => {
 
       expect(code).toBe(0)
       expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(1)
+    })
+  })
+
+  describe('deployment', () => {
+    test('points the service it is given at the new revision', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(DescribeServicesCommand)[0].args[0].input).toStrictEqual({
+        cluster: undefined,
+        services: [MOCK_SERVICE],
+      })
+      expect(ecsMock.commandCalls(UpdateServiceCommand)[0].args[0].input).toStrictEqual({
+        cluster: undefined,
+        service: MOCK_SERVICE,
+        taskDefinition: taskDefinitionArn(MOCK_FAMILY, 2),
+      })
+      const output = context.stdout.toString()
+      expect(output).toContain(`Updating ${MOCK_SERVICE} to my-app:2`)
+      expect(output).not.toContain('Update your services and tasks')
+    })
+
+    test('looks the service up in the cluster it is given', async () => {
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+        '--cluster',
+        MOCK_CLUSTER,
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(DescribeServicesCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
+      expect(ecsMock.commandCalls(UpdateServiceCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
+    })
+
+    test('points each service at the revision of the family it runs', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand, {taskDefinition: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 4}), tags: []})
+      ecsMock
+        .on(RegisterTaskDefinitionCommand, {family: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 5})})
+      ecsMock.on(DescribeServicesCommand, {services: ['my-worker-service']}).resolves({
+        services: [
+          fargateService({serviceName: 'my-worker-service', taskDefinition: taskDefinitionArn('my-worker', 4)}),
+        ],
+      })
+
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--task-definition',
+        'my-worker',
+        '--ecs-service',
+        MOCK_SERVICE,
+        '--ecs-service',
+        'my-worker-service',
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand).map((call) => call.args[0].input)).toStrictEqual([
+        {cluster: undefined, service: MOCK_SERVICE, taskDefinition: taskDefinitionArn(MOCK_FAMILY, 2)},
+        {cluster: undefined, service: 'my-worker-service', taskDefinition: taskDefinitionArn('my-worker', 5)},
+      ])
+    })
+
+    test('leaves a service that already runs the instrumented revision alone', async () => {
+      const {taskDefinition: instrumented} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+      ecsMock.on(DescribeTaskDefinitionCommand).resolves({
+        taskDefinition: fargateTaskDefinition({containerDefinitions: instrumented.containerDefinitions}),
+        tags: INSTRUMENTATION_TAGS,
+      })
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(0)
+      expect(context.stdout.toString()).toContain(`${MOCK_SERVICE} already runs my-app:1, no deployment needed.`)
+    })
+
+    test('updates no service on a dry run', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+        '--dry-run',
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(0)
+      expect(context.stdout.toString()).toContain(`[Dry Run] Updating ${MOCK_SERVICE} to the new my-app revision.`)
+    })
+
+    test('deploys nothing when a task definition could not be instrumented', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand)
+        .resolves({taskDefinition: fargateTaskDefinition({networkMode: 'bridge'}), tags: []})
+
+      const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--ecs-service', MOCK_SERVICE])
+
+      expect(code).toBe(1)
+      expect(ecsMock.commandCalls(DescribeServicesCommand)).toHaveLength(0)
+    })
+
+    test('reports a service running a task definition it did not instrument', async () => {
+      ecsMock
+        .on(DescribeServicesCommand)
+        .resolves({services: [fargateService({taskDefinition: taskDefinitionArn('other-app', 3)})]})
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+      ])
+
+      expect(code).toBe(1)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(0)
+      expect(context.stdout.toString()).toContain(
+        `${MOCK_SERVICE} runs other-app, which this run did not instrument. Pass --task-definition other-app`
+      )
+    })
+
+    test('keeps deploying after a service it cannot find', async () => {
+      ecsMock.on(DescribeServicesCommand, {services: ['gone']}).resolves({
+        services: [],
+        failures: [{arn: 'arn:aws:ecs:us-east-1:123456789012:service/gone', reason: 'MISSING'}],
+      })
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        'gone',
+        '--ecs-service',
+        MOCK_SERVICE,
+        '--cluster',
+        MOCK_CLUSTER,
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(
+        `No ECS service found for gone (MISSING) in the ${MOCK_CLUSTER} cluster.`
+      )
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(1)
+    })
+
+    test('reports a failure to update the service', async () => {
+      ecsMock.on(UpdateServiceCommand).rejects(new Error('AccessDeniedException'))
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('AccessDeniedException')
     })
   })
 

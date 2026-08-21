@@ -3,10 +3,12 @@ import type {FromIniInit} from '@aws-sdk/credential-provider-ini'
 import type {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
 
 import {
+  DescribeServicesCommand,
   DescribeTaskDefinitionCommand,
   ECSClient,
   RegisterTaskDefinitionCommand,
   TaskDefinitionField,
+  UpdateServiceCommand,
 } from '@aws-sdk/client-ecs'
 import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {CredentialsProviderError} from '@smithy/property-provider'
@@ -83,10 +85,10 @@ export const describeTaskDefinition = async (
 }
 
 /**
- * A revision this command registered. The revision number is what the user needs to deploy, so it
- * is checked here rather than asserted at each use.
+ * A revision this command registered. The revision number is what the user needs to deploy and the
+ * ARN is what a service has to be pointed at, so both are checked here rather than at each use.
  */
-export type RegisteredTaskDefinition = TaskDefinition & {revision: number}
+export type RegisteredTaskDefinition = TaskDefinition & {taskDefinitionArn: string; revision: number}
 
 export const registerTaskDefinition = async (
   client: ECSClient,
@@ -94,9 +96,60 @@ export const registerTaskDefinition = async (
 ): Promise<RegisteredTaskDefinition> => {
   const response = await client.send(new RegisterTaskDefinitionCommand(input))
   const registered = response.taskDefinition
-  if (registered?.revision === undefined) {
-    throw Error('RegisterTaskDefinition did not return a revision.')
+  if (registered?.revision === undefined || registered.taskDefinitionArn === undefined) {
+    throw Error('RegisterTaskDefinition did not return the new revision.')
   }
 
-  return {...registered, revision: registered.revision}
+  return {...registered, taskDefinitionArn: registered.taskDefinitionArn, revision: registered.revision}
+}
+
+/**
+ * The `family:revision` a task definition ARN ends in, which is how ECS names a revision.
+ */
+export const taskDefinitionRevision = (taskDefinitionArn: string): string =>
+  taskDefinitionArn.split('/').pop() ?? taskDefinitionArn
+
+/**
+ * The family a task definition ARN belongs to, which is what ties a service to a task definition
+ * this command instrumented.
+ */
+export const taskDefinitionFamily = (taskDefinitionArn: string): string =>
+  taskDefinitionRevision(taskDefinitionArn).split(':')[0]
+
+/**
+ * An ECS service, narrowed to what pointing it at a new task definition revision needs.
+ */
+export type DescribedService = {
+  name: string
+  /** The ARN of the task definition revision the service runs today. */
+  taskDefinition: string
+}
+
+export const describeService = async (
+  client: ECSClient,
+  cluster: string | undefined,
+  service: string
+): Promise<DescribedService> => {
+  const response = await client.send(new DescribeServicesCommand({cluster, services: [service]}))
+  const described = response.services?.[0]
+  if (!described?.taskDefinition) {
+    const reason = response.failures?.[0]?.reason
+    throw Error(
+      `No ECS service found for ${service}${reason ? ` (${reason})` : ''} in the ${cluster ?? 'default'} cluster.`
+    )
+  }
+
+  return {name: described.serviceName ?? service, taskDefinition: described.taskDefinition}
+}
+
+/**
+ * Points a service at a task definition revision, which starts an ECS deployment.
+ */
+export const updateServiceTaskDefinition = async (
+  client: ECSClient,
+  cluster: string | undefined,
+  service: string,
+  taskDefinition: string
+): Promise<void> => {
+  await client.send(new UpdateServiceCommand({cluster, service, taskDefinition}))
 }

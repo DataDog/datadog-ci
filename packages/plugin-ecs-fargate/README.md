@@ -4,7 +4,7 @@ You can use the CLI to instrument your AWS ECS Fargate task definitions with Dat
 
 ### `instrument`
 
-Run `datadog-ci ecs-fargate instrument` to add the Datadog Agent sidecar to an ECS Fargate task definition. The command reads the task definitions you name, adds the `datadog-agent` container to each of them, and registers the result as a new revision. It never changes a running service: deploy the new revision to roll the change out.
+Run `datadog-ci ecs-fargate instrument` to add the Datadog Agent sidecar to an ECS Fargate task definition. The command reads the task definitions you name, adds the `datadog-agent` container to each of them, and registers the result as a new revision. Nothing that is running changes until the new revision is deployed, which you can leave to the command with `--ecs-service`.
 
 ```bash
 # Instrument a task definition, reading the API key from an AWS Secrets Manager secret
@@ -16,6 +16,10 @@ datadog-ci ecs-fargate instrument --task-definition my-app:3 -r us-east-1 --api-
 # Instrument several task definitions in one run
 datadog-ci ecs-fargate instrument --task-definition my-app --task-definition my-worker -r us-east-1 --api-key-secret-arn <secret-arn>
 
+# Instrument a task definition and roll the new revision out to the service running it
+datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
+  --ecs-service my-app-service --cluster my-cluster
+
 # Instrument with unified service tagging
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
   --service my-service --env prod --version 1.0.0
@@ -26,13 +30,27 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 
 Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE`, `DD_TRACE_ENABLED`, and `DD_LOGS_INJECTION` are only filled in when the container does not set them itself, so a task definition that has already made a choice keeps it. Everything else the command is asked for wins over what the task definition had, including an explicit `--service`.
 
+The same three values are also written to the application containers as the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels. The environment variables tag what a tracer running inside a container sends; these labels are what the Agent reads to tag the metrics it collects about the container from the outside, so the two line up in Datadog. The Agent container is deliberately left unlabelled, so that it reports its own resource usage under its own name rather than your service's. Labels already on a container are kept, and any that are not Datadog's are left alone.
+
 Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it; upgrading the CLI does not on its own produce a new revision, since that tag is not part of the comparison.
+
+#### Windows tasks
+
+Windows task definitions are instrumented the same way, with three differences the command applies on its own after reading the task's `runtimePlatform`. The Agent runs the `-servercore` build of the image, published as a manifest list so ECS pulls the variant matching your Windows Server version. The Agent container is given `C:\` as its working directory, which it needs and its image does not set. And it gets no health check, because the Agent's probe is a shell script that only the Linux image ships, so a probe would report the Agent as permanently unhealthy rather than tell you anything; the command warns when it makes this choice.
+
+If you pass `--agent-image` for a Windows task, it is used exactly as given, so point it at a `-servercore` tag: mirroring `public.ecr.aws/datadog/agent:latest` into your own registry gives you the Linux image, which will not start on Windows.
+
+#### Deploying the new revision
+
+Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
+
+Services are only updated once every task definition in the run is instrumented, so a run that fails part way through does not leave half of your services on a new revision. Tasks you start yourself with `RunTask`, and services you do not name, keep running the revision they were on.
 
 ### Configuration
 
 #### AWS credentials
 
-You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: the ones the task definition already had, plus `service`, `env`, `version`, and `dd_sls_ci`.
+You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: the ones the task definition already had, plus `service`, `env`, `version`, and `dd_sls_ci`. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
 
 #### Datadog API key
 
@@ -57,6 +75,8 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition to instrument. Can be specified multiple times. |  |
 | `--region` | `-r` | The AWS region the task definition lives in |  |
 | `--profile` |  | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly instrumented revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
+| `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Omit it for the `default` cluster of the region. |  |
 | `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
 | `--service` |  | The value for the service tag. Use this to group related tasks belonging to similar workloads. For example, `my-service`. If not provided, the task definition family is used. |  |
@@ -82,6 +102,8 @@ Instead of supplying arguments, you can create a configuration file in your proj
   "ecsFargate": {
     "taskDefinitions": ["my-app", "my-worker"],
     "region": "us-east-1",
+    "ecsServices": ["my-app-service", "my-worker-service"],
+    "cluster": "my-cluster",
     "apiKeySecretArn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key",
     "service": "my-service",
     "environment": "prod",

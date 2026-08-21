@@ -1,4 +1,4 @@
-import type {ContainerDefinition} from '@aws-sdk/client-ecs'
+import type {ContainerDefinition, RuntimePlatform} from '@aws-sdk/client-ecs'
 
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
@@ -14,6 +14,7 @@ import {
   MOCK_SETTINGS,
   SERVICE_TAG,
   fargateTaskDefinition,
+  windowsTaskDefinition,
 } from './fixtures'
 
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
@@ -76,6 +77,7 @@ describe('instrumentTaskDefinition', () => {
         {name: 'DD_TRACE_ENABLED', value: 'true'},
         {name: 'DD_LOGS_INJECTION', value: 'true'},
       ],
+      dockerLabels: {'com.datadoghq.tags.service': 'my-app'},
     })
   })
 
@@ -99,7 +101,6 @@ describe('instrumentTaskDefinition', () => {
     const original = fargateTaskDefinition({executionRoleArn: undefined})
 
     const {warnings} = instrumentTaskDefinition(original, {
-      agentImage: AGENT_IMAGE,
       site: 'datadoghq.com',
       apiKey: MOCK_API_KEY,
     })
@@ -109,7 +110,6 @@ describe('instrumentTaskDefinition', () => {
 
   test('writes the API key in plain text when no secret ARN is given', () => {
     const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
-      agentImage: AGENT_IMAGE,
       site: 'datadoghq.com',
       apiKey: MOCK_API_KEY,
     })
@@ -214,6 +214,79 @@ describe('instrumentTaskDefinition', () => {
         {key: 'version', value: '1.0.0'},
         CLI_VERSION_TAG,
       ])
+    })
+
+    describe('docker labels', () => {
+      test('labels the application containers so the Agent tags what it collects about them', () => {
+        const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+          ...MOCK_SETTINGS,
+          service: 'payments',
+          environment: 'prod',
+          version: '1.0.0',
+        })
+
+        expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toStrictEqual({
+          'com.datadoghq.tags.service': 'payments',
+          'com.datadoghq.tags.env': 'prod',
+          'com.datadoghq.tags.version': '1.0.0',
+        })
+      })
+
+      test('leaves the Agent container unlabelled, so it does not report under the application service', () => {
+        const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+          ...MOCK_SETTINGS,
+          service: 'payments',
+        })
+
+        expect(agentContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toBeUndefined()
+      })
+
+      test('keeps a label the application container carried when the service is only inferred', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [{...APP_CONTAINER, dockerLabels: {'com.datadoghq.tags.service': 'checkout'}}],
+        })
+
+        const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+        expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toStrictEqual({
+          'com.datadoghq.tags.service': 'checkout',
+        })
+      })
+
+      test('overrides a label the container carried with an explicit service', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [{...APP_CONTAINER, dockerLabels: {'com.datadoghq.tags.service': 'checkout'}}],
+        })
+
+        const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, service: 'payments'})
+
+        expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toStrictEqual({
+          'com.datadoghq.tags.service': 'payments',
+        })
+      })
+
+      test('preserves labels that have nothing to do with Datadog', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [{...APP_CONTAINER, dockerLabels: {'com.example.team': 'intake'}}],
+        })
+
+        const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+        expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toStrictEqual({
+          'com.example.team': 'intake',
+          'com.datadoghq.tags.service': 'my-app',
+        })
+      })
+
+      test('adds no labels when there is nothing to name the service after', () => {
+        const original = {...fargateTaskDefinition(), family: undefined}
+
+        const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+        // An empty map would read as a change against a task definition that had none, and register
+        // a revision for nothing.
+        expect(appContainerOf(taskDefinition.containerDefinitions)).not.toHaveProperty('dockerLabels')
+      })
     })
   })
 
@@ -431,6 +504,68 @@ describe('instrumentTaskDefinition', () => {
       const {warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
       expect(warnings).toContainEqual(expect.stringContaining('health check'))
+    })
+  })
+
+  describe('windows tasks', () => {
+    test('runs the Windows build of the Agent image', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.image).toBe(`${AGENT_IMAGE}-servercore`)
+    })
+
+    test('gives the Agent the working directory its Windows image leaves unset', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.workingDirectory).toBe('C:\\')
+    })
+
+    test('adds no health check, since the Agent probe only ships in the Linux image', () => {
+      const {taskDefinition, warnings} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)).not.toHaveProperty('healthCheck')
+      expect(warnings).toContainEqual(expect.stringContaining('without a health check'))
+    })
+
+    test('still runs an explicitly requested image', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        agentImage: 'my-registry/agent:7.60.0-servercore',
+      })
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.image).toBe('my-registry/agent:7.60.0-servercore')
+    })
+
+    test('instruments the application containers as it would on Linux', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        service: 'payments',
+      })
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).toHaveProperty('DD_SERVICE', 'payments')
+      expect(app?.dockerLabels).toStrictEqual({'com.datadoghq.tags.service': 'payments'})
+    })
+
+    test('re-instrumenting produces an identical task definition', () => {
+      const first = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+      const described = windowsTaskDefinition({containerDefinitions: first.taskDefinition.containerDefinitions})
+
+      const second = instrumentTaskDefinition(described, MOCK_SETTINGS)
+
+      expect(second.taskDefinition).toStrictEqual(first.taskDefinition)
+    })
+
+    test.each<[string, RuntimePlatform | undefined]>([
+      ['LINUX', {operatingSystemFamily: 'LINUX', cpuArchitecture: 'X86_64'}],
+      ['no runtime platform', undefined],
+    ])('builds the Linux Agent for a task declaring %s', (_, runtimePlatform) => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition({runtimePlatform}), MOCK_SETTINGS)
+
+      const agent = agentContainerOf(taskDefinition.containerDefinitions)
+      expect(agent?.image).toBe(AGENT_IMAGE)
+      expect(agent?.healthCheck).toBeDefined()
+      expect(agent).not.toHaveProperty('workingDirectory')
     })
   })
 
