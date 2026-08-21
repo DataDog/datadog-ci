@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-ecs-fargate",
-  "version": "5.22.0",
+  "version": "5.23.0",
   "description": "Datadog CI plugin for `ecs-fargate` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -48,7 +48,7 @@
     "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
   },
   "peerDependencies": {
-    "@aws-sdk/client-ecs": "^3.1115.0",
+    "@aws-sdk/client-ecs": "^3.1045.0",
     "@aws-sdk/credential-providers": "^3.1045.0",
     "@smithy/property-provider": "2.2.0",
     "@smithy/util-retry": "2.2.0"
@@ -68,7 +68,7 @@
     }
   },
   "devDependencies": {
-    "@aws-sdk/client-ecs": "3.1115.0",
+    "@aws-sdk/client-ecs": "3.1045.0",
     "@aws-sdk/credential-provider-ini": "3.972.38",
     "@aws-sdk/credential-providers": "3.1045.0",
     "@aws-sdk/types": "3.973.8",
