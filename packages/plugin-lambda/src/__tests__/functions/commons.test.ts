@@ -757,7 +757,7 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
             Handler: 'index.handler',
-            Runtime: 'nodejs16.x',
+            Runtime: 'nodejs18.x',
           },
         },
         {

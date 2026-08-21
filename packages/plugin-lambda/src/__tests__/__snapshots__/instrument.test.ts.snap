@@ -182,7 +182,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:142"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:142"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -257,7 +257,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:99",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:142"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:142"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world

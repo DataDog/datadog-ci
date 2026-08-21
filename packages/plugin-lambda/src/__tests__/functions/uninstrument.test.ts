@@ -430,12 +430,12 @@ describe('uninstrument', () => {
       process.env = OLD_ENV
     })
 
-    test('throws an error when it encounters an unsupported runtime', async () => {
+    test('rejects nodejs16.x', async () => {
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
-            Runtime: Runtime.go1x,
+            Runtime: 'nodejs16.x',
           },
         },
       })
@@ -445,7 +445,7 @@ describe('uninstrument', () => {
       )
       await expect(
         getUninstrumentedFunctionConfig(lambdaClientMock as any, cloudWatchLogsClientMock as any, config, undefined)
-      ).rejects.toThrow()
+      ).rejects.toThrow('runtime nodejs16.x not supported')
     })
 
     test('returns configurations without updateRequest when no changes need to be made', async () => {

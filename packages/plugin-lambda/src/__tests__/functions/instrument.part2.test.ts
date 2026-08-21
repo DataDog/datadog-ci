@@ -946,8 +946,8 @@ describe('instrument', () => {
           [
             'node',
             {
-              runtime: Runtime.nodejs16x,
-              layer: 'Datadog-Node16-x',
+              runtime: Runtime.nodejs18x,
+              layer: 'Datadog-Node18-x',
             },
             '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
           ],
