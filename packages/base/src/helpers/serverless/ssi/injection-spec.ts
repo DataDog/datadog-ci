@@ -70,9 +70,9 @@ const getProbeServerCompatibilityErrors = (language: Language, version: string):
   }
 
   const baseline = PROBE_SERVER_VERSION_BASELINES[language]
-  const parsedVersion = valid(version) ?? undefined
+  const parsedVersion = valid(version.replace(/^v/, '')) ?? undefined
 
-  return parsedVersion !== undefined && gt(parsedVersion, baseline)
+  return parsedVersion === undefined || gt(parsedVersion, baseline)
     ? []
     : [`Automatic instrumentation requires tracer version later than ${baseline} or "latest".`]
 }

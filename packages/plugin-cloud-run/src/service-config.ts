@@ -8,7 +8,7 @@ import {
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
-  TRACER_COPY_CONTAINER_NAME,
+  TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_READINESS_PORT,
   TRACER_VOLUME_NAME,
@@ -76,28 +76,31 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     [HEALTH_PORT_ENV_VAR]: {name: HEALTH_PORT_ENV_VAR, value: String(healthCheckPort)},
   }
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
+  const sourceContainers = sourceTemplate.containers ?? []
+  const hasTracerContainer = sourceContainers.some((container) => container.name === TRACER_CONTAINER_NAME)
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
   if (shouldRemoveSsi) {
     sourceTemplate = removeExistingSsiState(sourceTemplate)
   } else if (ssiConfig.kind === 'no-injection') {
-    if (sourceTemplate.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
+    if (hasTracerContainer) {
       targetContainers = new Set(
-        sourceTemplate.containers.filter(
-          (container) => container.name !== options.sidecarName && container.name !== TRACER_COPY_CONTAINER_NAME
+        sourceContainers.filter(
+          (container) => container.name !== options.sidecarName && container.name !== TRACER_CONTAINER_NAME
         )
       )
     }
   } else {
     const mainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
     )
     assertTracerReadinessPortAvailable(mainContainer, options.sidecarName, tracerReadinessPort, healthCheckPort)
-    sourceTemplate = hasSsi ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
+    sourceTemplate =
+      hasSsi || hasTracerContainer ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
     )
     targetContainers = new Set([updatedMainContainer])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
@@ -134,7 +137,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   if (ssiConfig.kind === 'single-language') {
     const mainContainer = selectMainContainer(
       template.containers ?? [],
-      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
     )
     const configuredMainContainer = {
       ...mainContainer,
@@ -146,7 +149,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         container === mainContainer ? configuredMainContainer : container
       ),
     }
-    template = applyTracerCopy(
+    template = applyTracerContainer(
       template,
       {
         image: ssiConfig.spec.image,
@@ -174,8 +177,7 @@ export const uninstrumentServiceConfig = (
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const updatedContainers = containers
     .filter(
-      (container) =>
-        container.name !== options.sidecarName && (!hasSsi || container.name !== TRACER_COPY_CONTAINER_NAME)
+      (container) => container.name !== options.sidecarName && (!hasSsi || container.name !== TRACER_CONTAINER_NAME)
     )
     .map((container) =>
       removeContainerInstrumentation(
@@ -209,27 +211,27 @@ export const uninstrumentServiceConfig = (
   }
 }
 
-const TRACER_COPY_SCRIPT = [
+const TRACER_RUNTIME_SCRIPT = [
   'set -e',
   '/datadog-init/copy-lib.sh "$1"',
   '[ -f "$2" ]',
   'exec /datadog-init/probe-server "$3"',
 ].join('\n')
 
-interface TracerCopyConfig {
+interface TracerContainerConfig {
   image: string
   completionMarker: string
   readinessPort: number
 }
 
-const buildTracerCopyContainer = (config: TracerCopyConfig): IContainer => ({
-  name: TRACER_COPY_CONTAINER_NAME,
+const buildTracerContainer = (config: TracerContainerConfig): IContainer => ({
+  name: TRACER_CONTAINER_NAME,
   image: config.image,
   command: ['/bin/sh'],
   args: [
     '-c',
-    TRACER_COPY_SCRIPT,
-    TRACER_COPY_CONTAINER_NAME,
+    TRACER_RUNTIME_SCRIPT,
+    TRACER_CONTAINER_NAME,
     TRACER_MOUNT_PATH,
     config.completionMarker,
     String(config.readinessPort),
@@ -245,13 +247,13 @@ const buildTracerCopyContainer = (config: TracerCopyConfig): IContainer => ({
   },
 })
 
-const applyTracerCopy = (
+const applyTracerContainer = (
   template: IServiceTemplate,
-  config: TracerCopyConfig,
+  config: TracerContainerConfig,
   mainContainer: IContainer,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
-  const managedDependencies = new Set([TRACER_COPY_CONTAINER_NAME, ...dependencyNames])
+  const managedDependencies = new Set([TRACER_CONTAINER_NAME, ...dependencyNames])
   const containers = (template.containers ?? []).map((container) =>
     container === mainContainer
       ? {
@@ -262,14 +264,14 @@ const applyTracerCopy = (
           ],
           dependsOn: [
             ...(container.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
-            TRACER_COPY_CONTAINER_NAME,
+            TRACER_CONTAINER_NAME,
             ...dependencyNames,
           ],
         }
       : container
   )
 
-  containers.push(buildTracerCopyContainer(config))
+  containers.push(buildTracerContainer(config))
 
   return {
     ...template,
@@ -308,7 +310,7 @@ const assertTracerReadinessPortAvailable = (
 const removeExistingSsiState = (template: IServiceTemplate, mainContainer?: IContainer): IServiceTemplate => ({
   ...template,
   containers: (template.containers ?? [])
-    .filter((container) => container.name !== TRACER_COPY_CONTAINER_NAME)
+    .filter((container) => container.name !== TRACER_CONTAINER_NAME)
     .map((container) =>
       removeExistingSsiContainer(
         container,
@@ -335,7 +337,7 @@ const removeExistingSsiContainer = (container: IContainer, isMainContainer: bool
     cleaned = {...cleaned, volumeMounts}
   }
 
-  return removeDependency(cleaned, TRACER_COPY_CONTAINER_NAME)
+  return removeDependency(cleaned, TRACER_CONTAINER_NAME)
 }
 
 const removeDependency = (container: IContainer, name: string): IContainer => {
