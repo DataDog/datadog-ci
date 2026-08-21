@@ -30,7 +30,7 @@ export const SERVICE_TAG: Tag = {key: 'service', value: MOCK_FAMILY}
 /** The tags every instrumented revision carries. */
 export const INSTRUMENTATION_TAGS: Tag[] = [SERVICE_TAG, CLI_VERSION_TAG]
 
-/** No `agentImage`, so the transform picks the default build. */
+/** No `agentImage`, so the transform picks the default build for the task's platform. */
 export const MOCK_SETTINGS: InstrumentSettings = {
   site: 'datadoghq.com',
   apiKeySecretArn: MOCK_API_KEY_SECRET_ARN,
@@ -129,6 +129,15 @@ export const fargateTaskDefinition = ({
   volumes: [],
   ...overrides,
 })
+
+/**
+ * A task definition that runs Windows containers, which the Agent sidecar is built differently for.
+ */
+export const windowsTaskDefinition = (overrides: Partial<TaskDefinition> = {}): TaskDefinition =>
+  fargateTaskDefinition({
+    runtimePlatform: {operatingSystemFamily: 'WINDOWS_SERVER_2022_CORE', cpuArchitecture: 'X86_64'},
+    ...overrides,
+  })
 
 /**
  * A revision the command registered, as `DescribeTaskDefinition` hands it back to the next run:

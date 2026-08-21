@@ -19,8 +19,25 @@ export const LAUNCH_TYPE_FARGATE = 'FARGATE'
  */
 export const AWSVPC_NETWORK_MODE = 'awsvpc'
 
+/**
+ * ECS spells the Windows operating system families with the `WINDOWS_SERVER` prefix (e.g.
+ * `WINDOWS_SERVER_2019_CORE`, `WINDOWS_SERVER_2022_FULL`) Anything else, `LINUX` and
+ * declaring no family at all included, runs Linux.
+ */
+export const WINDOWS_OS_FAMILY_PREFIX = 'WINDOWS_SERVER'
+
 // Agent sidecar defaults
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
+
+/**
+ * The tag suffix for the Windows build of the Agent image
+ */
+export const WINDOWS_AGENT_IMAGE_SUFFIX = '-servercore'
+
+/**
+ * The working directory the Agent requires on Windows, which its image does not set itself.
+ */
+export const WINDOWS_WORKING_DIRECTORY = 'C:\\'
 
 /**
  * The task definition tag keys for the unified service tags, which name the same three concepts as
@@ -42,6 +59,9 @@ export const DOCKER_LABEL_VERSION = 'com.datadoghq.tags.version'
 /**
  * The Agent's own health probe. Shipping it means application containers can gate their startup on
  * the Agent being ready through a `dependsOn` HEALTHY condition.
+ *
+ * Linux only: `/probe.sh` is a shell script shipped in the Linux image, and the Windows image has
+ * no equivalent on its `PATH`, so Windows tasks get no health check at all.
  */
 export const AGENT_HEALTH_CHECK_COMMAND = ['CMD-SHELL', '/probe.sh']
 export const AGENT_HEALTH_CHECK_INTERVAL = 15
