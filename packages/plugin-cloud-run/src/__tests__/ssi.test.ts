@@ -7,7 +7,11 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {TRACER_MOUNT_PATH, TRACER_READINESS_PORT} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {
+  TRACER_CONTAINER_NAME,
+  TRACER_MOUNT_PATH,
+  TRACER_READINESS_PORT,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
   LIBCS,
@@ -319,7 +323,7 @@ describe('SSI service preparation', () => {
     expect(app?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
   })
 
-  test('applies the tracer-copy sidecar and sized Memory volume', () => {
+  test('applies the tracer container and sized Memory volume', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
     const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer')
 
@@ -350,7 +354,7 @@ describe('SSI service preparation', () => {
     })
   })
 
-  test('uses the configured readiness port for the tracer-copy container', () => {
+  test('uses the configured readiness port for the tracer container', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), {
       ...serviceConfigOptions(),
       tracerReadinessPort: 19000,
@@ -477,6 +481,16 @@ describe('SSI service preparation', () => {
     )
     expect(result.template?.volumes?.filter((volume) => volume.name === 'datadog-tracer')).toHaveLength(1)
     expect(instrumentServiceConfig(result, serviceConfigOptions('python'))).toEqual(result)
+  })
+
+  test('replaces a markerless tracer container', () => {
+    const service = serviceWithWorker()
+    service.template!.containers!.push({name: TRACER_CONTAINER_NAME, image: 'customer-image'} as IContainer)
+
+    const result = instrumentServiceConfig(service, serviceConfigOptions('python'))
+    const tracers = result.template?.containers?.filter((container) => container.name === TRACER_CONTAINER_NAME)
+
+    expect(tracers).toEqual([expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:latest'})])
   })
 
   test.each([

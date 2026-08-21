@@ -9,7 +9,7 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {TRACER_COPY_CONTAINER_NAME, TRACER_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {TRACER_CONTAINER_NAME, TRACER_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
@@ -245,10 +245,10 @@ describe('UninstrumentCommand', () => {
                 {name: TRACER_VOLUME_NAME, mountPath: '/datadog-lib'},
                 {name: 'customer-volume', mountPath: '/customer'},
               ],
-              dependsOn: ['datadog-sidecar', TRACER_COPY_CONTAINER_NAME, 'database'],
+              dependsOn: ['datadog-sidecar', TRACER_CONTAINER_NAME, 'database'],
             },
             {name: 'datadog-sidecar'},
-            {name: TRACER_COPY_CONTAINER_NAME},
+            {name: TRACER_CONTAINER_NAME},
           ],
           volumes: [
             {name: 'shared-volume', emptyDir: {}},
