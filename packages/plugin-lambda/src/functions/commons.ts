@@ -381,7 +381,6 @@ export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | 
     case 'java21':
     case 'java25':
     case 'java8.al2':
-    case 'nodejs16.x':
     case 'nodejs18.x':
     case 'nodejs20.x':
     case 'nodejs22.x':
