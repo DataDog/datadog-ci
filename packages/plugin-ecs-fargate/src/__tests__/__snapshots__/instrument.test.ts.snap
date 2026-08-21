@@ -2,12 +2,21 @@
 
 exports[`ecs-fargate instrument prints the diff and registers nothing on a dry run 1`] = `
 "[Dry Run] Instrumenting my-app:
-@@ -3,10 +3,26 @@
+@@ -1,12 +1,35 @@
+  {
+    "containerDefinitions": [
       {
++       "dockerLabels": {
++         "com.datadoghq.tags.service": "my-app"
++       },
         "environment": [
           {
             "name": "PORT",
             "value": "8080"
++         },
++         {
++           "name": "DD_SERVICE",
++           "value": "my-app"
 +         },
 +         {
 +           "name": "DD_TRACE_ENABLED",
@@ -29,7 +38,7 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -15,20 +31,106 @@
+@@ -15,20 +38,114 @@
             "awslogs-group": "/ecs/my-app",
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
@@ -57,6 +66,10 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +         {
 +           "name": "DD_DOGSTATSD_TAG_CARDINALITY",
 +           "value": "orchestrator"
++         },
++         {
++           "name": "DD_SERVICE",
++           "value": "my-app"
 +         },
 +         {
 +           "name": "ECS_FARGATE",
@@ -125,6 +138,10 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
     ],
 -   "tags": [],
 +   "tags": [
++     {
++       "key": "service",
++       "value": "my-app"
++     },
 +     {
 +       "key": "dd_sls_ci",
 +       "value": "vXXXX"

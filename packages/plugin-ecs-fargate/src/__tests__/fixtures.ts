@@ -24,8 +24,10 @@ export const serviceArn = (service = MOCK_SERVICE, cluster = MOCK_CLUSTER): stri
   `arn:aws:ecs:${MOCK_REGION}:123456789012:service/${cluster}/${service}`
 
 export const CLI_VERSION_TAG: Tag = {key: 'dd_sls_ci', value: 'vXXXX'}
+/** The service tag a run that was not given a `--service` writes, from the task definition family. */
+export const SERVICE_TAG: Tag = {key: 'service', value: MOCK_FAMILY}
 /** The tags every instrumented revision carries. */
-export const INSTRUMENTATION_TAGS: Tag[] = [CLI_VERSION_TAG]
+export const INSTRUMENTATION_TAGS: Tag[] = [SERVICE_TAG, CLI_VERSION_TAG]
 
 /** No `agentImage`, so the transform picks the default build. */
 export const MOCK_SETTINGS: InstrumentSettings = {
