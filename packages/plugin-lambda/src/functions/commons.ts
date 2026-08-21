@@ -21,7 +21,7 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {LAMBDA_LAYER_VERSIONS} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-versions'
+import {LAMBDA_LAYER_CATALOG} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-catalog'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {input as promptInput} from '@inquirer/prompts'
@@ -144,14 +144,14 @@ export const collectFunctionsByRegion = (
  */
 export const getLatestLayerVersion = (layer: LayerKey): number => {
   if (layer === 'extension') {
-    return LAMBDA_LAYER_VERSIONS[layer]
+    return LAMBDA_LAYER_CATALOG.versions[layer]
   }
   const runtimeType = RUNTIME_LOOKUP[layer]
   if (runtimeType === undefined || runtimeType === RuntimeType.CUSTOM) {
     throw new Error(`No layer version found for ${runtimeType}`)
   }
 
-  return LAMBDA_LAYER_VERSIONS[runtimeType]
+  return LAMBDA_LAYER_CATALOG.versions[runtimeType]
 }
 
 export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
