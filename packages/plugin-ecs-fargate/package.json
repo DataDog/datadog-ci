@@ -9,6 +9,9 @@
     "plugin"
   ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-ecs-fargate",
+  "bugs": {
+    "url": "https://github.com/DataDog/datadog-ci/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/DataDog/datadog-ci.git",
@@ -43,5 +46,36 @@
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-ecs": "^3.1115.0",
+    "@aws-sdk/credential-providers": "^3.1045.0",
+    "@smithy/property-provider": "2.2.0",
+    "@smithy/util-retry": "2.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-ecs": {
+      "optional": true
+    },
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    },
+    "@smithy/property-provider": {
+      "optional": true
+    },
+    "@smithy/util-retry": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@aws-sdk/client-ecs": "3.1115.0",
+    "@aws-sdk/credential-provider-ini": "3.972.38",
+    "@aws-sdk/credential-providers": "3.1045.0",
+    "@aws-sdk/types": "3.973.8",
+    "@datadog/datadog-ci-base": "workspace:*",
+    "@smithy/property-provider": "2.2.0",
+    "@smithy/util-retry": "2.2.0",
+    "aws-sdk-client-mock": "4.1.0",
+    "chalk": "3.0.0"
   }
 }
