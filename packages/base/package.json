@@ -69,6 +69,7 @@
     "@datadog/datadog-ci-plugin-coverage": "workspace:*",
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
+    "@datadog/datadog-ci-plugin-ecs-fargate": "workspace:*",
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
     "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-lambda": "workspace:*",
@@ -95,6 +96,9 @@
       "optional": true
     },
     "@datadog/datadog-ci-plugin-dora": {
+      "optional": true
+    },
+    "@datadog/datadog-ci-plugin-ecs-fargate": {
       "optional": true
     },
     "@datadog/datadog-ci-plugin-gate": {
