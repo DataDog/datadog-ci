@@ -14,9 +14,18 @@ import {sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   AGENT_IMAGE,
   API_KEY_ENV_VAR,
+  DD_APPSEC_ENABLED_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
+  DD_TAGS_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
+  SERVICE_ENV_VAR,
   SITE_ENV_VAR,
+  VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
@@ -43,12 +52,18 @@ import {
   DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR,
   DD_TRACE_AGENT_URL_ENV_VAR,
   DD_USE_DOGSTATSD_ENV_VAR,
+  DOCKER_LABEL_ENV,
+  DOCKER_LABEL_SERVICE,
+  DOCKER_LABEL_VERSION,
   DOGSTATSD_ORCHESTRATOR_CARDINALITY,
   DOGSTATSD_SOCKET_URL,
   ECS_FARGATE_ENV_VAR,
   ECS_TASK_COLLECTION_ACTIONS,
+  ENVIRONMENT_TAG_KEY,
   LAUNCH_TYPE_FARGATE,
   READ_ONLY_TASK_DEFINITION_FIELDS,
+  SERVICE_TAG_KEY,
+  VERSION_TAG_KEY,
 } from './constants'
 
 /**
@@ -70,6 +85,20 @@ export type InstrumentSettings = {
    * address. Absent enables it.
    */
   agentSocket?: boolean
+  /** The service name the user asked for. Absent means the task definition family is used instead. */
+  service?: string
+  environment?: string
+  version?: string
+  /** Additional tags, as the `key:value,key:value` string `DD_TAGS` takes. */
+  extraTags?: string
+  /** Additional environment variables to set on every container in the task. */
+  envVars?: Record<string, string>
+  /** Whether the tracers send traces. Absent leaves the choice to the task definition. */
+  tracing?: boolean
+  logLevel?: string
+  appsec?: boolean
+  /** The ML application name, when LLM Observability is enabled. */
+  llmobs?: string
 }
 
 export type InstrumentResult = {
@@ -97,7 +126,8 @@ type ManagedValues = {
  * fill in what is missing, managed values replace what is there, and removed names are dropped.
  *
  * Existing entries keep their position, so that re-running produces an identical result rather than
- * a reordered one that would show up as a diff.
+ * a reordered one that would show up as a diff. Shared by the environment variables and the Docker
+ * labels, so the two can never disagree on what overrides what.
  */
 const mergeManaged = <T>(
   {managed, defaults, removed}: ManagedValues,
@@ -120,47 +150,133 @@ const mergeManaged = <T>(
 }
 
 /**
- * Builds the environment the Agent sidecar runs with.
+ * The unified service tags, which every container in the task carries so that the telemetry the
+ * tracers and the Agent send line up.
+ *
+ * An explicit `--service` takes precedence. Otherwise derived from the family the task definition is named after
  */
-const getAgentEnvVars = (settings: InstrumentSettings): ManagedValues => ({
-  managed: {
-    [ECS_FARGATE_ENV_VAR]: 'true',
-    [SITE_ENV_VAR]: settings.site,
-    // The Agent's own trace intake, which is a separate switch from the tracers' `DD_TRACE_ENABLED`.
-    [DD_APM_ENABLED_ENV_VAR]: 'true',
-    [DD_USE_DOGSTATSD_ENV_VAR]: 'true',
-    [DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR]: 'true',
-    ...(settings.apiKey ? {[API_KEY_ENV_VAR]: settings.apiKey} : {}),
-  },
-  defaults: {
-    [DD_DOGSTATSD_ORIGIN_DETECTION_ENV_VAR]: 'true',
-    [DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR]: 'true',
-    [DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR]: DOGSTATSD_ORCHESTRATOR_CARDINALITY,
-  },
-})
+const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
+  const managed: Record<string, string> = {}
+  const defaults: Record<string, string> = {}
+
+  if (settings.service) {
+    managed[SERVICE_ENV_VAR] = settings.service
+  } else if (family) {
+    defaults[SERVICE_ENV_VAR] = family
+  }
+  if (settings.environment) {
+    managed[ENVIRONMENT_ENV_VAR] = settings.environment
+  }
+  if (settings.version) {
+    managed[VERSION_ENV_VAR] = settings.version
+  }
+  if (settings.extraTags) {
+    managed[DD_TAGS_ENV_VAR] = settings.extraTags
+  }
+  if (settings.logLevel) {
+    managed[DD_LOG_LEVEL_ENV_VAR] = settings.logLevel
+  }
+
+  return {managed, defaults}
+}
 
 /**
- * Builds the environment the application containers run with: the switches the tracer libraries
- * read, and where they send what they produce.
+ * The unified service tags as Docker labels, which the application containers carry so that the
+ * metrics the Agent collects about them are tagged like the telemetry their tracers send. As with
+ * the environment variables, an explicit `--service` overrides, while the family is a fallback.
+ */
+const getUstDockerLabels = (settings: InstrumentSettings, family?: string): ManagedValues => {
+  const managed: Record<string, string> = {}
+  const defaults: Record<string, string> = {}
+
+  if (settings.service) {
+    managed[DOCKER_LABEL_SERVICE] = settings.service
+  } else if (family) {
+    defaults[DOCKER_LABEL_SERVICE] = family
+  }
+  if (settings.environment) {
+    managed[DOCKER_LABEL_ENV] = settings.environment
+  }
+  if (settings.version) {
+    managed[DOCKER_LABEL_VERSION] = settings.version
+  }
+
+  return {managed, defaults}
+}
+
+/**
+ * Builds the environment the Agent sidecar runs with.
+ */
+const getAgentEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
+  const serviceTags = getServiceTagEnvVars(settings, family)
+
+  return {
+    managed: {
+      [ECS_FARGATE_ENV_VAR]: 'true',
+      [SITE_ENV_VAR]: settings.site,
+      // The Agent's own trace intake, which is a separate switch from the tracers' `DD_TRACE_ENABLED`.
+      [DD_APM_ENABLED_ENV_VAR]: String(settings.tracing ?? true),
+      [DD_USE_DOGSTATSD_ENV_VAR]: 'true',
+      [DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR]: 'true',
+      ...(settings.apiKey ? {[API_KEY_ENV_VAR]: settings.apiKey} : {}),
+      ...serviceTags.managed,
+      ...settings.envVars,
+    },
+    defaults: {
+      [DD_DOGSTATSD_ORIGIN_DETECTION_ENV_VAR]: 'true',
+      [DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR]: 'true',
+      [DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR]: DOGSTATSD_ORCHESTRATOR_CARDINALITY,
+      ...serviceTags.defaults,
+    },
+  }
+}
+
+/**
+ * Builds the environment the application containers run with: the unified service tags, the
+ * switches the tracer libraries read, and where they send what they produce.
  *
  * Tracing and log injection are defaults rather than managed values, so a task definition that has
- * already made a choice about either keeps it. The transport is managed instead, because it has to
- * agree with the volume mounts: the two ways of reaching the Agent are mutually exclusive, so the
- * unused one is removed rather than left behind to point at a socket that is no longer mounted.
+ * already made a choice about either keeps it. The products the user turns on explicitly are managed.
+ * The transport is managed too, because it has to agree with the volume mounts: the two ways of
+ * reaching the Agent are mutually exclusive, so the unused one is removed rather than left behind
+ * to point at a socket that is no longer mounted.
  */
-const getAppContainerEnvVars = (socketEnabled: boolean): ManagedValues => ({
-  managed: socketEnabled
-    ? {
-        [DD_TRACE_AGENT_URL_ENV_VAR]: APM_SOCKET_URL,
-        [DD_DOGSTATSD_URL_ENV_VAR]: DOGSTATSD_SOCKET_URL,
-      }
-    : {[DD_AGENT_HOST_ENV_VAR]: AGENT_LOOPBACK_HOST},
-  removed: socketEnabled ? [DD_AGENT_HOST_ENV_VAR] : [DD_TRACE_AGENT_URL_ENV_VAR, DD_DOGSTATSD_URL_ENV_VAR],
-  defaults: {
-    [DD_TRACE_ENABLED_ENV_VAR]: 'true',
-    [LOGS_INJECTION_ENV_VAR]: 'true',
-  },
-})
+const getAppContainerEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
+  const serviceTags = getServiceTagEnvVars(settings, family)
+  const socketEnabled = settings.agentSocket !== false
+  const managed: Record<string, string> = {...serviceTags.managed}
+
+  if (socketEnabled) {
+    managed[DD_TRACE_AGENT_URL_ENV_VAR] = APM_SOCKET_URL
+    managed[DD_DOGSTATSD_URL_ENV_VAR] = DOGSTATSD_SOCKET_URL
+  } else {
+    managed[DD_AGENT_HOST_ENV_VAR] = AGENT_LOOPBACK_HOST
+  }
+
+  if (settings.tracing !== undefined) {
+    managed[DD_TRACE_ENABLED_ENV_VAR] = String(settings.tracing)
+  }
+  if (settings.appsec) {
+    managed[DD_APPSEC_ENABLED_ENV_VAR] = 'true'
+  }
+  if (settings.llmobs) {
+    managed[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
+    managed[DD_LLMOBS_ML_APP_ENV_VAR] = settings.llmobs
+    // The Agent sidecar forwards the payloads, so the tracer does not send them to the intake itself.
+    managed[DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR] = 'false'
+  }
+  Object.assign(managed, settings.envVars)
+
+  return {
+    managed,
+    removed: socketEnabled ? [DD_AGENT_HOST_ENV_VAR] : [DD_TRACE_AGENT_URL_ENV_VAR, DD_DOGSTATSD_URL_ENV_VAR],
+    defaults: {
+      ...serviceTags.defaults,
+      [DD_TRACE_ENABLED_ENV_VAR]: 'true',
+      [LOGS_INJECTION_ENV_VAR]: 'true',
+    },
+  }
+}
 
 const SOCKET_VOLUME: Volume = {name: AGENT_SOCKET_VOLUME_NAME}
 
@@ -218,6 +334,19 @@ const toEnvironment = (values: ManagedValues, existing?: KeyValuePair[]): KeyVal
   return [...mergeManaged(values, declared)].map(([name, value]) => ({name, value}))
 }
 
+/**
+ * The Docker labels to give a container: what the command writes, merged into what it already
+ * carries. Absent when empty, so `isUpToDate` does not read a new empty map as a change.
+ */
+const toDockerLabels = (
+  values: ManagedValues,
+  existing?: Record<string, string>
+): Record<string, string> | undefined => {
+  const merged = mergeManaged(values, Object.entries(existing ?? {}))
+
+  return merged.size > 0 ? Object.fromEntries(merged) : undefined
+}
+
 export type AgentContainerResult = {
   container: ContainerDefinition
   warnings: string[]
@@ -228,6 +357,8 @@ export type AgentContainerResult = {
  */
 type AgentContainerContext = {
   settings: InstrumentSettings
+  /** The task definition family, used to name the service when the user did not. */
+  family?: string
   /** The Agent container already on the task definition, if any. */
   existing?: ContainerDefinition
   /** A log configuration borrowed from an application container, when the Agent has none. */
@@ -239,7 +370,12 @@ type AgentContainerContext = {
  * into those of `existing`, the Agent container already on the task definition. Fields it must own
  * but that the user had already set are reported as warnings rather than changed silently.
  */
-const buildAgentContainer = ({settings, existing, logConfiguration}: AgentContainerContext): AgentContainerResult => {
+const buildAgentContainer = ({
+  settings,
+  family,
+  existing,
+  logConfiguration,
+}: AgentContainerContext): AgentContainerResult => {
   const warnings: string[] = []
 
   // The API key lives either in `secrets` or in `environment`, never both, so switching between the
@@ -281,7 +417,7 @@ const buildAgentContainer = ({settings, existing, logConfiguration}: AgentContai
     // The Agent must not be able to take the task down: a crashed Agent should cost telemetry, not
     // availability.
     essential: false,
-    environment: toEnvironment(getAgentEnvVars(settings), inheritedEnvironment),
+    environment: toEnvironment(getAgentEnvVars(settings, family), inheritedEnvironment),
     secrets,
     healthCheck,
     // The other end of the socket the tracers write to. The Agent image already listens on this
@@ -306,13 +442,27 @@ const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfigu
   )?.logConfiguration
 
 /**
- * The tags the revision carries: the version of the CLI that produced it, replacing whatever the
- * task definition had.
+ * The tags the revision carries: the unified service tags the task now reports under, and the
+ * version of the CLI that produced the revision. Both replace whatever the task definition had.
  */
-const instrumentationTags = (tags: Tag[]): Tag[] => [
-  ...tags.filter((tag) => tag.key !== SERVERLESS_CLI_VERSION_TAG_NAME),
-  {key: SERVERLESS_CLI_VERSION_TAG_NAME, value: SERVERLESS_CLI_VERSION_TAG_VALUE},
-]
+const instrumentationTags = (tags: Tag[], settings: InstrumentSettings, service?: string): Tag[] => {
+  const managed = new Map<string, string>()
+  if (service) {
+    managed.set(SERVICE_TAG_KEY, service)
+  }
+  if (settings.environment) {
+    managed.set(ENVIRONMENT_TAG_KEY, settings.environment)
+  }
+  if (settings.version) {
+    managed.set(VERSION_TAG_KEY, settings.version)
+  }
+  managed.set(SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE)
+
+  return [
+    ...tags.filter((tag) => tag.key === undefined || !managed.has(tag.key)),
+    ...[...managed].map(([key, value]) => ({key, value})),
+  ]
+}
 
 /**
  * Rewrites a Fargate task definition to run the Datadog Agent as a sidecar alongside the
@@ -358,6 +508,7 @@ export const instrumentTaskDefinition = (
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer({
     settings,
+    family,
     existing: existingAgent,
     logConfiguration: borrowedLogConfiguration(containers),
   })
@@ -376,14 +527,19 @@ export const instrumentTaskDefinition = (
     )
   }
 
+  // The Agent is left out of the Docker labels on purpose: they tag the metrics collected about the
+  // container carrying them, so an Agent labelled with the application's service would report its
+  // own resource usage under that service.
   const socketEnabled = settings.agentSocket !== false
-  const appEnvironment = getAppContainerEnvVars(socketEnabled)
+  const appEnvironment = getAppContainerEnvVars(settings, family)
+  const appLabels = getUstDockerLabels(settings, family)
   const containerDefinitions = containers.map((container) =>
     container.name === AGENT_CONTAINER_NAME
       ? agentContainer
       : removeUndefinedValues({
           ...container,
           environment: toEnvironment(appEnvironment, container.environment),
+          dockerLabels: toDockerLabels(appLabels, container.dockerLabels),
           mountPoints: withSocketMount(container.mountPoints, socketEnabled),
         })
   )
@@ -396,7 +552,7 @@ export const instrumentTaskDefinition = (
       ...stripReadOnlyFields(taskDefinition),
       containerDefinitions,
       volumes: withSocketVolume(taskDefinition.volumes, socketEnabled),
-      tags: instrumentationTags(tags),
+      tags: instrumentationTags(tags, settings, settings.service ?? family),
     }),
     warnings,
   }

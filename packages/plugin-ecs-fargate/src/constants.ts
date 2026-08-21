@@ -21,6 +21,23 @@ export const AWSVPC_NETWORK_MODE = 'awsvpc'
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
 
 /**
+ * The task definition tag keys for the unified service tags, which name the same three concepts as
+ * the `DD_SERVICE`, `DD_ENV`, and `DD_VERSION` environment variables the containers run with.
+ */
+export const SERVICE_TAG_KEY = 'service'
+export const ENVIRONMENT_TAG_KEY = 'env'
+export const VERSION_TAG_KEY = 'version'
+
+/**
+ * Docker labels the Agent reads to attach the unified service tags to the metrics it collects about
+ * a container. The `DD_SERVICE` family of environment variables covers what the tracer inside the
+ * container sends; these cover what the Agent observes from the outside.
+ */
+export const DOCKER_LABEL_SERVICE = 'com.datadoghq.tags.service'
+export const DOCKER_LABEL_ENV = 'com.datadoghq.tags.env'
+export const DOCKER_LABEL_VERSION = 'com.datadoghq.tags.version'
+
+/**
  * The Agent's own health probe. Shipping it means application containers can gate their startup on
  * the Agent being ready through a `dependsOn` HEALTHY condition.
  */

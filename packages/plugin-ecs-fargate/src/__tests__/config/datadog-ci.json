@@ -1,6 +1,9 @@
 {
   "ecsFargate": {
     "taskDefinitions": ["my-app"],
+    "service": "from-config",
+    "environment": "staging",
+    "sourceCodeIntegration": false,
     "agentImage": "public.ecr.aws/datadog/agent:7-from-config",
     "agentSocket": false
   }
