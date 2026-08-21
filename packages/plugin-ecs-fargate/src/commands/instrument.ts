@@ -6,9 +6,11 @@ import type {EcsFargateConfigOptions} from '@datadog/datadog-ci-base/commands/ec
 import {EcsFargateInstrumentCommand} from '@datadog/datadog-ci-base/commands/ecs-fargate/instrument'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {generateConfigDiff} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
@@ -68,6 +70,16 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     const apiKey = await this.resolveApiKey(config)
     if (!apiKey) {
       return 1
+    }
+
+    if (config.sourceCodeIntegration ?? true) {
+      // The git tags are still resolved on a dry run, so the diff shows the DD_TAGS a real run would
+      // write. Uploading the metadata is a write to Datadog, which a dry run must not make.
+      config.extraTags = await handleSourceCodeIntegration(
+        this.context,
+        !this.dryRun && (config.uploadGitMetadata ?? true),
+        config.extraTags
+      )
     }
 
     const settings: InstrumentSettings = {...this.buildSettings(config), ...apiKey}
@@ -272,6 +284,15 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       agentImage: config.agentImage,
       agentSocket: config.agentSocket ?? true,
       site: getDatadogSite(),
+      service: config.service,
+      environment: config.environment,
+      version: config.version,
+      extraTags: config.extraTags,
+      envVars: parseEnvVars(config.envVars),
+      tracing: toBoolean(config.tracing),
+      logLevel: config.logLevel,
+      appsec: config.appsec,
+      llmobs: config.llmobs,
     }
   }
 
