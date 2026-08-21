@@ -37,6 +37,8 @@ packages/plugin-cloud-run                            @DataDog/datadog-ci-admins 
 packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-container-app                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/commands/container-app             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/plugin-ecs-fargate                          @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/ecs-fargate               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-lambda                               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
