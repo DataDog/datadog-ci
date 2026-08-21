@@ -20,7 +20,14 @@ export const AWSVPC_NETWORK_MODE = 'awsvpc'
 
 // Agent sidecar defaults
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
-export const DEFAULT_AGENT_IMAGE = 'public.ecr.aws/datadog/agent:latest'
+
+/**
+ * The task definition tag keys for the unified service tags, which name the same three concepts as
+ * the `DD_SERVICE`, `DD_ENV`, and `DD_VERSION` environment variables the containers run with.
+ */
+export const SERVICE_TAG_KEY = 'service'
+export const ENVIRONMENT_TAG_KEY = 'env'
+export const VERSION_TAG_KEY = 'version'
 
 /**
  * The Agent's own health probe. Shipping it means application containers can gate their startup on

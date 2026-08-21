@@ -17,34 +17,32 @@ Updating configuration for my-container-app:
         }
       ]
     },
-@@ -23,80 +19,26 @@
-    "template": {
-      "containers": [
+@@ -25,78 +21,24 @@
         {
           "env": [
             {
+              "name": "PORT",
+              "value": "8080"
+-           },
+-           {
 -             "name": "DD_API_KEY",
 -             "secretRef": "dd-api-key"
--           },
--           {
--             "name": "DD_ENV",
--             "value": "staging"
--           },
--           {
--             "name": "DD_SERVICE",
--             "value": "my-service"
 -           },
 -           {
 -             "name": "DD_SITE",
 -             "value": "datadoghq.com"
 -           },
 -           {
--             "name": "DD_VERSION",
--             "value": "1.0.0"
+-             "name": "DD_SERVICE",
+-             "value": "my-service"
 -           },
 -           {
-              "name": "PORT",
-              "value": "8080"
+-             "name": "DD_ENV",
+-             "value": "staging"
+-           },
+-           {
+-             "name": "DD_VERSION",
+-             "value": "1.0.0"
             }
           ],
           "image": "myregistry.azurecr.io/myapp:latest",
@@ -122,34 +120,32 @@ exports[`container-app uninstrument snapshot tests prints dry run data 1`] = `
         }
       ]
     },
-@@ -23,80 +19,26 @@
-    "template": {
-      "containers": [
+@@ -25,78 +21,24 @@
         {
           "env": [
             {
+              "name": "PORT",
+              "value": "8080"
+-           },
+-           {
 -             "name": "DD_API_KEY",
 -             "secretRef": "dd-api-key"
--           },
--           {
--             "name": "DD_ENV",
--             "value": "staging"
--           },
--           {
--             "name": "DD_SERVICE",
--             "value": "my-service"
 -           },
 -           {
 -             "name": "DD_SITE",
 -             "value": "datadoghq.com"
 -           },
 -           {
--             "name": "DD_VERSION",
--             "value": "1.0.0"
+-             "name": "DD_SERVICE",
+-             "value": "my-service"
 -           },
 -           {
-              "name": "PORT",
-              "value": "8080"
+-             "name": "DD_ENV",
+-             "value": "staging"
+-           },
+-           {
+-             "name": "DD_VERSION",
+-             "value": "1.0.0"
             }
           ],
           "image": "myregistry.azurecr.io/myapp:latest",

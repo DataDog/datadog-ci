@@ -1,5 +1,30 @@
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
+
+const validateApiKey = jest.fn()
+jest.mock('@datadog/datadog-ci-base/helpers/apikey', () => ({
+  newApiKeyValidator: jest.fn().mockImplementation(() => ({
+    validateApiKey,
+  })),
+}))
+
+const handleSourceCodeIntegration = jest.fn()
+jest.mock('@datadog/datadog-ci-base/helpers/serverless/source-code-integration', () => ({
+  handleSourceCodeIntegration,
+}))
+
+const fromIni = jest.fn()
+jest.mock('@aws-sdk/credential-providers', () => ({
+  fromIni,
+  fromNodeProviderChain: jest.fn(
+    () => () => Promise.resolve({accessKeyId: 'access-key', secretAccessKey: 'secret-key'})
+  ),
+}))
+
+import type {ContainerDefinition} from '@aws-sdk/client-ecs'
+
 import {DescribeTaskDefinitionCommand, ECSClient, RegisterTaskDefinitionCommand} from '@aws-sdk/client-ecs'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {PluginCommand} from '../commands/instrument'
@@ -8,21 +33,14 @@ import {instrumentTaskDefinition} from '../task-definition'
 
 import {
   CLI_VERSION_TAG,
+  INSTRUMENTATION_TAGS,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
   MOCK_REGION,
   MOCK_SETTINGS,
+  SERVICE_TAG,
   fargateTaskDefinition,
 } from './fixtures'
-
-jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
-
-jest.mock('@aws-sdk/credential-providers', () => ({
-  fromIni: jest.fn(() => () => Promise.resolve({accessKeyId: 'access-key', secretAccessKey: 'secret-key'})),
-  fromNodeProviderChain: jest.fn(
-    () => () => Promise.resolve({accessKeyId: 'access-key', secretAccessKey: 'secret-key'})
-  ),
-}))
 
 const ecsMock = mockClient(ECSClient)
 
@@ -35,11 +53,27 @@ const runCLI = makeRunCLI(PluginCommand, [
   MOCK_REGION,
 ])
 
+const registeredContainers = (call = 0): ContainerDefinition[] =>
+  ecsMock.commandCalls(RegisterTaskDefinitionCommand)[call].args[0].input.containerDefinitions ?? []
+
+const envVarsOf = (containers: ContainerDefinition[], name: string) =>
+  Object.fromEntries(
+    (containers.find((container) => container.name === name)?.environment ?? []).map(({name: key, value}) => [
+      key,
+      value,
+    ])
+  )
+
 describe('ecs-fargate instrument', () => {
   beforeEach(() => {
     ecsMock.reset()
     ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: fargateTaskDefinition(), tags: []})
     ecsMock.on(RegisterTaskDefinitionCommand).resolves({taskDefinition: fargateTaskDefinition({revision: 2})})
+    validateApiKey.mockClear().mockResolvedValue(true)
+    handleSourceCodeIntegration.mockClear().mockResolvedValue(undefined)
+    fromIni
+      .mockClear()
+      .mockImplementation(() => () => Promise.resolve({accessKeyId: 'access-key', secretAccessKey: 'secret-key'}))
   })
 
   test('registers a new revision with the Agent sidecar', async () => {
@@ -73,20 +107,21 @@ describe('ecs-fargate instrument', () => {
     expect(output).toContain('[Dry Run]')
     expect(output).toContain('Instrumenting my-app')
     expect(output).toContain(AGENT_CONTAINER_NAME)
+    expect(output).toMatchSnapshot()
   })
 
-  test('tags the new revision with the CLI version', async () => {
+  test('tags the new revision with the service and the CLI version', async () => {
     await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
 
     const registered = ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input
-    expect(registered.tags).toStrictEqual([CLI_VERSION_TAG])
+    expect(registered.tags).toStrictEqual(INSTRUMENTATION_TAGS)
   })
 
   test('registers nothing when only the CLI version tag is out of date', async () => {
     const {taskDefinition: instrumented} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
     ecsMock.on(DescribeTaskDefinitionCommand).resolves({
       taskDefinition: fargateTaskDefinition({containerDefinitions: instrumented.containerDefinitions}),
-      tags: [{key: 'dd_sls_ci', value: 'v0.0.0'}],
+      tags: [SERVICE_TAG, {key: 'dd_sls_ci', value: 'v0.0.0'}],
     })
 
     const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
@@ -100,7 +135,7 @@ describe('ecs-fargate instrument', () => {
     const {taskDefinition: instrumented} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
     ecsMock.on(DescribeTaskDefinitionCommand).resolves({
       taskDefinition: fargateTaskDefinition({containerDefinitions: instrumented.containerDefinitions}),
-      tags: [],
+      tags: INSTRUMENTATION_TAGS,
     })
 
     const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
@@ -110,72 +145,338 @@ describe('ecs-fargate instrument', () => {
     expect(context.stdout.toString()).toContain('my-app is already instrumented')
   })
 
-  test('warns when the API key is written in plain text', async () => {
-    const {code, context} = await runCLI([], {DATADOG_API_KEY: '', DD_API_KEY: MOCK_API_KEY})
+  test('instruments every task definition it is given', async () => {
+    const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--task-definition', 'my-other-app'])
 
     expect(code).toBe(0)
-    expect(context.stdout.toString()).toContain('in plain text')
-    const registered = ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input
-    const agent = registered.containerDefinitions?.find((container) => container.name === AGENT_CONTAINER_NAME)
-    expect(agent?.environment).toContainEqual({name: 'DD_API_KEY', value: MOCK_API_KEY})
+    expect(
+      ecsMock.commandCalls(DescribeTaskDefinitionCommand).map((call) => call.args[0].input.taskDefinition)
+    ).toStrictEqual(['my-app', 'my-other-app'])
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(2)
   })
 
-  test('fails when no region can be resolved', async () => {
-    const runWithoutRegion = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '--task-definition', 'my-app'])
-
-    const {code, context} = await runWithoutRegion(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
-
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('No region specified')
-    expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
-  })
-
-  test('resolves the region from the environment', async () => {
-    const runWithoutRegion = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '--task-definition', 'my-app'])
-
-    const {code} = await runWithoutRegion(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN], {
-      AWS_REGION: MOCK_REGION,
-    })
-
-    expect(code).toBe(0)
-    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(1)
-  })
-
-  test('fails when no API key is available', async () => {
-    const {code, context} = await runCLI([], {DD_API_KEY: '', DATADOG_API_KEY: ''})
-
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('No Datadog API key found')
-    expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
-  })
-
-  test('reports a task definition that cannot be instrumented', async () => {
+  test('keeps instrumenting after a task definition it cannot handle', async () => {
     ecsMock
-      .on(DescribeTaskDefinitionCommand)
+      .on(DescribeTaskDefinitionCommand, {taskDefinition: 'my-app'})
       .resolves({taskDefinition: fargateTaskDefinition({networkMode: 'bridge'}), tags: []})
 
-    const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+    const {code, context} = await runCLI([
+      '--api-key-secret-arn',
+      MOCK_API_KEY_SECRET_ARN,
+      '--task-definition',
+      'my-other-app',
+    ])
 
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Fargate requires awsvpc')
-    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(1)
   })
 
-  test('reports a task definition that does not exist', async () => {
-    ecsMock.on(DescribeTaskDefinitionCommand).resolves({})
+  describe('configuration', () => {
+    test('writes the service tagging flags to the containers and the revision', async () => {
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--service',
+        'payments',
+        '--env',
+        'prod',
+        '--version',
+        '1.0.0',
+        '--extra-tags',
+        'team:intake',
+        '--no-source-code-integration',
+      ])
 
-    const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+      expect(code).toBe(0)
+      const registered = ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input
+      expect(envVarsOf(registered.containerDefinitions ?? [], 'my-app')).toMatchObject({
+        DD_SERVICE: 'payments',
+        DD_ENV: 'prod',
+        DD_VERSION: '1.0.0',
+        DD_TAGS: 'team:intake',
+      })
+      expect(registered.tags).toStrictEqual([
+        {key: 'service', value: 'payments'},
+        {key: 'env', value: 'prod'},
+        {key: 'version', value: '1.0.0'},
+        CLI_VERSION_TAG,
+      ])
+    })
 
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('No task definition found for my-app')
+    test('writes the product toggles to the containers', async () => {
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--tracing',
+        'false',
+        '--log-level',
+        'debug',
+        '--appsec',
+        '--llmobs',
+        'my-ml-app',
+        '--env-vars',
+        'DD_PROFILING_ENABLED=true',
+      ])
+
+      expect(code).toBe(0)
+      expect(envVarsOf(registeredContainers(), 'my-app')).toMatchObject({
+        DD_TRACE_ENABLED: 'false',
+        DD_LOG_LEVEL: 'debug',
+        DD_APPSEC_ENABLED: 'true',
+        DD_LLMOBS_ENABLED: 'true',
+        DD_LLMOBS_ML_APP: 'my-ml-app',
+        DD_LLMOBS_AGENTLESS_ENABLED: 'false',
+        DD_PROFILING_ENABLED: 'true',
+      })
+      expect(envVarsOf(registeredContainers(), AGENT_CONTAINER_NAME)).toMatchObject({DD_APM_ENABLED: 'false'})
+    })
+
+    test('runs the Agent image it is given', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--agent-image', 'my-registry/agent:7.60.0'])
+
+      const agent = registeredContainers().find((container) => container.name === AGENT_CONTAINER_NAME)
+      expect(agent?.image).toBe('my-registry/agent:7.60.0')
+    })
+
+    test('runs the default Agent image when it is given none', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      const agent = registeredContainers().find((container) => container.name === AGENT_CONTAINER_NAME)
+      expect(agent?.image).toBe(AGENT_IMAGE)
+    })
+
+    test('reads the task definitions and their configuration from a config file', async () => {
+      const runWithConfig = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '-r', MOCK_REGION])
+
+      const {code} = await runWithConfig([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--config',
+        `${__dirname}/config/datadog-ci.json`,
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)[0].args[0].input.taskDefinition).toBe('my-app')
+      expect(envVarsOf(registeredContainers(), 'my-app')).toMatchObject({
+        DD_SERVICE: 'from-config',
+        DD_ENV: 'staging',
+      })
+    })
+
+    test('prefers a command-line argument over the configuration file', async () => {
+      const runWithConfig = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '-r', MOCK_REGION])
+
+      const {code} = await runWithConfig([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--config',
+        `${__dirname}/config/datadog-ci.json`,
+        '--service',
+        'from-cli',
+      ])
+
+      expect(code).toBe(0)
+      expect(envVarsOf(registeredContainers(), 'my-app')).toMatchObject({
+        DD_SERVICE: 'from-cli',
+        // What the command line did not set still comes from the file.
+        DD_ENV: 'staging',
+      })
+    })
+
+    test('turns a flag off from the configuration file when the command line is silent', async () => {
+      const runWithConfig = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '-r', MOCK_REGION])
+
+      const {code} = await runWithConfig([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--config',
+        `${__dirname}/config/datadog-ci.json`,
+      ])
+
+      expect(code).toBe(0)
+      expect(handleSourceCodeIntegration).not.toHaveBeenCalled()
+    })
+
+    test('reports a configuration file it cannot read', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--config',
+        `${__dirname}/config/does-not-exist.json`,
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('Could not read the configuration file: Config file not found')
+    })
+
+    test('reports every problem with the configuration at once', async () => {
+      const runWithoutTarget = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '-r', MOCK_REGION])
+
+      const {code, context} = await runWithoutTarget([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--env-vars',
+        'NOT_AN_ASSIGNMENT',
+        '--extra-tags',
+        'not-a-tag',
+        '--tracing',
+        'yes',
+      ])
+
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toContain('No task definitions specified to instrument')
+      expect(output).toContain('All env vars must be in the format `KEY=VALUE`')
+      expect(output).toContain('Extra tags do not comply with the <key>:<value> array.')
+      expect(output).toContain('--tracing must be either `true` or `false`.')
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('uses the named AWS profile it is given', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--profile', 'my-profile'])
+
+      expect(fromIni).toHaveBeenCalledWith({profile: 'my-profile'})
+    })
+
+    test('reports a named profile it cannot read', async () => {
+      fromIni.mockImplementation(() => () => Promise.reject(new Error('Profile `my-profile` could not be found')))
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--profile', 'my-profile'])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain("Couldn't set AWS profile credentials")
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('fails when no region can be resolved', async () => {
+      const runWithoutRegion = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '--task-definition', 'my-app'])
+
+      const {code, context} = await runWithoutRegion(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('No region specified')
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('resolves the region from the environment', async () => {
+      const runWithoutRegion = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '--task-definition', 'my-app'])
+
+      const {code} = await runWithoutRegion(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN], {
+        AWS_REGION: MOCK_REGION,
+      })
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(1)
+    })
   })
 
-  test('reports a failure to register the new revision', async () => {
-    ecsMock.on(RegisterTaskDefinitionCommand).rejects(new Error('AccessDeniedException'))
+  describe('source code integration', () => {
+    test('tags the task with the local commit', async () => {
+      handleSourceCodeIntegration.mockResolvedValue('git.commit.sha:abc123,git.repository_url:github.com/org/repo')
 
-    const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+      const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
 
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('AccessDeniedException')
+      expect(code).toBe(0)
+      expect(handleSourceCodeIntegration).toHaveBeenCalledWith(expect.anything(), true, undefined)
+      expect(envVarsOf(registeredContainers(), 'my-app')).toMatchObject({
+        DD_TAGS: 'git.commit.sha:abc123,git.repository_url:github.com/org/repo',
+      })
+    })
+
+    test('adds to the extra tags it is given', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--extra-tags', 'team:intake'])
+
+      expect(handleSourceCodeIntegration).toHaveBeenCalledWith(expect.anything(), true, 'team:intake')
+    })
+
+    test('uploads no git metadata when asked not to', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--no-upload-git-metadata'])
+
+      expect(handleSourceCodeIntegration).toHaveBeenCalledWith(expect.anything(), false, undefined)
+    })
+
+    test('uploads no git metadata on a dry run, but still shows the tags it would write', async () => {
+      handleSourceCodeIntegration.mockResolvedValue('git.commit.sha:abc123')
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--dry-run'])
+
+      expect(code).toBe(0)
+      expect(handleSourceCodeIntegration).toHaveBeenCalledWith(expect.anything(), false, undefined)
+      expect(context.stdout.toString()).toContain('git.commit.sha:abc123')
+    })
+
+    test('is skipped when turned off', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--no-source-code-integration'])
+
+      expect(handleSourceCodeIntegration).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('API key', () => {
+    test('warns when the API key is written in plain text', async () => {
+      const {code, context} = await runCLI([], {DATADOG_API_KEY: '', DD_API_KEY: MOCK_API_KEY})
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('in plain text')
+      expect(envVarsOf(registeredContainers(), AGENT_CONTAINER_NAME)).toMatchObject({DD_API_KEY: MOCK_API_KEY})
+    })
+
+    test('fails when no API key is available', async () => {
+      const {code, context} = await runCLI([], {DD_API_KEY: '', DATADOG_API_KEY: ''})
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('No Datadog API key found')
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('fails before instrumenting when the API key is invalid', async () => {
+      validateApiKey.mockResolvedValue(false)
+
+      const {code, context} = await runCLI([], {DATADOG_API_KEY: '', DD_API_KEY: MOCK_API_KEY})
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('Invalid Datadog API key')
+      expect(handleSourceCodeIntegration).not.toHaveBeenCalled()
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('does not validate a key it cannot read', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(validateApiKey).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('failures', () => {
+    test('reports a task definition that cannot be instrumented', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand)
+        .resolves({taskDefinition: fargateTaskDefinition({networkMode: 'bridge'}), tags: []})
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('Fargate requires awsvpc')
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('reports a task definition that does not exist', async () => {
+      ecsMock.on(DescribeTaskDefinitionCommand).resolves({})
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('No task definition found for my-app')
+    })
+
+    test('reports a failure to register the new revision', async () => {
+      ecsMock.on(RegisterTaskDefinitionCommand).rejects(new Error('AccessDeniedException'))
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('AccessDeniedException')
+    })
   })
 })

@@ -1,15 +1,21 @@
 import type {InstrumentSettings} from '../task-definition'
 import type {ContainerDefinition, Tag, TaskDefinition} from '@aws-sdk/client-ecs'
 
-export const CLI_VERSION_TAG: Tag = {key: 'dd_sls_ci', value: 'vXXXX'}
+import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 export const MOCK_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_API_KEY_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key-AbCdEf'
 export const MOCK_REGION = 'us-east-1'
 export const MOCK_FAMILY = 'my-app'
 
+export const CLI_VERSION_TAG: Tag = {key: 'dd_sls_ci', value: 'vXXXX'}
+/** The service tag a run that was not given a `--service` writes, from the task definition family. */
+export const SERVICE_TAG: Tag = {key: 'service', value: MOCK_FAMILY}
+/** The tags every instrumented revision carries. */
+export const INSTRUMENTATION_TAGS: Tag[] = [SERVICE_TAG, CLI_VERSION_TAG]
+
 export const MOCK_SETTINGS: InstrumentSettings = {
-  agentImage: 'public.ecr.aws/datadog/agent:latest',
+  agentImage: AGENT_IMAGE,
   site: 'datadoghq.com',
   apiKeySecretArn: MOCK_API_KEY_SECRET_ARN,
 }

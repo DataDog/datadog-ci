@@ -9,7 +9,21 @@ import type {
 } from '@aws-sdk/client-ecs'
 
 import {sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
-import {API_KEY_ENV_VAR, SITE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  API_KEY_ENV_VAR,
+  DD_APPSEC_ENABLED_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
+  DD_TAGS_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  LOGS_INJECTION_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -26,8 +40,11 @@ import {
   DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR,
   DD_USE_DOGSTATSD_ENV_VAR,
   ECS_FARGATE_ENV_VAR,
+  ENVIRONMENT_TAG_KEY,
   LAUNCH_TYPE_FARGATE,
   READ_ONLY_TASK_DEFINITION_FIELDS,
+  SERVICE_TAG_KEY,
+  VERSION_TAG_KEY,
 } from './constants'
 
 /**
@@ -40,6 +57,20 @@ export type InstrumentSettings = {
   apiKey?: string
   /** The Secrets Manager ARN holding the API key. Preferred: it keeps the key off the task definition. */
   apiKeySecretArn?: string
+  /** The service name the user asked for. Absent means the task definition family is used instead. */
+  service?: string
+  environment?: string
+  version?: string
+  /** Additional tags, as the `key:value,key:value` string `DD_TAGS` takes. */
+  extraTags?: string
+  /** Additional environment variables to set on every container in the task. */
+  envVars?: Record<string, string>
+  /** Whether the tracers send traces. Absent leaves the choice to the task definition. */
+  tracing?: boolean
+  logLevel?: string
+  appsec?: boolean
+  /** The ML application name, when LLM Observability is enabled. */
+  llmobs?: string
 }
 
 export type InstrumentResult = {
@@ -48,38 +79,124 @@ export type InstrumentResult = {
 }
 
 /**
- * Builds the environment the Agent sidecar runs with.
+ * Environment variables to write to a container, split by how strongly the command owns them.
  */
-export const getAgentEnvVars = (settings: InstrumentSettings): Record<string, string> => {
-  const envVars: Record<string, string> = {
-    [ECS_FARGATE_ENV_VAR]: 'true',
-    [SITE_ENV_VAR]: settings.site,
-    [DD_APM_ENABLED_ENV_VAR]: 'true',
-    [DD_USE_DOGSTATSD_ENV_VAR]: 'true',
-    [DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR]: 'true',
-  }
-
-  if (settings.apiKey) {
-    envVars[API_KEY_ENV_VAR] = settings.apiKey
-  }
-
-  return envVars
+type ManagedEnvironment = {
+  /** Owned by the command: these replace what the task definition had. */
+  managed: Record<string, string>
+  /** Suggested by the command: a value already on the container wins. */
+  defaults: Record<string, string>
 }
 
 /**
- * Merges the managed environment variables into the ones already on the container, by name.
+ * The unified service tags, which every container in the task carries so that the telemetry the
+ * tracers and the Agent send line up.
+ *
+ * An explicit `--service` is authoritative. The family the task definition is named after is only a
+ * fallback, since a container that sets `DD_SERVICE` itself knows better than a name we guessed.
+ */
+const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): ManagedEnvironment => {
+  const managed: Record<string, string> = {}
+  const defaults: Record<string, string> = {}
+
+  if (settings.service) {
+    managed[SERVICE_ENV_VAR] = settings.service
+  } else if (family) {
+    defaults[SERVICE_ENV_VAR] = family
+  }
+  if (settings.environment) {
+    managed[ENVIRONMENT_ENV_VAR] = settings.environment
+  }
+  if (settings.version) {
+    managed[VERSION_ENV_VAR] = settings.version
+  }
+  if (settings.extraTags) {
+    managed[DD_TAGS_ENV_VAR] = settings.extraTags
+  }
+  if (settings.logLevel) {
+    managed[DD_LOG_LEVEL_ENV_VAR] = settings.logLevel
+  }
+
+  return {managed, defaults}
+}
+
+/**
+ * Builds the environment the Agent sidecar runs with.
+ */
+const getAgentEnvVars = (settings: InstrumentSettings, family?: string): ManagedEnvironment => {
+  const serviceTags = getServiceTagEnvVars(settings, family)
+
+  return {
+    managed: {
+      [ECS_FARGATE_ENV_VAR]: 'true',
+      [SITE_ENV_VAR]: settings.site,
+      // The Agent's own trace intake, which is a separate switch from the tracers' `DD_TRACE_ENABLED`.
+      [DD_APM_ENABLED_ENV_VAR]: String(settings.tracing ?? true),
+      [DD_USE_DOGSTATSD_ENV_VAR]: 'true',
+      [DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR]: 'true',
+      ...(settings.apiKey ? {[API_KEY_ENV_VAR]: settings.apiKey} : {}),
+      ...serviceTags.managed,
+      ...settings.envVars,
+    },
+    defaults: serviceTags.defaults,
+  }
+}
+
+/**
+ * Builds the environment the application containers run with: the unified service tags, plus the
+ * switches the tracer libraries read.
+ *
+ * Tracing and log injection are defaults rather than managed values, so a task definition that has
+ * already made a choice about either keeps it. The products the user turns on explicitly are managed.
+ */
+const getAppContainerEnvVars = (settings: InstrumentSettings, family?: string): ManagedEnvironment => {
+  const serviceTags = getServiceTagEnvVars(settings, family)
+  const managed: Record<string, string> = {...serviceTags.managed}
+
+  if (settings.tracing !== undefined) {
+    managed[DD_TRACE_ENABLED_ENV_VAR] = String(settings.tracing)
+  }
+  if (settings.appsec) {
+    managed[DD_APPSEC_ENABLED_ENV_VAR] = 'true'
+  }
+  if (settings.llmobs) {
+    managed[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
+    managed[DD_LLMOBS_ML_APP_ENV_VAR] = settings.llmobs
+    // The Agent sidecar forwards the payloads, so the tracer does not send them to the intake itself.
+    managed[DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR] = 'false'
+  }
+  Object.assign(managed, settings.envVars)
+
+  return {
+    managed,
+    defaults: {
+      ...serviceTags.defaults,
+      [DD_TRACE_ENABLED_ENV_VAR]: 'true',
+      [LOGS_INJECTION_ENV_VAR]: 'true',
+    },
+  }
+}
+
+/**
+ * Merges the environment variables the command writes into the ones already on the container, by
+ * name: defaults fill in what is missing, managed values replace what is there.
  *
  * Existing variables keep their position so that re-running produces an identical array rather than
  * a reordered one that would show up as a diff.
  */
-const toEnvironment = (managed: Record<string, string>, existing?: KeyValuePair[]): KeyValuePair[] => {
+const toEnvironment = (environment: ManagedEnvironment, existing?: KeyValuePair[]): KeyValuePair[] => {
   const merged = new Map<string, string | undefined>()
   for (const {name, value} of existing ?? []) {
     if (name !== undefined) {
       merged.set(name, value)
     }
   }
-  for (const [name, value] of Object.entries(managed)) {
+  for (const [name, value] of Object.entries(environment.defaults)) {
+    if (!merged.has(name)) {
+      merged.set(name, value)
+    }
+  }
+  for (const [name, value] of Object.entries(environment.managed)) {
     merged.set(name, value)
   }
 
@@ -104,8 +221,9 @@ export type AgentContainerResult = {
  * the Agent is already reachable on `127.0.0.1` without one; a mapping would only publish DogStatsD
  * and the trace intake on the task's network interface.
  */
-export const buildAgentContainer = (
+const buildAgentContainer = (
   settings: InstrumentSettings,
+  family?: string,
   existing?: ContainerDefinition,
   logConfiguration?: LogConfiguration
 ): AgentContainerResult => {
@@ -126,7 +244,7 @@ export const buildAgentContainer = (
     ? (existing?.environment ?? []).filter((envVar) => envVar.name !== API_KEY_ENV_VAR)
     : existing?.environment
 
-  if (existing?.essential === true) {
+  if (existing !== undefined && existing.essential !== false) {
     warnings.push(
       `Marking the ${AGENT_CONTAINER_NAME} container non-essential, overriding the task definition: a crashed Agent should cost telemetry, not availability.`
     )
@@ -150,7 +268,7 @@ export const buildAgentContainer = (
     // The Agent must not be able to take the task down: a crashed Agent should cost telemetry, not
     // availability.
     essential: false,
-    environment: toEnvironment(getAgentEnvVars(settings), inheritedEnvironment),
+    environment: toEnvironment(getAgentEnvVars(settings, family), inheritedEnvironment),
     secrets,
     healthCheck,
     // Without one, a Fargate container's output goes nowhere, which would leave an Agent that
@@ -175,16 +293,31 @@ const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfigu
   )?.logConfiguration
 
 /**
- * Stamps the revision with the version of the CLI that produced it, replacing other possibly existing values
+ * The tags the revision carries: the unified service tags the task now reports under, and the
+ * version of the CLI that produced the revision. Both replace whatever the task definition had.
  */
-const withCliVersionTag = (tags: Tag[]): Tag[] => [
-  ...tags.filter((tag) => tag.key !== SERVERLESS_CLI_VERSION_TAG_NAME),
-  {key: SERVERLESS_CLI_VERSION_TAG_NAME, value: SERVERLESS_CLI_VERSION_TAG_VALUE},
-]
+const instrumentationTags = (tags: Tag[], settings: InstrumentSettings, service?: string): Tag[] => {
+  const managed = new Map<string, string>()
+  if (service) {
+    managed.set(SERVICE_TAG_KEY, service)
+  }
+  if (settings.environment) {
+    managed.set(ENVIRONMENT_TAG_KEY, settings.environment)
+  }
+  if (settings.version) {
+    managed.set(VERSION_TAG_KEY, settings.version)
+  }
+  managed.set(SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE)
+
+  return [
+    ...tags.filter((tag) => tag.key === undefined || !managed.has(tag.key)),
+    ...[...managed].map(([key, value]) => ({key, value})),
+  ]
+}
 
 /**
  * Rewrites a Fargate task definition to run the Datadog Agent as a sidecar alongside the
- * application containers, which are left untouched.
+ * application containers, which are given the environment their tracers read.
  *
  * The Agent container is keyed by name, so instrumenting an already instrumented task definition
  * produces an identical result and does not burn a revision.
@@ -217,6 +350,7 @@ export const instrumentTaskDefinition = (
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer(
     settings,
+    family,
     existingAgent,
     borrowedLogConfiguration(containers)
   )
@@ -227,8 +361,19 @@ export const instrumentTaskDefinition = (
     )
   }
 
+  // ECS resolves secrets through the task's execution role, so a reference without a role in place
+  // registers a revision whose tasks cannot start.
+  if (settings.apiKeySecretArn && !taskDefinition.executionRoleArn) {
+    warnings.push(
+      `Task definition ${family} has no executionRoleArn, which ECS needs to read ${settings.apiKeySecretArn}. Tasks started from this revision will fail until the task definition has an execution role granting secretsmanager:GetSecretValue on that secret.`
+    )
+  }
+
+  const appEnvironment = getAppContainerEnvVars(settings, family)
   const containerDefinitions = containers.map((container) =>
-    container.name === AGENT_CONTAINER_NAME ? agentContainer : container
+    container.name === AGENT_CONTAINER_NAME
+      ? agentContainer
+      : {...container, environment: toEnvironment(appEnvironment, container.environment)}
   )
   if (!existingAgent) {
     containerDefinitions.push(agentContainer)
@@ -238,7 +383,7 @@ export const instrumentTaskDefinition = (
     taskDefinition: {
       ...stripReadOnlyFields(taskDefinition),
       containerDefinitions,
-      tags: withCliVersionTag(tags),
+      tags: instrumentationTags(tags, settings, settings.service ?? family),
     },
     warnings,
   }

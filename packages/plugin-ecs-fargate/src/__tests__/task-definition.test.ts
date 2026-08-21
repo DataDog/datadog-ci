@@ -1,14 +1,18 @@
 import type {ContainerDefinition} from '@aws-sdk/client-ecs'
 
-import {AGENT_CONTAINER_NAME, DEFAULT_AGENT_IMAGE} from '../constants'
+import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+
+import {AGENT_CONTAINER_NAME} from '../constants'
 import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields} from '../task-definition'
 
 import {
   APP_CONTAINER,
   CLI_VERSION_TAG,
+  INSTRUMENTATION_TAGS,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
   MOCK_SETTINGS,
+  SERVICE_TAG,
   fargateTaskDefinition,
 } from './fixtures'
 
@@ -16,6 +20,9 @@ jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 const agentContainerOf = (containers: ContainerDefinition[] | undefined) =>
   containers?.find((container) => container.name === AGENT_CONTAINER_NAME)
+
+const appContainerOf = (containers: ContainerDefinition[] | undefined) =>
+  containers?.find((container) => container.name === APP_CONTAINER.name)
 
 const envVarsOf = (container: ContainerDefinition | undefined) =>
   Object.fromEntries((container?.environment ?? []).map(({name, value}) => [name, value]))
@@ -26,7 +33,7 @@ describe('instrumentTaskDefinition', () => {
 
     const agent = agentContainerOf(taskDefinition.containerDefinitions)
     expect(agent).toBeDefined()
-    expect(agent?.image).toBe(DEFAULT_AGENT_IMAGE)
+    expect(agent?.image).toBe(AGENT_IMAGE)
     // A crashed Agent should cost telemetry, not availability.
     expect(agent?.essential).toBe(false)
     expect(envVarsOf(agent)).toStrictEqual({
@@ -35,6 +42,7 @@ describe('instrumentTaskDefinition', () => {
       DD_APM_ENABLED: 'true',
       DD_USE_DOGSTATSD: 'true',
       DD_ECS_TASK_COLLECTION_ENABLED: 'true',
+      DD_SERVICE: 'my-app',
     })
     expect(agent?.healthCheck).toStrictEqual({
       command: ['CMD-SHELL', '/probe.sh'],
@@ -45,11 +53,30 @@ describe('instrumentTaskDefinition', () => {
     })
   })
 
-  test('leaves application containers untouched', () => {
+  test('runs the Agent image the settings ask for', () => {
+    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+      ...MOCK_SETTINGS,
+      agentImage: '123456789012.dkr.ecr.us-east-1.amazonaws.com/datadog/agent:7.60.0',
+    })
+
+    expect(agentContainerOf(taskDefinition.containerDefinitions)?.image).toBe(
+      '123456789012.dkr.ecr.us-east-1.amazonaws.com/datadog/agent:7.60.0'
+    )
+  })
+
+  test('gives the application containers what their tracers read, leaving the rest alone', () => {
     const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
 
-    const app = taskDefinition.containerDefinitions?.find((container) => container.name === APP_CONTAINER.name)
-    expect(app).toStrictEqual(APP_CONTAINER)
+    const app = appContainerOf(taskDefinition.containerDefinitions)
+    expect(app).toStrictEqual({
+      ...APP_CONTAINER,
+      environment: [
+        {name: 'PORT', value: '8080'},
+        {name: 'DD_SERVICE', value: 'my-app'},
+        {name: 'DD_TRACE_ENABLED', value: 'true'},
+        {name: 'DD_LOGS_INJECTION', value: 'true'},
+      ],
+    })
   })
 
   test('references the API key secret rather than writing the key', () => {
@@ -60,9 +87,29 @@ describe('instrumentTaskDefinition', () => {
     expect(envVarsOf(agent)).not.toHaveProperty('DD_API_KEY')
   })
 
+  test('warns when the secret is referenced but no execution role can read it', () => {
+    const original = fargateTaskDefinition({executionRoleArn: undefined})
+
+    const {warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+    expect(warnings).toContainEqual(expect.stringContaining('no executionRoleArn'))
+  })
+
+  test('does not warn about an execution role when the API key is written in plain text', () => {
+    const original = fargateTaskDefinition({executionRoleArn: undefined})
+
+    const {warnings} = instrumentTaskDefinition(original, {
+      agentImage: AGENT_IMAGE,
+      site: 'datadoghq.com',
+      apiKey: MOCK_API_KEY,
+    })
+
+    expect(warnings).not.toContainEqual(expect.stringContaining('no executionRoleArn'))
+  })
+
   test('writes the API key in plain text when no secret ARN is given', () => {
     const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
-      agentImage: DEFAULT_AGENT_IMAGE,
+      agentImage: AGENT_IMAGE,
       site: 'datadoghq.com',
       apiKey: MOCK_API_KEY,
     })
@@ -117,29 +164,153 @@ describe('instrumentTaskDefinition', () => {
     expect(taskDefinition.executionRoleArn).toBe('arn:aws:iam::123456789012:role/ecsTaskExecutionRole')
   })
 
-  test('carries the existing tags onto the new revision', () => {
-    const tags = [{key: 'team', value: 'intake'}]
+  describe('unified service tagging', () => {
+    test('names the service after the task definition family by default', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
 
-    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS, tags)
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_SERVICE', 'my-app')
+      expect(taskDefinition.tags).toContainEqual(SERVICE_TAG)
+    })
 
-    expect(taskDefinition.tags).toStrictEqual([...tags, CLI_VERSION_TAG])
+    test('leaves a service the application container named itself', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_SERVICE', value: 'checkout'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_SERVICE', 'checkout')
+    })
+
+    test('overrides the container with an explicit service', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_SERVICE', value: 'checkout'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, service: 'payments'})
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_SERVICE', 'payments')
+      expect(taskDefinition.tags).toContainEqual({key: 'service', value: 'payments'})
+    })
+
+    test('writes the environment, version, and extra tags to every container', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        environment: 'prod',
+        version: '1.0.0',
+        extraTags: 'team:intake,layer:api',
+      })
+
+      for (const container of taskDefinition.containerDefinitions ?? []) {
+        expect(envVarsOf(container)).toMatchObject({
+          DD_ENV: 'prod',
+          DD_VERSION: '1.0.0',
+          DD_TAGS: 'team:intake,layer:api',
+        })
+      }
+      expect(taskDefinition.tags).toStrictEqual([
+        SERVICE_TAG,
+        {key: 'env', value: 'prod'},
+        {key: 'version', value: '1.0.0'},
+        CLI_VERSION_TAG,
+      ])
+    })
   })
 
-  test('tags the new revision with the CLI version', () => {
-    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS, [])
+  describe('product toggles', () => {
+    test('turns tracing off on both the tracers and the Agent', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {...MOCK_SETTINGS, tracing: false})
 
-    expect(taskDefinition.tags).toStrictEqual([CLI_VERSION_TAG])
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'false')
+      expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_APM_ENABLED', 'false')
+    })
+
+    test('leaves tracing as the application container set it', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TRACE_ENABLED', value: 'false'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'false')
+    })
+
+    test('enables tracing over the application container when asked to', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TRACE_ENABLED', value: 'false'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing: true})
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'true')
+    })
+
+    test('sets the log level on the tracers and the Agent', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {...MOCK_SETTINGS, logLevel: 'debug'})
+
+      for (const container of taskDefinition.containerDefinitions ?? []) {
+        expect(envVarsOf(container)).toHaveProperty('DD_LOG_LEVEL', 'debug')
+      }
+    })
+
+    test('enables Application Security Monitoring on the application containers only', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {...MOCK_SETTINGS, appsec: true})
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_APPSEC_ENABLED', 'true')
+      expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).not.toHaveProperty('DD_APPSEC_ENABLED')
+    })
+
+    test('enables LLM Observability against the Agent rather than the intake', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        llmobs: 'my-ml-app',
+      })
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toMatchObject({
+        DD_LLMOBS_ENABLED: 'true',
+        DD_LLMOBS_ML_APP: 'my-ml-app',
+        DD_LLMOBS_AGENTLESS_ENABLED: 'false',
+      })
+    })
+
+    test('sets the extra environment variables on every container, over what was there', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        envVars: {PORT: '9090', DD_PROFILING_ENABLED: 'true'},
+      })
+
+      for (const container of taskDefinition.containerDefinitions ?? []) {
+        expect(envVarsOf(container)).toMatchObject({PORT: '9090', DD_PROFILING_ENABLED: 'true'})
+      }
+    })
   })
 
-  test('replaces the CLI version tag an earlier run left behind', () => {
-    const tags = [
-      {key: 'team', value: 'intake'},
-      {key: 'dd_sls_ci', value: 'v0.0.0'},
-    ]
+  describe('tags', () => {
+    test('carries the existing tags onto the new revision', () => {
+      const tags = [{key: 'team', value: 'intake'}]
 
-    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS, tags)
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS, tags)
 
-    expect(taskDefinition.tags).toStrictEqual([{key: 'team', value: 'intake'}, CLI_VERSION_TAG])
+      expect(taskDefinition.tags).toStrictEqual([...tags, ...INSTRUMENTATION_TAGS])
+    })
+
+    test('tags the new revision with the service and the CLI version', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS, [])
+
+      expect(taskDefinition.tags).toStrictEqual(INSTRUMENTATION_TAGS)
+    })
+
+    test('replaces the tags an earlier run left behind', () => {
+      const tags = [
+        {key: 'team', value: 'intake'},
+        {key: 'service', value: 'old-name'},
+        {key: 'dd_sls_ci', value: 'v0.0.0'},
+      ]
+
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS, tags)
+
+      expect(taskDefinition.tags).toStrictEqual([{key: 'team', value: 'intake'}, ...INSTRUMENTATION_TAGS])
+    })
   })
 
   describe('idempotency', () => {
@@ -165,7 +336,7 @@ describe('instrumentTaskDefinition', () => {
 
       const {taskDefinition} = instrumentTaskDefinition(described, MOCK_SETTINGS)
 
-      expect(taskDefinition).toStrictEqual({...stripReadOnlyFields(described), tags: [CLI_VERSION_TAG]})
+      expect(taskDefinition).toStrictEqual({...stripReadOnlyFields(described), tags: INSTRUMENTATION_TAGS})
     })
 
     test('does not add a second Agent container', () => {
@@ -201,7 +372,7 @@ describe('instrumentTaskDefinition', () => {
       expect(envVarsOf(agent)).toHaveProperty('DD_PROCESS_AGENT_ENABLED', 'true')
       expect(envVarsOf(agent)).toHaveProperty('ECS_FARGATE', 'true')
       // The command owns the image.
-      expect(agent?.image).toBe(DEFAULT_AGENT_IMAGE)
+      expect(agent?.image).toBe(AGENT_IMAGE)
     })
 
     test('preserves secrets the user added by hand', () => {
@@ -311,7 +482,7 @@ describe('isUpToDate', () => {
     const updated = instrumented()
     const original = {
       ...stripReadOnlyFields(fargateTaskDefinition({containerDefinitions: updated.containerDefinitions})),
-      tags: [CLI_VERSION_TAG],
+      tags: INSTRUMENTATION_TAGS,
     }
 
     expect(isUpToDate(original, updated)).toBe(true)
@@ -321,9 +492,19 @@ describe('isUpToDate', () => {
     const updated = instrumented()
     const original = {
       ...stripReadOnlyFields(fargateTaskDefinition({containerDefinitions: updated.containerDefinitions})),
-      tags: [{key: 'dd_sls_ci', value: 'v0.0.0'}],
+      tags: [SERVICE_TAG, {key: 'dd_sls_ci', value: 'v0.0.0'}],
     }
 
     expect(isUpToDate(original, updated)).toBe(true)
+  })
+
+  test('a service tag that no longer matches warrants a new revision', () => {
+    const updated = instrumented()
+    const original = {
+      ...stripReadOnlyFields(fargateTaskDefinition({containerDefinitions: updated.containerDefinitions})),
+      tags: [{key: 'service', value: 'old-name'}, CLI_VERSION_TAG],
+    }
+
+    expect(isUpToDate(original, updated)).toBe(false)
   })
 })
