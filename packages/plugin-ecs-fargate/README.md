@@ -55,6 +55,12 @@ Running the command twice is safe: the sidecars are matched by name, so an alrea
 Pass `--log-collection` to send the task's logs to Datadog. A `datadog-log-router` sidecar running [AWS for Fluent Bit](https://github.com/aws/aws-for-fluent-bit) is added and the other containers, including the Agent, are routed through it.
 Existing log configurations are replaced. Omitting `--log-collection` on a later run does not restore them or remove the router.
 
+#### Windows tasks
+
+Windows task definitions are instrumented the same way, with three differences the command applies on its own after reading the task's `runtimePlatform`. The Agent runs the `-servercore` build of the image, published as a manifest list so ECS pulls the variant matching your Windows Server version. The Agent container is given `C:\` as its working directory, which it needs and its image does not set. And it gets no health check, because the Agent's probe is a shell script that only the Linux image ships, so a probe would report the Agent as permanently unhealthy rather than tell you anything; the command warns when it makes this choice.
+
+If you pass `--agent-image` for a Windows task, it is used exactly as given, so point it at a `-servercore` tag: mirroring `public.ecr.aws/datadog/agent:latest` into your own registry gives you the Linux image, which will not start on Windows.
+
 #### Deploying the new revision
 
 Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. A service named by its full ARN already says which cluster it runs in, so `--cluster` can be left off; passing a `--cluster` that contradicts the ARN's cluster is an error, not a silent override. A run updates services in a single cluster, so ARNs naming more than one are reported too. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. The matching happens before anything is registered, so a service running a family that no `--task-definition` covers is reported without a revision having been registered for it. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.

@@ -78,6 +78,9 @@ import {
   READ_ONLY_TASK_DEFINITION_FIELDS,
   SERVICE_TAG_KEY,
   VERSION_TAG_KEY,
+  WINDOWS_AGENT_IMAGE_SUFFIX,
+  WINDOWS_OS_FAMILY_PREFIX,
+  WINDOWS_WORKING_DIRECTORY,
 } from './constants'
 
 /**
@@ -85,8 +88,8 @@ import {
  */
 export type InstrumentSettings = {
   /**
-   * The Agent image to run. Absent leaves the choice to the transform, which picks the default
-   * build.
+   * The Agent image to run. Absent leaves the choice to the transform, which picks the default build
+   * for the task's platform.
    */
   agentImage?: string
   site: string
@@ -401,10 +404,25 @@ export type SidecarContainerResult = {
 }
 
 /**
+ * Whether the task runs Windows containers, which the Agent sidecar has to be built differently
+ * for. A task definition that declares no `runtimePlatform`, or declares `LINUX`, runs Linux.
+ */
+const isWindowsTask = (taskDefinition: TaskDefinition): boolean =>
+  taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
+
+/**
+ * The Agent image to run; either the one specified by the user, or the default build for the task's platform.
+ */
+const agentImage = (settings: InstrumentSettings, windows: boolean): string =>
+  settings.agentImage ?? (windows ? `${AGENT_IMAGE}${WINDOWS_AGENT_IMAGE_SUFFIX}` : AGENT_IMAGE)
+
+/**
  * What the Agent sidecar is built from.
  */
 type AgentContainerContext = {
   settings: InstrumentSettings
+  /** Whether the task runs Windows containers. */
+  windows: boolean
   /** The task definition family, used to name the service when the user did not. */
   family?: string
   /** The Agent container already on the task definition, if any. */
@@ -422,6 +440,7 @@ type AgentContainerContext = {
  */
 const buildAgentContainer = ({
   settings,
+  windows,
   family,
   existing,
   firelens,
@@ -450,14 +469,22 @@ const buildAgentContainer = ({
     )
   }
 
-  const healthCheck = {
-    command: [...AGENT_HEALTH_CHECK_COMMAND],
-    interval: AGENT_HEALTH_CHECK_INTERVAL,
-    timeout: AGENT_HEALTH_CHECK_TIMEOUT,
-    retries: AGENT_HEALTH_CHECK_RETRIES,
-    startPeriod: AGENT_HEALTH_CHECK_START_PERIOD,
-  }
-  if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
+  // The Agent's probe is a shell script that only exists in the Linux image, so a Windows task gets
+  // no health check rather than one that can never pass.
+  const healthCheck = windows
+    ? undefined
+    : {
+        command: [...AGENT_HEALTH_CHECK_COMMAND],
+        interval: AGENT_HEALTH_CHECK_INTERVAL,
+        timeout: AGENT_HEALTH_CHECK_TIMEOUT,
+        retries: AGENT_HEALTH_CHECK_RETRIES,
+        startPeriod: AGENT_HEALTH_CHECK_START_PERIOD,
+      }
+  if (windows) {
+    warnings.push(
+      `Leaving the ${AGENT_CONTAINER_NAME} container without a health check: the Agent's probe is a shell script that only its Linux image ships. Nothing will report whether the Agent is ready on this task.`
+    )
+  } else if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
     warnings.push(`Replacing the health check on the ${AGENT_CONTAINER_NAME} container with the Agent's own probe.`)
   }
 
@@ -471,13 +498,15 @@ const buildAgentContainer = ({
   const container = removeUndefinedValues({
     ...existing,
     name: AGENT_CONTAINER_NAME,
-    image: settings.agentImage ?? AGENT_IMAGE,
+    image: agentImage(settings, windows),
     // The Agent must not be able to take the task down: a crashed Agent should cost telemetry, not
     // availability.
     essential: false,
     environment: toEnvironment(getAgentEnvVars(settings, family), inheritedEnvironment),
     secrets,
     healthCheck,
+    // The Windows Agent image leaves the working directory unset, and the Agent needs one.
+    workingDirectory: windows ? WINDOWS_WORKING_DIRECTORY : existing?.workingDirectory,
     // The other end of the socket the tracers write to. The Agent image already listens on this
     // path, so mounting the volume is all it takes.
     mountPoints: withSocketMount(existing?.mountPoints, settings.agentSocket !== false),
@@ -621,6 +650,7 @@ export const instrumentTaskDefinition = (
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer({
     settings,
+    windows: isWindowsTask(taskDefinition),
     family,
     existing: existingAgent,
     firelens,

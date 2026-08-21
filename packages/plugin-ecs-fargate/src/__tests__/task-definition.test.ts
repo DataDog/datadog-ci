@@ -1,4 +1,4 @@
-import type {ContainerDefinition} from '@aws-sdk/client-ecs'
+import type {ContainerDefinition, RuntimePlatform} from '@aws-sdk/client-ecs'
 
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
@@ -21,6 +21,7 @@ import {
   asDescribed,
   fargateTaskDefinition,
   firelensLogConfiguration,
+  windowsTaskDefinition,
 } from './fixtures'
 
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
@@ -624,6 +625,70 @@ describe('instrumentTaskDefinition', () => {
       const {warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
       expect(warnings).toContainEqual(expect.stringContaining('health check'))
+    })
+  })
+
+  describe('windows tasks', () => {
+    test('runs the Windows build of the Agent image', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.image).toBe(`${AGENT_IMAGE}-servercore`)
+    })
+
+    test('gives the Agent the working directory its Windows image leaves unset', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.workingDirectory).toBe('C:\\')
+    })
+
+    test('adds no health check, since the Agent probe only ships in the Linux image', () => {
+      const {taskDefinition, warnings} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)).not.toHaveProperty('healthCheck')
+      expect(warnings).toContainEqual(expect.stringContaining('without a health check'))
+    })
+
+    test('still runs an explicitly requested image', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        agentImage: 'my-registry/agent:7.60.0-servercore',
+      })
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.image).toBe('my-registry/agent:7.60.0-servercore')
+    })
+
+    test('instruments the application containers as it would on Linux', () => {
+      const {taskDefinition} = instrumentTaskDefinition(windowsTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        service: 'payments',
+      })
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).toHaveProperty('DD_SERVICE', 'payments')
+      expect(app?.dockerLabels).toStrictEqual({'com.datadoghq.tags.service': 'payments'})
+    })
+
+    test('re-instrumenting produces an identical task definition', () => {
+      const first = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+      const described = asDescribed(first.taskDefinition, {
+        runtimePlatform: {operatingSystemFamily: 'WINDOWS_SERVER_2022_CORE', cpuArchitecture: 'X86_64'},
+      })
+
+      const second = instrumentTaskDefinition(described, MOCK_SETTINGS)
+
+      expect(second.taskDefinition).toStrictEqual(first.taskDefinition)
+    })
+
+    test.each<[string, RuntimePlatform | undefined]>([
+      ['LINUX', {operatingSystemFamily: 'LINUX', cpuArchitecture: 'X86_64'}],
+      ['no runtime platform', undefined],
+    ])('builds the Linux Agent for a task declaring %s', (_, runtimePlatform) => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition({runtimePlatform}), MOCK_SETTINGS)
+
+      const agent = agentContainerOf(taskDefinition.containerDefinitions)
+      expect(agent?.image).toBe(AGENT_IMAGE)
+      expect(agent?.healthCheck).toBeDefined()
+      expect(agent).not.toHaveProperty('workingDirectory')
     })
   })
 
