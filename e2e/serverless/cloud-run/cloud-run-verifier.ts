@@ -48,7 +48,7 @@ interface CloudRunService {
 
 const SIDECAR_NAME = 'datadog-sidecar'
 const SHARED_VOLUME_NAME = 'shared-volume'
-const TRACER_COPY_CONTAINER_NAME = 'datadog-tracer-copy'
+const TRACER_COPY_CONTAINER_NAME = 'datadog-tracer'
 const TRACER_MOUNT_PATH = '/datadog-lib'
 const TRACER_READINESS_PORT = 18999
 const TRACER_VOLUME_NAME = 'datadog-tracer'
