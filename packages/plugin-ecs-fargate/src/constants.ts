@@ -13,14 +13,13 @@ export const LAUNCH_TYPE_FARGATE = 'FARGATE'
 
 /**
  * Fargate tasks only support the `awsvpc` network mode, which puts every container in the task into
- * a single network namespace. That is what makes `127.0.0.1` a valid way for an application
- * container to reach the Agent sidecar.
+ * a single network namespace
  */
 export const AWSVPC_NETWORK_MODE = 'awsvpc'
 
 /**
- * ECS spells the Windows operating system families `WINDOWS_SERVER_2019_CORE`,
- * `WINDOWS_SERVER_2022_FULL`, and so on, so they are matched by prefix. Anything else, `LINUX` and
+ * ECS spells the Windows operating system families with the `WINDOWS_SERVER` prefix (e.g.
+ * `WINDOWS_SERVER_2019_CORE`, `WINDOWS_SERVER_2022_FULL`) Anything else, `LINUX` and
  * declaring no family at all included, runs Linux.
  */
 export const WINDOWS_OS_FAMILY_PREFIX = 'WINDOWS_SERVER'
@@ -29,8 +28,7 @@ export const WINDOWS_OS_FAMILY_PREFIX = 'WINDOWS_SERVER'
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
 
 /**
- * The tag suffix for the Windows build of the Agent image. Datadog publishes it as a manifest list
- * covering Windows Server 2019, 2022, and 2025, so ECS pulls the one matching the task's platform.
+ * The tag suffix for the Windows build of the Agent image
  */
 export const WINDOWS_AGENT_IMAGE_SUFFIX = '-servercore'
 

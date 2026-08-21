@@ -119,8 +119,6 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
    * A task definition that cannot be instrumented does not stop the others: a run over several of
    * them reports every problem rather than the first one.
    *
-   * @param deployed whether a named ECS service is pointed at the revision, which is otherwise left
-   * to the user.
    * @returns the revision the services running the family should be pointed at, or `undefined` if
    * the task definition could not be instrumented.
    */

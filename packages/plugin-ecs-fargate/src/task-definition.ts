@@ -128,8 +128,7 @@ const mergeManaged = <T>(
  * The unified service tags, which every container in the task carries so that the telemetry the
  * tracers and the Agent send line up.
  *
- * An explicit `--service` is authoritative. The family the task definition is named after is only a
- * fallback, since a container that sets `DD_SERVICE` itself knows better than a name we guessed.
+ * An explicit `--service` takes precedence. Otherwise derived from the family the task definition is named after
  */
 const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
   const managed: Record<string, string> = {}
@@ -158,14 +157,8 @@ const getServiceTagEnvVars = (settings: InstrumentSettings, family?: string): Ma
 
 /**
  * The unified service tags as Docker labels, which the application containers carry so that the
- * metrics the Agent collects about them are tagged like the telemetry their tracers send.
- *
- * Only the three tags have labels: `DD_TAGS` and the log level have no equivalent, since the Agent
- * applies its own global tags to what it collects.
- *
- * Authority follows the environment variables: an explicit `--service` is the command's to set,
- * while the family the task definition is named after is only a fallback, since a container that
- * labels itself knows better than a name we guessed.
+ * metrics the Agent collects about them are tagged like the telemetry their tracers send. As with
+ * the environment variables, an explicit `--service` overrides, while the family is a fallback.
  */
 const getUstDockerLabels = (settings: InstrumentSettings, family?: string): ManagedValues => {
   const managed: Record<string, string> = {}
@@ -259,12 +252,8 @@ const toEnvironment = (values: ManagedValues, existing?: KeyValuePair[]): KeyVal
 }
 
 /**
- * The Docker labels to give a container: what the command writes, merged into what the container
- * already carries.
- *
- * Absent when there is nothing to write and the container carried none, so that a task definition
- * without labels does not gain an empty map. `isUpToDate` compares structurally, so an empty map
- * where there was previously nothing would read as a change and register a revision.
+ * The Docker labels to give a container: what the command writes, merged into what it already
+ * carries. Absent when empty, so `isUpToDate` does not read a new empty map as a change.
  */
 const toDockerLabels = (
   values: ManagedValues,
@@ -288,11 +277,7 @@ const isWindowsTask = (taskDefinition: TaskDefinition): boolean =>
   taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
 
 /**
- * The Agent image to run: the one the user asked for, or the default build for the task's platform.
- *
- * An explicit `--agent-image` is used verbatim on either platform, since pinning a version or
- * pointing at a mirrored registry is the user's call. Only the default varies, because only then is
- * the image ours to choose.
+ * The Agent image to run; either the one specified by the user, or the default build for the task's platform.
  */
 const agentImage = (settings: InstrumentSettings, windows: boolean): string =>
   settings.agentImage ?? (windows ? `${AGENT_IMAGE}${WINDOWS_AGENT_IMAGE_SUFFIX}` : AGENT_IMAGE)
@@ -313,17 +298,9 @@ type AgentContainerContext = {
 }
 
 /**
- * Builds the Datadog Agent sidecar container definition.
- *
- * `existing` is the Agent container already present on the task definition, if any. Environment
- * variables and secrets are merged by name, so additions the user made by hand survive
- * re-instrumentation and a second run produces an identical container rather than accumulating
- * duplicates. Where the command has to take ownership of a field the user had already set, it says
- * so through a warning rather than changing it silently.
- *
- * No port mappings are declared. Every container in an `awsvpc` task shares a network namespace, so
- * the Agent is already reachable on `127.0.0.1` without one; a mapping would only publish DogStatsD
- * and the trace intake on the task's network interface.
+ * Builds the Datadog Agent sidecar container definition, merging environment variables and secrets
+ * into those of `existing`, the Agent container already on the task definition. Fields it must own
+ * but that the user had already set are reported as warnings rather than changed silently.
  */
 const buildAgentContainer = ({
   settings,
@@ -395,11 +372,8 @@ const buildAgentContainer = ({
 }
 
 /**
- * The log configuration to give the Agent sidecar, borrowed from an application container.
- *
- * Only `awslogs` is reused: it names a log group the execution role can already write to, and adds
- * the container name to the stream on its own, so it needs no adjusting. Other drivers route
- * through a container that may not accept the Agent's logs.
+ * The log configuration to give the Agent sidecar: the first `awslogs` one found on an application
+ * container, whose log group the execution role can already write to.
  */
 const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfiguration | undefined =>
   containers.find(
@@ -519,11 +493,8 @@ const withoutCliVersionTag = (input: RegisterTaskDefinitionCommandInput): Regist
 })
 
 /**
- * Whether the task definition already matches what instrumentation would register.
- *
- * The CLI version tag is left out of the comparison, so upgrading datadog-ci does not on its own
- * produce a revision that services then have to be redeployed onto. The tag still rides along on
- * revisions registered for other reasons, recording the version that produced each one.
+ * Whether the task definition already matches what instrumentation would register, ignoring the
+ * CLI version tag so that upgrading datadog-ci alone does not produce a new revision.
  */
 export const isUpToDate = (
   original: RegisterTaskDefinitionCommandInput,
@@ -540,11 +511,8 @@ const READ_ONLY_FIELDS: ReadonlySet<keyof TaskDefinition> = new Set<keyof TaskDe
 
 /**
  * Drops the fields `DescribeTaskDefinition` returns but `RegisterTaskDefinition` rejects, so a
- * described task definition can be registered as a new revision.
- *
- * Driven off `READ_ONLY_TASK_DEFINITION_FIELDS` rather than a hand-written destructure, so the list
- * has one definition. `family` and `containerDefinitions` are restated because the register input
- * requires the keys to be present even when their values are undefined.
+ * described task definition can be registered as a new revision. `family` and
+ * `containerDefinitions` are restated because the register input requires those keys to be present.
  */
 export const stripReadOnlyFields = (taskDefinition: TaskDefinition): RegisterTaskDefinitionCommandInput => {
   const registerable = Object.fromEntries(

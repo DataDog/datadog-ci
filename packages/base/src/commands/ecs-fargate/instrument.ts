@@ -39,6 +39,49 @@ export type EcsFargateConfigOptions = Partial<{
   llmobs: string
 }>
 
+/**
+ * Derive the cluster from an ECS service ARN
+ */
+const clusterFromServiceArn = (service: string): string | undefined => {
+  if (!service.startsWith('arn:')) {
+    return undefined
+  }
+
+  const segments = service.split('/')
+
+  return segments.length === 3 ? segments[1] : undefined
+}
+
+/**
+ * The cluster the services to update run in, derived from `--cluster` or from the service ARNs naming them.
+ * Conflicting Clusters are rejected
+ */
+const resolveCluster = (cluster: string | undefined, services: string[]): [string | undefined, string[]] => {
+  const named = [
+    ...new Set(services.map(clusterFromServiceArn).filter((value): value is string => value !== undefined)),
+  ]
+
+  if (cluster) {
+    const conflicting = named.filter((value) => value !== cluster)
+
+    return [
+      cluster,
+      conflicting.length > 0
+        ? [`--cluster ${cluster} is not the cluster the service ARNs name (${conflicting.join(', ')}).`]
+        : [],
+    ]
+  }
+
+  if (named.length > 1) {
+    return [
+      undefined,
+      [`The service ARNs name several clusters (${named.join(', ')}), and a run updates services in one cluster.`],
+    ]
+  }
+
+  return [named[0], []]
+}
+
 export class EcsFargateInstrumentCommand extends BaseCommand {
   public static paths = [['ecs-fargate', 'instrument']]
 
@@ -67,7 +110,7 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   })
   private cluster = Option.String('--cluster', {
     description:
-      'The ECS cluster the services named by `--ecs-service` run in. Omit it for the `default` cluster of the region.',
+      'The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region.',
   })
   private apiKeySecretArn = Option.String('--api-key-secret-arn,--apiKeySecretArn', {
     description: `The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text`,
@@ -136,12 +179,6 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   /**
    * The configuration to instrument with, along with everything wrong with it. The caller reports
    * the problems, so that a run with several mistakes in it names them all at once.
-   *
-   * An argument the user typed wins over the configuration file, so that a checked-in
-   * `datadog-ci.json` can be overridden per run rather than silently deciding which region gets a
-   * new task definition revision. Options left off the command line are absent rather than carrying
-   * a default, which is what lets the file fill them in; the defaults are applied where they are
-   * used.
    */
   public async ensureConfig(): Promise<[EcsFargateConfigOptions, string[]]> {
     const flags: EcsFargateConfigOptions = {
@@ -196,7 +233,10 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       errors.push('--cluster names the cluster of the services to update, so it only applies with --ecs-service.')
     }
 
-    return [config, errors]
+    const [cluster, clusterErrors] = resolveCluster(config.cluster, config.ecsServices ?? [])
+    errors.push(...clusterErrors)
+
+    return [{...config, cluster}, errors]
   }
 
   public async execute(): Promise<number | void> {

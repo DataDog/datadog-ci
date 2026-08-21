@@ -42,7 +42,7 @@ If you pass `--agent-image` for a Windows task, it is used exactly as given, so 
 
 #### Deploying the new revision
 
-Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
+Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. A service named by its full ARN already says which cluster it runs in, so `--cluster` can be left off; passing one that the ARN contradicts is an error rather than a silent choice between them. A run updates services in a single cluster, so ARNs naming more than one are reported too. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
 
 Services are only updated once every task definition in the run is instrumented, so a run that fails part way through does not leave half of your services on a new revision. Tasks you start yourself with `RunTask`, and services you do not name, keep running the revision they were on.
 
@@ -76,7 +76,7 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--region` | `-r` | The AWS region the task definition lives in |  |
 | `--profile` |  | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
 | `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly instrumented revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
-| `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Omit it for the `default` cluster of the region. |  |
+| `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
 | `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
 | `--service` |  | The value for the service tag. Use this to group related tasks belonging to similar workloads. For example, `my-service`. If not provided, the task definition family is used. |  |

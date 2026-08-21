@@ -50,6 +50,7 @@ import {
   SERVICE_TAG,
   fargateService,
   fargateTaskDefinition,
+  serviceArn,
   taskDefinitionArn,
 } from './fixtures'
 
@@ -435,6 +436,74 @@ describe('ecs-fargate instrument', () => {
       expect(code).toBe(0)
       expect(ecsMock.commandCalls(DescribeServicesCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
       expect(ecsMock.commandCalls(UpdateServiceCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
+    })
+
+    test('takes the cluster from the service ARN when it is not given one', async () => {
+      ecsMock.on(DescribeServicesCommand).resolves({services: [fargateService({serviceName: serviceArn()})]})
+
+      const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--ecs-service', serviceArn()])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(DescribeServicesCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
+      expect(ecsMock.commandCalls(UpdateServiceCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
+    })
+
+    test('keeps the cluster it is given when the service ARN agrees', async () => {
+      ecsMock.on(DescribeServicesCommand).resolves({services: [fargateService({serviceName: serviceArn()})]})
+
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        serviceArn(),
+        '--cluster',
+        MOCK_CLUSTER,
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)[0].args[0].input).toMatchObject({cluster: MOCK_CLUSTER})
+    })
+
+    test('reports a cluster that the service ARN contradicts', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        serviceArn(MOCK_SERVICE, 'other-cluster'),
+        '--cluster',
+        MOCK_CLUSTER,
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(
+        `--cluster ${MOCK_CLUSTER} is not the cluster the service ARNs name (other-cluster).`
+      )
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('reports service ARNs that name different clusters', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        serviceArn(MOCK_SERVICE, 'one'),
+        '--ecs-service',
+        serviceArn('my-worker-service', 'two'),
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('The service ARNs name several clusters (one, two)')
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('leaves the cluster alone for a short-format service ARN', async () => {
+      const shortFormat = `arn:aws:ecs:${MOCK_REGION}:123456789012:service/${MOCK_SERVICE}`
+      ecsMock.on(DescribeServicesCommand).resolves({services: [fargateService({serviceName: shortFormat})]})
+
+      const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--ecs-service', shortFormat])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)[0].args[0].input).toMatchObject({cluster: undefined})
     })
 
     test('points each service at the revision of the family it runs', async () => {

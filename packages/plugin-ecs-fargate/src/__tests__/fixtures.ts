@@ -11,6 +11,10 @@ export const MOCK_SERVICE = 'my-app-service'
 export const taskDefinitionArn = (family = MOCK_FAMILY, revision = 1): string =>
   `arn:aws:ecs:${MOCK_REGION}:123456789012:task-definition/${family}:${revision}`
 
+/** A service ARN in the long format, which names the cluster the service runs in. */
+export const serviceArn = (service = MOCK_SERVICE, cluster = MOCK_CLUSTER): string =>
+  `arn:aws:ecs:${MOCK_REGION}:123456789012:service/${cluster}/${service}`
+
 export const CLI_VERSION_TAG: Tag = {key: 'dd_sls_ci', value: 'vXXXX'}
 /** The service tag a run that was not given a `--service` writes, from the task definition family. */
 export const SERVICE_TAG: Tag = {key: 'service', value: MOCK_FAMILY}
@@ -82,7 +86,7 @@ export const fargateService = ({
   ...overrides
 }: Partial<Service> = {}): Service => ({
   serviceName,
-  serviceArn: `arn:aws:ecs:${MOCK_REGION}:123456789012:service/${MOCK_CLUSTER}/${serviceName}`,
+  serviceArn: serviceArn(serviceName),
   clusterArn: `arn:aws:ecs:${MOCK_REGION}:123456789012:cluster/${MOCK_CLUSTER}`,
   taskDefinition,
   status: 'ACTIVE',
