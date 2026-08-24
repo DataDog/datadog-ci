@@ -21,7 +21,7 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {LAMBDA_LAYER_CATALOG} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-catalog'
+import {LAMBDA_LAYER_VERSIONS} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-versions'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {input as promptInput} from '@inquirer/prompts'
@@ -29,8 +29,7 @@ import {CredentialsProviderError} from '@smithy/property-provider'
 
 import {
   ARM64_ARCHITECTURE,
-  ARM_LAYERS,
-  ARM_LAYER_SUFFIX,
+  ARM_LAYER_LOOKUP,
   AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -144,14 +143,14 @@ export const collectFunctionsByRegion = (
  */
 export const getLatestLayerVersion = (layer: LayerKey): number => {
   if (layer === 'extension') {
-    return LAMBDA_LAYER_CATALOG.versions[layer]
+    return LAMBDA_LAYER_VERSIONS[layer]
   }
   const runtimeType = RUNTIME_LOOKUP[layer]
   if (runtimeType === undefined || runtimeType === RuntimeType.CUSTOM) {
     throw new Error(`No layer version found for ${runtimeType}`)
   }
 
-  return LAMBDA_LAYER_CATALOG.versions[runtimeType]
+  return LAMBDA_LAYER_VERSIONS[runtimeType]
 }
 
 export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
@@ -292,13 +291,10 @@ export const getLayerArn = (
   region: string,
   settings?: InstrumentationSettings
 ): string => {
-  let layerName = LAYER_LOOKUP[layer]
-  if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
-    layerName += ARM_LAYER_SUFFIX
-  }
-  if (settings?.lambdaFips) {
-    layerName += '-FIPS'
-  }
+  const selectedLayerName = config.Architectures?.includes(ARM64_ARCHITECTURE)
+    ? ARM_LAYER_LOOKUP[layer]
+    : LAYER_LOOKUP[layer]
+  const layerName = settings?.lambdaFips ? `${selectedLayerName}-FIPS` : selectedLayerName
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
   const isGovCloud = region.startsWith('us-gov')
   if (isGovCloud) {

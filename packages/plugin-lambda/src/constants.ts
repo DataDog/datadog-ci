@@ -1,5 +1,3 @@
-import type {Runtime} from '@aws-sdk/client-lambda'
-
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_TAGS_ENV_VAR,
@@ -9,49 +7,18 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {LAMBDA_LAYER_CATALOG} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-catalog'
 import {AdaptiveRetryStrategy, ConfiguredRetryStrategy} from '@smithy/util-retry'
+
+import {EXTENSION_LAYER_KEY, LAYER_LOOKUP} from './lambda-layer-runtimes'
 
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 
-export const EXTENSION_LAYER_KEY = 'extension'
-
-type LayerKey = {
-  [RuntimeKey in keyof typeof LAMBDA_LAYER_CATALOG.runtimes]: 'layers' extends keyof (typeof LAMBDA_LAYER_CATALOG.runtimes)[RuntimeKey]
-    ? RuntimeKey
-    : never
-}[keyof typeof LAMBDA_LAYER_CATALOG.runtimes]
-
-export const LAYER_LOOKUP = Object.fromEntries(
-  Object.entries(LAMBDA_LAYER_CATALOG.runtimes).flatMap(([runtime, config]) =>
-    'layers' in config ? [[runtime, config.layers.x86_64]] : []
-  )
-) as Record<LayerKey, string>
+export {ARM_LAYER_LOOKUP, EXTENSION_LAYER_KEY, LAYER_LOOKUP, RUNTIME_LOOKUP, RuntimeType} from './lambda-layer-runtimes'
+export type {LayerKey} from './lambda-layer-runtimes'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = LAYER_LOOKUP[EXTENSION_LAYER_KEY]
 
-export enum RuntimeType {
-  DOTNET = 'dotnet',
-  CUSTOM = 'custom',
-  JAVA = 'java',
-  NODE = 'node',
-  PYTHON = 'python',
-  RUBY = 'ruby',
-}
-
-// Lookup table for runtimes that are currently supported by the CLI
-export const RUNTIME_LOOKUP = Object.fromEntries(
-  Object.entries(LAMBDA_LAYER_CATALOG.runtimes).flatMap(([runtime, config]) =>
-    'family' in config ? [[runtime, config.family]] : []
-  )
-) as Partial<Record<Runtime, RuntimeType>>
-
-export type {LayerKey}
-export const ARM_LAYERS = Object.entries(LAMBDA_LAYER_CATALOG.runtimes).flatMap(([runtime, config]) =>
-  'layers' in config && config.layers.arm64 !== config.layers.x86_64 ? [runtime] : []
-) as LayerKey[]
 export const ARM64_ARCHITECTURE = 'arm64'
-export const ARM_LAYER_SUFFIX = '-ARM'
 
 export const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
 export const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
