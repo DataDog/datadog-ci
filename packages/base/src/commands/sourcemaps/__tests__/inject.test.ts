@@ -120,6 +120,81 @@ describe('sourcemaps inject', () => {
     expect(context.stdout.toString()).toContain('Would inject debug IDs into 1 file(s)')
   })
 
+  test('skips a sourcemap with no mappings without modifying either file', async () => {
+    fs.writeFileSync(
+      sourcemapPath,
+      JSON.stringify({version: 3, sources: [], sourcesContent: [], names: [], mappings: ''})
+    )
+    const originalJs = fs.readFileSync(jsPath, 'utf-8')
+    const originalSourcemap = fs.readFileSync(sourcemapPath, 'utf-8')
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
+    expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe(originalSourcemap)
+    expect(context.stdout.toString()).toContain(`Skipped ${sourcemapPath}: sourcemap contains no mappings.`)
+    expect(context.stdout.toString()).toContain('skipped 1 file(s); failed 0 file(s)')
+  })
+
+  test('skips an empty sourcemap during dry-run without modifying either file', async () => {
+    fs.writeFileSync(sourcemapPath, JSON.stringify({version: 3, sources: [], names: [], mappings: ''}))
+    const originalJs = fs.readFileSync(jsPath, 'utf-8')
+    const originalSourcemap = fs.readFileSync(sourcemapPath, 'utf-8')
+
+    const {context, code} = await runCLI([directory, '--dry-run'])
+
+    expect(code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
+    expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe(originalSourcemap)
+    expect(context.stdout.toString()).toContain('skipped 1 file(s); failed 0 file(s)')
+  })
+
+  test('skips an empty sourcemap when its bundle already contains a debug ID', async () => {
+    const debugId = '00000000-0000-4000-8000-000000000000'
+    fs.writeFileSync(jsPath, `window.context={"ddDebugId":"${debugId}"};\n//# sourceMappingURL=bundle.js.map`)
+    fs.writeFileSync(sourcemapPath, JSON.stringify({version: 3, sources: [], names: [], mappings: ''}))
+    const originalJs = fs.readFileSync(jsPath, 'utf-8')
+    const originalSourcemap = fs.readFileSync(sourcemapPath, 'utf-8')
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
+    expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe(originalSourcemap)
+    expect(context.stdout.toString()).toContain('skipped 1 file(s); failed 0 file(s)')
+  })
+
+  test('injects mapped bundles and skips empty sourcemaps in the same batch', async () => {
+    fs.writeFileSync(sourcemapPath, JSON.stringify({version: 3, sources: [], names: [], mappings: ''}))
+    const emptyJs = fs.readFileSync(jsPath, 'utf-8')
+    const mappedJsPath = upath.join(directory, 'mapped.js')
+    fs.writeFileSync(mappedJsPath, 'console.log("mapped");\n//# sourceMappingURL=mapped.js.map')
+    fs.writeFileSync(
+      `${mappedJsPath}.map`,
+      JSON.stringify({version: 3, sources: ['mapped.ts'], sourcesContent: ['console.log("mapped");'], mappings: 'AAAA'})
+    )
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(emptyJs)
+    expect(fs.readFileSync(mappedJsPath, 'utf-8')).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(context.stdout.toString()).toContain(
+      'Injected debug IDs into 1 file(s); skipped 1 file(s); failed 0 file(s)'
+    )
+  })
+
+  test('does not treat a sourcemap with a missing mappings field as empty', async () => {
+    fs.writeFileSync(sourcemapPath, JSON.stringify({version: 3, sources: [], names: []}))
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(1)
+    expect(context.stdout.toString()).toContain('WARN: Failed to inject debug ID')
+    expect(context.stdout.toString()).not.toContain('sourcemap contains no mappings')
+  })
+
   test('validates malformed sourcemaps in dry-run mode without modifying files', async () => {
     const originalJs = fs.readFileSync(jsPath, 'utf-8')
     fs.writeFileSync(sourcemapPath, 'not valid JSON')

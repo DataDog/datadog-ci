@@ -15,7 +15,7 @@ export const renderDiscoveryWarning = (message: string) => `WARN: ${message}\n`
 export const renderNoSourcemapsFound = (basePath: string) => `No JavaScript sourcemaps found in ${basePath}.\n`
 
 export const renderInjectionSummary = (result: InjectionResult, dryRun: boolean) =>
-  `${dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s) with existing debug IDs; failed ${result.failed} file(s).\n`
+  `${dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s); failed ${result.failed} file(s).\n`
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}

@@ -67,6 +67,9 @@ const parseSourcemap = (sourcemapContent: string): ParsedSourcemap => {
   return parsed as ParsedSourcemap
 }
 
+const isEmptySourcemap = (sourcemap: ParsedSourcemap): boolean =>
+  sourcemap.sections === undefined && sourcemap.mappings === ''
+
 /** Adds extracted IDs to payloads and reports whether at least one was found. */
 export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
   let hasAnyDebugId = false
@@ -253,10 +256,25 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
   const result: InjectionResult = {failed: 0, injected: 0, skipped: 0}
 
   for (const payload of payloads) {
+    let sourcemapContent: string
+    try {
+      sourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
+      const sourcemap = parseSourcemap(sourcemapContent)
+      if (isEmptySourcemap(sourcemap)) {
+        result.skipped++
+        stdout.write(`Skipped ${payload.sourcemapPath}: sourcemap contains no mappings.\n`)
+        continue
+      }
+    } catch (error) {
+      result.failed++
+      const action = payload.debugId === undefined ? 'inject' : 'record'
+      stdout.write(`WARN: Failed to ${action} debug ID in ${payload.sourcemapPath}: ${error}\n`)
+      continue
+    }
+
     if (payload.debugId !== undefined) {
       try {
-        const existingSourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
-        const sourcemap = parseSourcemap(existingSourcemapContent)
+        const sourcemap = parseSourcemap(sourcemapContent)
         if (sourcemap.debug_id === payload.debugId) {
           result.skipped++
           continue
@@ -280,10 +298,8 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
     }
 
     let jsContent: string
-    let sourcemapContent: string
     try {
       jsContent = fs.readFileSync(payload.minifiedFilePath, 'utf-8')
-      sourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
     } catch (error) {
       result.failed++
       stdout.write(`WARN: Failed to read ${payload.minifiedFilePath} or its sourcemap: ${error}\n`)
