@@ -70,6 +70,12 @@ const parseSourcemap = (sourcemapContent: string): ParsedSourcemap => {
 const isEmptySourcemap = (sourcemap: ParsedSourcemap): boolean =>
   sourcemap.sections === undefined && sourcemap.mappings === ''
 
+const assertSourcemapSupportsInjection = (sourcemap: ParsedSourcemap): void => {
+  if (sourcemap.sections !== undefined) {
+    throw new Error('Indexed sourcemaps with "sections" are not supported by sourcemaps inject')
+  }
+}
+
 /** Adds extracted IDs to payloads and reports whether at least one was found. */
 export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
   let hasAnyDebugId = false
@@ -137,9 +143,9 @@ const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
 // SourceMapSource starts with the original generated code and its map. ReplaceSource
 // applies insertions directly to that mapped source, preserving existing mappings
 // while shifting their generated positions.
-export const injectDebugIdSnippet = (
+const injectDebugIdSnippetIntoSourcemap = (
   jsContent: string,
-  sourcemapContent: string,
+  originalSourcemap: ParsedSourcemap,
   debugId: string
 ): {js: string; sourcemap: string} => {
   const hashbangMatch = jsContent.match(HASHBANG_REGEX)
@@ -148,10 +154,7 @@ export const injectDebugIdSnippet = (
 
   const useDirectives = extractLeadingUseDirectives(sourceWithoutHashbang)
 
-  const originalSourcemap = parseSourcemap(sourcemapContent)
-  if (originalSourcemap.sections !== undefined) {
-    throw new Error('Indexed sourcemaps with "sections" are not supported by sourcemaps inject')
-  }
+  assertSourcemapSupportsInjection(originalSourcemap)
   const source = new SourceMapSource(jsContent, PRE_INJECTION_SOURCE_NAME, originalSourcemap)
   const injected = new ReplaceSource(source)
   injected.insert(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
@@ -180,6 +183,13 @@ export const injectDebugIdSnippet = (
     sourcemap: JSON.stringify(combinedMap),
   }
 }
+
+export const injectDebugIdSnippet = (
+  jsContent: string,
+  sourcemapContent: string,
+  debugId: string
+): {js: string; sourcemap: string} =>
+  injectDebugIdSnippetIntoSourcemap(jsContent, parseSourcemap(sourcemapContent), debugId)
 
 export interface InjectionResult {
   failed: number
@@ -256,14 +266,16 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
   const result: InjectionResult = {failed: 0, injected: 0, skipped: 0}
 
   for (const payload of payloads) {
-    let sourcemapContent: string
+    let sourcemap: ParsedSourcemap
     try {
-      sourcemapContent = fs.readFileSync(payload.sourcemapPath, 'utf-8')
-      const sourcemap = parseSourcemap(sourcemapContent)
+      sourcemap = parseSourcemap(fs.readFileSync(payload.sourcemapPath, 'utf-8'))
       if (isEmptySourcemap(sourcemap)) {
         result.skipped++
         stdout.write(`Skipped ${payload.sourcemapPath}: sourcemap contains no mappings.\n`)
         continue
+      }
+      if (payload.debugId === undefined) {
+        assertSourcemapSupportsInjection(sourcemap)
       }
     } catch (error) {
       result.failed++
@@ -274,7 +286,6 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
 
     if (payload.debugId !== undefined) {
       try {
-        const sourcemap = parseSourcemap(sourcemapContent)
         if (sourcemap.debug_id === payload.debugId) {
           result.skipped++
           continue
@@ -310,7 +321,7 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
     stdout.write(`Generated debug ID for ${payload.minifiedFilePath}: ${debugId}\n`)
 
     try {
-      const {js, sourcemap} = injectDebugIdSnippet(jsContent, sourcemapContent, debugId)
+      const {js, sourcemap: updatedSourcemap} = injectDebugIdSnippetIntoSourcemap(jsContent, sourcemap, debugId)
       if (dryRun) {
         payload.debugId = debugId
         result.injected++
@@ -320,7 +331,7 @@ export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, st
 
       replaceArtifacts([
         {content: js, filePath: payload.minifiedFilePath},
-        {content: sourcemap, filePath: payload.sourcemapPath},
+        {content: updatedSourcemap, filePath: payload.sourcemapPath},
       ])
       payload.debugId = debugId
       result.injected++

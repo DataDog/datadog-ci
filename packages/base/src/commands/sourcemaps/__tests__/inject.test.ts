@@ -56,6 +56,15 @@ describe('sourcemaps inject', () => {
     expect(context.stdout.toString()).toContain('failed 0 file(s)')
   })
 
+  test('reads each sourcemap only once during injection', async () => {
+    const readFileSpy = jest.spyOn(fs, 'readFileSync')
+
+    expect((await runCLI([directory])).code).toBe(0)
+
+    const sourcemapReads = readFileSpy.mock.calls.filter(([filePath]) => filePath === sourcemapPath)
+    expect(sourcemapReads).toHaveLength(1)
+  })
+
   test('records an existing build-plugin debug ID when the sourcemap has no debug_id', async () => {
     expect((await runCLI([directory])).code).toBe(0)
     const injectedJs = fs.readFileSync(jsPath, 'utf-8')
@@ -228,6 +237,31 @@ describe('sourcemaps inject', () => {
     expect(context.stdout.toString()).toContain(
       'Indexed sourcemaps with "sections" are not supported by sourcemaps inject'
     )
+    expect(context.stdout.toString()).not.toContain('Generated debug ID')
+  })
+
+  test('records an existing bundle debug ID in indexed sourcemap metadata', async () => {
+    const debugId = '00000000-0000-4000-8000-000000000000'
+    fs.writeFileSync(jsPath, `window.context={"ddDebugId":"${debugId}"};\n//# sourceMappingURL=bundle.js.map`)
+    fs.writeFileSync(
+      sourcemapPath,
+      JSON.stringify({
+        version: 3,
+        sections: [
+          {
+            offset: {line: 0, column: 0},
+            map: {version: 3, sources: ['original.js'], names: [], mappings: 'AAAA'},
+          },
+        ],
+      })
+    )
+
+    const {context, code} = await runCLI([directory])
+
+    expect(code).toBe(0)
+    const updatedSourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {debug_id?: string}
+    expect(updatedSourcemap.debug_id).toBe(debugId)
+    expect(context.stdout.toString()).toContain(`Recorded existing debug ID in ${sourcemapPath}: ${debugId}`)
   })
 
   test('does not follow sourcemap references outside the requested directory', async () => {
