@@ -135,7 +135,7 @@ export const generateDebugId = (jsContent: string): string => {
   ].join('-')
 }
 
-const PRE_INJECTION_SOURCE_NAME = 'pre-injection.js'
+const PRE_INJECTION_SOURCE_NAME = 'dd-pre-injection.js'
 
 // The snippet is inserted as early as possible (after an optional hashbang and/or
 // leading "use ...;" directives, which are kept first since they must remain the first
