@@ -48,7 +48,7 @@ describe('instrument', () => {
       const functionConfiguration: LFunctionConfiguration = {
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Handler: 'index.handler',
-        Runtime: 'nodejs18.x',
+        Runtime: 'nodejs20.x',
       }
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
