@@ -45,7 +45,6 @@ import {
   isMissingAnyDatadogApiKeyEnvVar,
   getAWSCredentials,
   isMissingDatadogEnvVars,
-  isSupportedRuntime,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
   maskConfig,
@@ -558,12 +557,6 @@ describe('commons', () => {
       expect(getLayerNameWithVersion(layerArn)).toBe(undefined)
     })
   })
-  describe('isSupportedRuntime', () => {
-    test('supports the exact Java 8 runtime', () => {
-      expect(isSupportedRuntime('java8')).toBe(true)
-    })
-  })
-
   describe('getRegion', () => {
     test('should return the expected region', () => {
       const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
@@ -764,7 +757,7 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
             Handler: 'index.handler',
-            Runtime: 'nodejs18.x',
+            Runtime: 'nodejs16.x',
           },
         },
         {
