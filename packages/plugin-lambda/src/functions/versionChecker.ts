@@ -1,4 +1,4 @@
-import {RuntimeType} from '../constants'
+import {RuntimeType} from '../lambda-layer-runtimes'
 
 const UNIVERSAL_INSTRUMENTATION_JAVA_EXTENSION_VERSION = 24
 const UNIVERSAL_INSTRUMENTATION_JAVA_TRACER_VERSION = 5

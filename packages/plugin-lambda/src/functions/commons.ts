@@ -1,5 +1,5 @@
-import type {LayerKey} from '../constants'
 import type {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
+import type {LayerKey} from '../lambda-layer-runtimes'
 import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import type {
   LambdaClient,
@@ -29,19 +29,15 @@ import {CredentialsProviderError} from '@smithy/property-provider'
 
 import {
   ARM64_ARCHITECTURE,
-  ARM_LAYERS,
-  ARM_LAYER_SUFFIX,
   AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
-  LAYER_LOOKUP,
   EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-  RuntimeType,
-  RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
+import {ARM_LAYER_LOOKUP, LAYER_LOOKUP, RUNTIME_LOOKUP, RuntimeType} from '../lambda-layer-runtimes'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
@@ -292,13 +288,10 @@ export const getLayerArn = (
   region: string,
   settings?: InstrumentationSettings
 ): string => {
-  let layerName = LAYER_LOOKUP[layer]
-  if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
-    layerName += ARM_LAYER_SUFFIX
-  }
-  if (settings?.lambdaFips) {
-    layerName += '-FIPS'
-  }
+  const selectedLayerName = config.Architectures?.includes(ARM64_ARCHITECTURE)
+    ? ARM_LAYER_LOOKUP[layer]
+    : LAYER_LOOKUP[layer]
+  const layerName = settings?.lambdaFips ? `${selectedLayerName}-FIPS` : selectedLayerName
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
   const isGovCloud = region.startsWith('us-gov')
   if (isGovCloud) {

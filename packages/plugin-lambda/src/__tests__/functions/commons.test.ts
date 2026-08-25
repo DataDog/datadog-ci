@@ -25,15 +25,11 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
 import {PluginCommand as InstrumentCommand} from '../../commands/instrument'
-import type {LayerKey} from '../../constants'
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  DD_LAMBDA_EXTENSION_LAYER_NAME,
-  EXTENSION_LAYER_KEY,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
-  LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
 } from '../../constants'
 import {
@@ -54,6 +50,8 @@ import {
   maskConfig,
 } from '../../functions/commons'
 import type {FunctionConfiguration} from '../../interfaces'
+import {DD_LAMBDA_EXTENSION_LAYER_NAME, EXTENSION_LAYER_KEY, LAYER_LOOKUP} from '../../lambda-layer-runtimes'
+import type {LayerKey} from '../../lambda-layer-runtimes'
 
 import {
   MOCK_LAMBDA_CONFIG,

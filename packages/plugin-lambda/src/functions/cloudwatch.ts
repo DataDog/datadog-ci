@@ -4,7 +4,7 @@ import type {LambdaClient} from '@aws-sdk/client-lambda'
 import {DeleteRolePolicyCommand, GetRolePolicyCommand, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand} from '@aws-sdk/client-lambda'
 
-import {DD_LAMBDA_EXTENSION_LAYER_NAME} from '../constants'
+import {DD_LAMBDA_EXTENSION_LAYER_NAME} from '../lambda-layer-runtimes'
 
 export const DENY_POLICY_NAME = 'DenyCloudWatchLogs'
 

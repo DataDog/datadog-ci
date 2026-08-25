@@ -1,8 +1,8 @@
-import {RuntimeType} from '../../constants'
 import {
   isExtensionCompatibleWithUniversalInstrumentation,
   isTracerCompatibleWithExtension,
 } from '../../functions/versionChecker'
+import {RuntimeType} from '../../lambda-layer-runtimes'
 
 describe('Test extension and trace version checker', () => {
   test.each`

@@ -1,5 +1,3 @@
-import type {Runtime} from '@aws-sdk/client-lambda'
-
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_TAGS_ENV_VAR,
@@ -13,95 +11,7 @@ import {AdaptiveRetryStrategy, ConfiguredRetryStrategy} from '@smithy/util-retry
 
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 
-export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
-export const EXTENSION_LAYER_KEY = 'extension'
-export const LAYER_LOOKUP = {
-  [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
-  dotnet6: 'dd-trace-dotnet',
-  dotnet8: 'dd-trace-dotnet',
-  dotnet10: 'dd-trace-dotnet',
-  java11: 'dd-trace-java',
-  java17: 'dd-trace-java',
-  java21: 'dd-trace-java',
-  java25: 'dd-trace-java',
-  'java8.al2': 'dd-trace-java',
-  'nodejs16.x': 'Datadog-Node16-x',
-  'nodejs18.x': 'Datadog-Node18-x',
-  'nodejs20.x': 'Datadog-Node20-x',
-  'nodejs22.x': 'Datadog-Node22-x',
-  'nodejs24.x': 'Datadog-Node24-x',
-  'python3.8': 'Datadog-Python38',
-  'python3.9': 'Datadog-Python39',
-  'python3.10': 'Datadog-Python310',
-  'python3.11': 'Datadog-Python311',
-  'python3.12': 'Datadog-Python312',
-  'python3.13': 'Datadog-Python313',
-  'python3.14': 'Datadog-Python314',
-  'ruby3.2': 'Datadog-Ruby3-2',
-  'ruby3.3': 'Datadog-Ruby3-3',
-  'ruby3.4': 'Datadog-Ruby3-4',
-  'ruby4.0': 'Datadog-Ruby4-0',
-} as const
-
-export enum RuntimeType {
-  DOTNET = 'dotnet',
-  CUSTOM = 'custom',
-  JAVA = 'java',
-  NODE = 'node',
-  PYTHON = 'python',
-  RUBY = 'ruby',
-}
-
-// Lookup table for runtimes that are currently supported by the CLI
-export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
-  dotnet6: RuntimeType.DOTNET,
-  dotnet8: RuntimeType.DOTNET,
-  dotnet10: RuntimeType.DOTNET,
-  java11: RuntimeType.JAVA,
-  java17: RuntimeType.JAVA,
-  java21: RuntimeType.JAVA,
-  java25: RuntimeType.JAVA,
-  'java8.al2': RuntimeType.JAVA,
-  'nodejs16.x': RuntimeType.NODE,
-  'nodejs18.x': RuntimeType.NODE,
-  'nodejs20.x': RuntimeType.NODE,
-  'nodejs22.x': RuntimeType.NODE,
-  'nodejs24.x': RuntimeType.NODE,
-  'provided.al2': RuntimeType.CUSTOM,
-  'provided.al2023': RuntimeType.CUSTOM,
-  'python3.8': RuntimeType.PYTHON,
-  'python3.9': RuntimeType.PYTHON,
-  'python3.10': RuntimeType.PYTHON,
-  'python3.11': RuntimeType.PYTHON,
-  'python3.12': RuntimeType.PYTHON,
-  'python3.13': RuntimeType.PYTHON,
-  'python3.14': RuntimeType.PYTHON,
-  'ruby3.2': RuntimeType.RUBY,
-  'ruby3.3': RuntimeType.RUBY,
-  'ruby3.4': RuntimeType.RUBY,
-  'ruby4.0': RuntimeType.RUBY,
-}
-
-export type LayerKey = keyof typeof LAYER_LOOKUP
-export const ARM_LAYERS = [
-  EXTENSION_LAYER_KEY,
-  'dotnet6',
-  'dotnet8',
-  'dotnet10',
-  'python3.8',
-  'python3.9',
-  'python3.10',
-  'python3.11',
-  'python3.12',
-  'python3.13',
-  'python3.14',
-  'ruby3.2',
-  'ruby3.3',
-  'ruby3.4',
-  'ruby4.0',
-]
 export const ARM64_ARCHITECTURE = 'arm64'
-export const ARM_LAYER_SUFFIX = '-ARM'
 
 export const PYTHON_HANDLER_LOCATION = 'datadog_lambda.handler.handler'
 export const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler'
