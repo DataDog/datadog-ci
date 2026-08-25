@@ -1,5 +1,5 @@
-import type {LayerKey} from '../constants'
 import type {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
+import type {LayerKey} from '../lambda-layer-runtimes'
 import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import type {
   LambdaClient,
@@ -25,21 +25,17 @@ import {
 import {
   API_KEY_SECRET_ARN_ENV_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
-  DD_LAMBDA_EXTENSION_LAYER_NAME,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LAYER_LOOKUP,
   LOG_ENABLED_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
-  RuntimeType,
-  RUNTIME_LOOKUP,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
@@ -47,6 +43,7 @@ import {
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
+import {DD_LAMBDA_EXTENSION_LAYER_NAME, LAYER_LOOKUP, RUNTIME_LOOKUP, RuntimeType} from '../lambda-layer-runtimes'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
 import {calculateTagRemoveRequest} from '../tags'
 

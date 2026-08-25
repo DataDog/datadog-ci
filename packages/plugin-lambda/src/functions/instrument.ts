@@ -1,10 +1,10 @@
-import type {LayerKey} from '../constants'
 import type {
   FunctionConfiguration,
   InstrumentationSettings,
   LogGroupConfiguration,
   TagConfiguration,
 } from '../interfaces'
+import type {LayerKey} from '../lambda-layer-runtimes'
 import type {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import type {
   LambdaClient,
@@ -44,27 +44,29 @@ import {
   CORECLR_PROFILER,
   CORECLR_PROFILER_PATH,
   DD_DOTNET_TRACER_HOME,
-  DD_LAMBDA_EXTENSION_LAYER_NAME,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
-  EXTENSION_LAYER_KEY,
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
-  LAYER_LOOKUP,
   LOG_ENABLED_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
   PYTHON_HANDLER_LOCATION,
-  RuntimeType,
-  RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   SERVERLESS_APPSEC_ENABLED_ENV_VAR,
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
+import {
+  DD_LAMBDA_EXTENSION_LAYER_NAME,
+  EXTENSION_LAYER_KEY,
+  LAYER_LOOKUP,
+  RUNTIME_LOOKUP,
+  RuntimeType,
+} from '../lambda-layer-runtimes'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
 import {calculateTagUpdateRequest} from '../tags'
 

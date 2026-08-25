@@ -9,14 +9,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {AdaptiveRetryStrategy, ConfiguredRetryStrategy} from '@smithy/util-retry'
 
-import {EXTENSION_LAYER_KEY, LAYER_LOOKUP} from './lambda-layer-runtimes'
-
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
-
-export {ARM_LAYER_LOOKUP, EXTENSION_LAYER_KEY, LAYER_LOOKUP, RUNTIME_LOOKUP, RuntimeType} from './lambda-layer-runtimes'
-export type {LayerKey} from './lambda-layer-runtimes'
-
-export const DD_LAMBDA_EXTENSION_LAYER_NAME = LAYER_LOOKUP[EXTENSION_LAYER_KEY]
 
 export const ARM64_ARCHITECTURE = 'arm64'
 

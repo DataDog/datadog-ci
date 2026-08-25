@@ -3,9 +3,10 @@
 import type {Runtime} from '@aws-sdk/client-lambda'
 
 export const EXTENSION_LAYER_KEY = 'extension'
+export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 
 export const LAYER_LOOKUP = {
-  [EXTENSION_LAYER_KEY]: 'Datadog-Extension',
+  [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   dotnet6: 'dd-trace-dotnet',
   dotnet8: 'dd-trace-dotnet',
   dotnet10: 'dd-trace-dotnet',
