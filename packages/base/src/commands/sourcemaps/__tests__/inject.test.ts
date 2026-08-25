@@ -1,5 +1,6 @@
 import fs from 'fs'
 import os from 'os'
+import vm from 'vm'
 
 import upath from 'upath'
 
@@ -54,6 +55,26 @@ describe('sourcemaps inject', () => {
     expect(sourcemap.debug_id).toBe(debugId)
     expect(context.stdout.toString()).toContain('Injected debug IDs into 1 file(s)')
     expect(context.stdout.toString()).toContain('failed 0 file(s)')
+  })
+
+  test('preserves semicolonless directives and strict mode through the command', async () => {
+    fs.writeFileSync(
+      jsPath,
+      '"use strict"\n"custom mode"\nglobalThis.strictResult = (function () { return this === undefined })();\n//# sourceMappingURL=bundle.js.map'
+    )
+
+    expect((await runCLI([directory])).code).toBe(0)
+
+    const injectedJs = fs.readFileSync(jsPath, 'utf-8')
+    const snippetIndex = injectedJs.indexOf('DD_SOURCE_CODE_CONTEXT')
+    const context: Record<string, unknown> = {}
+    vm.runInNewContext(injectedJs, context)
+
+    expect(injectedJs.indexOf('"use strict"')).toBeLessThan(snippetIndex)
+    expect(injectedJs.indexOf('"custom mode"')).toBeLessThan(snippetIndex)
+    expect(injectedJs.match(/"use strict"/g)).toHaveLength(1)
+    expect(injectedJs.match(/"custom mode"/g)).toHaveLength(1)
+    expect(context.strictResult).toBe(true)
   })
 
   test('reads each sourcemap only once during injection', async () => {

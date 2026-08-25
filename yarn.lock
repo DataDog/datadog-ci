@@ -1410,6 +1410,7 @@ __metadata:
   resolution: "@datadog/datadog-ci-base@workspace:packages/base"
   dependencies:
     "@antfu/install-pkg": "npm:^1.1.0"
+    "@babel/parser": "npm:^7.29.0"
     "@types/async-retry": "npm:^1.4.8"
     "@types/datadog-metrics": "npm:^0.6.1"
     "@types/debug": "npm:^4.1.12"

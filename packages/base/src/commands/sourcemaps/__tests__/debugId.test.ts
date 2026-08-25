@@ -277,28 +277,30 @@ describe('injectDebugIdSnippet', () => {
     )
   })
 
-  test('keeps a leading hashbang first', () => {
-    const js = '#!/usr/bin/env node\nvar x = 1;'
+  test('keeps a leading hashbang and directive before the snippet', () => {
+    const js = '#!/usr/bin/env node\n"use strict";\nvar x = 1;'
     const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
+    const lines = result.js.split('\n')
 
-    expect(result.js.startsWith('#!/usr/bin/env node\n')).toBe(true)
-    expect(result.js).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(lines[0]).toBe('#!/usr/bin/env node')
+    expect(lines[1]).toBe('"use strict";')
+    expect(lines[2]).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(result.js.match(/"use strict"/g)).toHaveLength(1)
   })
 
-  test('repeats a leading "use strict" directive before the snippet and still resolves original positions', async () => {
+  test('preserves a leading "use strict" directive exactly once and still resolves original positions', async () => {
     const js = '"use strict";\nvar x = 1;\nconsole.log(x);'
     const sourcemap = buildIdentitySourcemap(js)
 
     const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
-    const firstLine = result.js.split('\n')[0]
+    const lines = result.js.split('\n')
 
-    expect(firstLine.startsWith('"use strict";')).toBe(true)
-    expect(firstLine).toContain('DD_SOURCE_CODE_CONTEXT')
-    expect(result.js).toContain(js)
+    expect(lines[0]).toBe('"use strict";')
+    expect(lines[1]).toContain('DD_SOURCE_CODE_CONTEXT')
+    expect(result.js.match(/"use strict"/g)).toHaveLength(1)
 
     // `console.log(x);` is the third line of `js` (1-based line 3). The whole,
-    // unstripped original source is preserved verbatim starting one generated
-    // line after the injected snippet, so it becomes 1-based generated line 4.
+    // original source remains on 1-based generated line 4 after the injected line.
     const position = await originalPositionFor(result.sourcemap, 4, 0)
 
     expect(position.source).toBe(ORIGINAL_SOURCE_NAME)
@@ -306,15 +308,45 @@ describe('injectDebugIdSnippet', () => {
     expect(position.column).toBe(0)
   })
 
-  test('repeats every leading directive, not just the first, before the snippet', () => {
-    const js = '"use asm";\n"use strict";\nvar x = 1;\nconsole.log(x);'
-    const sourcemap = buildIdentitySourcemap(js)
+  test.each([
+    ['custom', '"analytics mode";\nvar x = 1;', ['"analytics mode";']],
+    ['multiple', '"use client"; "use server";\nvar x = 1;', ['"use client";', '"use server";']],
+    ['commented and escaped', "/* banner */\n'custom\\' mode';\nvar x = 1;", ["'custom\\' mode';"]],
+    ['semicolonless', '"use strict"\n"custom mode"\nvar x = 1;', ['"use strict"', '"custom mode"']],
+    ['CRLF', '"custom";\r\nvar x = 1;', ['"custom";']],
+  ])('preserves %s directives exactly once before the snippet', (_name, js, directives) => {
+    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
+    const snippetIndex = result.js.indexOf('(function(c,n)')
 
-    const result = injectDebugIdSnippet(js, sourcemap, DEBUG_ID_2)
-    const firstLine = result.js.split('\n')[0]
+    expect(snippetIndex).toBeGreaterThan(0)
+    for (const directive of directives) {
+      expect(result.js.indexOf(directive)).toBeLessThan(snippetIndex)
+      expect(result.js.split(directive)).toHaveLength(2)
+    }
+  })
 
-    expect(firstLine.startsWith('"use asm";"use strict";')).toBe(true)
-    expect(firstLine).toContain('DD_SOURCE_CODE_CONTEXT')
+  test('fails safely when a possible directive bundle cannot be parsed', () => {
+    const js = '"custom";\nconst unterminated = `value'
+
+    expect(() => injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)).toThrow()
+  })
+
+  test('injects obvious non-directive syntax without requiring it to parse', () => {
+    const js = '@unsupported-syntax'
+    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
+
+    expect(result.js.startsWith('(function(c,n)')).toBe(true)
+    expect(result.js).toContain(js)
+  })
+
+  test.each([
+    ['binary expression', '"value" + other;\nconsole.log(other);'],
+    ['call expression across lines', '"value"\n(function run() {})();'],
+    ['parenthesized string', '("value");\nconsole.log("done");'],
+  ])('does not mistake a leading %s for a directive', (_name, js) => {
+    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2)
+
+    expect(result.js.split('\n')[0]).toContain('DD_SOURCE_CODE_CONTEXT')
     expect(result.js).toContain(js)
   })
 })

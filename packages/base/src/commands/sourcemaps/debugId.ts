@@ -5,6 +5,7 @@ import type {Sourcemap} from './interfaces'
 import type {Writable} from 'stream'
 import type {RawSourceMap} from 'webpack-sources'
 
+import {parse} from '@babel/parser'
 import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
 const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
@@ -95,27 +96,36 @@ const buildSnippet = (debugId: string): string =>
   `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},s=new Error().stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"DD_SOURCE_CODE_CONTEXT");`
 
 const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
-const USE_DIRECTIVE_REGEX =
-  /^(?:\s|\/\*[\s\S]*?\*\/|\/\/.*(?:\r\n|\r|\n))*(?<useDirective>"use [^"]*"|'use [^']*');?(?:\r\n|\r|\n)?/
 
-// A directive prologue can hold more than one directive (e.g. `"use strict"; "use asm";`), and
-// every one of them must be repeated ahead of the injected snippet: once the injected statement
-// is inserted, it ends the prologue, so any directive left behind after it is a no-op instead of
-// an active directive. Matches greedily from the front, one directive at a time, to capture the
-// full leading run rather than just the first.
-const extractLeadingUseDirectives = (source: string): string => {
-  let offset = 0
-  let directives = ''
-  for (;;) {
-    const match = source.slice(offset).match(USE_DIRECTIVE_REGEX)
-    if (!match?.groups?.useDirective) {
-      break
-    }
-    directives += `${match.groups.useDirective};`
-    offset += match[0].length
+interface DirectivePrologue {
+  end: number
+  needsSemicolon: boolean
+}
+
+const findDirectivePrologue = (source: string): DirectivePrologue => {
+  const firstNonWhitespace = source.search(/\S/u)
+  if (firstNonWhitespace === -1 || !`"'/`.includes(source[firstNonWhitespace])) {
+    return {end: 0, needsSemicolon: false}
   }
 
-  return directives
+  const {program} = parse(source, {
+    allowAwaitOutsideFunction: true,
+    allowReturnOutsideFunction: true,
+    attachComment: false,
+    plugins: ['jsx'],
+    sourceType: 'unambiguous',
+  })
+  const directiveEnd = program.directives.at(-1)?.end
+  if (!directiveEnd) {
+    return {end: 0, needsSemicolon: false}
+  }
+
+  let insertionOffset = directiveEnd
+  while (/\s/u.test(source[insertionOffset] ?? '')) {
+    insertionOffset++
+  }
+
+  return {end: insertionOffset, needsSemicolon: source[directiveEnd - 1] !== ';'}
 }
 
 // Keep this deterministic SHA-256 strategy in sync with build-plugins:
@@ -137,9 +147,9 @@ export const generateDebugId = (jsContent: string): string => {
 
 const PRE_INJECTION_SOURCE_NAME = 'dd-pre-injection.js'
 
-// The snippet is inserted as early as possible (after an optional hashbang and/or
-// leading "use ...;" directives, which are kept first since they must remain the first
-// statements in the file).
+// The snippet is inserted as early as possible, after an optional hashbang and the complete
+// directive prologue. Obvious non-directive bundles take a fast path; possible directives are
+// parsed so semicolonless directives and expression continuations follow JavaScript semantics.
 // SourceMapSource starts with the original generated code and its map. ReplaceSource
 // applies insertions directly to that mapped source, preserving existing mappings
 // while shifting their generated positions.
@@ -152,12 +162,13 @@ const injectDebugIdSnippetIntoSourcemap = (
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
   const sourceWithoutHashbang = jsContent.slice(hashbangPortion.length)
 
-  const useDirectives = extractLeadingUseDirectives(sourceWithoutHashbang)
+  const directivePrologue = findDirectivePrologue(sourceWithoutHashbang)
+  const injectionOffset = hashbangPortion.length + directivePrologue.end
 
   assertSourcemapSupportsInjection(originalSourcemap)
   const source = new SourceMapSource(jsContent, PRE_INJECTION_SOURCE_NAME, originalSourcemap)
   const injected = new ReplaceSource(source)
-  injected.insert(hashbangPortion.length, `${useDirectives}${buildSnippet(debugId)}\n`)
+  injected.insert(injectionOffset, `${directivePrologue.needsSemicolon ? ';' : ''}${buildSnippet(debugId)}\n`)
 
   const {source: injectedSource, map} = injected.sourceAndMap({columns: true})
   if (!map) {
