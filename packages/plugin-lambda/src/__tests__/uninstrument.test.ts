@@ -646,7 +646,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs16.x',
               Layers: layers,
             },
           },

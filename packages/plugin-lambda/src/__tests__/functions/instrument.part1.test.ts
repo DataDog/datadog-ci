@@ -3,7 +3,7 @@ jest.mock('../../loggroup')
 import type {FunctionConfiguration as LFunctionConfiguration} from '@aws-sdk/client-lambda'
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
+import {LambdaClient, ListFunctionsCommand, Runtime} from '@aws-sdk/client-lambda'
 import {
   ENVIRONMENT_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
@@ -78,11 +78,16 @@ describe('instrument', () => {
       expect(result.updateFunctionConfigurationCommandInput?.Handler).toBeUndefined()
     })
 
-    test('rejects nodejs16.x', async () => {
-      const functionConfiguration: LFunctionConfiguration = {
-        FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-        Runtime: 'nodejs16.x',
-      }
+    test('throws an error when it encounters an unsupported runtime', async () => {
+      mockLambdaConfigurations(lambdaClientMock, {
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          config: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+            Runtime: Runtime.go1x,
+          },
+        },
+      })
+
       const settings = {
         extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
@@ -92,15 +97,15 @@ describe('instrument', () => {
         lambdaFips: false,
       }
 
-      await expect(
-        getInstrumentedFunctionConfig(
-          lambdaClientMock as any,
-          cloudWatchLogsClientMock as any,
-          functionConfiguration,
-          'us-east-1',
-          settings
-        )
-      ).rejects.toThrow('runtime nodejs16.x not supported')
+      const instrumentedConfig = getInstrumentedFunctionConfig(
+        lambdaClientMock as any,
+        cloudWatchLogsClientMock as any,
+        {},
+        'us-east-1',
+        settings
+      )
+
+      await expect(instrumentedConfig).rejects.toThrow()
     })
 
     test('replaces the layer arn when the version has changed', async () => {

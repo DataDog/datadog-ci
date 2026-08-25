@@ -653,7 +653,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
@@ -751,7 +751,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
@@ -1363,7 +1363,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
