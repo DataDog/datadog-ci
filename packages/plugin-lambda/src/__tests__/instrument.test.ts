@@ -12,6 +12,17 @@ jest.mock('@aws-sdk/credential-providers', () => ({
 jest.mock('../prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer')
 jest.mock('@datadog/datadog-ci-base/helpers/prompt')
+jest.mock('@datadog/datadog-ci-base/helpers/serverless/lambda-layer-versions', () => ({
+  // Fixed values keep snapshots independent of catalog updates.
+  LAMBDA_LAYER_VERSIONS: {
+    extension: 99,
+    dotnet: 25,
+    java: 27,
+    node: 142,
+    python: 127,
+    ruby: 30,
+  },
+}))
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 import * as fs from 'fs'
