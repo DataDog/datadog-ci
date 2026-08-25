@@ -11,6 +11,7 @@ Component,Origin,Licence,Copyright
 @azure/arm-appcontainers,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-resources,import,MIT,Copyright (c) Microsoft Corporation
+@babel/parser,import,MIT,Copyright (C) 2012-2014 by various contributors (see AUTHORS)
 @smithy/property-provider,import,Apache-2.0,"Copyright 2018-2020 Amazon.com, Inc. or its affiliates."
 @smithy/util-retry,import,Apache-2.0,"Copyright 2019 Amazon.com, Inc. or its affiliates."
 @types/async-retry,dev,MIT,Copyright (c) Microsoft Corporation
@@ -94,3 +95,5 @@ typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contrib
 @yao-pkg/pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 syncpack,dev,MIT,Copyright (c) 2017-2023 Jamie Mason
 tsdown,dev,MIT,Copyright (c) 2025-present VoidZero Inc. & Contributors
+webpack-sources,import,MIT,Copyright (c) 2017 JS Foundation and other contributors
+source-map,dev,BSD-3-Clause,Copyright 2009-2011 Mozilla Foundation and contributors

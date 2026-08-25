@@ -1410,6 +1410,7 @@ __metadata:
   resolution: "@datadog/datadog-ci-base@workspace:packages/base"
   dependencies:
     "@antfu/install-pkg": "npm:^1.1.0"
+    "@babel/parser": "npm:^7.29.0"
     "@types/async-retry": "npm:^1.4.8"
     "@types/datadog-metrics": "npm:^0.6.1"
     "@types/debug": "npm:^4.1.12"
@@ -1435,11 +1436,13 @@ __metadata:
     proxy-agent: "npm:^6.4.0"
     semver: "npm:^7.6.3"
     simple-git: "npm:^3.36.0"
+    source-map: "npm:^0.7.4"
     terminal-link: "npm:^2.1.1"
     tiny-async-pool: "npm:^2.1.0"
     typanion: "npm:^3.14.0"
     undici: "npm:^7.29.0"
     upath: "npm:^2.0.1"
+    webpack-sources: "npm:^3.5.1"
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
@@ -12086,6 +12089,13 @@ __metadata:
   version: 3.0.1
   resolution: "webidl-conversions@npm:3.0.1"
   checksum: 10/b65b9f8d6854572a84a5c69615152b63371395f0c5dcd6729c45789052296df54314db2bc3e977df41705eacb8bc79c247cee139a63fa695192f95816ed528ad
+  languageName: node
+  linkType: hard
+
+"webpack-sources@npm:^3.5.1":
+  version: 3.5.1
+  resolution: "webpack-sources@npm:3.5.1"
+  checksum: 10/50b9699a3ab9a698e117d8a6b816235576f17e60aeca0a44269041773f960c3beb2ad10d07bc5f2ef8eebde3db5275c6a23566dad475db8f840a34a7bfabd2c3
   languageName: node
   linkType: hard
 

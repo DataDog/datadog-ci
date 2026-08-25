@@ -1,3 +1,6 @@
+import fs from 'fs'
+import os from 'os'
+
 import chalk from 'chalk'
 import upath from 'upath'
 
@@ -313,11 +316,38 @@ describe('execute', () => {
     )
   })
 
-  test('debug id missing in all files aborts with exit 1', async () => {
+  test('debug id mode uploads a build-plugin bundle whose sourcemap has no debug_id', async () => {
+    const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-sourcemaps-upload-'))
+    const jsPath = upath.join(directory, 'bundle.js')
+    fs.writeFileSync(
+      jsPath,
+      `(function() {})({"ddDebugId":"2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91"});\n//# sourceMappingURL=bundle.js.map`
+    )
+    fs.writeFileSync(`${jsPath}.map`, JSON.stringify({version: 3, sources: ['original.js'], mappings: 'AAAA'}))
+
+    try {
+      const {context, code} = await runCLIWithDebugId([directory])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
+      expect(context.stdout.toString()).toContain('(debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)')
+    } finally {
+      fs.rmSync(directory, {recursive: true, force: true})
+    }
+  })
+
+  test('debug id missing in all files aborts without mutating build artifacts', async () => {
+    const jsPath = './src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js'
+    const originalJs = fs.readFileSync(jsPath, 'utf-8')
+
     const {context, code} = await runCLIWithDebugId(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
+
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('No debug ID found in any minified file')
-    expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+    const stdout = context.stdout.toString()
+    expect(context.stderr.toString()).toContain('No debug ID found in any minified file. Aborting upload.')
+    expect(stdout).not.toContain('Generated debug ID for')
+    expect(stdout).not.toContain('[DRYRUN] Uploading sourcemap')
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
   })
 
   test('debug id with no sourcemaps found succeeds with exit 0', async () => {
@@ -326,7 +356,7 @@ describe('execute', () => {
     expect(context.stderr.toString()).not.toContain('No debug ID found')
   })
 
-  test('debug id missing in some files skips only those files', async () => {
+  test('debug id missing in some files uploads existing IDs and skips missing IDs', async () => {
     const {context, code} = await runCLIWithDebugId([
       './src/commands/sourcemaps/__tests__/fixtures/bundle-with-partial-debug-id',
     ])
@@ -334,8 +364,10 @@ describe('execute', () => {
     const stdout = context.stdout.toString()
     expect(stdout).toContain('[DRYRUN] Uploading sourcemap')
     expect(stdout).toContain('a.min.js.map')
-    expect(stdout).toContain('because no debug ID was found')
     expect(stdout).toContain('b.min.js.map')
+    expect(stdout).toContain('(debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)') // a.min.js: pre-existing ID, unchanged
+    expect(stdout).not.toContain('Generated debug ID for')
+    expect(stdout).toContain('because no debug ID was found')
   })
 
   test('relative path with double dots', async () => {
