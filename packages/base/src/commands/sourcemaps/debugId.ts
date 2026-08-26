@@ -66,25 +66,33 @@ export const extractDebugId = (filePath: string): string | undefined => searchFi
 // small reads. Keep an overlap so markers split across chunk boundaries are still detected.
 export const hasSourceCodeContext = async (filePath: string): Promise<boolean> => {
   try {
-    const stream = fs.createReadStream(filePath, {
-      encoding: 'utf8',
-      highWaterMark: SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES,
-    })
-    let overlap = ''
+    const fileHandle = await fs.promises.open(filePath, 'r')
+    try {
+      const buffer = Buffer.alloc(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES)
+      let overlap = ''
+      let position = 0
 
-    for await (const chunk of stream) {
-      const searchableContent = overlap + chunk
-      if (searchableContent.includes(SOURCE_CODE_CONTEXT_MARKER)) {
-        return true
+      while (true) {
+        const {bytesRead} = await fileHandle.read(buffer, 0, SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES, position)
+        if (bytesRead === 0) {
+          return false
+        }
+
+        const searchableContent = overlap + buffer.toString('utf8', 0, bytesRead)
+        if (searchableContent.includes(SOURCE_CODE_CONTEXT_MARKER)) {
+          return true
+        }
+
+        overlap = searchableContent.slice(-FILE_SEARCH_OVERLAP_CHARACTERS)
+        position += bytesRead
       }
-
-      overlap = searchableContent.slice(-FILE_SEARCH_OVERLAP_CHARACTERS)
+    } finally {
+      await fileHandle.close()
     }
   } catch {
     // Unreadable file: treated as not having the source code context marker.
+    return false
   }
-
-  return false
 }
 
 type ParsedSourcemap = RawSourceMap & Record<string, unknown>
