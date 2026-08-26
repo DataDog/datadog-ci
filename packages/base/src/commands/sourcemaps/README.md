@@ -58,7 +58,7 @@ This command will upload all JavaScript sourcemaps and their corresponding JavaS
 
 With `--debug-id`, this command uploads only bundles that already contain a debug ID. It does not modify build artifacts; run `sourcemaps inject` first when debug IDs are missing.
 
-Service/version uploads reject minified bundles containing the Datadog `DD_SOURCE_CODE_CONTEXT` runtime injection. Debug-ID and service/version matching are mutually exclusive; upload those bundles with `--debug-id`, or rebuild them without the injection before using service/version matching. A `ddDebugId` value by itself, without `DD_SOURCE_CODE_CONTEXT`, does not trigger this check.
+Service/version uploads reject minified bundles containing the Datadog `DD_SOURCE_CODE_CONTEXT` runtime injection. Debug ID and service/version matching are mutually exclusive; upload those bundles with `--debug-id`, or rebuild them without the injection before using service/version matching. A `ddDebugId` value by itself, without `DD_SOURCE_CODE_CONTEXT`, does not trigger this check.
 
 To upload the sourcemaps in the build folder, this command should be run:
 
