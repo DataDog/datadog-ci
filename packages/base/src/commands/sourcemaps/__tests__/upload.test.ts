@@ -1,10 +1,9 @@
 import fs from 'fs'
-import os from 'os'
 
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI, withTempDirectory} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {SourcemapsUploadCommand} from '../upload'
@@ -317,23 +316,20 @@ describe('execute', () => {
   })
 
   test('debug id mode uploads a build-plugin bundle whose sourcemap has no debug_id', async () => {
-    const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-sourcemaps-upload-'))
-    const jsPath = upath.join(directory, 'bundle.js')
-    fs.writeFileSync(
-      jsPath,
-      `(function() {})({"ddDebugId":"2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91"});\n//# sourceMappingURL=bundle.js.map`
-    )
-    fs.writeFileSync(`${jsPath}.map`, JSON.stringify({version: 3, sources: ['original.js'], mappings: 'AAAA'}))
+    await withTempDirectory(async (directory) => {
+      const jsPath = upath.join(directory, 'bundle.js')
+      fs.writeFileSync(
+        jsPath,
+        `(function() {})({"ddDebugId":"2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91"});\n//# sourceMappingURL=bundle.js.map`
+      )
+      fs.writeFileSync(`${jsPath}.map`, JSON.stringify({version: 3, sources: ['original.js'], mappings: 'AAAA'}))
 
-    try {
       const {context, code} = await runCLIWithDebugId([directory])
 
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
       expect(context.stdout.toString()).toContain('(debug ID: 2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91)')
-    } finally {
-      fs.rmSync(directory, {recursive: true, force: true})
-    }
+    })
   })
 
   test('debug id missing in all files aborts without mutating build artifacts', async () => {
@@ -381,8 +377,7 @@ describe('execute', () => {
   })
 
   test('service/version mode allows a standalone debug ID without DD_SOURCE_CODE_CONTEXT', async () => {
-    const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-debug-id-only-'))
-    try {
+    await withTempDirectory(async (directory) => {
       fs.writeFileSync(
         upath.join(directory, 'bundle.js'),
         `({"ddDebugId":"2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91"});\n//# sourceMappingURL=bundle.js.map`
@@ -398,9 +393,7 @@ describe('execute', () => {
       expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
       expect(context.stdout.toString()).not.toContain('(debug ID:')
       expect(context.stderr.toString()).not.toContain('A Datadog debug ID injection was found')
-    } finally {
-      fs.rmSync(directory, {recursive: true, force: true})
-    }
+    })
   })
 
   test('relative path with double dots', async () => {

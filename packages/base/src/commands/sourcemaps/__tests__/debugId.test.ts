@@ -1,9 +1,10 @@
 import fs from 'fs'
-import os from 'os'
 import {Writable} from 'stream'
 
 import {SourceMapConsumer, SourceMapGenerator} from 'source-map'
 import upath from 'upath'
+
+import {withTempDirectory} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {
   addDebugIdToPayloads,
@@ -21,24 +22,6 @@ const DEBUG_ID = '2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91'
 
 const makeSourcemap = (minifiedFilePath: string) =>
   new Sourcemap(minifiedFilePath, `https://static.com/${minifiedFilePath}`, `${minifiedFilePath}.map`, minifiedFilePath)
-
-const withTempDirectory = (callback: (directory: string) => void): void => {
-  const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-debug-id-'))
-  try {
-    callback(directory)
-  } finally {
-    fs.rmSync(directory, {recursive: true, force: true})
-  }
-}
-
-const withTempDirectoryAsync = async (callback: (directory: string) => Promise<void>): Promise<void> => {
-  const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-debug-id-'))
-  try {
-    await callback(directory)
-  } finally {
-    fs.rmSync(directory, {recursive: true, force: true})
-  }
-}
 
 describe('extractDebugId', () => {
   afterEach(() => {
@@ -126,7 +109,7 @@ describe('extractDebugId', () => {
 
 describe('hasSourceCodeContext', () => {
   test('detects DD_SOURCE_CODE_CONTEXT', async () => {
-    await withTempDirectoryAsync(async (directory) => {
+    await withTempDirectory(async (directory) => {
       const filePath = upath.join(directory, 'injected.min.js')
       fs.writeFileSync(filePath, `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES + 100)}DD_SOURCE_CODE_CONTEXT`)
 
@@ -135,7 +118,7 @@ describe('hasSourceCodeContext', () => {
   })
 
   test('detects DD_SOURCE_CODE_CONTEXT split across two chunks', async () => {
-    await withTempDirectoryAsync(async (directory) => {
+    await withTempDirectory(async (directory) => {
       const filePath = upath.join(directory, 'split-context.min.js')
       const marker = 'DD_SOURCE_CODE_CONTEXT'
       fs.writeFileSync(filePath, `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES - 10)}${marker}`)
@@ -145,7 +128,7 @@ describe('hasSourceCodeContext', () => {
   })
 
   test('does not treat a standalone debug ID as injected source code context', async () => {
-    await withTempDirectoryAsync(async (directory) => {
+    await withTempDirectory(async (directory) => {
       const filePath = upath.join(directory, 'debug-id-only.min.js')
       fs.writeFileSync(filePath, `{"ddDebugId":"${DEBUG_ID}"}`)
 

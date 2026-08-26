@@ -123,7 +123,7 @@ export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
 // Keep this runtime snippet in sync with build-plugins:
 // https://github.com/DataDog/build-plugins/blob/c9384d115d53578f220cd5e1f29994acb96a1782/packages/plugins/rum/src/getSourceCodeContextSnippet.ts#L55
 const buildSnippet = (debugId: string): string =>
-  `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},s=new Error().stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"DD_SOURCE_CODE_CONTEXT");`
+  `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},s=new Error().stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"${SOURCE_CODE_CONTEXT_MARKER}");`
 
 const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
 
