@@ -16,6 +16,7 @@ const SOURCE_CODE_CONTEXT_MARKER = 'DD_SOURCE_CODE_CONTEXT'
 // Read progressively so the common case only needs the first KiB, while still supporting
 // bundlers or transforms that place the injected snippet later in the artifact.
 export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
+export const SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES = 64 * 1024
 
 // Keep enough content from the previous chunk to match a debug ID literal split across a read
 // boundary. The longest supported literal is shorter than this overlap.
@@ -60,8 +61,31 @@ const searchFile = <T>(filePath: string, match: (fileContent: string) => T | und
 
 export const extractDebugId = (filePath: string): string | undefined => searchFile(filePath, matchDebugId)
 
-export const hasSourceCodeContext = (filePath: string): boolean =>
-  searchFile(filePath, (fileContent) => (fileContent.includes(SOURCE_CODE_CONTEXT_MARKER) ? true : undefined)) ?? false
+// Default service/version uploads may contain many large bundles. Scan them asynchronously in
+// larger chunks so checking marker-free files does not block the event loop with thousands of
+// small reads. Keep an overlap so markers split across chunk boundaries are still detected.
+export const hasSourceCodeContext = async (filePath: string): Promise<boolean> => {
+  try {
+    const stream = fs.createReadStream(filePath, {
+      encoding: 'utf8',
+      highWaterMark: SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES,
+    })
+    let overlap = ''
+
+    for await (const chunk of stream) {
+      const searchableContent = overlap + chunk
+      if (searchableContent.includes(SOURCE_CODE_CONTEXT_MARKER)) {
+        return true
+      }
+
+      overlap = searchableContent.slice(-FILE_SEARCH_OVERLAP_CHARACTERS)
+    }
+  } catch {
+    // Unreadable file: treated as not having the source code context marker.
+  }
+
+  return false
+}
 
 type ParsedSourcemap = RawSourceMap & Record<string, unknown>
 

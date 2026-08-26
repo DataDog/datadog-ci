@@ -146,10 +146,17 @@ export class SourcemapsUploadCommand extends BaseCommand {
 
         return 1
       }
-    } else if (payloads.some(({minifiedFilePath}) => hasSourceCodeContext(minifiedFilePath))) {
-      this.context.stderr.write(renderSourceCodeContextFoundWithoutDebugIdFlag())
+    } else {
+      const hasSourceCodeContextResults = await doWithMaxConcurrency(
+        this.maxConcurrency,
+        payloads,
+        ({minifiedFilePath}) => hasSourceCodeContext(minifiedFilePath)
+      )
+      if (hasSourceCodeContextResults.some(Boolean)) {
+        this.context.stderr.write(renderSourceCodeContextFoundWithoutDebugIdFlag())
 
-      return 1
+        return 1
+      }
     }
 
     const requestBuilder = this.getRequestBuilder()
