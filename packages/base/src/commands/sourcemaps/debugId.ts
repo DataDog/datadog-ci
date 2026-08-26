@@ -9,6 +9,7 @@ import {parse} from '@babel/parser'
 import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
 const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
+const SOURCE_CODE_CONTEXT_MARKER = 'DD_SOURCE_CODE_CONTEXT'
 
 // Keep this progressive scanner in sync with build-plugins PR #489:
 // https://github.com/DataDog/build-plugins/pull/489
@@ -18,14 +19,14 @@ export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
 
 // Keep enough content from the previous chunk to match a debug ID literal split across a read
 // boundary. The longest supported literal is shorter than this overlap.
-const DEBUG_ID_SEARCH_OVERLAP_CHARACTERS = 64
+const FILE_SEARCH_OVERLAP_CHARACTERS = 64
 const VARIANT_CHARS = ['8', '9', 'a', 'b'] as const
 
 const matchDebugId = (fileContent: string): string | undefined => DEBUG_ID_REGEX.exec(fileContent)?.[1]
 
-// Search in fixed-size reads and stop as soon as the debug ID is found. Only a small overlap is
-// retained between reads, so even the worst case (scanning to EOF) uses bounded memory.
-export const extractDebugId = (filePath: string): string | undefined => {
+// Search in fixed-size reads and stop as soon as a match is found. Only a small overlap is retained
+// between reads, so even the worst case (scanning to EOF) uses bounded memory.
+const searchFile = <T>(filePath: string, match: (fileContent: string) => T | undefined): T | undefined => {
   try {
     const fileDescriptor = fs.openSync(filePath, 'r')
     try {
@@ -40,22 +41,27 @@ export const extractDebugId = (filePath: string): string | undefined => {
         }
 
         const searchableContent = overlap + buffer.toString('utf-8', 0, bytesRead)
-        const debugId = matchDebugId(searchableContent)
-        if (debugId) {
-          return debugId
+        const result = match(searchableContent)
+        if (result !== undefined) {
+          return result
         }
 
-        overlap = searchableContent.slice(-DEBUG_ID_SEARCH_OVERLAP_CHARACTERS)
+        overlap = searchableContent.slice(-FILE_SEARCH_OVERLAP_CHARACTERS)
         position += bytesRead
       }
     } finally {
       fs.closeSync(fileDescriptor)
     }
   } catch {
-    // Unreadable file: treated as having no debug ID.
+    // Unreadable file: treated as having no match.
     return undefined
   }
 }
+
+export const extractDebugId = (filePath: string): string | undefined => searchFile(filePath, matchDebugId)
+
+export const hasSourceCodeContext = (filePath: string): boolean =>
+  searchFile(filePath, (fileContent) => (fileContent.includes(SOURCE_CODE_CONTEXT_MARKER) ? true : undefined)) ?? false
 
 type ParsedSourcemap = RawSourceMap & Record<string, unknown>
 

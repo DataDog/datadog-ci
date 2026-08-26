@@ -10,6 +10,7 @@ import {
   DEBUG_ID_SEARCH_CHUNK_BYTES,
   extractDebugId,
   generateDebugId,
+  hasSourceCodeContext,
   injectMissingDebugIds,
   injectDebugIdSnippet,
 } from '../debugId'
@@ -110,6 +111,36 @@ describe('extractDebugId', () => {
 
   test('returns undefined when the file cannot be read', () => {
     expect(extractDebugId('nonexistent.js')).toBeUndefined()
+  })
+})
+
+describe('hasSourceCodeContext', () => {
+  test('detects DD_SOURCE_CODE_CONTEXT', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'injected.min.js')
+      fs.writeFileSync(filePath, `${'x'.repeat(DEBUG_ID_SEARCH_CHUNK_BYTES + 100)}DD_SOURCE_CODE_CONTEXT`)
+
+      expect(hasSourceCodeContext(filePath)).toBe(true)
+    })
+  })
+
+  test('detects DD_SOURCE_CODE_CONTEXT split across two chunks', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'split-context.min.js')
+      const marker = 'DD_SOURCE_CODE_CONTEXT'
+      fs.writeFileSync(filePath, `${'x'.repeat(DEBUG_ID_SEARCH_CHUNK_BYTES - 10)}${marker}`)
+
+      expect(hasSourceCodeContext(filePath)).toBe(true)
+    })
+  })
+
+  test('does not treat a standalone debug ID as injected source code context', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'debug-id-only.min.js')
+      fs.writeFileSync(filePath, `{"ddDebugId":"${DEBUG_ID}"}`)
+
+      expect(hasSourceCodeContext(filePath)).toBe(false)
+    })
   })
 })
 

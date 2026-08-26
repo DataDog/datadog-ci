@@ -31,7 +31,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {addDebugIdToPayloads} from './debugId'
+import {addDebugIdToPayloads, hasSourceCodeContext} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
@@ -42,6 +42,7 @@ import {
   renderFailedUpload,
   renderGitDataNotAttachedWarning,
   renderGitWarning,
+  renderSourceCodeContextFoundWithoutDebugIdFlag,
   renderInvalidPrefix,
   renderNoDebugIdFound,
   renderRetriedUpload,
@@ -139,9 +140,14 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
     const payloads = await this.getPayloadsToUpload(useGit)
+    if (this.debugId) {
+      if (payloads.length > 0 && !addDebugIdToPayloads(payloads)) {
+        this.context.stderr.write(renderNoDebugIdFound())
 
-    if (this.debugId && payloads.length > 0 && !addDebugIdToPayloads(payloads)) {
-      this.context.stderr.write(renderNoDebugIdFound())
+        return 1
+      }
+    } else if (payloads.some(({minifiedFilePath}) => hasSourceCodeContext(minifiedFilePath))) {
+      this.context.stderr.write(renderSourceCodeContextFoundWithoutDebugIdFlag())
 
       return 1
     }

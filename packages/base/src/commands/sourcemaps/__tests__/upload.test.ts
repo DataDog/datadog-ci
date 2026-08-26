@@ -370,6 +370,39 @@ describe('execute', () => {
     expect(stdout).toContain('because no debug ID was found')
   })
 
+  test('service/version mode rejects bundles containing DD_SOURCE_CODE_CONTEXT', async () => {
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id'])
+
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('A Datadog debug ID injection was found')
+    expect(context.stderr.toString()).toContain('Debug-ID uploads and service/version uploads are mutually exclusive')
+    expect(context.stderr.toString()).toContain('Re-run with --debug-id')
+    expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
+  })
+
+  test('service/version mode allows a standalone debug ID without DD_SOURCE_CODE_CONTEXT', async () => {
+    const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-debug-id-only-'))
+    try {
+      fs.writeFileSync(
+        upath.join(directory, 'bundle.js'),
+        `({"ddDebugId":"2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91"});\n//# sourceMappingURL=bundle.js.map`
+      )
+      fs.writeFileSync(
+        upath.join(directory, 'bundle.js.map'),
+        JSON.stringify({version: 3, sources: ['original.js'], mappings: 'AAAA'})
+      )
+
+      const {context, code} = await runCLI([directory])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
+      expect(context.stdout.toString()).not.toContain('(debug ID:')
+      expect(context.stderr.toString()).not.toContain('A Datadog debug ID injection was found')
+    } finally {
+      fs.rmSync(directory, {recursive: true, force: true})
+    }
+  })
+
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])
     const output = context.stdout.toString().split('\n')
