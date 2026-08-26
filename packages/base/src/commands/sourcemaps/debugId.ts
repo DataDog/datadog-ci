@@ -15,6 +15,7 @@ const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
 // Read progressively so the common case only needs the first KiB, while still supporting
 // bundlers or transforms that place the injected snippet later in the artifact.
 export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
+export const DEBUG_ID_ASYNC_SEARCH_CHUNK_BYTES = 64 * 1024
 
 // Keep enough content from the previous chunk to match a debug ID literal split across a read
 // boundary. The longest supported literal is shorter than this overlap.
@@ -53,6 +54,39 @@ export const extractDebugId = (filePath: string): string | undefined => {
     }
   } catch {
     // Unreadable file: treated as having no debug ID.
+    return undefined
+  }
+}
+
+// Resolve commands can scan many large marker-free bundles. Use non-blocking, larger reads and
+// await close before resolving so callers can safely clean up artifacts on Windows.
+export const extractDebugIdAsync = async (filePath: string): Promise<string | undefined> => {
+  try {
+    const fileHandle = await fs.promises.open(filePath, 'r')
+    try {
+      const buffer = Buffer.alloc(DEBUG_ID_ASYNC_SEARCH_CHUNK_BYTES)
+      let overlap = ''
+      let position = 0
+
+      while (true) {
+        const {bytesRead} = await fileHandle.read(buffer, 0, DEBUG_ID_ASYNC_SEARCH_CHUNK_BYTES, position)
+        if (bytesRead === 0) {
+          return undefined
+        }
+
+        const searchableContent = overlap + buffer.toString('utf8', 0, bytesRead)
+        const debugId = matchDebugId(searchableContent)
+        if (debugId) {
+          return debugId
+        }
+
+        overlap = searchableContent.slice(-DEBUG_ID_SEARCH_OVERLAP_CHARACTERS)
+        position += bytesRead
+      }
+    } finally {
+      await fileHandle.close()
+    }
+  } catch {
     return undefined
   }
 }

@@ -1,4 +1,4 @@
-import type {Sourcemap} from './interfaces'
+import type {Sourcemap, SourcemapResolution} from './interfaces'
 
 import chalk from 'chalk'
 
@@ -16,6 +16,23 @@ export const renderNoSourcemapsFound = (basePath: string) => `No JavaScript sour
 
 export const renderInjectionSummary = (result: InjectionResult, dryRun: boolean) =>
   `${dryRun ? 'Would inject' : 'Injected'} debug IDs into ${result.injected} file(s); skipped ${result.skipped} file(s); failed ${result.failed} file(s).\n`
+
+export const renderSourcemapResolutions = (resolutions: SourcemapResolution[]): string =>
+  resolutions
+    .map((resolution) => {
+      const output = [
+        `[${resolution.status}] ${resolution.minifiedFilePath}`,
+        `  Sourcemap: ${resolution.sourcemapPath}`,
+        `  Bundle debug ID: ${resolution.bundleDebugId ?? '<missing>'}`,
+        `  Sourcemap debug ID: ${resolution.sourcemapDebugId ?? '<missing>'}`,
+      ]
+      if (resolution.sourcemapError) {
+        output.push(`  Sourcemap error: ${resolution.sourcemapError}`)
+      }
+
+      return output.join('\n')
+    })
+    .join('\n\n') + (resolutions.length > 0 ? '\n' : '')
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}

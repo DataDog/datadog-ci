@@ -52,6 +52,24 @@ datadog-ci sourcemaps inject ./build
 datadog-ci sourcemaps upload ./build --debug-id
 ```
 
+### `resolve`
+
+This read-only command resolves debug IDs to local JavaScript bundles and their corresponding sourcemaps. Use it when a sourcemap is missing from the Datadog UI and you need to inspect the build artifacts that may not have been collected or uploaded.
+
+To locate a specific debug ID in either the runtime bundle or the sourcemap's top-level `debug_id` field:
+
+```bash
+datadog-ci sourcemaps resolve ./build --debug-id 12345678-1234-1234-1234-123456789abc
+```
+
+To find artifact pairs whose runtime JavaScript bundle has no debug ID:
+
+```bash
+datadog-ci sourcemaps resolve ./build --missing-debug-id
+```
+
+The output reports the minified file, corresponding sourcemap, both debug ID values, and whether they are `matched`, `bundle-only`, `sourcemap-only`, `mismatched`, or `missing`. Use `--json` for machine-readable output and `--max-concurrency` to control concurrent artifact inspection. This command only examines local files; it does not verify whether Datadog received an artifact.
+
 ### `upload`
 
 This command will upload all JavaScript sourcemaps and their corresponding JavaScript bundles to Datadog in order to un-minify front-end stack traces received by Datadog.

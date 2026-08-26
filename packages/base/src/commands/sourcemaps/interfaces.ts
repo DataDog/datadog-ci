@@ -90,3 +90,20 @@ export interface GitData {
   gitRepositoryPayload?: string
   gitRepositoryURL: string
 }
+
+export enum SourcemapResolutionStatus {
+  BundleOnly = 'bundle-only',
+  Matched = 'matched',
+  Mismatched = 'mismatched',
+  Missing = 'missing',
+  SourcemapOnly = 'sourcemap-only',
+}
+
+export interface SourcemapResolution {
+  bundleDebugId?: string
+  minifiedFilePath: string
+  sourcemapDebugId?: string
+  sourcemapError?: string
+  sourcemapPath: string
+  status: SourcemapResolutionStatus
+}
