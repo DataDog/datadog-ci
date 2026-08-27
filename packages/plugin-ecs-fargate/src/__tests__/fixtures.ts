@@ -61,6 +61,7 @@ export const fargateTaskDefinition = ({
   cpu: '512',
   memory: '1024',
   executionRoleArn: 'arn:aws:iam::123456789012:role/ecsTaskExecutionRole',
+  taskRoleArn: 'arn:aws:iam::123456789012:role/my-app-task-role',
   containerDefinitions: [{...APP_CONTAINER}],
   volumes: [],
   ...overrides,

@@ -113,12 +113,6 @@ The following `<scope>` and `<command>` values are available.
 
 - `upload`: Upload iOS dSYM files for Error Tracking (macOS only).
 
-#### `ecs-fargate`
-
-<sub>**README:** [📚](/packages/plugin-ecs-fargate) | **Documentation:** [🔗](https://docs.datadoghq.com/integrations/ecs_fargate/) | **Plugin:** `@datadog/datadog-ci-plugin-ecs-fargate`</sub>
-
-- `instrument`: Apply Datadog instrumentation to an AWS ECS Fargate Task Definition.
-
 #### `flutter-symbols`
 
 <sub>**README:** [📚](/packages/base/src/commands/flutter-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)</sub>
@@ -246,6 +240,12 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `correlate`: Correlate GitOps CD deployments with application repositories CI pipelines. [🔗](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
 - `correlate-image`: Correlate an image from a CD provider with its source commit. [🔗](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 - `gate`: Evaluate a Deployment Gate. [🔗](https://docs.datadoghq.com/deployment_gates/)
+
+#### `ecs-fargate`
+
+<sub>**README:** [📚](/packages/plugin-ecs-fargate) | **Documentation:** [🔗](https://docs.datadoghq.com/integrations/aws-fargate/) | **Plugin:** `@datadog/datadog-ci-plugin-ecs-fargate`</sub>
+
+- `instrument`: Apply Datadog instrumentation to an AWS ECS Fargate Task Definition.
 
 #### `elf-symbols`
 

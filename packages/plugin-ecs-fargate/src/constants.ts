@@ -42,6 +42,23 @@ export const ECS_FARGATE_ENV_VAR = 'ECS_FARGATE'
 export const DD_APM_ENABLED_ENV_VAR = 'DD_APM_ENABLED'
 export const DD_USE_DOGSTATSD_ENV_VAR = 'DD_USE_DOGSTATSD'
 export const DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR = 'DD_ECS_TASK_COLLECTION_ENABLED'
+export const DD_DOGSTATSD_ORIGIN_DETECTION_ENV_VAR = 'DD_DOGSTATSD_ORIGIN_DETECTION'
+export const DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR = 'DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT'
+export const DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR = 'DD_DOGSTATSD_TAG_CARDINALITY'
+
+/**
+ * The tag cardinality custom metrics are submitted with: enough to tell one task apart from another.
+ */
+export const DOGSTATSD_ORCHESTRATOR_CARDINALITY = 'orchestrator'
+
+/**
+ * The task role permissions the Agent needs to collect ECS task metadata.
+ */
+export const ECS_TASK_COLLECTION_ACTIONS = [
+  'ecs:ListClusters',
+  'ecs:ListContainerInstances',
+  'ecs:DescribeContainerInstances',
+]
 
 /**
  * Fields `DescribeTaskDefinition` returns that `RegisterTaskDefinition` rejects. They have to be
