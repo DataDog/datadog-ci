@@ -1,5 +1,13 @@
 import type {InstrumentSettings} from '../task-definition'
-import type {ContainerDefinition, Service, Tag, TaskDefinition} from '@aws-sdk/client-ecs'
+import type {
+  ContainerDefinition,
+  MountPoint,
+  RegisterTaskDefinitionCommandInput,
+  Service,
+  Tag,
+  TaskDefinition,
+  Volume,
+} from '@aws-sdk/client-ecs'
 
 export const MOCK_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_API_KEY_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key-AbCdEf'
@@ -23,6 +31,14 @@ export const INSTRUMENTATION_TAGS: Tag[] = [CLI_VERSION_TAG]
 export const MOCK_SETTINGS: InstrumentSettings = {
   site: 'datadoghq.com',
   apiKeySecretArn: MOCK_API_KEY_SECRET_ARN,
+}
+
+/** What carries the Agent's APM and DogStatsD sockets between the containers sharing them. */
+export const SOCKET_VOLUME: Volume = {name: 'dd-sockets'}
+export const SOCKET_MOUNT: MountPoint = {
+  sourceVolume: 'dd-sockets',
+  containerPath: '/var/run/datadog',
+  readOnly: false,
 }
 
 export const APP_CONTAINER: ContainerDefinition = {
@@ -66,6 +82,20 @@ export const fargateTaskDefinition = ({
   volumes: [],
   ...overrides,
 })
+
+/**
+ * A revision the command registered, as `DescribeTaskDefinition` hands it back to the next run:
+ * read-only fields and all.
+ */
+export const asDescribed = (
+  registered: RegisterTaskDefinitionCommandInput,
+  overrides: Partial<TaskDefinition> = {}
+): TaskDefinition =>
+  fargateTaskDefinition({
+    containerDefinitions: registered.containerDefinitions,
+    volumes: registered.volumes,
+    ...overrides,
+  })
 
 /**
  * An ECS service as `DescribeServices` returns it, running the first revision of its family.

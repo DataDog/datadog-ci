@@ -23,6 +23,7 @@ export type EcsFargateConfigOptions = Partial<{
   // Configuration options
   apiKeySecretArn: string
   agentImage: string
+  agentSocket: boolean
 }>
 
 /**
@@ -128,6 +129,11 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   private agentImage = Option.String('--agent-image,--sidecar-image', {
     description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. Defaults to '${AGENT_IMAGE}'`,
   })
+  // No default, so that leaving the flag off does not override the configuration file.
+  private noAgentSocket = Option.Boolean('--no-agent-socket', {
+    description:
+      'Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default.',
+  })
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file.',
   })
@@ -160,6 +166,7 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       cluster: this.cluster,
       apiKeySecretArn: this.apiKeySecretArn,
       agentImage: this.agentImage,
+      agentSocket: this.noAgentSocket === undefined ? undefined : !this.noAgentSocket,
     }
 
     let fileConfig: EcsFargateConfigOptions
