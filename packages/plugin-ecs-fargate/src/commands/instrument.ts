@@ -23,7 +23,7 @@ import {
   updateServiceTaskDefinition,
 } from '../aws'
 import {AWS_REGION_ENV_VARS} from '../constants'
-import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields} from '../task-definition'
+import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
 
 /**
  * A task definition this run instrumented, and the revision the ECS services running that family
@@ -34,6 +34,13 @@ type InstrumentedRevision = {
   /** Absent on a dry run, which registers no revision to point a service at. */
   taskDefinitionArn?: string
 }
+
+/**
+ * The revisions to deploy, by family. `ensureConfig` rejects a run naming a family twice, so there
+ * is one revision per family and a service running that family has a single revision to be pointed
+ * at rather than whichever one happened to be instrumented first.
+ */
+type InstrumentedRevisions = Map<string, InstrumentedRevision>
 
 export class PluginCommand extends EcsFargateInstrumentCommand {
   public async execute(): Promise<0 | 1> {
@@ -77,12 +84,12 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     }
 
     const services = config.ecsServices ?? []
-    const instrumented: InstrumentedRevision[] = []
+    const instrumented: InstrumentedRevisions = new Map()
     let failed = false
     for (const taskDefinition of config.taskDefinitions ?? []) {
       const revision = await this.instrument(client, taskDefinition, settings, services.length > 0)
       if (revision) {
-        instrumented.push(revision)
+        instrumented.set(revision.family, revision)
       } else {
         failed = true
       }
@@ -135,7 +142,10 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       }
 
       this.context.stdout.write(
-        `${this.dryRunPrefix}Instrumenting ${chalk.bold(family)}:\n${generateConfigDiff(original, updated)}\n`
+        `${this.dryRunPrefix}Instrumenting ${chalk.bold(family)}:\n${generateConfigDiff(
+          withMaskedApiKey(original),
+          withMaskedApiKey(updated)
+        )}\n`
       )
 
       if (this.dryRun) {
@@ -167,14 +177,14 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     client: ECSClient,
     cluster: string | undefined,
     services: string[],
-    instrumented: InstrumentedRevision[]
+    instrumented: InstrumentedRevisions
   ): Promise<boolean> {
     let deployed = true
     for (const name of services) {
       try {
         const service = await describeService(client, cluster, name)
         const family = taskDefinitionFamily(service.taskDefinition)
-        const target = instrumented.find((candidate) => candidate.family === family)
+        const target = instrumented.get(family)
         if (!target) {
           throw Error(
             `${name} runs ${family}, which this run did not instrument. Pass --task-definition ${family} to instrument it.`

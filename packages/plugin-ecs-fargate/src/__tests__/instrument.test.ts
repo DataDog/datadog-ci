@@ -15,7 +15,11 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   ),
 }))
 
+const promptInput = jest.fn().mockResolvedValue('123456')
+jest.mock('@inquirer/prompts', () => ({input: promptInput}))
+
 import type {ContainerDefinition} from '@aws-sdk/client-ecs'
+import type {FromIniInit} from '@aws-sdk/credential-provider-ini'
 
 import {
   DescribeServicesCommand,
@@ -77,6 +81,7 @@ describe('ecs-fargate instrument', () => {
     ecsMock.on(DescribeServicesCommand).resolves({services: [fargateService()], failures: []})
     ecsMock.on(UpdateServiceCommand).resolves({})
     validateApiKey.mockClear().mockResolvedValue(true)
+    promptInput.mockClear()
     fromIni
       .mockClear()
       .mockImplementation(() => () => Promise.resolve({accessKeyId: 'access-key', secretAccessKey: 'secret-key'}))
@@ -257,6 +262,33 @@ describe('ecs-fargate instrument', () => {
       expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
     })
 
+    test('reports task definitions that resolve to the same family', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--task-definition',
+        'my-app:3',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(
+        '--task-definition names the same task definition family more than once (my-app)'
+      )
+      expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('accepts task definitions of different families named in different formats', async () => {
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--task-definition',
+        taskDefinitionArn('my-worker', 4),
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(2)
+    })
+
     test('reports a cluster given without a service to update', async () => {
       const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--cluster', MOCK_CLUSTER])
 
@@ -267,7 +299,18 @@ describe('ecs-fargate instrument', () => {
     test('uses the named AWS profile it is given', async () => {
       await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--profile', 'my-profile'])
 
-      expect(fromIni).toHaveBeenCalledWith({profile: 'my-profile'})
+      expect(fromIni).toHaveBeenCalledWith(expect.objectContaining({profile: 'my-profile'}))
+    })
+
+    test('asks for a code when the named profile is backed by MFA', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--profile', 'my-profile'])
+
+      const {mfaCodeProvider} = fromIni.mock.calls[0][0] as FromIniInit
+      expect(mfaCodeProvider).toBeDefined()
+      await mfaCodeProvider?.('arn:aws:iam::123456789012:mfa/someone')
+      expect(promptInput).toHaveBeenCalledWith(
+        expect.objectContaining({message: expect.stringContaining('arn:aws:iam::123456789012:mfa/someone')})
+      )
     })
 
     test('reports a named profile it cannot read', async () => {
@@ -551,6 +594,15 @@ describe('ecs-fargate instrument', () => {
       expect(envVarsOf(registeredContainers(), AGENT_CONTAINER_NAME)).toMatchObject({DD_API_KEY: MOCK_API_KEY})
     })
 
+    test('keeps a plaintext API key out of the diff it prints', async () => {
+      const {code, context} = await runCLI(['--dry-run'], {DATADOG_API_KEY: '', DD_API_KEY: MOCK_API_KEY})
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('DD_API_KEY')
+      expect(output).not.toContain(MOCK_API_KEY)
+    })
+
     test('fails when no API key is available', async () => {
       const {code, context} = await runCLI([], {DD_API_KEY: '', DATADOG_API_KEY: ''})
 
@@ -587,6 +639,24 @@ describe('ecs-fargate instrument', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain('Fargate requires awsvpc')
       expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('registers and deploys nothing when no execution role can read the API key secret', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand)
+        .resolves({taskDefinition: fargateTaskDefinition({executionRoleArn: undefined}), tags: []})
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--ecs-service',
+        MOCK_SERVICE,
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('has no executionRoleArn')
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(0)
     })
 
     test('reports a task definition that does not exist', async () => {

@@ -3,7 +3,7 @@ import type {ContainerDefinition} from '@aws-sdk/client-ecs'
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 import {AGENT_CONTAINER_NAME} from '../constants'
-import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields} from '../task-definition'
+import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
 
 import {
   APP_CONTAINER,
@@ -35,6 +35,9 @@ describe('instrumentTaskDefinition', () => {
     // A crashed Agent should cost telemetry, not availability.
     expect(agent?.essential).toBe(false)
     expect(envVarsOf(agent)).toStrictEqual({
+      DD_DOGSTATSD_ORIGIN_DETECTION: 'true',
+      DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT: 'true',
+      DD_DOGSTATSD_TAG_CARDINALITY: 'orchestrator',
       ECS_FARGATE: 'true',
       DD_SITE: 'datadoghq.com',
       DD_APM_ENABLED: 'true',
@@ -83,23 +86,23 @@ describe('instrumentTaskDefinition', () => {
     expect(envVarsOf(agent)).not.toHaveProperty('DD_API_KEY')
   })
 
-  test('warns when the secret is referenced but no execution role can read it', () => {
+  test('rejects the secret reference when no execution role can read it', () => {
     const original = fargateTaskDefinition({executionRoleArn: undefined})
 
-    const {warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
-
-    expect(warnings).toContainEqual(expect.stringContaining('no executionRoleArn'))
+    expect(() => instrumentTaskDefinition(original, MOCK_SETTINGS)).toThrow(
+      `Task definition my-app has no executionRoleArn, which ECS needs to read ${MOCK_API_KEY_SECRET_ARN}`
+    )
   })
 
-  test('does not warn about an execution role when the API key is written in plain text', () => {
+  test('accepts a task definition without an execution role when the API key is written in plain text', () => {
     const original = fargateTaskDefinition({executionRoleArn: undefined})
 
-    const {warnings} = instrumentTaskDefinition(original, {
-      site: 'datadoghq.com',
-      apiKey: MOCK_API_KEY,
-    })
-
-    expect(warnings).not.toContainEqual(expect.stringContaining('no executionRoleArn'))
+    expect(() =>
+      instrumentTaskDefinition(original, {
+        site: 'datadoghq.com',
+        apiKey: MOCK_API_KEY,
+      })
+    ).not.toThrow()
   })
 
   test('writes the API key in plain text when no secret ARN is given', () => {
@@ -111,6 +114,34 @@ describe('instrumentTaskDefinition', () => {
     const agent = agentContainerOf(taskDefinition.containerDefinitions)
     expect(envVarsOf(agent)).toHaveProperty('DD_API_KEY', MOCK_API_KEY)
     expect(agent?.secrets).toBeUndefined()
+  })
+
+  test('names the task role permissions ECS task collection needs when there is no task role', () => {
+    const original = fargateTaskDefinition({taskRoleArn: undefined})
+
+    const {warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+    expect(warnings).toContainEqual(
+      expect.stringContaining(
+        'no taskRoleArn, so the Agent cannot collect ECS task metadata. Give the task definition a task role granting ecs:ListClusters, ecs:ListContainerInstances, ecs:DescribeContainerInstances'
+      )
+    )
+  })
+
+  test('keeps the DogStatsD origin tagging a task definition already chose', () => {
+    const original = fargateTaskDefinition({
+      containerDefinitions: [
+        {...APP_CONTAINER},
+        {name: AGENT_CONTAINER_NAME, environment: [{name: 'DD_DOGSTATSD_TAG_CARDINALITY', value: 'low'}]},
+      ],
+    })
+
+    const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+    expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).toMatchObject({
+      DD_DOGSTATSD_TAG_CARDINALITY: 'low',
+      DD_DOGSTATSD_ORIGIN_DETECTION: 'true',
+    })
   })
 
   test('borrows the awslogs configuration from an application container', () => {
@@ -334,6 +365,38 @@ describe('instrumentTaskDefinition', () => {
 
       expect(() => instrumentTaskDefinition(original, MOCK_SETTINGS)).not.toThrow()
     })
+  })
+})
+
+describe('withMaskedApiKey', () => {
+  test('masks the plaintext API key', () => {
+    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+      site: 'datadoghq.com',
+      apiKey: MOCK_API_KEY,
+    })
+
+    const masked = withMaskedApiKey(taskDefinition)
+
+    const value = envVarsOf(agentContainerOf(masked.containerDefinitions)).DD_API_KEY
+    expect(value).not.toBe(MOCK_API_KEY)
+    expect(value).not.toContain(MOCK_API_KEY.slice(2, -4))
+    expect(JSON.stringify(masked)).not.toContain(MOCK_API_KEY)
+  })
+
+  test('masks an API key that looks like a number', () => {
+    const numericKey = '12345678901234567890123456789012'
+    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+      site: 'datadoghq.com',
+      apiKey: numericKey,
+    })
+
+    expect(JSON.stringify(withMaskedApiKey(taskDefinition))).not.toContain(numericKey)
+  })
+
+  test('leaves a task definition without a plaintext API key alone', () => {
+    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+
+    expect(withMaskedApiKey(taskDefinition)).toStrictEqual(taskDefinition)
   })
 })
 
