@@ -45,6 +45,9 @@ import {
   MOCK_REGION,
   MOCK_SERVICE,
   MOCK_SETTINGS,
+  SOCKET_MOUNT,
+  SOCKET_VOLUME,
+  asDescribed,
   fargateService,
   fargateTaskDefinition,
   serviceArn,
@@ -131,7 +134,7 @@ describe('ecs-fargate instrument', () => {
   test('registers nothing when only the CLI version tag is out of date', async () => {
     const {taskDefinition: instrumented} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
     ecsMock.on(DescribeTaskDefinitionCommand).resolves({
-      taskDefinition: fargateTaskDefinition({containerDefinitions: instrumented.containerDefinitions}),
+      taskDefinition: asDescribed(instrumented),
       tags: [{key: 'dd_sls_ci', value: 'v0.0.0'}],
     })
 
@@ -145,7 +148,7 @@ describe('ecs-fargate instrument', () => {
   test('registers nothing when the task definition is already instrumented', async () => {
     const {taskDefinition: instrumented} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
     ecsMock.on(DescribeTaskDefinitionCommand).resolves({
-      taskDefinition: fargateTaskDefinition({containerDefinitions: instrumented.containerDefinitions}),
+      taskDefinition: asDescribed(instrumented),
       tags: INSTRUMENTATION_TAGS,
     })
 
@@ -198,6 +201,31 @@ describe('ecs-fargate instrument', () => {
       expect(agent?.image).toBe(AGENT_IMAGE)
     })
 
+    test('shares the socket volume with every container by default', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      const registered = ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input
+      expect(registered.volumes).toStrictEqual([SOCKET_VOLUME])
+      for (const container of registered.containerDefinitions ?? []) {
+        expect(container.mountPoints).toContainEqual(SOCKET_MOUNT)
+      }
+      expect(envVarsOf(registeredContainers(), MOCK_FAMILY)).toMatchObject({
+        DD_TRACE_AGENT_URL: 'unix:///var/run/datadog/apm.socket',
+        DD_DOGSTATSD_URL: 'unix:///var/run/datadog/dsd.socket',
+      })
+    })
+
+    test('leaves the socket off when told to', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--no-agent-socket'])
+
+      const registered = ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input
+      expect(registered.volumes).toStrictEqual([])
+      for (const container of registered.containerDefinitions ?? []) {
+        expect(container.mountPoints).toBeUndefined()
+      }
+      expect(envVarsOf(registeredContainers(), MOCK_FAMILY)).toMatchObject({DD_AGENT_HOST: '127.0.0.1'})
+    })
+
     test('reads the task definitions and their configuration from a config file', async () => {
       const runWithConfig = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '-r', MOCK_REGION])
 
@@ -213,6 +241,8 @@ describe('ecs-fargate instrument', () => {
       expect(registeredContainers().find((container) => container.name === AGENT_CONTAINER_NAME)?.image).toBe(
         'public.ecr.aws/datadog/agent:7-from-config'
       )
+      // Leaving --no-agent-socket off does not override the choice the file made.
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.volumes).toStrictEqual([])
     })
 
     test('prefers a command-line argument over the configuration file', async () => {
@@ -486,7 +516,7 @@ describe('ecs-fargate instrument', () => {
     test('leaves a service that already runs the instrumented revision alone', async () => {
       const {taskDefinition: instrumented} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
       ecsMock.on(DescribeTaskDefinitionCommand).resolves({
-        taskDefinition: fargateTaskDefinition({containerDefinitions: instrumented.containerDefinitions}),
+        taskDefinition: asDescribed(instrumented),
         tags: INSTRUMENTATION_TAGS,
       })
 

@@ -30,9 +30,15 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 
 Application containers are given `DD_TRACE_ENABLED` and `DD_LOGS_INJECTION`, so the tracers already installed in them send traces and tie your logs to those traces. Both are only filled in when the container does not set them itself, so a task definition that has already made a choice keeps it.
 
+#### Reaching the Agent
+
+The tracers reach the Agent over a Unix socket by default. The command adds a `dd-sockets` volume to the task, mounts it at `/var/run/datadog` on both the Agent and your application containers, and points the tracers at it with `DD_TRACE_AGENT_URL` and `DD_DOGSTATSD_URL`. Pass `--no-agent-socket` to use the task's loopback address instead, which sets `DD_AGENT_HOST` to `127.0.0.1` and leaves the volume off.
+
+Unlike the switches above, the command owns these: the two ways of reaching the Agent are mutually exclusive, so moving between them removes the one that no longer applies rather than leaving a socket path behind that nothing is listening on.
+
 The Agent sidecar accepts custom metrics over DogStatsD: `DD_DOGSTATSD_ORIGIN_DETECTION` and `DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT` are turned on and `DD_DOGSTATSD_TAG_CARDINALITY` is set to `orchestrator`, so your metrics are tagged with the task that submitted them. These are filled in the same way, so a task definition that already sets them keeps its own values.
 
-Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it; upgrading the CLI does not on its own produce a new revision, since that tag is not part of the comparison.
+Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it, and the Agent reports the same version through `DD_INSTALL_INFO_TOOL`, `DD_INSTALL_INFO_TOOL_VERSION`, and `DD_INSTALL_INFO_INSTALLER_VERSION`. Upgrading the CLI does not on its own produce a new revision, since neither the tag nor the reported version is part of the comparison.
 
 #### Deploying the new revision
 
@@ -82,6 +88,7 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
 | `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
+| `--no-agent-socket` |  | Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. |  |
 | `--config` |  | Path to the configuration file. |  |
 <!-- END_USAGE:instrument -->
 
@@ -100,6 +107,8 @@ Instead of supplying arguments, you can create a configuration file in your proj
   }
 }
 ```
+
+Keys name the setting rather than the argument, so a flag that turns something off is the setting set to `false`: `--no-agent-socket` is `"agentSocket": false`.
 
 ## Community
 

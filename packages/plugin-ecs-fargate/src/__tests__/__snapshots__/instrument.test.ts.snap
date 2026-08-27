@@ -2,7 +2,7 @@
 
 exports[`ecs-fargate instrument prints the diff and registers nothing on a dry run 1`] = `
 "[Dry Run] Instrumenting my-app:
-@@ -3,10 +3,18 @@
+@@ -3,10 +3,26 @@
       {
         "environment": [
           {
@@ -16,16 +16,32 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +         {
 +           "name": "DD_LOGS_INJECTION",
 +           "value": "true"
++         },
++         {
++           "name": "DD_TRACE_AGENT_URL",
++           "value": "unix:///var/run/datadog/apm.socket"
++         },
++         {
++           "name": "DD_DOGSTATSD_URL",
++           "value": "unix:///var/run/datadog/dsd.socket"
           }
         ],
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -16,19 +24,87 @@
+@@ -15,20 +31,118 @@
+            "awslogs-group": "/ecs/my-app",
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
           }
         },
++       "mountPoints": [
++         {
++           "containerPath": "/var/run/datadog",
++           "readOnly": false,
++           "sourceVolume": "dd-sockets"
++         }
++       ],
         "name": "my-app"
 +     },
 +     {
@@ -61,6 +77,18 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +         {
 +           "name": "DD_ECS_TASK_COLLECTION_ENABLED",
 +           "value": "true"
++         },
++         {
++           "name": "DD_INSTALL_INFO_TOOL",
++           "value": "datadog-ci"
++         },
++         {
++           "name": "DD_INSTALL_INFO_TOOL_VERSION",
++           "value": "datadog-ci-plugin-ecs-fargate"
++         },
++         {
++           "name": "DD_INSTALL_INFO_INSTALLER_VERSION",
++           "value": "XXXX"
 +         }
 +       ],
 +       "essential": false,
@@ -83,6 +111,13 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +           "awslogs-stream-prefix": "ecs"
 +         }
 +       },
++       "mountPoints": [
++         {
++           "containerPath": "/var/run/datadog",
++           "readOnly": false,
++           "sourceVolume": "dd-sockets"
++         }
++       ],
 +       "name": "datadog-agent",
 +       "secrets": [
 +         {
@@ -108,7 +143,12 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +     }
 +   ],
     "taskRoleArn": "arn:aws:iam::123456789012:role/my-app-task-role",
-    "volumes": []
+-   "volumes": []
++   "volumes": [
++     {
++       "name": "dd-sockets"
++     }
++   ]
   }
 "
 `;

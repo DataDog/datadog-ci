@@ -227,6 +227,7 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
   private buildSettings(config: EcsFargateConfigOptions): InstrumentSettings {
     return {
       agentImage: config.agentImage,
+      agentSocket: config.agentSocket ?? true,
       site: getDatadogSite(),
     }
   }
