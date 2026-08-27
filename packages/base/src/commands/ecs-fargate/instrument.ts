@@ -26,6 +26,30 @@ export type EcsFargateConfigOptions = Partial<{
 }>
 
 /**
+ * The family a `--task-definition` names, whether it is given as a family, a `family:revision`, or
+ * a full task definition ARN.
+ */
+const familyFromTaskDefinition = (taskDefinition: string): string =>
+  (taskDefinition.split('/').pop() ?? taskDefinition).split(':')[0]
+
+/**
+ * The families named more than once, which the run cannot act on: a family has one instrumented
+ * revision
+ */
+const duplicateFamilies = (taskDefinitions: string[]): string[] => {
+  const seen = new Set<string>()
+  const duplicates = new Set<string>()
+  for (const family of taskDefinitions.map(familyFromTaskDefinition)) {
+    if (seen.has(family)) {
+      duplicates.add(family)
+    }
+    seen.add(family)
+  }
+
+  return [...duplicates]
+}
+
+/**
  * Derive the cluster from an ECS service ARN
  */
 const clusterFromServiceArn = (service: string): string | undefined => {
@@ -77,7 +101,7 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   })
 
   protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {
-    description: 'Preview changes running command would apply',
+    description: 'Preview the changes the command would apply',
   })
 
   private taskDefinitions = Option.Array('--task-definition,--taskDefinition', {
@@ -156,6 +180,16 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
     if (!config.taskDefinitions?.length) {
       errors.push('No task definitions specified to instrument. Use --task-definition.')
     }
+
+    const duplicates = duplicateFamilies(config.taskDefinitions ?? [])
+    if (duplicates.length > 0) {
+      errors.push(
+        `--task-definition names the same task definition family more than once (${duplicates.join(
+          ', '
+        )}). A run instruments one revision per family, so name the revision to instrument once.`
+      )
+    }
+
     if (config.cluster && !config.ecsServices?.length) {
       errors.push('--cluster names the cluster of the services to update, so it only applies with --ecs-service.')
     }
