@@ -1622,6 +1622,7 @@ __metadata:
     "@aws-sdk/credential-providers": "npm:3.1045.0"
     "@aws-sdk/types": "npm:3.973.8"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@inquirer/prompts": "npm:7.10.1"
     "@smithy/property-provider": "npm:2.2.0"
     "@smithy/util-retry": "npm:2.2.0"
     aws-sdk-client-mock: "npm:4.1.0"

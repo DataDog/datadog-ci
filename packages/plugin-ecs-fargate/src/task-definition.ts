@@ -29,9 +29,14 @@ import {
   AWSLOGS_LOG_DRIVER,
   AWSVPC_NETWORK_MODE,
   DD_APM_ENABLED_ENV_VAR,
+  DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR,
+  DD_DOGSTATSD_ORIGIN_DETECTION_ENV_VAR,
+  DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR,
   DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR,
   DD_USE_DOGSTATSD_ENV_VAR,
+  DOGSTATSD_ORCHESTRATOR_CARDINALITY,
   ECS_FARGATE_ENV_VAR,
+  ECS_TASK_COLLECTION_ACTIONS,
   LAUNCH_TYPE_FARGATE,
   READ_ONLY_TASK_DEFINITION_FIELDS,
 } from './constants'
@@ -104,7 +109,11 @@ const getAgentEnvVars = (settings: InstrumentSettings): ManagedValues => ({
     [DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR]: 'true',
     ...(settings.apiKey ? {[API_KEY_ENV_VAR]: settings.apiKey} : {}),
   },
-  defaults: {},
+  defaults: {
+    [DD_DOGSTATSD_ORIGIN_DETECTION_ENV_VAR]: 'true',
+    [DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR]: 'true',
+    [DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR]: DOGSTATSD_ORCHESTRATOR_CARDINALITY,
+  },
 })
 
 /**
@@ -261,6 +270,15 @@ export const instrumentTaskDefinition = (
     )
   }
 
+  // ECS resolves secrets through the task's execution role, so a reference without a role in place
+  // would register a revision whose tasks cannot start. Registering it would be worse than doing
+  // nothing: with --ecs-service it replaces healthy tasks with tasks that fail at startup.
+  if (settings.apiKeySecretArn && !taskDefinition.executionRoleArn) {
+    throw Error(
+      `Task definition ${family} has no executionRoleArn, which ECS needs to read ${settings.apiKeySecretArn}, so tasks started from an instrumented revision would fail. Give the task definition an execution role granting secretsmanager:GetSecretValue on that secret, then run this command again.`
+    )
+  }
+
   const containers = taskDefinition.containerDefinitions ?? []
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer({
@@ -275,11 +293,11 @@ export const instrumentTaskDefinition = (
     )
   }
 
-  // ECS resolves secrets through the task's execution role, so a reference without a role in place
-  // registers a revision whose tasks cannot start.
-  if (settings.apiKeySecretArn && !taskDefinition.executionRoleArn) {
+  // Task collection reads the ECS API as the task role, so a task definition without one collects
+  // nothing. The permissions it needs are the command's to name, not to grant.
+  if (!taskDefinition.taskRoleArn) {
     warnings.push(
-      `Task definition ${family} has no executionRoleArn, which ECS needs to read ${settings.apiKeySecretArn}. Tasks started from this revision will fail until the task definition has an execution role granting secretsmanager:GetSecretValue on that secret.`
+      `Task definition ${family} has no taskRoleArn, so the Agent cannot collect ECS task metadata. Give the task definition a task role granting ${ECS_TASK_COLLECTION_ACTIONS.join(', ')} for the task, container, and image tags this metadata provides.`
     )
   }
 
@@ -305,6 +323,30 @@ export const instrumentTaskDefinition = (
     warnings,
   }
 }
+
+/**
+ * Masks a value that is known to be a credential. `maskString` is not used here because it lets
+ * values that look like numbers or booleans through, which an API key is free to look like.
+ */
+const maskApiKey = (apiKey: string): string =>
+  apiKey.length < 12 ? '*'.repeat(16) : `${apiKey.slice(0, 2)}${'*'.repeat(10)}${apiKey.slice(-4)}`
+
+/**
+ * The task definition with any plaintext API key masked, for printing. The diff goes to stdout,
+ * which in CI is a log that outlives the run, so the key a `DD_API_KEY` fallback writes must not
+ * reach it.
+ */
+export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => ({
+  ...input,
+  containerDefinitions: input.containerDefinitions?.map((container) => ({
+    ...container,
+    environment: container.environment?.map((envVar) =>
+      envVar.name === API_KEY_ENV_VAR && envVar.value !== undefined
+        ? {...envVar, value: maskApiKey(envVar.value)}
+        : envVar
+    ),
+  })),
+})
 
 const withoutCliVersionTag = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => ({
   ...input,

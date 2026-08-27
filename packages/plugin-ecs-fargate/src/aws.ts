@@ -11,13 +11,20 @@ import {
   UpdateServiceCommand,
 } from '@aws-sdk/client-ecs'
 import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {input as promptInput} from '@inquirer/prompts'
 import {CredentialsProviderError} from '@smithy/property-provider'
 
 import {AWS_SHARED_CREDENTIALS_FILE_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 
-// TODO: the two credential helpers below are duplicated from plugin-lambda's `functions/commons.ts`
-// (which also prompts for an MFA code). Move them to a shared `helpers/serverless/aws.ts` in the base
-// package, alongside `AWS_SHARED_CREDENTIALS_FILE_ENV_VAR` and the retry strategy from `constants.ts`.
+// TODO: the two credential helpers below are duplicated from plugin-lambda's `functions/commons.ts`.
+// Move them to a shared `helpers/serverless/aws.ts` in the base package, alongside
+// `AWS_SHARED_CREDENTIALS_FILE_ENV_VAR` and the retry strategy from `constants.ts`.
+
+const mfaCodeQuestion = (mfaSerial: string) => ({
+  message: `Enter MFA code for ${mfaSerial}: `,
+  validate: (value: string) =>
+    value.length >= 6 || 'Enter a valid MFA token. Length must be greater than or equal to 6.',
+})
 
 /**
  * Returns the credentials loaded from the given AWS named profile.
@@ -27,6 +34,10 @@ export const getAWSProfileCredentials = async (profile: string): Promise<AwsCred
   if (process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR] !== undefined) {
     init.filepath = process.env[AWS_SHARED_CREDENTIALS_FILE_ENV_VAR]
   }
+
+  // A profile with an `mfa_serial` cannot be resolved without a code, so one is asked for rather
+  // than letting the profile fail to load.
+  init.mfaCodeProvider = (mfaSerial) => promptInput(mfaCodeQuestion(mfaSerial))
 
   try {
     const credentialsProvider: AwsCredentialIdentityProvider = fromIni(init)

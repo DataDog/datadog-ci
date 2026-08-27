@@ -4,9 +4,13 @@ You can use the CLI to instrument your AWS ECS Fargate task definitions with Dat
 
 ### `instrument`
 
+**Warning:** The `ecs-fargate instrument` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
+
 Run `datadog-ci ecs-fargate instrument` to add the Datadog Agent sidecar to an ECS Fargate task definition. The command reads the task definitions you name, adds the `datadog-agent` container to each of them, and registers the result as a new revision. Nothing that is running changes until the new revision is deployed, which you can leave to the command with `--ecs-service`.
 
 ```bash
+export DD_BETA_COMMANDS_ENABLED=1
+
 # Instrument a task definition, reading the API key from an AWS Secrets Manager secret
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn>
 
@@ -26,11 +30,15 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 
 Application containers are given `DD_TRACE_ENABLED` and `DD_LOGS_INJECTION`, so the tracers already installed in them send traces and tie your logs to those traces. Both are only filled in when the container does not set them itself, so a task definition that has already made a choice keeps it.
 
+The Agent sidecar accepts custom metrics over DogStatsD: `DD_DOGSTATSD_ORIGIN_DETECTION` and `DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT` are turned on and `DD_DOGSTATSD_TAG_CARDINALITY` is set to `orchestrator`, so your metrics are tagged with the task that submitted them. These are filled in the same way, so a task definition that already sets them keeps its own values.
+
 Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it; upgrading the CLI does not on its own produce a new revision, since that tag is not part of the comparison.
 
 #### Deploying the new revision
 
-Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. A service named by its full ARN already says which cluster it runs in, so `--cluster` can be left off; passing one that the ARN contradicts is an error rather than a silent choice between them. A run updates services in a single cluster, so ARNs naming more than one are reported too. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
+Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. A service named by its full ARN already says which cluster it runs in, so `--cluster` can be left off; passing a `--cluster` that contradicts the ARN's cluster is an error, not a silent override. A run updates services in a single cluster, so ARNs naming more than one are reported too. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
+
+Because a service is matched by family, a run instruments one revision per family: naming two revisions of the same family, as `--task-definition my-app:3 --task-definition my-app:4` does, is reported rather than leaving the choice of which one to deploy to the order they were passed in.
 
 Services are only updated once every task definition in the run is instrumented, so a run that fails part way through does not leave half of your services on a new revision. Tasks you start yourself with `RunTask`, and services you do not name, keep running the revision they were on.
 
@@ -40,14 +48,21 @@ Services are only updated once every task definition in the run is instrumented,
 
 You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: the ones the task definition already had, plus `dd_sls_ci`. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
 
+`--profile` uses a named profile from your AWS configuration instead. A profile with an `mfa_serial` is supported: the command asks for the code when it loads the profile.
+
 #### Datadog API key
 
-Pass `--api-key-secret-arn` with the ARN of an AWS Secrets Manager secret holding your [Datadog API key](https://app.datadoghq.com/organization-settings/api-keys). The Agent reads the key from the secret at runtime, which keeps it out of the task definition. The task's execution role needs `secretsmanager:GetSecretValue` on that secret.
+Pass `--api-key-secret-arn` with the ARN of an AWS Secrets Manager secret holding your [Datadog API key](https://app.datadoghq.com/organization-settings/api-keys). The Agent reads the key from the secret at runtime, which keeps it out of the task definition. The task's execution role needs `secretsmanager:GetSecretValue` on that secret. ECS resolves secrets through that role, so a task definition with no `executionRoleArn` is reported and left alone rather than turned into a revision whose tasks cannot start.
 
-If you do not pass `--api-key-secret-arn`, the command falls back to the `DD_API_KEY` environment variable and writes its value into the task definition in plain text, which it warns about. A key given this way is validated against your Datadog site before anything is registered.
+If you do not pass `--api-key-secret-arn`, the command falls back to the `DD_API_KEY` environment variable and writes its value into the task definition in plain text, which it warns about. A key given this way is validated against your Datadog site before anything is registered, and is masked in the diff the command prints.
+
+#### Task role
+
+The Agent collects ECS task metadata, which is what tags your telemetry with the task, container, and image it came from. It reads that from the ECS API as the task role, so give the task definition a `taskRoleArn` whose policy allows `ecs:ListClusters`, `ecs:ListContainerInstances`, and `ecs:DescribeContainerInstances`. The command does not change your task role, so it reports a task definition that has none.
 
 #### Environment variables
 
+- `DD_BETA_COMMANDS_ENABLED`: set to `1` to enable this command while it is in beta.
 - `DD_API_KEY` (or `DATADOG_API_KEY`): the Datadog API key to write into the task definition, used only when `--api-key-secret-arn` is not passed.
 - `DD_SITE` (or `DATADOG_SITE`): the [Datadog site](https://docs.datadoghq.com/getting_started/site/) to send data to. Defaults to `datadoghq.com`.
 - `AWS_REGION` (or `AWS_DEFAULT_REGION`): the region to use when `--region` is not passed.
@@ -59,7 +74,7 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 <!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--dry` or `--dry-run` | `-d` | Preview changes running command would apply | `false` |
+| `--dry` or `--dry-run` | `-d` | Preview the changes the command would apply | `false` |
 | `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition to instrument. Can be specified multiple times. |  |
 | `--region` | `-r` | The AWS region the task definition lives in |  |
 | `--profile` |  | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |

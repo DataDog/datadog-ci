@@ -21,7 +21,7 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -16,18 +24,74 @@
+@@ -16,19 +24,87 @@
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
           }
@@ -30,6 +30,18 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +     },
 +     {
 +       "environment": [
++         {
++           "name": "DD_DOGSTATSD_ORIGIN_DETECTION",
++           "value": "true"
++         },
++         {
++           "name": "DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT",
++           "value": "true"
++         },
++         {
++           "name": "DD_DOGSTATSD_TAG_CARDINALITY",
++           "value": "orchestrator"
++         },
 +         {
 +           "name": "ECS_FARGATE",
 +           "value": "true"
@@ -95,6 +107,7 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +       "value": "vXXXX"
 +     }
 +   ],
+    "taskRoleArn": "arn:aws:iam::123456789012:role/my-app-task-role",
     "volumes": []
   }
 "
