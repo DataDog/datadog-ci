@@ -41,19 +41,19 @@ const getResolutionStatus = (
   return SourcemapResolutionStatus.Missing
 }
 
-export class SourcemapsResolveCommand extends BaseCommand {
-  public static paths = [['sourcemaps', 'resolve']]
+export class SourcemapsFindCommand extends BaseCommand {
+  public static paths = [['sourcemaps', 'find']]
 
   public static usage = Command.Usage({
     category: 'RUM',
-    description: 'Resolve debug IDs to local JavaScript bundles and sourcemaps.',
+    description: 'Find local JavaScript bundles and sourcemaps by debug ID.',
     details: `
       This read-only command finds local bundle-sourcemap pairs by debug ID or reports pairs whose runtime bundle has no debug ID.
     `,
     examples: [
-      ['Resolve a debug ID', 'datadog-ci sourcemaps resolve ./dist --debug-id 12345678-1234-1234-1234-123456789abc'],
-      ['Find bundles without debug IDs', 'datadog-ci sourcemaps resolve ./dist --missing-debug-id'],
-      ['Return machine-readable output', 'datadog-ci sourcemaps resolve ./dist --missing-debug-id --json'],
+      ['Find a debug ID', 'datadog-ci sourcemaps find ./dist --debug-id 12345678-1234-1234-1234-123456789abc'],
+      ['Find bundles without debug IDs', 'datadog-ci sourcemaps find ./dist --missing-debug-id'],
+      ['Return machine-readable output', 'datadog-ci sourcemaps find ./dist --missing-debug-id --json'],
     ],
   })
 

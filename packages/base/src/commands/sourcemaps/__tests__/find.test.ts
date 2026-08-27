@@ -6,14 +6,14 @@ import upath from 'upath'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {DEBUG_ID_ASYNC_SEARCH_CHUNK_BYTES} from '../debugId'
-import {SourcemapsResolveCommand} from '../resolve'
+import {SourcemapsFindCommand} from '../find'
 
 const DEBUG_ID = '2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91'
 const OTHER_DEBUG_ID = '00000000-0000-4000-8000-000000000000'
 
-const runCLI = makeRunCLI(SourcemapsResolveCommand, ['sourcemaps', 'resolve'])
+const runCLI = makeRunCLI(SourcemapsFindCommand, ['sourcemaps', 'find'])
 
-describe('sourcemaps resolve', () => {
+describe('sourcemaps find', () => {
   let directory: string
 
   beforeEach(() => {
