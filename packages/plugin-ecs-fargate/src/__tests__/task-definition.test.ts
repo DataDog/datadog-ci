@@ -11,6 +11,9 @@ import {
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
   MOCK_SETTINGS,
+  SOCKET_MOUNT,
+  SOCKET_VOLUME,
+  asDescribed,
   fargateTaskDefinition,
 } from './fixtures'
 
@@ -43,6 +46,9 @@ describe('instrumentTaskDefinition', () => {
       DD_APM_ENABLED: 'true',
       DD_USE_DOGSTATSD: 'true',
       DD_ECS_TASK_COLLECTION_ENABLED: 'true',
+      DD_INSTALL_INFO_TOOL: 'datadog-ci',
+      DD_INSTALL_INFO_TOOL_VERSION: 'datadog-ci-plugin-ecs-fargate',
+      DD_INSTALL_INFO_INSTALLER_VERSION: 'XXXX',
     })
     expect(agent?.healthCheck).toStrictEqual({
       command: ['CMD-SHELL', '/probe.sh'],
@@ -74,7 +80,10 @@ describe('instrumentTaskDefinition', () => {
         {name: 'PORT', value: '8080'},
         {name: 'DD_TRACE_ENABLED', value: 'true'},
         {name: 'DD_LOGS_INJECTION', value: 'true'},
+        {name: 'DD_TRACE_AGENT_URL', value: 'unix:///var/run/datadog/apm.socket'},
+        {name: 'DD_DOGSTATSD_URL', value: 'unix:///var/run/datadog/dsd.socket'},
       ],
+      mountPoints: [SOCKET_MOUNT],
     })
   })
 
@@ -220,12 +229,7 @@ describe('instrumentTaskDefinition', () => {
     test('re-instrumenting produces an identical task definition', () => {
       const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
 
-      // What a second run sees: the registered revision, read-only fields and all.
-      const described = fargateTaskDefinition({
-        containerDefinitions: first.taskDefinition.containerDefinitions,
-        revision: 2,
-      })
-      const second = instrumentTaskDefinition(described, MOCK_SETTINGS)
+      const second = instrumentTaskDefinition(asDescribed(first.taskDefinition, {revision: 2}), MOCK_SETTINGS)
 
       expect(second.taskDefinition).toStrictEqual(first.taskDefinition)
       expect(second.warnings).toHaveLength(0)
@@ -233,9 +237,7 @@ describe('instrumentTaskDefinition', () => {
 
     test('an already instrumented task definition is unchanged by the transform', () => {
       const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
-      const described = fargateTaskDefinition({
-        containerDefinitions: first.taskDefinition.containerDefinitions,
-      })
+      const described = asDescribed(first.taskDefinition)
 
       const {taskDefinition} = instrumentTaskDefinition(described, MOCK_SETTINGS)
 
@@ -244,15 +246,99 @@ describe('instrumentTaskDefinition', () => {
 
     test('does not add a second Agent container', () => {
       const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
-      const described = fargateTaskDefinition({
-        containerDefinitions: first.taskDefinition.containerDefinitions,
-      })
 
-      const {taskDefinition} = instrumentTaskDefinition(described, MOCK_SETTINGS)
+      const {taskDefinition} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_SETTINGS)
 
       expect(
         taskDefinition.containerDefinitions?.filter((container) => container.name === AGENT_CONTAINER_NAME)
       ).toHaveLength(1)
+    })
+
+    test('does not mount the socket volume twice', () => {
+      const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+
+      const {taskDefinition} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_SETTINGS)
+
+      expect(taskDefinition.volumes).toStrictEqual([SOCKET_VOLUME])
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([SOCKET_MOUNT])
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([SOCKET_MOUNT])
+    })
+  })
+
+  describe('reaching the Agent', () => {
+    test('shares the socket volume between the Agent and the application containers', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+
+      expect(taskDefinition.volumes).toStrictEqual([SOCKET_VOLUME])
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([SOCKET_MOUNT])
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([SOCKET_MOUNT])
+    })
+
+    test('sends the tracers to the loopback address when the socket is turned off', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        agentSocket: false,
+      })
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).toMatchObject({DD_AGENT_HOST: '127.0.0.1'})
+      expect(envVarsOf(app)).not.toHaveProperty('DD_TRACE_AGENT_URL')
+      expect(envVarsOf(app)).not.toHaveProperty('DD_DOGSTATSD_URL')
+      expect(taskDefinition.volumes).toStrictEqual([])
+      expect(app?.mountPoints).toBeUndefined()
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toBeUndefined()
+    })
+
+    // The two transports are mutually exclusive, so a socket URL left behind by an earlier run would
+    // point the tracers at a path nothing is listening on.
+    test('takes the socket away when an instrumented task definition turns it off', () => {
+      const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+
+      const {taskDefinition} = instrumentTaskDefinition(asDescribed(first.taskDefinition), {
+        ...MOCK_SETTINGS,
+        agentSocket: false,
+      })
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).not.toHaveProperty('DD_TRACE_AGENT_URL')
+      expect(envVarsOf(app)).not.toHaveProperty('DD_DOGSTATSD_URL')
+      expect(envVarsOf(app)).toMatchObject({DD_AGENT_HOST: '127.0.0.1'})
+      expect(taskDefinition.volumes).toStrictEqual([])
+      expect(app?.mountPoints).toStrictEqual([])
+    })
+
+    test('takes the loopback address away when the socket is turned back on', () => {
+      const withoutSocket = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        agentSocket: false,
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(asDescribed(withoutSocket.taskDefinition), MOCK_SETTINGS)
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).not.toHaveProperty('DD_AGENT_HOST')
+      expect(envVarsOf(app)).toMatchObject({
+        DD_TRACE_AGENT_URL: 'unix:///var/run/datadog/apm.socket',
+        DD_DOGSTATSD_URL: 'unix:///var/run/datadog/dsd.socket',
+      })
+      expect(taskDefinition.volumes).toStrictEqual([SOCKET_VOLUME])
+    })
+
+    test('keeps the volumes and mounts the task definition already declares', () => {
+      const scratch = {name: 'scratch'}
+      const scratchMount = {sourceVolume: 'scratch', containerPath: '/scratch', readOnly: false}
+      const original = fargateTaskDefinition({
+        volumes: [scratch],
+        containerDefinitions: [{...APP_CONTAINER, mountPoints: [scratchMount]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(taskDefinition.volumes).toStrictEqual([scratch, SOCKET_VOLUME])
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([
+        scratchMount,
+        SOCKET_MOUNT,
+      ])
     })
   })
 
@@ -415,21 +501,45 @@ describe('isUpToDate', () => {
 
   test('an instrumented task definition is up to date', () => {
     const updated = instrumented()
-    const original = {
-      ...stripReadOnlyFields(fargateTaskDefinition({containerDefinitions: updated.containerDefinitions})),
-      tags: INSTRUMENTATION_TAGS,
-    }
+    const original = {...stripReadOnlyFields(asDescribed(updated)), tags: INSTRUMENTATION_TAGS}
 
     expect(isUpToDate(original, updated)).toBe(true)
   })
 
   test('a stale CLI version tag alone does not warrant a new revision', () => {
     const updated = instrumented()
-    const original = {
-      ...stripReadOnlyFields(fargateTaskDefinition({containerDefinitions: updated.containerDefinitions})),
-      tags: [{key: 'dd_sls_ci', value: 'v0.0.0'}],
-    }
+    const original = {...stripReadOnlyFields(asDescribed(updated)), tags: [{key: 'dd_sls_ci', value: 'v0.0.0'}]}
 
     expect(isUpToDate(original, updated)).toBe(true)
+  })
+
+  test('a stale CLI version in the Agent install info alone does not warrant a new revision', () => {
+    const updated = instrumented()
+    const registeredByAnOlderCli = {
+      ...updated,
+      containerDefinitions: updated.containerDefinitions?.map((container) =>
+        container.name === AGENT_CONTAINER_NAME
+          ? {
+              ...container,
+              environment: container.environment?.map((envVar) =>
+                envVar.name === 'DD_INSTALL_INFO_INSTALLER_VERSION' ? {...envVar, value: '0.0.0'} : envVar
+              ),
+            }
+          : container
+      ),
+    }
+    const original = {...stripReadOnlyFields(asDescribed(registeredByAnOlderCli)), tags: INSTRUMENTATION_TAGS}
+
+    expect(isUpToDate(original, updated)).toBe(true)
+  })
+
+  test('turning the socket off warrants a new revision', () => {
+    const original = {...stripReadOnlyFields(asDescribed(instrumented())), tags: INSTRUMENTATION_TAGS}
+    const {taskDefinition: updated} = instrumentTaskDefinition(fargateTaskDefinition(), {
+      ...MOCK_SETTINGS,
+      agentSocket: false,
+    })
+
+    expect(isUpToDate(original, updated)).toBe(false)
   })
 })

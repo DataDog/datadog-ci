@@ -45,6 +45,34 @@ export const DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR = 'DD_ECS_TASK_COLLECTION_EN
 export const DD_DOGSTATSD_ORIGIN_DETECTION_ENV_VAR = 'DD_DOGSTATSD_ORIGIN_DETECTION'
 export const DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR = 'DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT'
 export const DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR = 'DD_DOGSTATSD_TAG_CARDINALITY'
+export const DD_TRACE_AGENT_URL_ENV_VAR = 'DD_TRACE_AGENT_URL'
+export const DD_DOGSTATSD_URL_ENV_VAR = 'DD_DOGSTATSD_URL'
+export const DD_AGENT_HOST_ENV_VAR = 'DD_AGENT_HOST'
+export const DD_INSTALL_INFO_TOOL_ENV_VAR = 'DD_INSTALL_INFO_TOOL'
+export const DD_INSTALL_INFO_TOOL_VERSION_ENV_VAR = 'DD_INSTALL_INFO_TOOL_VERSION'
+export const DD_INSTALL_INFO_INSTALLER_VERSION_ENV_VAR = 'DD_INSTALL_INFO_INSTALLER_VERSION'
+
+/**
+ * How the Agent reports what instrumented it, so that installs done by this command can be told
+ * apart from the ones done by hand or by another tool.
+ */
+export const INSTALL_INFO_TOOL = 'datadog-ci'
+export const INSTALL_INFO_TOOL_VERSION = 'datadog-ci-plugin-ecs-fargate'
+
+/**
+ * The volume carrying the Agent's APM and DogStatsD sockets. The tracers write to it and the Agent
+ * reads from it, which is why both sides mount it at the path the Agent's image already listens on.
+ */
+export const AGENT_SOCKET_VOLUME_NAME = 'dd-sockets'
+export const AGENT_SOCKET_MOUNT_PATH = '/var/run/datadog'
+export const APM_SOCKET_URL = `unix://${AGENT_SOCKET_MOUNT_PATH}/apm.socket`
+export const DOGSTATSD_SOCKET_URL = `unix://${AGENT_SOCKET_MOUNT_PATH}/dsd.socket`
+
+/**
+ * Where the tracers send telemetry when the socket is turned off. Every container in a Fargate task
+ * shares one network namespace, so the Agent is on the task's own loopback address.
+ */
+export const AGENT_LOOPBACK_HOST = '127.0.0.1'
 
 /**
  * The tag cardinality custom metrics are submitted with: enough to tell one task apart from another.
