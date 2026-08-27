@@ -108,22 +108,34 @@ describe('extractDebugId', () => {
 })
 
 describe('hasSourceCodeContext', () => {
-  test('detects DD_SOURCE_CODE_CONTEXT', async () => {
+  test('detects DD_SOURCE_CODE_CONTEXT with a debug ID', async () => {
     await withTempDirectory(async (directory) => {
       const filePath = upath.join(directory, 'injected.min.js')
-      fs.writeFileSync(filePath, `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES + 100)}DD_SOURCE_CODE_CONTEXT`)
+      fs.writeFileSync(
+        filePath,
+        `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES + 100)}{"ddDebugId":"${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT"`
+      )
 
       await expect(hasSourceCodeContext(filePath)).resolves.toBe(true)
     })
   })
 
-  test('detects DD_SOURCE_CODE_CONTEXT split across two chunks', async () => {
+  test('detects a debug ID source code context split across two chunks', async () => {
     await withTempDirectory(async (directory) => {
       const filePath = upath.join(directory, 'split-context.min.js')
-      const marker = 'DD_SOURCE_CODE_CONTEXT'
-      fs.writeFileSync(filePath, `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES - 10)}${marker}`)
+      const context = `{"ddDebugId":"${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT"`
+      fs.writeFileSync(filePath, `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES - context.length + 1)}${context}`)
 
       await expect(hasSourceCodeContext(filePath)).resolves.toBe(true)
+    })
+  })
+
+  test('does not treat DD_SOURCE_CODE_CONTEXT without a debug ID as debug ID injection', async () => {
+    await withTempDirectory(async (directory) => {
+      const filePath = upath.join(directory, 'mfe-context.min.js')
+      fs.writeFileSync(filePath, `({"ddDebugId":"${DEBUG_ID}"});({"mfeName":"checkout"},"DD_SOURCE_CODE_CONTEXT")`)
+
+      await expect(hasSourceCodeContext(filePath)).resolves.toBe(false)
     })
   })
 
