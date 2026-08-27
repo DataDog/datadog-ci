@@ -93,6 +93,7 @@ export interface GitData {
 
 export enum SourcemapResolutionStatus {
   BundleOnly = 'bundle-only',
+  Error = 'error',
   Matched = 'matched',
   Mismatched = 'mismatched',
   Missing = 'missing',
@@ -101,6 +102,7 @@ export enum SourcemapResolutionStatus {
 
 export interface SourcemapResolution {
   bundleDebugId?: string
+  bundleError?: string
   minifiedFilePath: string
   sourcemapDebugId?: string
   sourcemapError?: string

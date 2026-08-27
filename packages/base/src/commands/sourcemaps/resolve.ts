@@ -12,43 +12,20 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
-import {extractDebugIdAsync} from './debugId'
+import {extractDebugIdAsync, isValidDebugId} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap, SourcemapResolutionStatus} from './interfaces'
 import {renderDiscoveryWarning, renderPathNotFound, renderSourcemapResolutions} from './renderer'
-
-const DEBUG_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-interface SourcemapDebugIdResult {
-  debugId?: string
-  error?: string
-}
-
-const readSourcemapDebugId = async (sourcemapPath: string): Promise<SourcemapDebugIdResult> => {
-  try {
-    const parsed = JSON.parse(await fs.promises.readFile(sourcemapPath, 'utf8')) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {error: 'sourcemap must be a JSON object'}
-    }
-
-    const debugId = (parsed as Record<string, unknown>).debug_id
-    if (debugId === undefined) {
-      return {}
-    }
-    if (typeof debugId !== 'string' || !DEBUG_ID_REGEX.test(debugId)) {
-      return {error: 'sourcemap contains an invalid debug_id'}
-    }
-
-    return {debugId}
-  } catch (error) {
-    return {error: error instanceof Error ? error.message : String(error)}
-  }
-}
+import {extractSourcemapDebugId} from './sourcemapDebugId'
 
 const getResolutionStatus = (
   bundleDebugId: string | undefined,
-  sourcemapDebugId: string | undefined
+  sourcemapDebugId: string | undefined,
+  bundleError: string | undefined
 ): SourcemapResolutionStatus => {
+  if (bundleError) {
+    return SourcemapResolutionStatus.Error
+  }
   if (bundleDebugId && sourcemapDebugId) {
     return bundleDebugId.toLowerCase() === sourcemapDebugId.toLowerCase()
       ? SourcemapResolutionStatus.Matched
@@ -128,6 +105,15 @@ export class SourcemapsResolveCommand extends BaseCommand {
     const resolutions = await doWithMaxConcurrency(this.maxConcurrency, payloads, (payload) =>
       this.resolvePayload(payload)
     )
+    let resolutionFailures = 0
+    for (const resolution of resolutions) {
+      if (resolution.bundleError) {
+        resolutionFailures++
+        this.context.stderr.write(
+          renderDiscoveryWarning(`Could not inspect bundle ${resolution.minifiedFilePath}: ${resolution.bundleError}`)
+        )
+      }
+    }
     const matches = resolutions
       .filter((resolution) => this.matchesQuery(resolution))
       .sort((left, right) => left.minifiedFilePath.localeCompare(right.minifiedFilePath))
@@ -143,11 +129,11 @@ export class SourcemapsResolveCommand extends BaseCommand {
 
       return 1
     }
-    if (this.missingDebugId && matches.length === 0 && !this.json) {
+    if (this.missingDebugId && matches.length === 0 && resolutionFailures === 0 && !this.json) {
       this.context.stdout.write('All discovered minified files contain a debug ID.\n')
     }
 
-    return discoveryFailures === 0 ? 0 : 1
+    return discoveryFailures === 0 && resolutionFailures === 0 ? 0 : 1
   }
 
   private validateOptions(): boolean {
@@ -156,7 +142,7 @@ export class SourcemapsResolveCommand extends BaseCommand {
 
       return false
     }
-    if (this.debugId && !DEBUG_ID_REGEX.test(this.debugId)) {
+    if (this.debugId && !isValidDebugId(this.debugId)) {
       this.context.stderr.write('--debug-id must be a UUID.\n')
 
       return false
@@ -166,24 +152,25 @@ export class SourcemapsResolveCommand extends BaseCommand {
   }
 
   private async resolvePayload(payload: Sourcemap): Promise<SourcemapResolution> {
-    const [bundleDebugId, sourcemapResult] = await Promise.all([
+    const [bundleResult, sourcemapResult] = await Promise.all([
       extractDebugIdAsync(payload.minifiedFilePath),
-      readSourcemapDebugId(payload.sourcemapPath),
+      extractSourcemapDebugId(payload.sourcemapPath),
     ])
 
     return {
-      ...(bundleDebugId ? {bundleDebugId} : {}),
+      ...(bundleResult.debugId ? {bundleDebugId: bundleResult.debugId} : {}),
+      ...(bundleResult.error ? {bundleError: bundleResult.error} : {}),
       minifiedFilePath: payload.minifiedFilePath,
       ...(sourcemapResult.debugId ? {sourcemapDebugId: sourcemapResult.debugId} : {}),
       ...(sourcemapResult.error ? {sourcemapError: sourcemapResult.error} : {}),
       sourcemapPath: payload.sourcemapPath,
-      status: getResolutionStatus(bundleDebugId, sourcemapResult.debugId),
+      status: getResolutionStatus(bundleResult.debugId, sourcemapResult.debugId, bundleResult.error),
     }
   }
 
   private matchesQuery(resolution: SourcemapResolution): boolean {
     if (this.missingDebugId) {
-      return resolution.bundleDebugId === undefined
+      return resolution.bundleDebugId === undefined && resolution.bundleError === undefined
     }
 
     const debugId = this.debugId!.toLowerCase()

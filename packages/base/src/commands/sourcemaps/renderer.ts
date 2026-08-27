@@ -26,6 +26,9 @@ export const renderSourcemapResolutions = (resolutions: SourcemapResolution[]): 
         `  Bundle debug ID: ${resolution.bundleDebugId ?? '<missing>'}`,
         `  Sourcemap debug ID: ${resolution.sourcemapDebugId ?? '<missing>'}`,
       ]
+      if (resolution.bundleError) {
+        output.push(`  Bundle error: ${resolution.bundleError}`)
+      }
       if (resolution.sourcemapError) {
         output.push(`  Sourcemap error: ${resolution.sourcemapError}`)
       }

@@ -126,6 +126,31 @@ describe('sourcemaps resolve', () => {
     expect(typeof results[0].sourcemapError).toBe('string')
   })
 
+  test('reports malformed bundle IDs instead of classifying them as missing', async () => {
+    writePair('invalid-bundle', '2f1d7f524e1b--4f7c-8c0d-2f4a5f6d8e91')
+
+    const {context, code} = await runCLI([directory, '--missing-debug-id', '--json'])
+
+    expect(code).toBe(1)
+    expect(JSON.parse(context.stdout.toString())).toEqual([])
+    expect(context.stderr.toString()).toContain('bundle contains an invalid ddDebugId')
+    expect(context.stdout.toString()).not.toContain('"status": "missing"')
+  })
+
+  test('reports orphan sourcemaps instead of classifying their absent bundle as missing an ID', async () => {
+    fs.writeFileSync(
+      upath.join(directory, 'orphan.js.map'),
+      JSON.stringify({version: 3, sources: ['orphan.ts'], mappings: ''})
+    )
+
+    const {context, code} = await runCLI([directory, '--missing-debug-id', '--json'])
+
+    expect(code).toBe(1)
+    expect(JSON.parse(context.stdout.toString())).toEqual([])
+    expect(context.stderr.toString()).toContain('Could not inspect bundle')
+    expect(context.stderr.toString()).toContain('ENOENT')
+  })
+
   test('returns exit 1 when an exact debug ID has no local match', async () => {
     writePair('missing')
 
