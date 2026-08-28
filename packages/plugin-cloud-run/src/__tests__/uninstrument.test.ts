@@ -279,6 +279,45 @@ describe('UninstrumentCommand', () => {
       expect(result.template?.volumes).toEqual([{name: 'customer-volume', emptyDir: {}}])
     })
 
+    test('removes recognizable multi-language state without an injection label', () => {
+      const preload = '/opt/datadog-packages/datadog-apm-inject/stable/inject/launcher.preload.so'
+      const service: IService = {
+        labels: {customer: 'keep-me'},
+        template: {
+          containers: [
+            {
+              name: 'app',
+              env: [
+                {name: 'LD_PRELOAD', value: `${preload} /customer/preload.so`},
+                {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
+                {name: 'CUSTOM_VAR', value: 'keep-me'},
+              ],
+              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/opt/datadog-packages'}],
+              dependsOn: [TRACER_CONTAINER_NAME, 'database'],
+            },
+            {name: TRACER_CONTAINER_NAME},
+          ],
+          volumes: [{name: TRACER_VOLUME_NAME, emptyDir: {}}],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      expect(result.labels).toEqual({customer: 'keep-me'})
+      expect(result.template?.containers).toEqual([
+        expect.objectContaining({
+          name: 'app',
+          env: [
+            {name: 'LD_PRELOAD', value: '/customer/preload.so'},
+            {name: 'CUSTOM_VAR', value: 'keep-me'},
+          ],
+          volumeMounts: [],
+          dependsOn: ['database'],
+        }),
+      ])
+      expect(result.template?.volumes).toEqual([])
+    })
+
     test('keeps an unnamed main container unnamed', () => {
       const service: IService = {
         labels: {

@@ -44,6 +44,14 @@ describe('CloudRunInstrumentCommand', () => {
     expect(parsedOptions?.tracing).toBe(tracing)
   })
 
+  test('describes automatic language detection', async () => {
+    const {code, context} = await runCLI(['--help'])
+
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain('detect the language and add a tracer automatically')
+    expect(context.stdout.toString()).toContain('Omit this option with --tracing inject')
+  })
+
   test('accepts automatic instrumentation options', async () => {
     const {code} = await runCLI([
       '--language',

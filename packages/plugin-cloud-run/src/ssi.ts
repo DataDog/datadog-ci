@@ -31,6 +31,20 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
+export const COMPOSITE_TRACER_IMAGE = 'gcr.io/datadoghq/dd-lib-composite-init:latest'
+export const COMPOSITE_TRACER_MOUNT_PATH = '/opt/datadog-packages'
+export const COMPOSITE_TRACER_COMPLETION_MARKER = `${COMPOSITE_TRACER_MOUNT_PATH}/.datadog-composite-copy-finished`
+
+const COMPOSITE_ENV_FRAGMENTS: readonly EnvFragment[] = [
+  {
+    name: 'LD_PRELOAD',
+    value: `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so`,
+    separator: ' ',
+    mode: 'prepend',
+  },
+  {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless', mode: 'set-if-absent'},
+]
+
 export interface SsiOptions {
   readonly language: string | undefined
   readonly tracing: TracingMode | undefined
@@ -49,6 +63,7 @@ export type SsiConfigResult = (
       spec: LanguageInjectionSpec
       tracerVolumeMedium: TracerVolumeMedium
     }
+  | {kind: 'multi-language'; tracerVolumeMedium: TracerVolumeMedium}
 ) & {warnings: readonly string[]}
 
 /** Resolves SSI inputs to a mode or validation errors. */
@@ -68,11 +83,24 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
   }
 
   if (options.language === undefined) {
-    return {
-      kind: 'errors',
-      errors: ['--tracing inject requires --language until automatic multi-language injection is supported.'],
-      warnings: [],
-    }
+    const unsupportedFlags = [
+      options.tracerVersion !== undefined ? '--tracer-version' : undefined,
+      options.tracerLibc !== undefined ? '--tracer-libc' : undefined,
+    ].filter((flag): flag is string => flag !== undefined)
+
+    return unsupportedFlags.length > 0
+      ? {
+          kind: 'errors',
+          errors: [
+            `${unsupportedFlags.join(', ')} require --language because automatic language detection cannot apply per-language tracer settings. Add --language or remove these options.`,
+          ],
+          warnings: [],
+        }
+      : {
+          kind: 'multi-language',
+          tracerVolumeMedium: options.tracerVolumeMedium ?? 'memory',
+          warnings: [],
+        }
   }
 
   if (!isCloudRunLanguage(options.language)) {
@@ -185,17 +213,29 @@ export const selectMainContainer = (
   )
 }
 
+export const assertInjectionEnvCanBeMerged = (
+  existingEnv: readonly IEnvVar[] | null | undefined,
+  config: Extract<SsiConfigResult, {kind: 'single-language' | 'multi-language'}>
+): void => {
+  const env = existingEnv ?? []
+  if (config.kind === 'single-language') {
+    assertEnvCanBeMerged(env, config.spec.env, [DD_TAGS_ENV_VAR])
+  } else {
+    assertEnvCanBeMerged(env, COMPOSITE_ENV_FRAGMENTS)
+  }
+}
+
 export const mergeLanguageInjectionEnv = (
   existingEnv: readonly IEnvVar[] | null | undefined,
   spec: LanguageInjectionSpec
 ): IEnvVar[] => {
   const env = existingEnv ?? []
-  assertLanguageInjectionEnvCanBeMerged(env, spec)
+  assertEnvCanBeMerged(env, spec.env, [DD_TAGS_ENV_VAR])
   const merged = spec.env.reduce<IEnvVar[]>(
     (current, fragment) => {
       const existing = findEnv(current, fragment.name)
 
-      return upsertEnv(current, fragment.name, mergeLanguageEnvFragment(existing?.value ?? undefined, fragment))
+      return upsertEnv(current, fragment.name, mergeInjectionEnvFragment(existing?.value ?? undefined, fragment))
     },
     [...env]
   )
@@ -204,15 +244,43 @@ export const mergeLanguageInjectionEnv = (
   return upsertEnv(merged, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value ?? undefined))
 }
 
-/** Removes exact tracer fragments for every supported language so replacing a tracer cannot leave stale settings. */
-export const removeLanguageInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
+export const mergeCompositeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] => {
+  const env = existingEnv ?? []
+  assertEnvCanBeMerged(env, COMPOSITE_ENV_FRAGMENTS)
+
+  return COMPOSITE_ENV_FRAGMENTS.reduce<IEnvVar[]>(
+    (current, fragment) => {
+      const existing = findEnv(current, fragment.name)
+
+      return upsertEnv(current, fragment.name, mergeInjectionEnvFragment(existing?.value ?? undefined, fragment))
+    },
+    [...env]
+  )
+}
+
+export const removeSingleLanguageInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
+  removeEnvFragments(existingEnv, LANGUAGE_ENV_FRAGMENTS, true)
+
+export const removeCompositeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
+  removeEnvFragments(existingEnv, COMPOSITE_ENV_FRAGMENTS, false)
+
+/** Removes exact tracer fragments for every supported injection mode during full uninstrumentation. */
+export const removeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
+  removeEnvFragments(existingEnv, [...LANGUAGE_ENV_FRAGMENTS, ...COMPOSITE_ENV_FRAGMENTS], true)
+
+const removeEnvFragments = (
+  existingEnv: readonly IEnvVar[] | null | undefined,
+  ownedFragments: readonly EnvFragment[],
+  removeTag: boolean
+): IEnvVar[] =>
   (existingEnv ?? []).flatMap((variable) => {
     if (!variable.name || variable.valueSource || !variable.value) {
       return [variable]
     }
 
-    const fragments = LANGUAGE_ENV_FRAGMENTS.filter((fragment) => fragment.name === variable.name)
-    const withoutTag = variable.name === DD_TAGS_ENV_VAR ? removeInjectionModeTag(variable.value) : variable.value
+    const fragments = ownedFragments.filter((fragment) => fragment.name === variable.name)
+    const withoutTag =
+      removeTag && variable.name === DD_TAGS_ENV_VAR ? removeInjectionModeTag(variable.value) : variable.value
     const value = fragments.reduce<string | undefined>(removeEnvFragment, withoutTag)
 
     return value === undefined ? [] : [value === variable.value ? variable : {...variable, value}]
@@ -221,8 +289,12 @@ export const removeLanguageInjectionEnv = (existingEnv: readonly IEnvVar[] | nul
 const findEnv = (env: readonly IEnvVar[], name: string): IEnvVar | undefined =>
   env.find((variable) => variable.name === name)
 
-const assertLanguageInjectionEnvCanBeMerged = (env: readonly IEnvVar[], spec: LanguageInjectionSpec): void => {
-  const targetNames = new Set([...spec.env.map((fragment) => fragment.name), DD_TAGS_ENV_VAR])
+const assertEnvCanBeMerged = (
+  env: readonly IEnvVar[],
+  fragments: readonly EnvFragment[],
+  extraNames: readonly string[] = []
+): void => {
+  const targetNames = new Set([...fragments.map((fragment) => fragment.name), ...extraNames])
   for (const name of targetNames) {
     const matching = env.filter((variable) => variable.name === name)
     if (matching.length > 1) {
@@ -236,6 +308,10 @@ const assertLanguageInjectionEnvCanBeMerged = (env: readonly IEnvVar[], spec: La
       )
     }
   }
+
+  for (const fragment of fragments) {
+    mergeInjectionEnvFragment(findEnv(env, fragment.name)?.value ?? undefined, fragment)
+  }
 }
 
 const upsertEnv = (env: readonly IEnvVar[], name: string, value: string): IEnvVar[] => {
@@ -246,7 +322,7 @@ const upsertEnv = (env: readonly IEnvVar[], name: string, value: string): IEnvVa
     : env.map((variable, variableIndex) => (variableIndex === index ? {...variable, value} : variable))
 }
 
-const mergeLanguageEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
+const mergeInjectionEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
   try {
     return mergeEnvFragment(currentValue, fragment)
   } catch (error) {
