@@ -27,7 +27,9 @@ datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name
 
 `--tracing inject` without `--language` is reserved for future multi-language automatic instrumentation and currently returns an unsupported error. Go tracers cannot be injected; install `dd-trace-go` in the application and use `--tracing manual`.
 
-`--language` continues to set `DD_SOURCE` for log parsing without enabling automatic instrumentation by itself. `--tracer-version` and `--tracer-libc` only apply with `--tracing inject`.
+`--language` continues to set `DD_SOURCE` for log parsing without enabling automatic instrumentation by itself. `--tracer-version`, `--tracer-libc`, and `--tracer-volume-medium` only apply with `--tracing inject`.
+
+Injected tracers use a 500 MiB memory-backed volume by default. Set `--tracer-volume-medium disk` to use a 10 GiB disk-backed volume. Disk volumes are a Preview feature that requires the BETA launch stage and second generation execution environment. The command sets those requirements when needed, preserves an existing ALPHA launch stage, and never falls back to memory if Cloud Run rejects the disk configuration.
 
 Automatic instrumentation targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
@@ -56,9 +58,9 @@ You must have valid [GCP credentials][1] configured with access to the Cloud Run
 
 You must expose these environment variables in the environment where you are running `datadog-ci cloud-run instrument`:
 
-| Environment Variable | Description | Example |
-| -------------------- | ----------- | ------- |
-| `DD_API_KEY`         | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Cloud Run service. | `export DD_API_KEY=<API_KEY>` |
+| Environment Variable | Description                                                                                                                                                                                                                                                                | Example                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `DD_API_KEY`         | Datadog API Key. Sets the `DD_API_KEY` environment variable on your Cloud Run service.                                                                                                                                                                                     | `export DD_API_KEY=<API_KEY>`  |
 | `DD_SITE`            | Set which Datadog site to send data. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, `uk1.datadoghq.com`, `ddog-gov.com`, and `us2.ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com` |
 
 ### Arguments
@@ -66,6 +68,7 @@ You must expose these environment variables in the environment where you are run
 Configuration can be done using command-line arguments.
 
 #### `instrument`
+
 You can pass the following arguments to `instrument` to specify its behavior.
 
 <!-- BEGIN_USAGE:instrument -->
@@ -97,10 +100,12 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--language` |  | Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Possible values: "java", "nodejs", "csharp", "python", "ruby", "php", "go". |  |
 | `--tracer-version` |  | The tracer image tag to use with --tracing inject. | `latest` |
 | `--tracer-libc` |  | The C standard library used by the application image for automatic instrumentation. Possible values: "glibc", "musl". | `glibc` |
+| `--tracer-volume-medium` |  | Storage medium for the injected tracer volume. Possible values: "memory", "disk". Defaults to "memory". "disk" uses a 10 GiB Preview volume and requires the second generation execution environment. |  |
 | `--tracer-readiness-port` |  | The tracer container readiness port. Must not conflict with the main application port or the Agent health-check port. | `18999` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`
+
 You can pass the following arguments to `uninstrument` to specify its behavior.
 
 <!-- BEGIN_USAGE:uninstrument -->
@@ -117,6 +122,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior.
 <!-- END_USAGE:uninstrument -->
 
 #### `flare`
+
 You can pass the following arguments to `flare` to specify its behavior.
 
 <!-- BEGIN_USAGE:flare -->
@@ -135,11 +141,12 @@ You can pass the following arguments to `flare` to specify its behavior.
 
 ## Troubleshooting Cloud Run instrumentation
 
-To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare`  command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and the YAML config. These files are submitted to Datadog support via a ticket matching the provided Zendesk case ID.
+To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare` command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and the YAML config. These files are submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
 **Note**: This command works regardless of whether your Cloud Run services were instrumented using `datadog-ci cloud-run instrument`.
 
 ### Examples
+
 ```bash
 # Collect and send files to Datadog support for a single service
 datadog-ci cloud-run flare -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id>

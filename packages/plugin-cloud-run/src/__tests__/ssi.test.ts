@@ -37,6 +37,7 @@ const defaultOptions: SsiOptions = {
   tracing: undefined,
   tracerVersion: undefined,
   tracerLibc: undefined,
+  tracerVolumeMedium: undefined,
 }
 
 const getSpec = (language: Language, libc: Libc = 'glibc') =>
@@ -90,8 +91,23 @@ describe('resolveSsiConfig', () => {
     })
   })
 
-  test('requires injection for tracer flags, including explicit defaults', () => {
-    expect(getErrors({tracerVersion: 'latest', tracerLibc: 'glibc'})).toContain('--tracer-version, --tracer-libc')
+  test('requires injection for tracer options, including explicit defaults', () => {
+    expect(getErrors({tracerVersion: 'latest', tracerLibc: 'glibc', tracerVolumeMedium: 'memory'})).toContain(
+      '--tracer-version, --tracer-libc, --tracer-volume-medium'
+    )
+  })
+
+  test('defaults the tracer volume to memory and accepts disk', () => {
+    const memory = resolveSsiConfig({...defaultOptions, tracing: 'inject', language: 'nodejs'})
+    const disk = resolveSsiConfig({
+      ...defaultOptions,
+      tracing: 'inject',
+      language: 'nodejs',
+      tracerVolumeMedium: 'disk',
+    })
+
+    expect(memory).toMatchObject({kind: 'single-language', tracerVolumeMedium: 'memory'})
+    expect(disk).toMatchObject({kind: 'single-language', tracerVolumeMedium: 'disk'})
   })
 
   test.each([
@@ -244,11 +260,15 @@ describe('selectMainContainer', () => {
   })
 })
 
-const serviceConfigOptions = (language: Language | 'none' = 'nodejs'): InstrumentServiceConfigOptions => ({
+const serviceConfigOptions = (
+  language: Language | 'none' = 'nodejs',
+  tracerVolumeMedium: SsiOptions['tracerVolumeMedium'] = undefined
+): InstrumentServiceConfigOptions => ({
   ssiConfig: resolveSsiConfig({
     ...defaultOptions,
     tracing: language === 'none' ? undefined : 'inject',
     language: language === 'none' ? undefined : language,
+    tracerVolumeMedium,
   }),
   ddService: 'service',
   environment: undefined,
@@ -352,6 +372,71 @@ describe('SSI service preparation', () => {
       name: 'datadog-tracer',
       emptyDir: {medium: 1, sizeLimit: '500Mi'},
     })
+  })
+
+  test.each([
+    [undefined, 'BETA'],
+    ['LAUNCH_STAGE_UNSPECIFIED', 'BETA'],
+    ['GA', 'BETA'],
+    ['BETA', 'BETA'],
+    ['ALPHA', 'ALPHA'],
+  ] as const)('uses a 10 GiB disk volume and launch stage %s', (launchStage, expectedLaunchStage) => {
+    const service = serviceWithWorker()
+    service.description = 'keep me'
+    service.launchStage = launchStage
+    service.template!.executionEnvironment = 1
+    service.template!.serviceAccount = 'customer-service-account'
+
+    const result = instrumentServiceConfig(service, serviceConfigOptions('nodejs', 'disk'))
+
+    expect(result.launchStage).toBe(expectedLaunchStage)
+    expect(result.description).toBe('keep me')
+    expect(result.template).toMatchObject({
+      executionEnvironment: 2,
+      serviceAccount: 'customer-service-account',
+    })
+    expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
+      name: 'datadog-tracer',
+      emptyDir: {medium: 2, sizeLimit: '10Gi'},
+    })
+  })
+
+  test('switches tracer storage without resetting disk requirements', () => {
+    const memory = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const disk = instrumentServiceConfig(memory, serviceConfigOptions('nodejs', 'disk'))
+    const retry = instrumentServiceConfig(disk, serviceConfigOptions('nodejs', 'disk'))
+    const memoryAgain = instrumentServiceConfig(disk, serviceConfigOptions())
+
+    expect(disk.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toMatchObject({
+      emptyDir: {medium: 2, sizeLimit: '10Gi'},
+    })
+    expect(retry).toEqual(disk)
+    expect(memoryAgain.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toMatchObject({
+      emptyDir: {medium: 1, sizeLimit: '500Mi'},
+    })
+    expect(memoryAgain.launchStage).toBe('BETA')
+    expect(memoryAgain.template?.executionEnvironment).toBe(2)
+  })
+
+  test.each([
+    ['manual', 'true'],
+    ['disabled', 'false'],
+  ] as const)('removes disk injection for %s without resetting service requirements', (tracing, traceEnabled) => {
+    const injected = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions('nodejs', 'disk'))
+    const noInjectionOptions = serviceConfigOptions('none')
+    const result = instrumentServiceConfig(injected, {
+      ...noInjectionOptions,
+      ssiConfig: resolveSsiConfig({...defaultOptions, tracing, language: 'nodejs'}),
+      envVarsByName: {
+        ...noInjectionOptions.envVarsByName,
+        [DD_TRACE_ENABLED_ENV_VAR]: {name: DD_TRACE_ENABLED_ENV_VAR, value: traceEnabled},
+      },
+    })
+
+    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer')).toBeUndefined()
+    expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toBeUndefined()
+    expect(result.launchStage).toBe('BETA')
+    expect(result.template?.executionEnvironment).toBe(2)
   })
 
   test('uses the configured readiness port for the tracer container', () => {

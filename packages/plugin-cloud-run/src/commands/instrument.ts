@@ -171,6 +171,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       tracing: normalizeTracingMode(this.tracing),
       tracerVersion: this.tracerVersion,
       tracerLibc: this.tracerLibc,
+      tracerVolumeMedium: this.tracerVolumeMedium,
     })
 
     return this.ssiConfig

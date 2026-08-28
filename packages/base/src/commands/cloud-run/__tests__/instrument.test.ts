@@ -7,6 +7,7 @@ interface ParsedOptions {
   language: string | undefined
   tracerVersion: string | undefined
   tracerLibc: string | undefined
+  tracerVolumeMedium: string | undefined
   healthCheckPort: number | undefined
   tracerReadinessPort: number
 }
@@ -20,6 +21,7 @@ class TestCloudRunInstrumentCommand extends CloudRunInstrumentCommand {
       language: this.language,
       tracerVersion: this.tracerVersion,
       tracerLibc: this.tracerLibc,
+      tracerVolumeMedium: this.tracerVolumeMedium,
       healthCheckPort: this.healthCheckPort,
       tracerReadinessPort: this.tracerReadinessPort,
     }
@@ -43,7 +45,16 @@ describe('CloudRunInstrumentCommand', () => {
   })
 
   test('accepts automatic instrumentation options', async () => {
-    const {code} = await runCLI(['--language', 'python', '--tracer-version', '2.0.0', '--tracer-libc', 'musl'])
+    const {code} = await runCLI([
+      '--language',
+      'python',
+      '--tracer-version',
+      '2.0.0',
+      '--tracer-libc',
+      'musl',
+      '--tracer-volume-medium',
+      'disk',
+    ])
 
     expect(code).toBe(0)
     expect(parsedOptions).toEqual({
@@ -51,6 +62,7 @@ describe('CloudRunInstrumentCommand', () => {
       language: 'python',
       tracerVersion: '2.0.0',
       tracerLibc: 'musl',
+      tracerVolumeMedium: 'disk',
       healthCheckPort: undefined,
       tracerReadinessPort: 18999,
     })
@@ -97,6 +109,7 @@ describe('CloudRunInstrumentCommand', () => {
     ['--tracer-version', 'bad/tag'],
     ['--tracer-registry', 'gcr.io/datadoghq'],
     ['--tracer-libc', 'bionic'],
+    ['--tracer-volume-medium', 'ramdisk'],
   ])('rejects %s %s', async (flag, value) => {
     const {code} = await runCLI([flag, value])
 
