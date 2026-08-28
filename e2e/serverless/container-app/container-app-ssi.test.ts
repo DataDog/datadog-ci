@@ -8,7 +8,7 @@ import {triggerTraffic} from '../helpers/traffic'
 import {getContainerAppUrl, verifySsiInstrumented, verifyUninstrumented} from './container-app-verifier'
 
 const NODE_APPLICATION_IMAGE =
-  'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/node-ssi@sha256:5943fc61fc30fd77fd847819b37b2cf32dbc394c107116621610bd4b13099ce2'
+  'dde2etfcapp.azurecr.io/node-ssi@sha256:1794d7e5edeea7dbe940e74037b4c715a0355af47080fb7fbfbd4bc4a93bfb89'
 
 const describeOrSkip =
   process.env.SKIP_CONTAINER_APP_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true'
@@ -43,9 +43,6 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           ` --resource-group "${resourceGroup}"` +
           ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
           ` --image "${NODE_APPLICATION_IMAGE}"` +
-          ` --registry-server us-central1-docker.pkg.dev` +
-          ` --registry-username oauth2accesstoken` +
-          ` --registry-password "$(gcloud auth print-access-token)"` +
           ` --cpu 0.25 --memory 0.5Gi` +
           ` --min-replicas 0 --max-replicas 1` +
           ` --ingress external --target-port 8080` +
