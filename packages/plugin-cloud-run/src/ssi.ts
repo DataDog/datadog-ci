@@ -1,5 +1,10 @@
 import type {IContainer, IEnvVar} from './types'
-import type {CloudRunLanguage, TracingInput, TracingMode} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
+import type {
+  CloudRunLanguage,
+  TracerVolumeMedium,
+  TracingInput,
+  TracingMode,
+} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
@@ -31,6 +36,7 @@ export interface SsiOptions {
   readonly tracing: TracingMode | undefined
   readonly tracerVersion: string | undefined
   readonly tracerLibc: Libc | undefined
+  readonly tracerVolumeMedium: TracerVolumeMedium | undefined
 }
 
 export type SsiConfigResult = (
@@ -41,6 +47,7 @@ export type SsiConfigResult = (
       language: Language
       libc: Libc
       spec: LanguageInjectionSpec
+      tracerVolumeMedium: TracerVolumeMedium
     }
 ) & {warnings: readonly string[]}
 
@@ -80,6 +87,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
 
   const tracerVersion = options.tracerVersion ?? DEFAULT_TRACER_VERSION
   const tracerLibc = options.tracerLibc ?? DEFAULT_TRACER_LIBC
+  const tracerVolumeMedium = options.tracerVolumeMedium ?? 'memory'
   const errors = getLanguageCompatibilityErrors({
     language: options.language,
     libc: tracerLibc,
@@ -109,6 +117,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     language: options.language,
     libc: tracerLibc,
     spec,
+    tracerVolumeMedium,
   }
 }
 
@@ -251,6 +260,7 @@ const tracerFlags = (options: SsiOptions): string[] =>
   [
     options.tracerVersion !== undefined ? '--tracer-version' : undefined,
     options.tracerLibc !== undefined ? '--tracer-libc' : undefined,
+    options.tracerVolumeMedium !== undefined ? '--tracer-volume-medium' : undefined,
   ].filter((flag): flag is string => flag !== undefined)
 
 export class SsiConfigError extends Error {

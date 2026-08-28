@@ -139,6 +139,7 @@ describe('InstrumentCommand', () => {
     test.each([
       [['--tracing', 'inject'], 'requires --language'],
       [['--tracer-version', 'latest'], 'require --tracing inject'],
+      [['--tracer-volume-medium', 'disk'], 'require --tracing inject'],
       [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
     ])('rejects incompatible options before network calls: %s', async (flags, expected) => {
       const {code, context} = await runCLI([...requiredFlags, ...flags])
@@ -155,6 +156,7 @@ describe('InstrumentCommand', () => {
       ['--language', 'rust'],
       ['--tracer-libc', 'bionic'],
       ['--tracer-version', 'bad/tag'],
+      ['--tracer-volume-medium', 'ramdisk'],
     ])('rejects invalid %s values through Clipanion', async (flag, value) => {
       const {code} = await runCLI([...requiredFlags, flag, value])
 
@@ -215,6 +217,8 @@ describe('InstrumentCommand', () => {
         'musl',
         '--tracer-readiness-port',
         '19000',
+        '--tracer-volume-medium',
+        'disk',
       ])
 
       expect(code).toBe(0)
@@ -226,6 +230,7 @@ describe('InstrumentCommand', () => {
             kind: 'single-language',
             language: 'python',
             libc: 'musl',
+            tracerVolumeMedium: 'disk',
             spec: expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:4.13.1'}),
           }),
         })
@@ -363,6 +368,7 @@ describe('InstrumentCommand', () => {
       ;(command as any).tracing = undefined
       ;(command as any).tracerVersion = undefined
       ;(command as any).tracerLibc = undefined
+      ;(command as any).tracerVolumeMedium = undefined
       ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
       ;(command as any).sidecarName = 'datadog-sidecar'
       ;(command as any).sharedVolumeName = 'shared-volume'

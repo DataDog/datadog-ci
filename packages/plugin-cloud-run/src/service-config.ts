@@ -1,5 +1,6 @@
 import type {SsiConfigResult} from './ssi'
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume} from './types'
+import type {TracerVolumeMedium} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 
 import {createInstrumentedTemplate} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
@@ -19,7 +20,12 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 
 import {mergeLanguageInjectionEnv, removeLanguageInjectionEnv, selectMainContainer, SsiConfigError} from './ssi'
 
+type EmptyDirMedium = NonNullable<NonNullable<IVolume['emptyDir']>['medium']>
+
 const MEMORY_VOLUME_MEDIUM = 1 as const // google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
+const DISK_VOLUME_MEDIUM = 2 as EmptyDirMedium // Cloud Run API DISK; the installed SDK enum has not caught up.
+const DISK_VOLUME_SIZE_LIMIT = '10Gi'
+const GEN2_EXECUTION_ENVIRONMENT = 2 as const // google.cloud.run.v2.ExecutionEnvironment.EXECUTION_ENVIRONMENT_GEN2
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
 const UNIFIED_SERVICE_TAG_LABELS = {
@@ -155,6 +161,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         image: ssiConfig.spec.image,
         completionMarker: getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
         readinessPort: tracerReadinessPort,
+        tracerVolumeMedium: ssiConfig.tracerVolumeMedium,
       },
       configuredMainContainer,
       [options.sidecarName]
@@ -162,7 +169,18 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 
-  return {...service, labels, template: {...template, revision: undefined}}
+  const usesDiskTracerVolume = ssiConfig.kind === 'single-language' && ssiConfig.tracerVolumeMedium === 'disk'
+
+  return {
+    ...service,
+    ...(usesDiskTracerVolume ? {launchStage: atLeastBetaLaunchStage(service.launchStage)} : {}),
+    labels,
+    template: {
+      ...template,
+      ...(usesDiskTracerVolume ? {executionEnvironment: GEN2_EXECUTION_ENVIRONMENT} : {}),
+      revision: undefined,
+    },
+  }
 }
 
 export const uninstrumentServiceConfig = (
@@ -222,6 +240,7 @@ interface TracerContainerConfig {
   image: string
   completionMarker: string
   readinessPort: number
+  tracerVolumeMedium: TracerVolumeMedium
 }
 
 const buildTracerContainer = (config: TracerContainerConfig): IContainer => ({
@@ -280,11 +299,19 @@ const applyTracerContainer = (
       ...(template.volumes ?? []),
       {
         name: TRACER_VOLUME_NAME,
-        emptyDir: {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT},
+        emptyDir: tracerVolumeConfig(config.tracerVolumeMedium),
       },
     ],
   }
 }
+
+const tracerVolumeConfig = (medium: TracerVolumeMedium) =>
+  medium === 'disk'
+    ? {medium: DISK_VOLUME_MEDIUM, sizeLimit: DISK_VOLUME_SIZE_LIMIT}
+    : {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT}
+
+const atLeastBetaLaunchStage = (launchStage: IService['launchStage']) =>
+  launchStage === 'ALPHA' ? launchStage : 'BETA'
 
 const assertTracerReadinessPortAvailable = (
   mainContainer: IContainer,

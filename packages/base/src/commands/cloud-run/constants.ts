@@ -5,6 +5,8 @@ import {LANGUAGE_METADATA} from '../../helpers/serverless/ssi/tracer'
 export const CLOUD_RUN_TRACER_REGISTRY = 'gcr.io/datadoghq' as const
 export const DEFAULT_TRACER_VERSION = 'latest' as const
 export const DEFAULT_TRACER_LIBC = 'glibc' as const
+export const TRACER_VOLUME_MEDIA = ['memory', 'disk'] as const
+export type TracerVolumeMedium = (typeof TRACER_VOLUME_MEDIA)[number]
 
 export const CLOUD_RUN_LANGUAGES = [...(Object.keys(LANGUAGE_METADATA) as Language[]), 'go'] as const
 export type CloudRunLanguage = (typeof CLOUD_RUN_LANGUAGES)[number]

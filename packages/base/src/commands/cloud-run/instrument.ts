@@ -15,7 +15,13 @@ import {TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
 
 import {BaseCommand} from '../..'
 
-import {CLOUD_RUN_LANGUAGES, DEFAULT_TRACER_LIBC, DEFAULT_TRACER_VERSION, TRACING_INPUTS} from './constants'
+import {
+  CLOUD_RUN_LANGUAGES,
+  DEFAULT_TRACER_LIBC,
+  DEFAULT_TRACER_VERSION,
+  TRACER_VOLUME_MEDIA,
+  TRACING_INPUTS,
+} from './constants'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
@@ -123,6 +129,14 @@ export class CloudRunInstrumentCommand extends BaseCommand {
       (libc) => `"${libc}"`
     ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
     validator: t.isEnum(LIBCS),
+  })
+  protected tracerVolumeMedium = Option.String('--tracer-volume-medium', {
+    description: `Storage medium for the injected tracer volume. Possible values: ${TRACER_VOLUME_MEDIA.map(
+      (medium) => `"${medium}"`
+    ).join(
+      ', '
+    )}. Defaults to "memory". "disk" uses a 10 GiB Preview volume and requires the second generation execution environment.`,
+    validator: t.isEnum(TRACER_VOLUME_MEDIA),
   })
   protected tracerReadinessPort: number = Option.String('--tracer-readiness-port', String(TRACER_READINESS_PORT), {
     description: `The tracer container readiness port. Must not conflict with the main application port or the Agent health-check port. Defaults to ${TRACER_READINESS_PORT}.`,

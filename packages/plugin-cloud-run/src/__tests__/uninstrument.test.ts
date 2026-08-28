@@ -226,7 +226,9 @@ describe('UninstrumentCommand', () => {
       ;(command as any).envVars = ['CONFIGURED_VAR=remove-me']
       const service: IService = {
         labels: {[SSI_INJECTION_MODE_LABEL]: SINGLE_LANGUAGE_SSI_MODE, customer: 'keep-me'},
+        launchStage: 'BETA',
         template: {
+          executionEnvironment: 2,
           containers: [
             {
               name: 'app',
@@ -261,6 +263,8 @@ describe('UninstrumentCommand', () => {
       const result = command.createUninstrumentedServiceConfig(service)
 
       expect(result.labels).toEqual({customer: 'keep-me'})
+      expect(result.launchStage).toBe('BETA')
+      expect(result.template?.executionEnvironment).toBe(2)
       expect(result.template?.containers).toEqual([
         expect.objectContaining({
           name: 'app',
