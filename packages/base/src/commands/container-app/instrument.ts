@@ -1,7 +1,7 @@
 import type {ContainerAppConfigOptions} from './common'
 
 import {Command, Option} from 'clipanion'
-import {isNumber} from 'typanion'
+import * as t from 'typanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 import {
@@ -11,8 +11,18 @@ import {
   DEFAULT_SIDECAR_NAME,
   SIDECAR_IMAGE,
 } from '../../helpers/serverless/constants'
+import {DEFAULT_TRACER_LIBC, LIBCS} from '../../helpers/serverless/ssi/injection-spec'
+import {
+  DEFAULT_TRACER_VERSION,
+  LANGUAGE_METADATA,
+  TRACER_IMAGE_TAG_REG_EXP,
+  type Language,
+} from '../../helpers/serverless/ssi/tracer'
+import {TRACING_INPUTS} from '../../helpers/serverless/ssi/tracing'
 
 import {ContainerAppCommand} from './common'
+
+export const CONTAINER_APP_LANGUAGES = [...(Object.keys(LANGUAGE_METADATA) as Language[]), 'go'] as const
 
 export const DEFAULT_SIDECAR_CPU = 0.5
 export const DEFAULT_SIDECAR_MEMORY = 1
@@ -50,14 +60,39 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   })
   private sidecarCpu = Option.String('--sidecar-cpu', {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_CPU}'.`,
-    validator: isNumber(),
+    validator: t.isNumber(),
   })
   private sidecarMemory = Option.String('--sidecar-memory', {
     description: `The amount of memory (in GiB) to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
-    validator: isNumber(),
+    validator: t.isNumber(),
   })
   private sidecarImage = Option.String('--sidecar-image', SIDECAR_IMAGE, {
     description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Defaults to '${SIDECAR_IMAGE}'`,
+  })
+  private tracing: ContainerAppConfigOptions['tracing'] = Option.String('--tracing', {
+    description:
+      'Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled".',
+    validator: t.isEnum(TRACING_INPUTS),
+  })
+  private language: ContainerAppConfigOptions['language'] = Option.String('--language', {
+    description: `Set the application language for log parsing. With --tracing inject, this also selects the tracer. Possible values: ${CONTAINER_APP_LANGUAGES.map(
+      (language) => `"${language}"`
+    ).join(', ')}.`,
+    validator: t.isEnum(CONTAINER_APP_LANGUAGES),
+  })
+  private tracerVersion = Option.String('--tracer-version', {
+    description: `Set the tracer image tag for automatic instrumentation. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
+    validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
+  })
+  private tracerLibc: ContainerAppConfigOptions['tracerLibc'] = Option.String('--tracer-libc', {
+    description: `Set the C standard library used by the application image. Possible values: ${LIBCS.map(
+      (libc) => `"${libc}"`
+    ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
+    validator: t.isEnum(LIBCS),
+  })
+  private containerName = Option.String('--container-name', {
+    description:
+      'Select the application container to instrument when the Container App has multiple application containers.',
   })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
@@ -86,6 +121,11 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       sidecarCpu: this.sidecarCpu,
       sidecarMemory: this.sidecarMemory,
       sidecarImage: this.sidecarImage,
+      tracing: this.tracing,
+      language: this.language,
+      tracerVersion: this.tracerVersion,
+      tracerLibc: this.tracerLibc,
+      containerName: this.containerName,
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,

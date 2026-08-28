@@ -234,6 +234,44 @@ Ensure you copied the value and not the Key ID.
       expect(updateTags).not.toHaveBeenCalled()
     })
 
+    test.each<[string[], string]>([
+      [['--tracing', 'inject'], '--tracing inject requires --language'],
+      [
+        ['--tracing', 'inject', '--language', 'nodejs', '--shared-volume-name', 'datadog-tracer'],
+        '--shared-volume-name',
+      ],
+    ])('Validates tracer configuration before authentication or API calls', async (args, message) => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, ...args])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(message)
+      expect(validateApiKey).not.toHaveBeenCalled()
+      expect(getToken).not.toHaveBeenCalled()
+      expect(containerAppsOperations.get).not.toHaveBeenCalled()
+    })
+
+    test('Sets DD_SOURCE without injecting a tracer when only --language is provided', async () => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--language', 'python'])
+
+      expect(code).toBe(0)
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-container-app',
+        expect.objectContaining({
+          template: expect.objectContaining({
+            containers: expect.arrayContaining([
+              expect.objectContaining({
+                name: 'main-container',
+                env: expect.arrayContaining([{name: 'DD_SOURCE', value: 'python'}]),
+              }),
+            ]),
+          }),
+        })
+      )
+      const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+      expect(updatedApp.template?.initContainers).toBeUndefined()
+    })
+
     test('Handles errors during sidecar instrumentation', async () => {
       containerAppsOperations.beginUpdateAndWait.mockClear().mockRejectedValue(new Error('sidecar error'))
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
@@ -1372,16 +1410,33 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.get).toHaveBeenCalledWith('rg2', 'app2')
     })
 
-    test('Tag update failure does not fail entire operation', async () => {
-      updateTags.mockClear().mockRejectedValue(new Error('tag update error'))
+    test('Retries after a tracer tag update failure without duplicating configuration', async () => {
+      updateTags.mockClear().mockRejectedValueOnce(new Error('tag update error'))
 
-      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(code).toEqual(0)
-      const output = context.stdout.toString()
-      expect(output).toContain('Updating configuration for my-container-app')
-      expect(output).toContain('[Error] Failed to update tags for my-container-app')
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
-      expect(updateTags).toHaveBeenCalled()
+      const first = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
+      expect(first.code).toEqual(1)
+      expect(first.context.stdout.toString()).toContain(
+        '[Error] Failed to instrument my-container-app: Error: tag update error'
+      )
+      const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+
+      containerAppsOperations.get.mockResolvedValue(updatedApp)
+      containerAppsOperations.listSecrets.mockResolvedValue({value: updatedApp.configuration?.secrets})
+      containerAppsOperations.beginUpdateAndWait.mockClear()
+      updateTags.mockResolvedValue({})
+
+      const retry = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
+      expect(retry.code).toEqual(0)
+      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenLastCalledWith(CONTAINER_APP_ID, {
+        properties: {
+          tags: {
+            service: 'my-container-app',
+            dd_sls_ci: 'vXXXX',
+            dd_sls_injection_mode: 'single_language',
+          },
+        },
+      })
     })
 
     test('Uses custom sidecar name', async () => {

@@ -11,6 +11,7 @@ jest.mock('@azure/identity', () => ({
 const containerAppsOperations = {
   get: jest.fn(),
   beginUpdateAndWait: jest.fn(),
+  listSecrets: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -25,6 +26,11 @@ import type {ContainerApp, Container} from '@azure/arm-appcontainers'
 
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  TRACER_CONTAINER_NAME,
+  TRACER_MOUNT_PATH,
+  TRACER_VOLUME_NAME,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
@@ -84,6 +90,9 @@ describe('container-app uninstrument', () => {
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
       containerAppsOperations.get.mockReset().mockResolvedValue(INSTRUMENTED_CONTAINER_APP)
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({
+        value: INSTRUMENTED_CONTAINER_APP.configuration!.secrets,
+      })
       containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
     })
@@ -164,6 +173,18 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       expect(updateTags).not.toHaveBeenCalled()
     })
 
+    test('Fails when tag removal fails', async () => {
+      updateTags.mockRejectedValue(new Error('tag removal error'))
+
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(
+        '[Error] Failed to uninstrument my-container-app: Error: tag removal error'
+      )
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
+    })
+
     test('Errors if no Azure Container App is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
@@ -230,6 +251,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
         },
       }
       containerAppsOperations.get.mockReset().mockResolvedValue(customInstrumentedApp)
+      containerAppsOperations.listSecrets.mockResolvedValue({value: customInstrumentedApp.configuration!.secrets})
 
       const {code} = await runCLI([
         ...DEFAULT_ARGS,
@@ -316,6 +338,9 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
       containerAppsOperations.get.mockReset().mockResolvedValue(INSTRUMENTED_CONTAINER_APP)
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({
+        value: INSTRUMENTED_CONTAINER_APP.configuration!.secrets,
+      })
       containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
     })
@@ -369,6 +394,67 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 
       // Should remove dd-api-key secret
       expect(result.configuration?.secrets).toEqual([{name: 'other-secret', value: 'OTHER'}])
+    })
+
+    test('removes recognizable tracer injection and preserves unrelated state', () => {
+      const app: ContainerApp = {
+        ...INSTRUMENTED_CONTAINER_APP,
+        tags: {
+          ...INSTRUMENTED_CONTAINER_APP.tags,
+          owner: 'payments',
+        },
+        template: {
+          ...INSTRUMENTED_CONTAINER_APP.template,
+          initContainers: [
+            {name: 'customer-init', image: 'customer'},
+            {
+              name: TRACER_CONTAINER_NAME,
+              image: 'datadoghq.azurecr.io/dd-lib-js-init:latest',
+              command: ['/datadog-init/copy-lib.sh'],
+              args: [TRACER_MOUNT_PATH],
+              resources: {cpu: 0.25, memory: '0.5Gi'},
+              volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
+            },
+          ],
+          containers: INSTRUMENTED_CONTAINER_APP.template!.containers!.map((container, index) =>
+            index === 0
+              ? {
+                  ...container,
+                  env: [
+                    ...(container.env ?? []),
+                    {
+                      name: 'NODE_OPTIONS',
+                      value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
+                    },
+                    {name: 'KEEP', value: 'value'},
+                  ],
+                  volumeMounts: [
+                    ...(container.volumeMounts ?? []),
+                    {volumeName: 'customer-volume', mountPath: '/customer'},
+                    {volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH},
+                  ],
+                }
+              : container
+          ),
+          volumes: [
+            ...(INSTRUMENTED_CONTAINER_APP.template!.volumes ?? []),
+            {name: 'customer-volume', storageType: 'EmptyDir'},
+            {name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'},
+          ],
+        },
+      }
+
+      const result = command.createUninstrumentedAppConfig(DEFAULT_CONFIG, app)
+      const main = result.template!.containers![0]
+
+      expect(result.template?.initContainers).toEqual([{name: 'customer-init', image: 'customer'}])
+      expect(result.template?.volumes).toEqual([{name: 'customer-volume', storageType: 'EmptyDir'}])
+      expect(main.volumeMounts).toEqual([{volumeName: 'customer-volume', mountPath: '/customer'}])
+      expect(main.env).toEqual([
+        {name: 'PORT', value: '8080'},
+        {name: 'NODE_OPTIONS', value: '--inspect'},
+        {name: 'KEEP', value: 'value'},
+      ])
     })
 
     test('handles app with no sidecar or shared volume gracefully', () => {

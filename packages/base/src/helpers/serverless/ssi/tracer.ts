@@ -18,7 +18,8 @@ export const LANGUAGE_METADATA = {
 export type Language = keyof typeof LANGUAGE_METADATA
 export type TracerLanguage = (typeof LANGUAGE_METADATA)[Language]['tracerLanguage']
 
-const IMAGE_TAG_REG_EXP = /^[\w][\w.-]{0,127}$/
+export const DEFAULT_TRACER_VERSION = 'latest' as const
+export const TRACER_IMAGE_TAG_REG_EXP = /^[\w][\w.-]{0,127}$/
 
 /** Returns the copy-lib.sh completion marker for one tracer image. */
 export const getTracerCopyCompletionMarker = (language: Language, mountPath: string): string =>
@@ -36,7 +37,7 @@ export const buildSingleLanguageTracerImage = (
     throw new Error(`Unsupported language: ${String(language)}`)
   }
   const metadata = LANGUAGE_METADATA[language]
-  if (typeof version !== 'string' || !IMAGE_TAG_REG_EXP.test(version)) {
+  if (typeof version !== 'string' || !TRACER_IMAGE_TAG_REG_EXP.test(version)) {
     throw new Error(`Invalid tracer version: ${JSON.stringify(version)}`)
   }
 

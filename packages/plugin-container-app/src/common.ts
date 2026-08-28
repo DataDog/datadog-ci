@@ -2,6 +2,7 @@ import type {EnvironmentVar} from '@azure/arm-appcontainers'
 import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {DD_SOURCE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 export const DD_API_KEY_SECRET_NAME = 'dd-api-key'
 
@@ -23,6 +24,9 @@ export const getEnvVarsByName = (
   envVars.DD_AZURE_RESOURCE_GROUP = {name: 'DD_AZURE_RESOURCE_GROUP', value: resourceGroup}
   envVars.DD_SERVERLESS_LOG_PATH = {name: 'DD_SERVERLESS_LOG_PATH', value: config.logsPath}
   envVars.DD_APM_ENABLED = {name: 'DD_APM_ENABLED', value: 'true'}
+  if (config.language) {
+    envVars[DD_SOURCE_ENV_VAR] = {name: DD_SOURCE_ENV_VAR, value: config.language}
+  }
 
   return envVars
 }

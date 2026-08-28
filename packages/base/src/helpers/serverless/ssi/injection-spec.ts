@@ -5,7 +5,8 @@ import type {EnvFragment} from './env'
 import {buildSingleLanguageTracerImage, type Language, type SingleLanguageTracerRegistry} from './tracer'
 
 export const DEFAULT_TRACER_ROOT = '/datadog-lib'
-export const LIBCS = ['glibc', 'musl'] as const
+export const DEFAULT_TRACER_LIBC = 'glibc' as const
+export const LIBCS = [DEFAULT_TRACER_LIBC, 'musl'] as const
 
 export type Libc = (typeof LIBCS)[number]
 

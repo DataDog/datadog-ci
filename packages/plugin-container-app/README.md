@@ -35,6 +35,14 @@ datadog-ci container-app instrument \
   --env prod \
   --version 1.0.0
 
+# Add a Python tracer automatically
+datadog-ci container-app instrument \
+  --subscription-id <subscription-id> \
+  --resource-group <resource-group-name> \
+  --name <container-app-name> \
+  --tracing inject \
+  --language python
+
 # Dry run to preview changes
 datadog-ci container-app instrument \
   --subscription-id <subscription-id> \
@@ -42,6 +50,22 @@ datadog-ci container-app instrument \
   --name <container-app-name> \
   --dry-run
 ```
+
+### Automatic APM instrumentation
+
+Use `--tracing inject --language <language>` to add a Java, Node.js, .NET, Python, Ruby, or PHP tracer without rebuilding the application image. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
+
+Tracer injection uses the `latest` tracer version and `glibc` by default. Use `--tracer-version` to pin an image tag, or `--tracer-libc musl` for a musl-based image. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported.
+
+For a Container App with multiple application containers, use `--container-name` to select one container. This differs from `--name`, which selects the Container App resource.
+
+Other tracing modes are:
+
+- `--tracing manual`, `true`, or `1`: Use a tracer already installed in the application image.
+- `--tracing disabled`, `false`, or `0`: Disable tracing and remove an injected tracer.
+- Omit `--tracing`: Preserve existing tracer injection.
+
+You can use `--language` without `--tracing inject` to set `DD_SOURCE` for log parsing. Go requires manual instrumentation: install `dd-trace-go`, and use `--tracing manual`.
 
 ### `uninstrument`
 
@@ -124,6 +148,11 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--sidecar-cpu` |  | The number of CPUs to allocate to the sidecar container. | `0.5` |
 | `--sidecar-memory` |  | The amount of memory (in GiB) to allocate to the sidecar container. | `1` |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. | `index.docker.io/datadog/serverless-init:latest` |
+| `--tracing` |  | Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled". |  |
+| `--language` |  | Set the application language for log parsing. With --tracing inject, this also selects the tracer. Possible values: "java", "nodejs", "csharp", "python", "ruby", "php", "go". |  |
+| `--tracer-version` |  | Set the tracer image tag for automatic instrumentation. | `latest` |
+| `--tracer-libc` |  | Set the C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
+| `--container-name` |  | Select the application container to instrument when the Container App has multiple application containers. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the app in the format "key1:value1,key2:value2". |  |
