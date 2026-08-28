@@ -137,7 +137,8 @@ describe('InstrumentCommand', () => {
     ]
 
     test.each([
-      [['--tracing', 'inject'], 'requires --language'],
+      [['--tracing', 'inject', '--tracer-version', 'latest'], 'require --language'],
+      [['--tracing', 'inject', '--tracer-libc', 'glibc'], 'require --language'],
       [['--tracer-version', 'latest'], 'require --tracing inject'],
       [['--tracer-volume-medium', 'disk'], 'require --tracing inject'],
       [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
@@ -185,6 +186,20 @@ describe('InstrumentCommand', () => {
       const options = instrumentConfig.mock.calls[0][1]
       expect(options.ssiConfig?.kind).toBe(configKind)
       expect(options.envVarsByName.DD_TRACE_ENABLED?.value).toBe(traceEnabled)
+    })
+
+    test('--tracing inject without a language selects multi-language injection', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+
+      const {code} = await runCLI([...requiredFlags, '--dry-run', '--tracing', 'inject'])
+
+      expect(code).toBe(0)
+      expect(instrumentConfig.mock.calls[0][1].ssiConfig).toEqual({
+        kind: 'multi-language',
+        tracerVolumeMedium: 'memory',
+        warnings: [],
+      })
     })
 
     test('--language sets the log source without automatic instrumentation', async () => {

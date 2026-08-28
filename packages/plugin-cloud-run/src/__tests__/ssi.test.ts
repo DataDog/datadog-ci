@@ -22,10 +22,14 @@ import {TRACER_INJECTION_LANGUAGES, type Language} from '@datadog/datadog-ci-bas
 
 import {instrumentServiceConfig} from '../service-config'
 import {
+  COMPOSITE_TRACER_COMPLETION_MARKER,
+  COMPOSITE_TRACER_IMAGE,
+  COMPOSITE_TRACER_MOUNT_PATH,
   getTracingEnvValue,
+  mergeCompositeInjectionEnv,
   mergeLanguageInjectionEnv,
   normalizeTracingMode,
-  removeLanguageInjectionEnv,
+  removeInjectionEnv,
   resolveSsiConfig,
   selectMainContainer,
   SsiConfigError,
@@ -97,21 +101,20 @@ describe('resolveSsiConfig', () => {
     )
   })
 
-  test('defaults the tracer volume to memory and accepts disk', () => {
-    const memory = resolveSsiConfig({...defaultOptions, tracing: 'inject', language: 'nodejs'})
-    const disk = resolveSsiConfig({
-      ...defaultOptions,
-      tracing: 'inject',
-      language: 'nodejs',
-      tracerVolumeMedium: 'disk',
-    })
+  test.each([
+    ['nodejs', 'single-language'],
+    [undefined, 'multi-language'],
+  ] as const)('defaults %s injection to memory and accepts disk', (language, kind) => {
+    const memory = resolveSsiConfig({...defaultOptions, tracing: 'inject', language})
+    const disk = resolveSsiConfig({...defaultOptions, tracing: 'inject', language, tracerVolumeMedium: 'disk'})
 
-    expect(memory).toMatchObject({kind: 'single-language', tracerVolumeMedium: 'memory'})
-    expect(disk).toMatchObject({kind: 'single-language', tracerVolumeMedium: 'disk'})
+    expect(memory).toMatchObject({kind, tracerVolumeMedium: 'memory'})
+    expect(disk).toMatchObject({kind, tracerVolumeMedium: 'disk'})
   })
 
   test.each([
-    [{tracing: 'inject'}, '--language'],
+    [{tracing: 'inject', tracerVersion: 'latest'}, '--tracer-version'],
+    [{tracing: 'inject', tracerLibc: 'glibc'}, '--tracer-libc'],
     [{tracing: 'inject', language: 'go'}, '--tracing manual'],
     [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'musl'],
     [{tracing: 'inject', language: 'csharp', tracerVersion: '2.51.0'}, 'Use tracer version 3.0'],
@@ -174,6 +177,42 @@ describe('language injection environment', () => {
     ).toThrow(/more than once/)
   })
 
+  test('merges and removes multi-language activation while preserving compatible preload entries', () => {
+    const existing: IEnvVar[] = [{name: 'LD_PRELOAD', value: '/customer/preload.so'}]
+    const injected = mergeCompositeInjectionEnv(existing)
+
+    expect(injected).toEqual([
+      {
+        name: 'LD_PRELOAD',
+        value: '/opt/datadog-packages/datadog-apm-inject/stable/inject/launcher.preload.so /customer/preload.so',
+      },
+      {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
+    ])
+    expect(mergeCompositeInjectionEnv(injected)).toEqual(injected)
+    expect(removeInjectionEnv(injected)).toEqual(existing)
+  })
+
+  test.each(['LD_PRELOAD', 'DD_INJECT_SENDER_TYPE'])('rejects duplicate multi-language %s values', (name) => {
+    expect(() =>
+      mergeCompositeInjectionEnv([
+        {name, value: 'first'},
+        {name, value: 'second'},
+      ])
+    ).toThrow(/more than once/)
+  })
+
+  test.each(['LD_PRELOAD', 'DD_INJECT_SENDER_TYPE'])('rejects a secret-backed multi-language %s value', (name) => {
+    expect(() => mergeCompositeInjectionEnv([{name, valueSource: {secretKeyRef: {secret: 'secret'}}}])).toThrow(
+      SsiConfigError
+    )
+  })
+
+  test('rejects a conflicting injection sender', () => {
+    expect(() => mergeCompositeInjectionEnv([{name: 'DD_INJECT_SENDER_TYPE', value: 'customer'}])).toThrow(
+      /DD_INJECT_SENDER_TYPE is already set/
+    )
+  })
+
   test('reports a conflicting scalar value', () => {
     expect(() =>
       mergeLanguageInjectionEnv([{name: 'CORECLR_ENABLE_PROFILING', value: '0'}], getSpec('csharp'))
@@ -189,7 +228,7 @@ describe('language injection environment', () => {
       getSpec(language, libc)
     )
 
-    expect(removeLanguageInjectionEnv(injected)).toEqual([
+    expect(removeInjectionEnv(injected)).toEqual([
       {name: 'CUSTOM', value: 'keep'},
       {name: 'DD_TAGS', value: 'team:backend'},
     ])
@@ -199,7 +238,7 @@ describe('language injection environment', () => {
     const markerlessJava = mergeLanguageInjectionEnv([{name: 'CUSTOM', value: 'keep'}], getSpec('java')).filter(
       (variable) => variable.name !== 'DD_TAGS'
     )
-    const replaced = mergeLanguageInjectionEnv(removeLanguageInjectionEnv(markerlessJava), nodeSpec)
+    const replaced = mergeLanguageInjectionEnv(removeInjectionEnv(markerlessJava), nodeSpec)
 
     expect(replaced).toEqual([
       {name: 'CUSTOM', value: 'keep'},
@@ -214,15 +253,15 @@ describe('language injection environment', () => {
       {name: 'DD_TAGS', value: ''},
     ]
 
-    expect(removeLanguageInjectionEnv(env)).toEqual(env)
+    expect(removeInjectionEnv(env)).toEqual(env)
   })
 
   test('removes both known PHP libc paths while preserving other scan directories', () => {
     const glibc = getSpec('php', 'glibc').env[0].value
     const musl = getSpec('php', 'musl').env[0].value
-    expect(
-      removeLanguageInjectionEnv([{name: 'PHP_INI_SCAN_DIR', value: `/etc/php:${glibc}:${musl}:/custom/php`}])
-    ).toEqual([{name: 'PHP_INI_SCAN_DIR', value: '/etc/php:/custom/php'}])
+    expect(removeInjectionEnv([{name: 'PHP_INI_SCAN_DIR', value: `/etc/php:${glibc}:${musl}:/custom/php`}])).toEqual([
+      {name: 'PHP_INI_SCAN_DIR', value: '/etc/php:/custom/php'},
+    ])
   })
 })
 
@@ -261,13 +300,13 @@ describe('selectMainContainer', () => {
 })
 
 const serviceConfigOptions = (
-  language: Language | 'none' = 'nodejs',
+  language: Language | 'multi' | 'none' = 'nodejs',
   tracerVolumeMedium: SsiOptions['tracerVolumeMedium'] = undefined
 ): InstrumentServiceConfigOptions => ({
   ssiConfig: resolveSsiConfig({
     ...defaultOptions,
     tracing: language === 'none' ? undefined : 'inject',
-    language: language === 'none' ? undefined : language,
+    language: language === 'none' || language === 'multi' ? undefined : language,
     tracerVolumeMedium,
   }),
   ddService: 'service',
@@ -374,6 +413,53 @@ describe('SSI service preparation', () => {
     })
   })
 
+  test('applies multi-language activation and the composite memory lifecycle', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions('multi'))
+    const app = result.template?.containers?.find((container) => container.name === 'app')
+    const tracer = result.template?.containers?.find((container) => container.name === TRACER_CONTAINER_NAME)
+
+    expect(app?.env).toEqual(
+      expect.arrayContaining([
+        {
+          name: 'LD_PRELOAD',
+          value: `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so`,
+        },
+        {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
+      ])
+    )
+    expect(app?.volumeMounts).toContainEqual({name: TRACER_CONTAINER_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH})
+    expect(app?.dependsOn).toEqual([TRACER_CONTAINER_NAME, 'datadog-sidecar'])
+    expect(tracer).toMatchObject({
+      image: COMPOSITE_TRACER_IMAGE,
+      volumeMounts: [{name: TRACER_CONTAINER_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH}],
+      resources: {limits: {memory: '2Gi'}},
+    })
+    expect(tracer?.args?.slice(2)).toEqual([
+      TRACER_CONTAINER_NAME,
+      COMPOSITE_TRACER_MOUNT_PATH,
+      COMPOSITE_TRACER_COMPLETION_MARKER,
+      String(TRACER_READINESS_PORT),
+    ])
+    expect(result.template?.volumes?.find((volume) => volume.name === TRACER_CONTAINER_NAME)).toEqual({
+      name: TRACER_CONTAINER_NAME,
+      emptyDir: {medium: 1, sizeLimit: '1.5Gi'},
+    })
+    expect(result.labels?.dd_sls_injection_mode).toBe('multi_language')
+  })
+
+  test('uses disk for multi-language injection without a tracer memory limit', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions('multi', 'disk'))
+    const tracer = result.template?.containers?.find((container) => container.name === TRACER_CONTAINER_NAME)
+
+    expect(tracer?.resources).toBeUndefined()
+    expect(result.template?.volumes?.find((volume) => volume.name === TRACER_CONTAINER_NAME)).toEqual({
+      name: TRACER_CONTAINER_NAME,
+      emptyDir: {medium: 2, sizeLimit: '10Gi'},
+    })
+    expect(result.launchStage).toBe('BETA')
+    expect(result.template?.executionEnvironment).toBe(2)
+  })
+
   test.each([
     [undefined, 'BETA'],
     ['LAUNCH_STAGE_UNSPECIFIED', 'BETA'],
@@ -438,6 +524,43 @@ describe('SSI service preparation', () => {
     expect(result.launchStage).toBe('BETA')
     expect(result.template?.executionEnvironment).toBe(2)
   })
+
+  test('switches between single- and multi-language injection idempotently', () => {
+    const single = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const multi = instrumentServiceConfig(single, serviceConfigOptions('multi'))
+    const singleAgain = instrumentServiceConfig(multi, serviceConfigOptions('python'))
+
+    expect(multi.labels?.dd_sls_injection_mode).toBe('multi_language')
+    expect(multi.template?.containers?.find(({name}) => name === 'app')?.env).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({name: 'NODE_OPTIONS', value: expect.stringContaining('/datadog-lib')}),
+      ])
+    )
+    expect(instrumentServiceConfig(multi, serviceConfigOptions('multi'))).toEqual(multi)
+    expect(singleAgain.labels?.dd_sls_injection_mode).toBe('single_language')
+    expect(singleAgain.template?.containers?.find(({name}) => name === 'app')?.env).toEqual(
+      expect.arrayContaining([expect.objectContaining({name: 'PYTHONPATH', value: '/datadog-lib'})])
+    )
+    expect(singleAgain.template?.containers?.find(({name}) => name === 'app')?.env).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({name: 'DD_INJECT_SENDER_TYPE'})])
+    )
+  })
+
+  test.each([
+    ['single-language', 'NODE_OPTIONS', serviceConfigOptions()],
+    ['multi-language', 'LD_PRELOAD', serviceConfigOptions('multi')],
+  ] satisfies [string, string, InstrumentServiceConfigOptions][])(
+    'rejects duplicate %s environment values before Agent environment normalization',
+    (_mode, name, options) => {
+      const service = serviceWithWorker()
+      service.template!.containers![0].env = [
+        {name, value: 'first'},
+        {name, value: 'second'},
+      ]
+
+      expect(() => instrumentServiceConfig(service, options)).toThrow(/more than once/)
+    }
+  )
 
   test('uses the configured readiness port for the tracer container', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), {
@@ -620,6 +743,55 @@ describe('SSI service preparation', () => {
     expect(app.env?.find((variable) => variable.name === 'DD_TAGS')).toBeUndefined()
     expect(app.volumeMounts?.map((mount) => mount.name)).not.toContain('datadog-tracer')
     expect(result.template!.containers![1].dependsOn).toBeUndefined()
+  })
+
+  test('manual tracing removes drifted multi-language state and preserves single-language fragments', () => {
+    const service = serviceWithWorker()
+    service.template!.containers![0].env = [
+      {name: 'NODE_OPTIONS', value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js'},
+    ]
+    const injected = instrumentServiceConfig(service, serviceConfigOptions('multi'))
+    const injectedApp = injected.template!.containers!.find(({name}) => name === 'app')!
+    injectedApp.volumeMounts = injectedApp.volumeMounts?.filter(({name}) => name !== TRACER_CONTAINER_NAME)
+    const options = serviceConfigOptions('none')
+    const result = instrumentServiceConfig(injected, {
+      ...options,
+      ssiConfig: resolveSsiConfig({...defaultOptions, tracing: 'manual'}),
+      envVarsByName: {
+        ...options.envVarsByName,
+        [DD_TRACE_ENABLED_ENV_VAR]: {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+      },
+    })
+    const app = result.template?.containers?.find(({name}) => name === 'app')
+
+    expect(result.labels).not.toHaveProperty('dd_sls_injection_mode')
+    expect(result.template?.containers?.find(({name}) => name === TRACER_CONTAINER_NAME)).toBeUndefined()
+    expect(app?.env).toContainEqual({
+      name: 'NODE_OPTIONS',
+      value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
+    })
+    expect(app?.env?.find(({name}) => name === 'LD_PRELOAD')).toBeUndefined()
+    expect(app?.env?.find(({name}) => name === 'DD_INJECT_SENDER_TYPE')).toBeUndefined()
+  })
+
+  test('single-language cleanup preserves multi-language sender configuration', () => {
+    const service = serviceWithWorker()
+    service.template!.containers![0].env!.push({name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'})
+    const injected = instrumentServiceConfig(service, serviceConfigOptions())
+    const options = serviceConfigOptions('none')
+    const result = instrumentServiceConfig(injected, {
+      ...options,
+      ssiConfig: resolveSsiConfig({...defaultOptions, tracing: 'disabled'}),
+      envVarsByName: {
+        ...options.envVarsByName,
+        [DD_TRACE_ENABLED_ENV_VAR]: {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
+      },
+    })
+
+    expect(result.template?.containers?.find(({name}) => name === 'app')?.env).toContainEqual({
+      name: 'DD_INJECT_SENDER_TYPE',
+      value: 'serverless',
+    })
   })
 
   test('omitting SSI configuration preserves owned SSI', () => {

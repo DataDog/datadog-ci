@@ -16,20 +16,23 @@ datadog-ci cloud-run instrument -i
 # Instrument a service with a pinned or custom sidecar image
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --sidecar-image gcr.io/datadoghq/serverless-init@sha256:<sha256>
 
-# Enable automatic APM instrumentation for a Python service
+# Enable automatic APM instrumentation with language detection
+datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --tracing inject
+
+# Inject only the Python tracer
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> --tracing inject --language python
 
 # Dry run of all updates
 datadog-ci cloud-run instrument -p <gcp-project> -r us-central1 -s <service-name> -d
 ```
 
-`--tracing` controls APM instrumentation. Use `manual` when the application image already includes a tracer, `inject` with `--language` to install a Java, Node.js, .NET, Python, Ruby, or PHP tracer automatically, or `disabled` to turn tracing off. The existing values `true`/`1` and `false`/`0` remain aliases for `manual` and `disabled`. If omitted, the command preserves an existing `DD_TRACE_ENABLED` value or enables tracing when none is set.
+`--tracing` controls APM instrumentation. Use `inject` to detect the application language and inject a tracer automatically. Add `--language` to inject only the Java, Node.js, .NET, Python, Ruby, or PHP tracer. Use `manual` when the application image already includes a tracer, or use `disabled` to turn tracing off. The values `true`/`1` and `false`/`0` are aliases for `manual` and `disabled`. If you omit `--tracing`, the command preserves existing automatic instrumentation and `DD_TRACE_ENABLED` values, or enables tracing when no value exists.
 
-`--tracing inject` without `--language` is reserved for future multi-language automatic instrumentation and currently returns an unsupported error. Go tracers cannot be injected; install `dd-trace-go` in the application and use `--tracing manual`.
+Go tracers cannot be injected. Install `dd-trace-go` in the application, and use `--tracing manual`.
 
-`--language` continues to set `DD_SOURCE` for log parsing without enabling automatic instrumentation by itself. `--tracer-version`, `--tracer-libc`, and `--tracer-volume-medium` only apply with `--tracing inject`.
+`--language` without `--tracing inject` continues to set `DD_SOURCE` for log parsing. `--tracer-version` and `--tracer-libc` require both `--tracing inject` and `--language`. `--tracer-volume-medium` requires `--tracing inject`.
 
-Injected tracers use a 500 MiB memory-backed volume by default. Set `--tracer-volume-medium disk` to use a 10 GiB disk-backed volume. Disk volumes are a Preview feature that requires the BETA launch stage and second generation execution environment. The command sets those requirements when needed, preserves an existing ALPHA launch stage, and never falls back to memory if Cloud Run rejects the disk configuration.
+Automatic language detection uses a 1.5 GiB memory-backed volume and sets the tracer container's memory limit to 2 GiB. Explicit `--language` uses a 500 MiB memory-backed volume. Set `--tracer-volume-medium disk` to use a 10 GiB disk-backed volume in either mode. Disk volumes are a Preview feature that requires the BETA launch stage and second generation execution environment. The command sets those requirements when needed, preserves an existing ALPHA launch stage, and does not fall back to memory if Cloud Run rejects the disk configuration.
 
 Automatic instrumentation targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
@@ -84,7 +87,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
-| `--tracing` |  | Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled". |  |
+| `--tracing` |  | Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" to detect the language and add a tracer automatically, or "disabled" to turn tracing off. Add --language with "inject" to select one tracer. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled". |  |
 | `--service-tag` or `--serviceTag` |  | The value for the service tag. Use this to group related Cloud Run services belonging to similar workloads. For example, `my-service`. If not provided, the Cloud Run service name is used. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
@@ -97,9 +100,9 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
-| `--language` |  | Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: "java", "nodejs", "csharp", "python", "ruby", "php". |  |
-| `--tracer-version` |  | The tracer image tag to use with --tracing inject. | `latest` |
-| `--tracer-libc` |  | The C standard library used by the application image for automatic instrumentation. Possible values: "glibc", "musl". | `glibc` |
+| `--language` |  | Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: "java", "nodejs", "csharp", "python", "ruby", "php". Omit this option with --tracing inject to detect the language automatically. |  |
+| `--tracer-version` |  | The tracer image tag to use with --tracing inject --language. | `latest` |
+| `--tracer-libc` |  | The C standard library used by the application image with --tracing inject --language. Possible values: "glibc", "musl". | `glibc` |
 | `--tracer-volume-medium` |  | Storage medium for the injected tracer volume. Possible values: "memory", "disk". Defaults to "memory". "disk" uses a 10 GiB Preview volume, promotes the launch stage to at least BETA, and requires the second generation execution environment. |  |
 | `--tracer-readiness-port` |  | The tracer container readiness port. Must not conflict with the main application port or the Agent health-check port. | `18999` |
 <!-- END_USAGE:instrument -->
