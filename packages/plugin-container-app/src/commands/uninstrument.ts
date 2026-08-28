@@ -173,9 +173,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
       configuration: {...containerApp.configuration, secrets: updatedSecrets},
       template: {
         ...containerApp.template,
-        ...(initContainers === undefined
-          ? {}
-          : {initContainers: initContainers.filter(({name}) => name !== TRACER_CONTAINER_NAME)}),
+        ...(initContainers ? {initContainers: initContainers.filter(({name}) => name !== TRACER_CONTAINER_NAME)} : {}),
         containers: updatedContainers,
         volumes: updatedVolumes,
       },
