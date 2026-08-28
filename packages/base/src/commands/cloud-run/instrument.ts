@@ -135,7 +135,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
       (medium) => `"${medium}"`
     ).join(
       ', '
-    )}. Defaults to "memory". "disk" uses a 10 GiB Preview volume and requires the second generation execution environment.`,
+    )}. Defaults to "memory". "disk" uses a 10 GiB Preview volume, promotes the launch stage to at least BETA, and requires the second generation execution environment.`,
     validator: t.isEnum(TRACER_VOLUME_MEDIA),
   })
   protected tracerReadinessPort: number = Option.String('--tracer-readiness-port', String(TRACER_READINESS_PORT), {
