@@ -43,6 +43,9 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           ` --resource-group "${resourceGroup}"` +
           ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
           ` --image "${NODE_APPLICATION_IMAGE}"` +
+          ` --registry-server us-central1-docker.pkg.dev` +
+          ` --registry-username oauth2accesstoken` +
+          ` --registry-password "$(gcloud auth print-access-token)"` +
           ` --cpu 0.25 --memory 0.5Gi` +
           ` --min-replicas 0 --max-replicas 1` +
           ` --ingress external --target-port 8080` +

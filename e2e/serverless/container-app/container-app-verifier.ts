@@ -196,8 +196,8 @@ export const verifySsiInstrumented = (
   expect(application.volumeMounts?.filter(({volumeName}) => volumeName === TRACER_NAME)).toEqual([
     {volumeName: TRACER_NAME, mountPath: TRACER_MOUNT_PATH},
   ])
-  expect(sidecar!.volumeMounts).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
-  expect(sidecar!.volumeMounts).not.toContainEqual(expect.objectContaining({mountPath: TRACER_MOUNT_PATH}))
+  expect(sidecar!.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
+  expect(sidecar!.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({mountPath: TRACER_MOUNT_PATH}))
   expect(sidecar!.env?.some(({value}) => value?.includes(NODE_OPTIONS_FRAGMENT))).not.toBe(true)
 
   const nodeOptions = application.env?.filter(({name}) => name === 'NODE_OPTIONS') ?? []
@@ -239,7 +239,7 @@ export const verifyUninstrumented = (appName: string, resourceGroup: string, sub
     const env = container.env || []
     const ddVars = env.filter((e) => e.name.startsWith('DD_'))
     expect(ddVars).toHaveLength(0)
-    expect(container.volumeMounts).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
+    expect(container.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
     expect(env.find(({name}) => name === 'NODE_OPTIONS')?.value ?? '').not.toContain(NODE_OPTIONS_FRAGMENT)
   }
 
