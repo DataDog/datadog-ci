@@ -163,6 +163,42 @@ const getResultIdentification = (test: Test, id: string, location: string, devic
   return `${test.name} - ${id}`
 }
 
+// XML 1.0 allows #x9, #xA, #xD, and the printable ranges below. Result payloads
+// can carry raw response bytes, and a single control character makes xml2js
+// throw for the whole document, which loses the entire report rather than the
+// one bad value.
+const invalidXmlChars = /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu
+
+export const stripInvalidXmlChars = (value: string): string => value.replace(invalidXmlChars, '')
+
+export const stripInvalidXmlCharsInPlace = (node: unknown): void => {
+  if (Array.isArray(node)) {
+    node.forEach((entry, index) => {
+      if (typeof entry === 'string') {
+        node[index] = stripInvalidXmlChars(entry)
+      } else {
+        stripInvalidXmlCharsInPlace(entry)
+      }
+    })
+
+    return
+  }
+
+  if (!node || typeof node !== 'object') {
+    return
+  }
+
+  const record = node as Record<string, unknown>
+  for (const key of Object.keys(record)) {
+    const value = record[key]
+    if (typeof value === 'string') {
+      record[key] = stripInvalidXmlChars(value)
+    } else {
+      stripInvalidXmlCharsInPlace(value)
+    }
+  }
+}
+
 export const getDefaultTestCaseStats = (): TestCaseStats => ({
   steps_allowfailures: 0,
   steps_count: 0,
@@ -292,6 +328,7 @@ export class JUnitReporter extends FileReporter implements Reporter {
 
     // Write the file
     try {
+      stripInvalidXmlCharsInPlace(this.json)
       this.writeReportToFile(this.builder.buildObject(this.json))
     } catch (e) {
       this.write(`\n❌ Couldn't write the JUnit report to ${this.destination}:\n${e}\n`)
