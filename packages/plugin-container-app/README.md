@@ -55,7 +55,7 @@ datadog-ci container-app instrument \
 
 Use `--tracing inject --language <language>` to add a Java, Node.js, .NET, Python, Ruby, or PHP tracer without rebuilding the application image. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
 
-Tracer injection uses the `latest` tracer version and `glibc` by default. Use `--tracer-version` to pin an image tag, or `--tracer-libc musl` for a musl-based image. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported.
+Tracer injection uses the `latest` tracer version and `glibc` by default. Use `--tracer-version` to pin an image tag, or `--tracer-libc musl` for a musl-based image. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Runtime support follows the [APM compatibility requirements](https://docs.datadoghq.com/tracing/trace_collection/compatibility/); `latest` can drop runtimes after they reach end of life.
 
 Automatic instrumentation can increase cold-start delays when the app scales to zero. For scale-to-zero workloads, install the tracer in the application image, and use `--tracing manual`.
 

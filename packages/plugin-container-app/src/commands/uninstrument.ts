@@ -8,7 +8,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
@@ -131,6 +131,9 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     containerApp: ContainerApp
   ) {
     const updatedAppConfig = this.createUninstrumentedAppConfig(config, containerApp)
+    if (sortedEqual(containerApp, updatedAppConfig)) {
+      return
+    }
 
     const configDiff = generateConfigDiff(containerApp, updatedAppConfig)
     this.context.stdout.write(
@@ -173,7 +176,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
       template: {
         ...sourceApp.template,
         containers: updatedContainers,
-        volumes: updatedVolumes,
+        ...(updatedVolumes.length !== volumes.length ? {volumes: updatedVolumes} : {}),
       },
     }
   }
@@ -192,8 +195,8 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
 
     return {
       ...appContainer,
-      volumeMounts: updatedVolumeMounts,
-      env: updatedEnvVars,
+      ...(updatedVolumeMounts.length !== existingVolumeMounts.length ? {volumeMounts: updatedVolumeMounts} : {}),
+      ...(updatedEnvVars.length !== (appContainer.env?.length ?? 0) ? {env: updatedEnvVars} : {}),
     }
   }
 }

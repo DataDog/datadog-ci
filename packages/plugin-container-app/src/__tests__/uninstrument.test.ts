@@ -464,7 +464,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       const result = command.createUninstrumentedAppConfig(config, DEFAULT_CONTAINER_APP)
 
       expect(result.template?.containers).toHaveLength(1)
-      expect(result.template?.volumes).toEqual([])
+      expect(result.template?.volumes).toBeUndefined()
     })
 
     test('preserves non-DD env vars', () => {
