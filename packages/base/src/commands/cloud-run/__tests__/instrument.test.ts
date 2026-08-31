@@ -47,7 +47,7 @@ describe('CloudRunInstrumentCommand', () => {
   test('accepts automatic instrumentation options', async () => {
     const {code} = await runCLI([
       '--language',
-      'python',
+      'rust',
       '--tracer-version',
       '2.0.0',
       '--tracer-libc',
@@ -59,7 +59,7 @@ describe('CloudRunInstrumentCommand', () => {
     expect(code).toBe(0)
     expect(parsedOptions).toEqual({
       tracing: undefined,
-      language: 'python',
+      language: 'rust',
       tracerVersion: '2.0.0',
       tracerLibc: 'musl',
       tracerVolumeMedium: 'disk',
@@ -105,7 +105,6 @@ describe('CloudRunInstrumentCommand', () => {
 
   test.each([
     ['--tracing', 'automatic'],
-    ['--language', 'rust'],
     ['--tracer-version', 'bad/tag'],
     ['--tracer-registry', 'gcr.io/datadoghq'],
     ['--tracer-libc', 'bionic'],
