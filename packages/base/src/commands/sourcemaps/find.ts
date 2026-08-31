@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import type {SourcemapResolution} from './interfaces'
+import type {SourcemapDebugIdMatch} from './interfaces'
 
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
@@ -10,49 +10,31 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
+import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
-import {extractDebugIdAsync, isValidDebugId} from './debugId'
-import {findSourcemaps} from './findSourcemaps'
-import {Sourcemap, SourcemapResolutionStatus} from './interfaces'
-import {renderDiscoveryWarning, renderPathNotFound, renderSourcemapResolutions} from './renderer'
+import {isValidDebugId} from './debugId'
+import {
+  renderDiscoveryWarning,
+  renderNoSourcemapsFound,
+  renderPathNotFound,
+  renderSourcemapDebugIdMatches,
+} from './renderer'
 import {extractSourcemapDebugId} from './sourcemapDebugId'
-
-const getResolutionStatus = (
-  bundleDebugId: string | undefined,
-  sourcemapDebugId: string | undefined,
-  bundleError: string | undefined
-): SourcemapResolutionStatus => {
-  if (bundleError) {
-    return SourcemapResolutionStatus.Error
-  }
-  if (bundleDebugId && sourcemapDebugId) {
-    return bundleDebugId.toLowerCase() === sourcemapDebugId.toLowerCase()
-      ? SourcemapResolutionStatus.Matched
-      : SourcemapResolutionStatus.Mismatched
-  }
-  if (bundleDebugId) {
-    return SourcemapResolutionStatus.BundleOnly
-  }
-  if (sourcemapDebugId) {
-    return SourcemapResolutionStatus.SourcemapOnly
-  }
-
-  return SourcemapResolutionStatus.Missing
-}
 
 export class SourcemapsFindCommand extends BaseCommand {
   public static paths = [['sourcemaps', 'find']]
 
   public static usage = Command.Usage({
     category: 'RUM',
-    description: 'Find local JavaScript bundles and sourcemaps by debug ID.',
+    description: 'Find local JavaScript sourcemaps by debug ID.',
     details: `
-      This read-only command finds local bundle-sourcemap pairs by debug ID or reports pairs whose runtime bundle has no debug ID.
+      This read-only command finds local sourcemaps by their top-level debug_id field or reports sourcemaps without one.
     `,
     examples: [
       ['Find a debug ID', 'datadog-ci sourcemaps find ./dist --debug-id 12345678-1234-1234-1234-123456789abc'],
-      ['Find bundles without debug IDs', 'datadog-ci sourcemaps find ./dist --missing-debug-id'],
+      ['Find sourcemaps without debug IDs', 'datadog-ci sourcemaps find ./dist --missing-debug-id'],
       ['Return machine-readable output', 'datadog-ci sourcemaps find ./dist --missing-debug-id --json'],
     ],
   })
@@ -87,39 +69,45 @@ export class SourcemapsFindCommand extends BaseCommand {
       return 1
     }
 
-    let discoveryFailures = 0
-    const payloads = await findSourcemaps(
-      this.basePath,
-      this.maxConcurrency,
-      (minifiedFilePath, sourcemapPath) => {
-        const relativePath = upath.relative(this.basePath, minifiedFilePath)
-
-        return new Sourcemap(minifiedFilePath, relativePath, sourcemapPath, relativePath)
-      },
-      (message) => {
-        discoveryFailures++
-        this.context.stderr.write(renderDiscoveryWarning(message))
+    const sourcemapPaths = globSync(buildPath(this.basePath, '**/*.js.map'))
+    if (sourcemapPaths.length === 0) {
+      if (this.json) {
+        this.context.stdout.write('[]\n')
+      } else {
+        this.context.stdout.write(renderNoSourcemapsFound(this.basePath))
       }
-    )
 
-    const resolutions = await doWithMaxConcurrency(this.maxConcurrency, payloads, (payload) =>
-      this.resolvePayload(payload)
+      return 1
+    }
+
+    const inspectedSourcemaps = await doWithMaxConcurrency(
+      this.maxConcurrency,
+      sourcemapPaths,
+      async (sourcemapPath) => ({
+        sourcemapPath,
+        ...(await extractSourcemapDebugId(sourcemapPath)),
+      })
     )
-    let resolutionFailures = 0
-    for (const resolution of resolutions) {
-      if (resolution.bundleError) {
-        resolutionFailures++
+    let inspectionFailures = 0
+    for (const sourcemap of inspectedSourcemaps) {
+      if (sourcemap.error) {
+        inspectionFailures++
         this.context.stderr.write(
-          renderDiscoveryWarning(`Could not inspect bundle ${resolution.minifiedFilePath}: ${resolution.bundleError}`)
+          renderDiscoveryWarning(`Could not inspect sourcemap ${sourcemap.sourcemapPath}: ${sourcemap.error}`)
         )
       }
     }
-    const matches = resolutions
-      .filter((resolution) => this.matchesQuery(resolution))
-      .sort((left, right) => left.minifiedFilePath.localeCompare(right.minifiedFilePath))
+    const matches: SourcemapDebugIdMatch[] = inspectedSourcemaps
+      .filter(
+        ({debugId, error}) =>
+          error === undefined &&
+          (this.missingDebugId ? debugId === undefined : debugId?.toLowerCase() === this.debugId!.toLowerCase())
+      )
+      .map(({debugId, sourcemapPath}) => ({...(debugId ? {debugId} : {}), sourcemapPath}))
+      .sort((left, right) => left.sourcemapPath.localeCompare(right.sourcemapPath))
 
     this.context.stdout.write(
-      this.json ? `${JSON.stringify(matches, undefined, 2)}\n` : renderSourcemapResolutions(matches)
+      this.json ? `${JSON.stringify(matches, undefined, 2)}\n` : renderSourcemapDebugIdMatches(matches)
     )
 
     if (this.debugId && matches.length === 0) {
@@ -129,11 +117,11 @@ export class SourcemapsFindCommand extends BaseCommand {
 
       return 1
     }
-    if (this.missingDebugId && matches.length === 0 && resolutionFailures === 0 && !this.json) {
-      this.context.stdout.write('All discovered minified files contain a debug ID.\n')
+    if (this.missingDebugId && matches.length === 0 && inspectionFailures === 0 && !this.json) {
+      this.context.stdout.write('All discovered sourcemaps contain a debug ID.\n')
     }
 
-    return discoveryFailures === 0 && resolutionFailures === 0 ? 0 : 1
+    return inspectionFailures === 0 ? 0 : 1
   }
 
   private validateOptions(): boolean {
@@ -149,32 +137,5 @@ export class SourcemapsFindCommand extends BaseCommand {
     }
 
     return true
-  }
-
-  private async resolvePayload(payload: Sourcemap): Promise<SourcemapResolution> {
-    const [bundleResult, sourcemapResult] = await Promise.all([
-      extractDebugIdAsync(payload.minifiedFilePath),
-      extractSourcemapDebugId(payload.sourcemapPath),
-    ])
-
-    return {
-      ...(bundleResult.debugId ? {bundleDebugId: bundleResult.debugId} : {}),
-      ...(bundleResult.error ? {bundleError: bundleResult.error} : {}),
-      minifiedFilePath: payload.minifiedFilePath,
-      ...(sourcemapResult.debugId ? {sourcemapDebugId: sourcemapResult.debugId} : {}),
-      ...(sourcemapResult.error ? {sourcemapError: sourcemapResult.error} : {}),
-      sourcemapPath: payload.sourcemapPath,
-      status: getResolutionStatus(bundleResult.debugId, sourcemapResult.debugId, bundleResult.error),
-    }
-  }
-
-  private matchesQuery(resolution: SourcemapResolution): boolean {
-    if (this.missingDebugId) {
-      return resolution.bundleDebugId === undefined && resolution.bundleError === undefined
-    }
-
-    const debugId = this.debugId!.toLowerCase()
-
-    return resolution.bundleDebugId?.toLowerCase() === debugId || resolution.sourcemapDebugId?.toLowerCase() === debugId
   }
 }

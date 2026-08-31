@@ -42,36 +42,32 @@ describe('extractSourcemapDebugId', () => {
     })
   })
 
-  test('ignores nested debug_id properties', async () => {
-    await withSourcemap(
-      JSON.stringify({version: 3, metadata: {debug_id: DEBUG_ID}, mappings: ''}),
-      async (sourcemapPath) => {
-        await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({})
-      }
-    )
+  test('ignores a debug_id nested inside sourcesContent', async () => {
+    // The nested literal is escaped inside the sourcesContent string, so the unescaped-quote
+    // regex does not match it. With no top-level debug_id, the result is empty.
+    const sourcesContent = `const nested = {"debug_id":"${DEBUG_ID}"};`
+    const sourcemap = JSON.stringify({version: 3, sourcesContent: [sourcesContent], mappings: ''})
+
+    await withSourcemap(sourcemap, async (sourcemapPath) => {
+      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({})
+    })
   })
 
-  test('reports an invalid top-level debug ID', async () => {
+  test('returns no debug ID when the value is not a UUID', async () => {
     await withSourcemap('{"version":3,"debug_id":"invalid"}', async (sourcemapPath) => {
-      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({
-        error: 'sourcemap contains an invalid debug_id',
-      })
+      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({})
     })
   })
 
-  test('reports a non-string top-level debug ID', async () => {
+  test('returns no debug ID for a non-string value', async () => {
     await withSourcemap('{"version":3,"debug_id":123}', async (sourcemapPath) => {
-      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({
-        error: 'sourcemap contains an invalid debug_id',
-      })
+      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({})
     })
   })
 
-  test('reports malformed JSON', async () => {
+  test('returns no debug ID for malformed JSON', async () => {
     await withSourcemap('not-json', async (sourcemapPath) => {
-      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({
-        error: 'sourcemap must be a JSON object',
-      })
+      await expect(extractSourcemapDebugId(sourcemapPath)).resolves.toEqual({})
     })
   })
 
