@@ -31,7 +31,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {addDebugIdToPayloads} from './debugId'
+import {addDebugIdToPayloads, extractDebugId} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
@@ -147,10 +147,12 @@ export class SourcemapsUploadCommand extends BaseCommand {
         return 1
       }
     } else {
-      if (payloads.length > 0 && addDebugIdToPayloads(payloads)) {
-        this.context.stderr.write(renderSourceCodeContextFoundWithoutDebugIdFlag())
+      for (const {minifiedFilePath} of payloads) {
+        if (extractDebugId(minifiedFilePath) !== undefined) {
+          this.context.stderr.write(renderSourceCodeContextFoundWithoutDebugIdFlag())
 
-        return 1
+          return 1
+        }
       }
     }
 
