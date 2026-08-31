@@ -32,10 +32,8 @@ export type EcsFargateConfigOptions = Partial<{
  */
 const familyFromTaskDefinition = (taskDefinition: string): string =>
   (taskDefinition.split('/').pop() ?? taskDefinition).split(':')[0]
-
 /**
- * The families named more than once, which the run cannot act on: a family has one instrumented
- * revision
+ * Finds families that are named more than once as a task definition family can only be instrumented once
  */
 const duplicateFamilies = (taskDefinitions: string[]): string[] => {
   const seen = new Set<string>()
