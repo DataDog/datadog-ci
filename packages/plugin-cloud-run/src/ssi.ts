@@ -92,7 +92,9 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
       ? {
           kind: 'errors',
           errors: [
-            `${unsupportedFlags.join(', ')} require --language because automatic language detection cannot apply per-language tracer settings. Add --language or remove these options.`,
+            `${unsupportedFlags.join(', ')} ${
+              unsupportedFlags.length === 1 ? 'requires' : 'require'
+            } --language because automatic language detection cannot apply per-language tracer settings. Add --language or remove these options.`,
           ],
           warnings: [],
         }
@@ -101,6 +103,20 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
           tracerVolumeMedium: options.tracerVolumeMedium ?? 'memory',
           warnings: [],
         }
+  }
+
+  if (!isCloudRunLanguage(options.language)) {
+    return {
+      kind: 'errors',
+      errors: [
+        `Automatic instrumentation does not support language ${JSON.stringify(
+          options.language
+        )}. Use one of ${TRACER_INJECTION_LANGUAGES.map((language) => JSON.stringify(language)).join(
+          ', '
+        )}, or omit --language to detect it automatically.`,
+      ],
+      warnings: [],
+    }
   }
 
   if (!isCloudRunLanguage(options.language)) {

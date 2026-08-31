@@ -19,7 +19,6 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +     "dd_sls_ci": "v0_0_0",
 +     "service": "interactive-service"
 +   },
-    "name": "projects/interactive-project/locations/us-west1/services/interactive-service",
     "template": {
       "containers": [
         {
@@ -32,7 +31,7 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +             "name": "DD_HEALTH_PORT",
 +             "value": "5555"
 +           },
-+           {
+            {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
@@ -52,14 +51,14 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +             "name": "DD_TRACE_ENABLED",
 +             "value": "true"
 +           },
-            {
++           {
               "name": "NODE_ENV",
               "value": "production"
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
-          "name": "main-app",
--         "volumeMounts": []
+-         "name": "main-app"
++         "name": "main-app",
 +         "volumeMounts": [
 +           {
 +             "mountPath": "/shared-volume",
@@ -108,7 +107,6 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +         },
 +         "startupProbe": {
 +           "failureThreshold": 3,
-+           "initialDelaySeconds": 0,
 +           "periodSeconds": 10,
 +           "tcpSocket": {
 +             "port": 5555
@@ -123,8 +121,7 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +         ]
         }
       ],
--     "revision": "test-service-v1",
--     "volumes": []
+-     "revision": "test-service-v1"
 +     "volumes": [
 +       {
 +         "emptyDir": {
@@ -160,7 +157,6 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +     "service": "test-service",
 +     "version": "1.0.0"
 +   },
-    "name": "projects/test-project/locations/us-central1/services/test-service",
     "template": {
       "containers": [
         {
@@ -189,7 +185,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "name": "DD_SERVICE",
 +             "value": "test-service"
 +           },
-            {
++           {
 +             "name": "DD_SITE",
 +             "value": "datadoghq.com"
 +           },
@@ -201,14 +197,14 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "name": "DD_VERSION",
 +             "value": "1.0.0"
 +           },
-+           {
+            {
               "name": "NODE_ENV",
               "value": "production"
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
-          "name": "main-app",
--         "volumeMounts": []
+-         "name": "main-app"
++         "name": "main-app",
 +         "volumeMounts": [
 +           {
 +             "mountPath": "/shared-volume",
@@ -265,7 +261,6 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +         },
 +         "startupProbe": {
 +           "failureThreshold": 3,
-+           "initialDelaySeconds": 0,
 +           "periodSeconds": 10,
 +           "tcpSocket": {
 +             "port": 5555
@@ -280,8 +275,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +         ]
         }
       ],
--     "revision": "test-service-v1",
--     "volumes": []
+-     "revision": "test-service-v1"
 +     "volumes": [
 +       {
 +         "emptyDir": {

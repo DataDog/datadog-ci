@@ -17,13 +17,11 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
 -   "labels": {
 -     "service": "test-service"
 -   },
-+   "labels": {},
-    "name": "projects/test-project/locations/us-central1/services/test-service",
     "template": {
       "containers": [
-        {
-          "env": [
-            {
+-       {
+-         "env": [
+-           {
 -             "name": "DD_API_KEY",
 -             "value": "test-api-key"
 -           }
@@ -37,9 +35,9 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
 -           }
 -         ]
 -       },
--       {
--         "env": [
--           {
+        {
+          "env": [
+            {
 -             "name": "DD_SERVICE",
 -             "value": "test-service"
 -           },
@@ -53,24 +51,22 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
-          "name": "main-app",
+-         "name": "main-app",
 -         "volumeMounts": [
 -           {
 -             "mountPath": "/shared-volume",
 -             "name": "shared-volume"
 -           }
 -         ]
-+         "volumeMounts": []
-        }
-      ],
+-       }
+-     ],
 -     "revision": "test-service-v1",
 -     "volumes": [
 -       {
--         "emptyDir": {},
 -         "name": "shared-volume"
--       }
--     ]
-+     "volumes": []
++         "name": "main-app"
+        }
+      ]
     }
   }
 ✅ Cloud Run uninstrumentation completed successfully!
@@ -94,13 +90,11 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
 -   "labels": {
 -     "service": "test-service"
 -   },
-+   "labels": {},
-    "name": "projects/test-project/locations/us-central1/services/test-service",
     "template": {
       "containers": [
-        {
-          "env": [
-            {
+-       {
+-         "env": [
+-           {
 -             "name": "DD_API_KEY",
 -             "value": "test-api-key"
 -           }
@@ -114,9 +108,9 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
 -           }
 -         ]
 -       },
--       {
--         "env": [
--           {
+        {
+          "env": [
+            {
 -             "name": "DD_SERVICE",
 -             "value": "test-service"
 -           },
@@ -130,24 +124,22 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
-          "name": "main-app",
+-         "name": "main-app",
 -         "volumeMounts": [
 -           {
 -             "mountPath": "/shared-volume",
 -             "name": "shared-volume"
 -           }
 -         ]
-+         "volumeMounts": []
-        }
-      ],
+-       }
+-     ],
 -     "revision": "test-service-v1",
 -     "volumes": [
 -       {
--         "emptyDir": {},
 -         "name": "shared-volume"
--       }
--     ]
-+     "volumes": []
++         "name": "main-app"
+        }
+      ]
     }
   }
 

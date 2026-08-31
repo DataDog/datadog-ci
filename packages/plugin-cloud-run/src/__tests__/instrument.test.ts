@@ -27,6 +27,7 @@ const mockServicesClient = {
   updateService: jest.fn(),
 }
 jest.mock('@google-cloud/run', () => ({
+  ...jest.requireActual('@google-cloud/run'),
   ServicesClient: jest.fn(() => mockServicesClient),
 }))
 
@@ -47,6 +48,12 @@ describe('InstrumentCommand', () => {
     mockServicesClient.servicePath.mockImplementation(
       (project, region, service) => `projects/${project}/locations/${region}/services/${service}`
     )
+    mockServicesClient.updateService.mockImplementation(({service}) => [
+      {
+        metadata: service,
+        promise: jest.fn().mockResolvedValue([]),
+      },
+    ])
   })
 
   describe('validates required variables', () => {
@@ -137,8 +144,8 @@ describe('InstrumentCommand', () => {
     ]
 
     test.each([
-      [['--tracing', 'inject', '--tracer-version', 'latest'], 'require --language'],
-      [['--tracing', 'inject', '--tracer-libc', 'glibc'], 'require --language'],
+      [['--tracing', 'inject', '--tracer-version', 'latest'], 'requires --language'],
+      [['--tracing', 'inject', '--tracer-libc', 'glibc'], 'requires --language'],
       [['--tracer-version', 'latest'], 'require --tracing inject'],
       [['--tracer-volume-medium', 'disk'], 'require --tracing inject'],
       [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
@@ -305,11 +312,6 @@ describe('InstrumentCommand', () => {
       process.env[SERVICE_ENV_VAR] = 'test-service'
 
       mockServicesClient.getService.mockResolvedValue([mockService])
-
-      const mockOperation = {
-        promise: jest.fn().mockResolvedValue([]),
-      }
-      mockServicesClient.updateService.mockResolvedValue([mockOperation])
 
       jest.restoreAllMocks()
 

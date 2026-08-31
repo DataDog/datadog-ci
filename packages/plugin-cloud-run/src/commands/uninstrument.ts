@@ -1,3 +1,4 @@
+import type {ServiceUpdatePreview} from '../service-update'
 import type {IService} from '../types'
 
 import {CloudRunUninstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/uninstrument'
@@ -5,14 +6,22 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {uninstrumentServiceConfig} from '../service-config'
+import {previewServiceUpdate} from '../service-update'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
+
+interface UninstrumentedServiceUpdate {
+  existingService: IService
+  updatedService: IService
+  serviceName: string
+  preview: ServiceUpdatePreview
+}
 
 export class PluginCommand extends CloudRunUninstrumentCommand {
   protected fipsConfig = {
@@ -71,7 +80,8 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     try {
       await this.uninstrumentSidecar(this.project, this.services, this.region)
     } catch (error) {
-      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${error}\n`))
+      const message = error instanceof Error ? error.message : String(error)
+      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${message}\n`))
 
       return 1
     }
@@ -94,48 +104,34 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}🚀 Uninstrumenting Cloud Run services with sidecar...\n`)
     )
-    for (let i = 0; i < existingServiceConfigs.length; i++) {
-      const serviceConfig = existingServiceConfigs[i]
-      const serviceName = services[i]
-      try {
-        await this.uninstrumentService(client, serviceConfig, serviceName)
-      } catch (error) {
-        this.context.stderr.write(
-          dryRunPrefix(this.dryRun) + renderError(`Failed to instrument service ${serviceName}: ${error}\n`)
-        )
-        throw error
-      }
-    }
-  }
+    const updates = await Promise.all(
+      existingServiceConfigs.map(async (existingService, index): Promise<UninstrumentedServiceUpdate> => {
+        const serviceName = services[index]
+        try {
+          const updatedService = this.createUninstrumentedServiceConfig(existingService)
+          const preview = await previewServiceUpdate(client, existingService, updatedService)
 
-  public async uninstrumentService(client: ServicesClient, existingService: IService, serviceName: string) {
-    const updatedService = this.createUninstrumentedServiceConfig(existingService)
-    this.context.stdout.write(generateConfigDiff(existingService, updatedService))
-    if (this.dryRun) {
-      this.context.stdout.write(
-        `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
-          serviceName
-        )} with the above changes.\n`
-      )
-
-      return
-    } else if (this.interactive) {
-      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
-      if (!confirmed) {
-        throw new Error('Uninstrumentation cancelled by user.')
-      }
-    }
-
-    await withSpinner(
-      `Uninstrumenting service ${chalk.bold(serviceName)}...`,
-      async () => {
-        const [operation] = await client.updateService({
-          service: updatedService,
-        })
-        await operation.promise()
-      },
-      `Uninstrumented service ${chalk.bold(serviceName)}`
+          return {existingService, updatedService, serviceName, preview}
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          throw new Error(`Failed to validate service ${serviceName}: ${message}`)
+        }
+      })
     )
+
+    const updatedServices: string[] = []
+    for (const update of updates) {
+      try {
+        if (await this.uninstrumentService(client, update)) {
+          updatedServices.push(update.serviceName)
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        const partialSuccess =
+          updatedServices.length === 0 ? '' : `\nServices updated before the failure: ${updatedServices.join(', ')}.`
+        throw new Error(`Failed to uninstrument service ${update.serviceName}: ${message}${partialSuccess}`)
+      }
+    }
   }
 
   public createUninstrumentedServiceConfig(service: IService): IService {
@@ -160,5 +156,44 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     }
 
     return result.service
+  }
+
+  private async uninstrumentService(client: ServicesClient, update: UninstrumentedServiceUpdate): Promise<boolean> {
+    const {existingService, updatedService, serviceName, preview} = update
+    this.context.stdout.write(preview.diff)
+    if (!preview.hasChanges && existingService.terminalCondition?.state === 'CONDITION_SUCCEEDED') {
+      this.context.stdout.write(
+        `\n\n${dryRunPrefix(this.dryRun)}Service ${chalk.bold(serviceName)} is already uninstrumented.\n`
+      )
+
+      return false
+    }
+    if (this.dryRun) {
+      this.context.stdout.write(
+        `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
+          serviceName
+        )} with the above changes.\n`
+      )
+
+      return false
+    } else if (this.interactive) {
+      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
+      if (!confirmed) {
+        throw new Error('Uninstrumentation cancelled by user.')
+      }
+    }
+
+    await withSpinner(
+      `Uninstrumenting service ${chalk.bold(serviceName)}...`,
+      async () => {
+        const [operation] = await client.updateService({
+          service: updatedService,
+        })
+        await operation.promise()
+      },
+      `Uninstrumented service ${chalk.bold(serviceName)}`
+    )
+
+    return true
   }
 }
