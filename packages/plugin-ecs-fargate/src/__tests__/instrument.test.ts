@@ -349,7 +349,7 @@ describe('ecs-fargate instrument', () => {
       const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--profile', 'my-profile'])
 
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain("Couldn't set AWS profile credentials")
+      expect(context.stdout.toString()).toContain("Couldn't get AWS profile credentials")
       expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
     })
 
@@ -554,10 +554,86 @@ describe('ecs-fargate instrument', () => {
       const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--ecs-service', MOCK_SERVICE])
 
       expect(code).toBe(1)
-      expect(ecsMock.commandCalls(DescribeServicesCommand)).toHaveLength(0)
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(0)
     })
 
-    test('reports a service running a task definition it did not instrument', async () => {
+    test('rolls out the apps that worked when another could not be instrumented', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand, {taskDefinition: 'my-app'})
+        .resolves({taskDefinition: fargateTaskDefinition({networkMode: 'bridge'}), tags: []})
+      ecsMock
+        .on(DescribeTaskDefinitionCommand, {taskDefinition: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 4}), tags: []})
+      ecsMock
+        .on(RegisterTaskDefinitionCommand, {family: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 5})})
+      ecsMock.on(DescribeServicesCommand, {services: ['my-worker-service']}).resolves({
+        services: [
+          fargateService({serviceName: 'my-worker-service', taskDefinition: taskDefinitionArn('my-worker', 4)}),
+        ],
+      })
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--task-definition',
+        'my-worker',
+        '--ecs-service',
+        'my-worker-service',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('Fargate requires awsvpc')
+      expect(ecsMock.commandCalls(UpdateServiceCommand).map((call) => call.args[0].input)).toStrictEqual([
+        {cluster: undefined, service: 'my-worker-service', taskDefinition: taskDefinitionArn('my-worker', 5)},
+      ])
+    })
+
+    test('tells you to roll out the task definitions no service covers', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand, {taskDefinition: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 4}), tags: []})
+      ecsMock
+        .on(RegisterTaskDefinitionCommand, {family: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 5})})
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--task-definition',
+        'my-worker',
+        '--ecs-service',
+        MOCK_SERVICE,
+      ])
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      // MOCK_SERVICE runs my-app, so only my-worker is left for the user to roll out.
+      expect(output).toContain('Registered my-worker:5. Update your services and tasks to this revision')
+      expect(output).toContain('Registered my-app:2.\n')
+    })
+
+    test('keeps the messages of one app together while the others run alongside it', async () => {
+      ecsMock
+        .on(DescribeTaskDefinitionCommand, {taskDefinition: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 4}), tags: []})
+      ecsMock
+        .on(RegisterTaskDefinitionCommand, {family: 'my-worker'})
+        .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 5})})
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--task-definition',
+        'my-worker',
+      ])
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output.indexOf('Registered my-app:2')).toBeLessThan(output.indexOf('Instrumenting my-worker'))
+    })
+
+    test('reports a service running a task definition the run does not instrument', async () => {
       ecsMock
         .on(DescribeServicesCommand)
         .resolves({services: [fargateService({taskDefinition: taskDefinitionArn('other-app', 3)})]})
@@ -572,7 +648,7 @@ describe('ecs-fargate instrument', () => {
       expect(code).toBe(1)
       expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(0)
       expect(context.stdout.toString()).toContain(
-        `${MOCK_SERVICE} runs other-app, which this run did not instrument. Pass --task-definition other-app`
+        `${MOCK_SERVICE} runs other-app, which this run does not instrument. Pass --task-definition other-app`
       )
     })
 
