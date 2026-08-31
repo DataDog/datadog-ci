@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {isValidDebugId} from './debugId'
+import {isValidDebugId, DEBUG_ID_VALUE_PATTERN} from './debugId'
 
 export const SOURCEMAP_DEBUG_ID_SEARCH_CHUNK_BYTES = 64 * 1024
 
@@ -13,7 +13,7 @@ export interface SourcemapDebugIdResult {
 // unescaped quotes; the same literal nested inside a `sourcesContent` string value is escaped
 // as `\"debug_id\":\"...\"`, so requiring unescaped quotes skips that common nested case without
 // a full JSON parser. A non-standard nested object field named `debug_id` would still match.
-const DEBUG_ID_FIELD_REGEX = /"debug_id"\s*:\s*"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"/i
+const DEBUG_ID_FIELD_REGEX = new RegExp(`"debug_id"\\s*:\\s*"(${DEBUG_ID_VALUE_PATTERN})"`, 'i')
 
 // Keep enough content from the previous chunk to match a debug_id literal split across a read
 // boundary. The longest supported literal is shorter than this overlap.

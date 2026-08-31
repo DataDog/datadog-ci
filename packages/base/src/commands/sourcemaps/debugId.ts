@@ -8,8 +8,11 @@ import type {RawSourceMap} from 'webpack-sources'
 import {parse} from '@babel/parser'
 import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
-const DEBUG_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const DEBUG_ID_PROPERTY_REGEX = /"?ddDebugId"?\s*:\s*"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"/i
+// Single source of truth for the UUID v4-ish shape used by debug IDs. All debug-id regexes are
+// built from this fragment so the shape stays consistent across bundle and sourcemap matchers.
+export const DEBUG_ID_VALUE_PATTERN = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const DEBUG_ID_REGEX = new RegExp(`^${DEBUG_ID_VALUE_PATTERN}$`, 'i')
+const DEBUG_ID_PROPERTY_REGEX = new RegExp(`"?ddDebugId"?\\s*:\\s*"(${DEBUG_ID_VALUE_PATTERN})"`, 'i')
 
 // Keep this progressive scanner in sync with build-plugins PR #489:
 // https://github.com/DataDog/build-plugins/pull/489
