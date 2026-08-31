@@ -9,7 +9,7 @@ import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/consta
 import type {Libc} from '../../helpers/serverless/ssi/injection-spec'
 import type {Language} from '../../helpers/serverless/ssi/tracer'
 import type {TracingInput} from '../../helpers/serverless/ssi/tracing'
-import {DEFAULT_CONFIG_PATHS, removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
 
@@ -112,7 +112,7 @@ export abstract class ContainerAppCommand extends BaseCommand {
       envVars: this.envVars,
       ...this.additionalConfig,
     }
-    const fileConfig = (
+    const config = (
       await resolveConfigFromFile<{containerApp: ContainerAppConfigOptions}>(
         {containerApp: commandConfig},
         {
@@ -121,16 +121,6 @@ export abstract class ContainerAppCommand extends BaseCommand {
         }
       )
     ).containerApp
-    const config = {
-      ...fileConfig,
-      ...removeUndefinedValues({
-        tracing: commandConfig.tracing,
-        language: commandConfig.language,
-        tracerVersion: commandConfig.tracerVersion,
-        tracerLibc: commandConfig.tracerLibc,
-        containerName: commandConfig.containerName,
-      }),
-    }
     const containerApps: ContainerAppBySubscriptionAndGroup = {}
     const errors: string[] = []
     if (process.env.DD_API_KEY === undefined) {

@@ -33,6 +33,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
+import {SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {CONTAINER_APP_ID, DEFAULT_ARGS, DEFAULT_CONFIG, DEFAULT_CONTAINER_APP, NULL_SUBSCRIPTION_ID} from './common'
 
@@ -402,6 +403,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
         tags: {
           ...INSTRUMENTED_CONTAINER_APP.tags,
           owner: 'payments',
+          [SSI_INJECTION_MODE_TAG]: SINGLE_LANGUAGE_SSI_MODE,
         },
         template: {
           ...INSTRUMENTED_CONTAINER_APP.template,

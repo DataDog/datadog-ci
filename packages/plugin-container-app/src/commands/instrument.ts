@@ -35,8 +35,9 @@ import {
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
   applySingleLanguageSsi,
-  assertLanguageInjectionEnvCanBeMerged,
-  hasCompleteSsiSignature,
+  assertExistingLanguageInjectionCanBeReplaced,
+  assertSsiResourcesCanBeAdded,
+  hasSsi,
   preserveInjectionModeTag,
   removeSsiState,
   resolveSsiConfig,
@@ -159,6 +160,14 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
       config = {...config, service: config.service ?? containerAppName}
 
+      if (ssiConfig.kind === 'single-language' && (containerApp.template?.scale?.minReplicas ?? 0) === 0) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Automatic APM instrumentation can increase cold-start delays for ${containerAppName} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
+          )
+        )
+      }
+
       await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerApp, ssiConfig)
       await this.addTags(config, containerAppClient.subscriptionId, resourceGroup, containerApp, ssiConfig)
     } catch (error) {
@@ -251,21 +260,20 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
 
     let sourceApp = containerApp
     let targetIndex: number | undefined
+    const ssiExists = hasSsi(containerApp)
     if (ssiConfig.kind === 'single-language') {
       targetIndex = selectApplicationContainer(
         containerApp.template?.containers ?? [],
         config.sidecarName!,
         config.containerName
       )
-      assertLanguageInjectionEnvCanBeMerged(containerApp.template?.containers?.[targetIndex].env)
-      const hasMarker = containerApp.tags?.[SSI_INJECTION_MODE_TAG] === SINGLE_LANGUAGE_SSI_MODE
-      if (hasMarker || hasCompleteSsiSignature(containerApp, targetIndex)) {
+      if (ssiExists) {
+        assertExistingLanguageInjectionCanBeReplaced(containerApp)
         sourceApp = removeSsiState(containerApp)
+      } else {
+        assertSsiResourcesCanBeAdded(containerApp, targetIndex, config.sidecarName!)
       }
-    } else if (
-      ssiConfig.tracing !== undefined &&
-      containerApp.tags?.[SSI_INJECTION_MODE_TAG] === SINGLE_LANGUAGE_SSI_MODE
-    ) {
+    } else if (ssiConfig.tracing !== undefined && ssiExists) {
       sourceApp = removeSsiState(containerApp)
     }
 

@@ -57,6 +57,8 @@ Use `--tracing inject --language <language>` to add a Java, Node.js, .NET, Pytho
 
 Tracer injection uses the `latest` tracer version and `glibc` by default. Use `--tracer-version` to pin an image tag, or `--tracer-libc musl` for a musl-based image. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported.
 
+Automatic instrumentation can increase cold-start delays when the app scales to zero. For scale-to-zero workloads, install the tracer in the application image, and use `--tracing manual`.
+
 For a Container App with multiple application containers, use `--container-name` to select one container. This differs from `--name`, which selects the Container App resource.
 
 Other tracing modes are:
@@ -189,6 +191,8 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "environment": "prod",
     "version": "1.0.0",
     "logPath": "/custom-path/*.log",
+    "tracing": "inject",
+    "language": "python",
     "sourceCodeIntegration": true,
     "uploadGitMetadata": true,
     "extraTags": "team:backend,project:api",

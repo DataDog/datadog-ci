@@ -169,20 +169,50 @@ export const selectApplicationContainer = (
   )
 }
 
-export const assertLanguageInjectionEnvCanBeMerged = (env: readonly EnvironmentVar[] | undefined): void => {
-  const targetNames = new Set([...LANGUAGE_ENV_FRAGMENTS.map(({name}) => name), DD_TAGS_ENV_VAR])
-  for (const name of targetNames) {
-    const matching = (env ?? []).filter((variable) => variable.name === name)
-    if (matching.length > 1) {
-      throw new SsiConfigError(
-        `${name} appears more than once on the selected application container. Remove the duplicate before retrying.`
-      )
+export const assertLanguageInjectionEnvCanBeMerged = (
+  env: readonly EnvironmentVar[] | undefined,
+  spec: LanguageInjectionSpec
+): void => assertEnvironmentFragmentsCanBeMerged(env, spec.env)
+
+export const assertExistingLanguageInjectionCanBeReplaced = (containerApp: ContainerApp): void => {
+  for (const container of containerApp.template?.containers ?? []) {
+    const hasMarker = container.env?.some(
+      ({name, secretRef, value}) => name === DD_TAGS_ENV_VAR && !secretRef && hasInjectionModeTag(value)
+    )
+    if (hasMarker) {
+      assertEnvironmentFragmentsCanBeMerged(container.env, LANGUAGE_ENV_FRAGMENTS)
     }
-    if (matching[0]?.secretRef) {
-      throw new SsiConfigError(
-        `${name} on the selected application container comes from a secret reference. Set it to a literal value or remove it before retrying.`
+  }
+}
+
+export const assertSsiResourcesCanBeAdded = (
+  containerApp: ContainerApp,
+  targetIndex: number,
+  sidecarName: string
+): void => {
+  if (containerApp.template?.initContainers?.some(({name}) => name === TRACER_CONTAINER_NAME)) {
+    throw new SsiConfigError(
+      `An init container named '${TRACER_CONTAINER_NAME}' already exists. Rename or remove it before retrying.`
+    )
+  }
+  if (containerApp.template?.volumes?.some(({name}) => name === TRACER_VOLUME_NAME)) {
+    throw new SsiConfigError(
+      `A volume named '${TRACER_VOLUME_NAME}' already exists. Rename or remove it before retrying.`
+    )
+  }
+
+  const hasConflictingMount = (containerApp.template?.containers ?? []).some(
+    (container, index) =>
+      container.name !== sidecarName &&
+      (container.volumeMounts ?? []).some(
+        ({volumeName, mountPath}) =>
+          volumeName === TRACER_VOLUME_NAME || (index === targetIndex && mountPath === TRACER_MOUNT_PATH)
       )
-    }
+  )
+  if (hasConflictingMount) {
+    throw new SsiConfigError(
+      `An application container volume mount conflicts with the managed '${TRACER_VOLUME_NAME}' volume at '${TRACER_MOUNT_PATH}'. Rename or remove the conflicting mount before retrying.`
+    )
   }
 }
 
@@ -190,7 +220,7 @@ export const mergeLanguageInjectionEnv = (
   existingEnv: readonly EnvironmentVar[] | undefined,
   spec: LanguageInjectionSpec
 ): EnvironmentVar[] => {
-  assertLanguageInjectionEnvCanBeMerged(existingEnv)
+  assertLanguageInjectionEnvCanBeMerged(existingEnv, spec)
   const merged = spec.env.reduce<EnvironmentVar[]>(
     (env, fragment) => {
       const existing = env.find(({name}) => name === fragment.name)
@@ -232,6 +262,11 @@ export const removeLanguageInjectionEnv = (existingEnv: readonly EnvironmentVar[
 
     return value === undefined ? [] : [value === variable.value ? variable : {...variable, value}]
   })
+
+export const hasSsi = (containerApp: ContainerApp): boolean =>
+  (containerApp.tags !== undefined &&
+    Object.prototype.hasOwnProperty.call(containerApp.tags, SSI_INJECTION_MODE_TAG)) ||
+  (containerApp.template?.containers ?? []).some((_, index) => hasCompleteSsiSignature(containerApp, index))
 
 export const hasCompleteSsiSignature = (containerApp: ContainerApp, targetIndex: number): boolean => {
   const template = containerApp.template
@@ -336,6 +371,26 @@ const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
 const formatContainerNames = (candidates: readonly {container: Container}[]): string =>
   candidates.map(({container}) => container.name || '<unnamed>').join(', ')
 
+const assertEnvironmentFragmentsCanBeMerged = (
+  env: readonly EnvironmentVar[] | undefined,
+  fragments: readonly EnvFragment[]
+): void => {
+  const targetNames = new Set([...fragments.map(({name}) => name), DD_TAGS_ENV_VAR])
+  for (const name of targetNames) {
+    const matching = (env ?? []).filter((variable) => variable.name === name)
+    if (matching.length > 1) {
+      throw new SsiConfigError(
+        `${name} appears more than once on the selected application container. Remove the duplicate before retrying.`
+      )
+    }
+    if (matching[0]?.secretRef) {
+      throw new SsiConfigError(
+        `${name} on the selected application container comes from a secret reference. Set it to a literal value or remove it before retrying.`
+      )
+    }
+  }
+}
+
 const upsertEnv = <T extends EnvironmentVar>(env: readonly T[], name: string, value: string): T[] => {
   const index = env.findIndex((variable) => variable.name === name)
 
@@ -416,6 +471,6 @@ const buildTracerInitContainer = (spec: LanguageInjectionSpec): InitContainer =>
   image: spec.image,
   command: ['/datadog-init/copy-lib.sh'],
   args: [TRACER_MOUNT_PATH],
-  resources: {cpu: 0.25, memory: '0.5Gi'},
+  resources: {cpu: 0.25, memory: '0.5Gi', ephemeralStorage: '1Gi'},
   volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
 })
