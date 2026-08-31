@@ -45,7 +45,7 @@ export const getAWSProfileCredentials = async (profile: string): Promise<AwsCred
     return await credentialsProvider()
   } catch (err) {
     if (err instanceof Error) {
-      throw Error(`Couldn't set AWS profile credentials. ${err.message}`)
+      throw Error(`Couldn't get AWS profile credentials. ${err.message}`)
     }
   }
 }
@@ -121,11 +121,11 @@ export const taskDefinitionRevision = (taskDefinitionArn: string): string =>
   taskDefinitionArn.split('/').pop() ?? taskDefinitionArn
 
 /**
- * The family a task definition ARN belongs to, which is what ties a service to a task definition
- * this command instrumented.
+ * The family a task definition belongs to, either named by family, `family:revision`,
+ * or a full ARN. ties an ECS service to the task definition this command instruments.
  */
-export const taskDefinitionFamily = (taskDefinitionArn: string): string =>
-  taskDefinitionRevision(taskDefinitionArn).split(':')[0]
+export const taskDefinitionFamily = (taskDefinition: string): string =>
+  taskDefinitionRevision(taskDefinition).split(':')[0]
 
 /**
  * An ECS service, narrowed to what pointing it at a new task definition revision needs.
