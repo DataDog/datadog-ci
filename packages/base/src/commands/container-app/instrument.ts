@@ -12,17 +12,10 @@ import {
   SIDECAR_IMAGE,
 } from '../../helpers/serverless/constants'
 import {DEFAULT_TRACER_LIBC, LIBCS} from '../../helpers/serverless/ssi/injection-spec'
-import {
-  DEFAULT_TRACER_VERSION,
-  LANGUAGE_METADATA,
-  TRACER_IMAGE_TAG_REG_EXP,
-  type Language,
-} from '../../helpers/serverless/ssi/tracer'
+import {DEFAULT_TRACER_VERSION, TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
 import {TRACING_INPUTS} from '../../helpers/serverless/ssi/tracing'
 
 import {ContainerAppCommand} from './common'
-
-export const CONTAINER_APP_LANGUAGES = [...(Object.keys(LANGUAGE_METADATA) as Language[]), 'go'] as const
 
 export const DEFAULT_SIDECAR_CPU = 0.5
 export const DEFAULT_SIDECAR_MEMORY = 1
@@ -75,10 +68,9 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     validator: t.isEnum(TRACING_INPUTS),
   })
   private language: ContainerAppConfigOptions['language'] = Option.String('--language', {
-    description: `Set the application language for log parsing. With --tracing inject, this also selects the tracer. Possible values: ${CONTAINER_APP_LANGUAGES.map(
-      (language) => `"${language}"`
-    ).join(', ')}.`,
-    validator: t.isEnum(CONTAINER_APP_LANGUAGES),
+    description:
+      'Set the application language for log parsing. With --tracing inject, this selects a supported tracer.',
+    validator: t.cascade(t.isString(), t.matchesRegExp(/.+/)),
   })
   private tracerVersion = Option.String('--tracer-version', {
     description: `Set the tracer image tag for automatic instrumentation. Defaults to '${DEFAULT_TRACER_VERSION}'.`,

@@ -10,7 +10,6 @@ import {
   DEFAULT_SIDECAR_CPU,
   DEFAULT_SIDECAR_MEMORY,
 } from '@datadog/datadog-ci-base/commands/container-app/instrument'
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
@@ -35,10 +34,9 @@ import {
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
   applySingleLanguageSsi,
-  assertExistingLanguageInjectionCanBeReplaced,
+  assertLanguageInjectionEnvCanBeMerged,
   assertSsiResourcesCanBeAdded,
   hasSsi,
-  preserveInjectionModeTag,
   removeSsiState,
   resolveSsiConfig,
   selectApplicationContainer,
@@ -199,16 +197,22 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
     if (ssiConfig.kind === 'single-language') {
       updatedTags[SSI_INJECTION_MODE_TAG] = SINGLE_LANGUAGE_SSI_MODE
-    } else if (ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined) {
+    } else if (ssiConfig.kind === 'no-injection') {
       delete updatedTags[SSI_INJECTION_MODE_TAG]
     }
     if (!sortedEqual(containerApp.tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
-        await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
-          `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerApp.name}`,
-          {properties: {tags: updatedTags}}
-        )
+        try {
+          await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
+            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerApp.name}`,
+            {properties: {tags: updatedTags}}
+          )
+        } catch (error) {
+          this.context.stdout.write(
+            renderError(`Failed to update tags for ${containerApp.name}: ${formatError(error)}`)
+          )
+        }
       }
     }
   }
@@ -267,13 +271,13 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         config.sidecarName!,
         config.containerName
       )
+      assertLanguageInjectionEnvCanBeMerged(containerApp.template?.containers?.[targetIndex]?.env, ssiConfig.spec)
       if (ssiExists) {
-        assertExistingLanguageInjectionCanBeReplaced(containerApp)
         sourceApp = removeSsiState(containerApp)
       } else {
         assertSsiResourcesCanBeAdded(containerApp, targetIndex, config.sidecarName!)
       }
-    } else if (ssiConfig.tracing !== undefined && ssiExists) {
+    } else if (ssiExists) {
       sourceApp = removeSsiState(containerApp)
     }
 
@@ -306,7 +310,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
 
     // Use shared helper to create instrumented template
-    let updatedTemplate = createInstrumentedTemplate(
+    const updatedTemplate = createInstrumentedTemplate(
       sourceApp.template ?? {},
       baseSidecar,
       {
@@ -317,16 +321,6 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       },
       envVarsByName
     )
-    if (ssiConfig.kind === 'no-injection' && ssiConfig.tracing === undefined) {
-      updatedTemplate = {
-        ...updatedTemplate,
-        containers: updatedTemplate.containers.map((container, index) => ({
-          ...container,
-          env: preserveInjectionModeTag(sourceApp.template?.containers?.[index]?.env, container.env),
-        })),
-      }
-    }
-
     const secrets = sourceApp.configuration?.secrets ?? []
     const hasApiKey = secrets.some(({name}) => name === DD_API_KEY_SECRET_NAME)
     const updatedSecrets: Secret[] = secrets.map((secret) =>

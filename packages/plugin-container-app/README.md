@@ -64,10 +64,9 @@ For a Container App with multiple application containers, use `--container-name`
 Other tracing modes are:
 
 - `--tracing manual`, `true`, or `1`: Use a tracer already installed in the application image.
-- `--tracing disabled`, `false`, or `0`: Disable tracing and remove an injected tracer.
-- Omit `--tracing`: Preserve existing tracer injection.
+- `--tracing disabled`, `false`, or `0`: Disable tracing.
 
-You can use `--language` without `--tracing inject` to set `DD_SOURCE` for log parsing. Go requires manual instrumentation: install `dd-trace-go`, and use `--tracing manual`.
+You can use any nonempty `--language` value without `--tracing inject` to set `DD_SOURCE` for log parsing. With `--tracing inject`, use Java, Node.js, .NET, Python, Ruby, or PHP.
 
 ### `uninstrument`
 
@@ -151,7 +150,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--sidecar-memory` |  | The amount of memory (in GiB) to allocate to the sidecar container. | `1` |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. | `index.docker.io/datadog/serverless-init:latest` |
 | `--tracing` |  | Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled". |  |
-| `--language` |  | Set the application language for log parsing. With --tracing inject, this also selects the tracer. Possible values: "java", "nodejs", "csharp", "python", "ruby", "php", "go". |  |
+| `--language` |  | Set the application language for log parsing. With --tracing inject, this selects a supported tracer. |  |
 | `--tracer-version` |  | Set the tracer image tag for automatic instrumentation. | `latest` |
 | `--tracer-libc` |  | Set the C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
 | `--container-name` |  | Select the application container to instrument when the Container App has multiple application containers. |  |

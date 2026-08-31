@@ -15,6 +15,7 @@ import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import {
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
+  hasSsi,
   mergeLanguageInjectionEnv,
   removeLanguageInjectionEnv,
   resolveSsiConfig,
@@ -76,7 +77,8 @@ describe('Container Apps automatic APM instrumentation', () => {
 
     test.each([
       [{tracing: 'inject'}, '--language'],
-      [{tracing: 'inject', language: 'go'}, 'dd-trace-go'],
+      [{tracing: 'inject', language: 'go'}, 'supports only these languages'],
+      [{tracing: 'inject', language: 'rust'}, 'supports only these languages'],
       [{tracerVersion: '1.2.3'}, '--tracing inject'],
       [{tracerLibc: 'musl'}, '--tracing inject'],
       [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'does not support musl'],
@@ -90,6 +92,13 @@ describe('Container Apps automatic APM instrumentation', () => {
         expect(result.kind === 'errors' && result.errors.join('\n')).toContain(message)
       }
     )
+
+    test('accepts arbitrary language values without injection', () => {
+      expect(resolveSsiConfig({...DEFAULT_CONFIG, tracing: 'manual', language: 'rust'})).toMatchObject({
+        kind: 'no-injection',
+        tracing: 'manual',
+      })
+    })
 
     test('warns for Java 24+', () => {
       expect(resolveSsiConfig(injectConfig('java')).warnings.join('\n')).toContain('Java 24+')
@@ -233,7 +242,28 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(second.template).toEqual(first.template)
     })
 
-    test('validates stale managed environment before a language transition', () => {
+    test('validates the selected environment before injection', () => {
+      const app = {
+        ...DEFAULT_CONTAINER_APP,
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              env: [
+                ...(DEFAULT_CONTAINER_APP.template!.containers![0].env ?? []),
+                {name: 'NODE_OPTIONS', value: 'first'},
+                {name: 'NODE_OPTIONS', value: 'second'},
+              ],
+            },
+          ],
+        },
+      }
+
+      expect(() => createInstrumentedApp(injectConfig(), app)).toThrow(/NODE_OPTIONS appears more than once/)
+    })
+
+    test('does not reject unrelated managed environment during a language transition', () => {
       const node = createInstrumentedApp(injectConfig())
       const app = node.template!.containers![0]
       const unsafe = {
@@ -248,7 +278,7 @@ describe('Container Apps automatic APM instrumentation', () => {
         },
       }
 
-      expect(() => createInstrumentedApp(injectConfig('python'), unsafe)).toThrow(/NODE_OPTIONS appears more than once/)
+      expect(() => createInstrumentedApp(injectConfig('python'), unsafe)).not.toThrow()
     })
 
     test('replaces an owned tracer with another language', () => {
@@ -285,20 +315,25 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(getEnv(app.env, DD_TRACE_ENABLED_ENV_VAR)?.value).toBe(traceEnabled)
     })
 
-    test('omitted tracing preserves existing injection when updating DD_TAGS', () => {
+    test('detects SSI from the process marker', () => {
+      expect(
+        hasSsi({
+          ...DEFAULT_CONTAINER_APP,
+          template: {containers: [{name: 'app', env: [{name: 'DD_TAGS', value: SINGLE_LANGUAGE_INJECTION_MODE_TAG}]}]},
+        })
+      ).toBe(true)
+    })
+
+    test('omitted tracing removes existing injection', () => {
       const injected = createInstrumentedApp(injectConfig())
       const result = createInstrumentedApp(
         {...DEFAULT_CONFIG, service: 'my-container-app', extraTags: 'team:serverless'},
         injected
       )
 
-      expect(result.template?.initContainers).toEqual(injected.template?.initContainers)
-      expect(getEnv(result.template?.containers?.[0].env, 'NODE_OPTIONS')).toEqual(
-        getEnv(injected.template?.containers?.[0].env, 'NODE_OPTIONS')
-      )
-      expect(getEnv(result.template?.containers?.[0].env, 'DD_TAGS')?.value).toBe(
-        `${SINGLE_LANGUAGE_INJECTION_MODE_TAG},team:serverless`
-      )
+      expect(result.template?.initContainers).toEqual([])
+      expect(getEnv(result.template?.containers?.[0].env, 'NODE_OPTIONS')).toBeUndefined()
+      expect(getEnv(result.template?.containers?.[0].env, 'DD_TAGS')?.value).toBe('team:serverless')
     })
   })
 })

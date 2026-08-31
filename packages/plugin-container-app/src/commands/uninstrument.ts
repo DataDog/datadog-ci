@@ -116,10 +116,16 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     if (tagsChanged) {
       this.context.stdout.write(`${this.dryRunPrefix}Removing tags from ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
-        await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
-          `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerApp.name}`,
-          {properties: {tags: updatedTags}}
-        )
+        try {
+          await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
+            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerApp.name}`,
+            {properties: {tags: updatedTags}}
+          )
+        } catch (error) {
+          this.context.stdout.write(
+            renderError(`Failed to remove tags for ${containerApp.name}: ${formatError(error)}`)
+          )
+        }
       }
     }
   }
@@ -135,7 +141,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
       return
     }
 
-    const configDiff = generateConfigDiff(containerApp, updatedAppConfig)
+    const configDiff = generateConfigDiff(redactSecrets(containerApp), redactSecrets(updatedAppConfig))
     this.context.stdout.write(
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )
@@ -200,3 +206,13 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     }
   }
 }
+
+const redactSecrets = (containerApp: ContainerApp): ContainerApp => ({
+  ...containerApp,
+  configuration: {
+    ...containerApp.configuration,
+    secrets: containerApp.configuration?.secrets?.map((secret) =>
+      secret.value === undefined ? secret : {...secret, value: '<redacted>'}
+    ),
+  },
+})

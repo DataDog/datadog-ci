@@ -5,7 +5,6 @@ import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import type {TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
-import {CONTAINER_APP_LANGUAGES} from '@datadog/datadog-ci-base/commands/container-app/instrument'
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
   TRACER_CONTAINER_NAME,
@@ -92,12 +91,10 @@ export const resolveSsiConfig = (config: ContainerAppConfigOptions): SsiConfigRe
       warnings: [],
     }
   }
-  if (config.language === 'go') {
+  if (!isTracerInjectionLanguage(config.language)) {
     return {
       kind: 'errors',
-      errors: [
-        'Go automatic instrumentation is not supported. Install dd-trace-go in the application and use --tracing manual.',
-      ],
+      errors: [`--tracing inject supports only these languages: ${TRACER_INJECTION_LANGUAGES.join(', ')}.`],
       warnings: [],
     }
   }
@@ -174,17 +171,6 @@ export const assertLanguageInjectionEnvCanBeMerged = (
   spec: LanguageInjectionSpec
 ): void => assertEnvironmentFragmentsCanBeMerged(env, spec.env)
 
-export const assertExistingLanguageInjectionCanBeReplaced = (containerApp: ContainerApp): void => {
-  for (const container of containerApp.template?.containers ?? []) {
-    const hasMarker = container.env?.some(
-      ({name, secretRef, value}) => name === DD_TAGS_ENV_VAR && !secretRef && hasInjectionModeTag(value)
-    )
-    if (hasMarker) {
-      assertEnvironmentFragmentsCanBeMerged(container.env, LANGUAGE_ENV_FRAGMENTS)
-    }
-  }
-}
-
 export const assertSsiResourcesCanBeAdded = (
   containerApp: ContainerApp,
   targetIndex: number,
@@ -234,21 +220,6 @@ export const mergeLanguageInjectionEnv = (
   return upsertEnv(merged, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value))
 }
 
-/** Keeps an existing process injection tag when Agent configuration updates DD_TAGS. */
-export const preserveInjectionModeTag = <T extends EnvironmentVar>(
-  existingEnv: readonly EnvironmentVar[] | undefined,
-  updatedEnv: readonly T[] | undefined
-): T[] => {
-  const existingTags = existingEnv?.find(({name, secretRef}) => name === DD_TAGS_ENV_VAR && !secretRef)?.value
-  if (!hasInjectionModeTag(existingTags)) {
-    return [...(updatedEnv ?? [])]
-  }
-  const updated = updatedEnv ?? []
-  const updatedTags = updated.find(({name}) => name === DD_TAGS_ENV_VAR)
-
-  return upsertEnv(updated, DD_TAGS_ENV_VAR, mergeInjectionModeTag(updatedTags?.value))
-}
-
 /** Removes exact native tracer fragments for every supported language. */
 export const removeLanguageInjectionEnv = (existingEnv: readonly EnvironmentVar[] | undefined): EnvironmentVar[] =>
   (existingEnv ?? []).flatMap((variable) => {
@@ -266,6 +237,11 @@ export const removeLanguageInjectionEnv = (existingEnv: readonly EnvironmentVar[
 export const hasSsi = (containerApp: ContainerApp): boolean =>
   (containerApp.tags !== undefined &&
     Object.prototype.hasOwnProperty.call(containerApp.tags, SSI_INJECTION_MODE_TAG)) ||
+  (containerApp.template?.containers ?? []).some((container) =>
+    container.env?.some(
+      ({name, secretRef, value}) => name === DD_TAGS_ENV_VAR && !secretRef && hasInjectionModeTag(value)
+    )
+  ) ||
   (containerApp.template?.containers ?? []).some((_, index) => hasCompleteSsiSignature(containerApp, index))
 
 export const hasCompleteSsiSignature = (containerApp: ContainerApp, targetIndex: number): boolean => {
@@ -347,10 +323,8 @@ const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
       `Invalid tracing mode ${JSON.stringify(config.tracing)}. Possible values: ${TRACING_INPUTS.join(', ')}.`
     )
   }
-  if (config.language !== undefined && !(CONTAINER_APP_LANGUAGES as readonly string[]).includes(config.language)) {
-    errors.push(
-      `Invalid language ${JSON.stringify(config.language)}. Possible values: ${CONTAINER_APP_LANGUAGES.join(', ')}.`
-    )
+  if (config.language !== undefined && (typeof config.language !== 'string' || config.language.length === 0)) {
+    errors.push(`Invalid language ${JSON.stringify(config.language)}.`)
   }
   if (
     config.tracerVersion !== undefined &&
@@ -367,6 +341,9 @@ const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
 
   return errors
 }
+
+const isTracerInjectionLanguage = (language: string): language is Language =>
+  (TRACER_INJECTION_LANGUAGES as readonly string[]).includes(language)
 
 const formatContainerNames = (candidates: readonly {container: Container}[]): string =>
   candidates.map(({container}) => container.name || '<unnamed>').join(', ')

@@ -7,7 +7,6 @@ import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
 import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import type {Libc} from '../../helpers/serverless/ssi/injection-spec'
-import type {Language} from '../../helpers/serverless/ssi/tracer'
 import type {TracingInput} from '../../helpers/serverless/ssi/tracing'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
@@ -42,7 +41,7 @@ export type ContainerAppConfigOptions = Partial<{
   logsPath: string
   envVars: string[]
   tracing: TracingInput
-  language: Language | 'go'
+  language: string
   tracerVersion: string
   tracerLibc: Libc
   containerName: string

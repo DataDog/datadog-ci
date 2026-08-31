@@ -98,6 +98,21 @@ describe('container-app uninstrument', () => {
       updateTags.mockClear().mockResolvedValue({})
     })
 
+    test('redacts secrets in the configuration diff', async () => {
+      containerAppsOperations.get.mockResolvedValueOnce({...INSTRUMENTED_CONTAINER_APP})
+      containerAppsOperations.listSecrets.mockResolvedValueOnce({
+        value: [
+          {name: 'dd-api-key', value: 'api-key'},
+          {name: 'other-secret', value: 'sensitive-value'},
+        ],
+      })
+
+      const {context} = await runCLI(DEFAULT_ARGS)
+
+      expect(context.stdout.toString()).not.toContain('sensitive-value')
+      expect(context.stdout.toString()).toContain('<redacted>')
+    })
+
     test('Removes sidecar, volume, DD env vars, secret, and tags', async () => {
       const {code, context} = await runCLI(DEFAULT_ARGS)
       const output = context.stdout.toString()
@@ -179,9 +194,9 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 
       const {code, context} = await runCLI(DEFAULT_ARGS)
 
-      expect(code).toBe(1)
+      expect(code).toBe(0)
       expect(context.stdout.toString()).toContain(
-        '[Error] Failed to uninstrument my-container-app: Error: tag removal error'
+        '[Error] Failed to remove tags for my-container-app: Error: tag removal error'
       )
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
     })

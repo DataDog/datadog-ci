@@ -1410,13 +1410,13 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.get).toHaveBeenCalledWith('rg2', 'app2')
     })
 
-    test('Retries after a tracer tag update failure without duplicating configuration', async () => {
+    test('Continues after a tracer tag update failure without duplicating configuration', async () => {
       updateTags.mockClear().mockRejectedValueOnce(new Error('tag update error'))
 
       const first = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
-      expect(first.code).toEqual(1)
+      expect(first.code).toEqual(0)
       expect(first.context.stdout.toString()).toContain(
-        '[Error] Failed to instrument my-container-app: Error: tag update error'
+        '[Error] Failed to update tags for my-container-app: Error: tag update error'
       )
       const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
 
