@@ -36,6 +36,8 @@ Automatic language detection uses a 1.5 GiB memory-backed volume and sets the tr
 
 Automatic instrumentation targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
+Automatic instrumentation can increase cold-start delays when the service scales to zero. For latency-sensitive scale-to-zero workloads, install the tracer in the application image, and use `--tracing manual`.
+
 ### `uninstrument`
 
 Run `datadog-ci cloud-run uninstrument` to revert Datadog instrumentation from a Cloud Run service. This command updates the configuration by removing the sidecar container, the shared log volume, and Datadog environment variables.
