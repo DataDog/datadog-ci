@@ -10,6 +10,7 @@ import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {
+  CLOUD_RUN_LANGUAGES,
   CLOUD_RUN_TRACER_REGISTRY,
   DEFAULT_TRACER_LIBC,
   DEFAULT_TRACER_VERSION,
@@ -32,7 +33,7 @@ import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serve
 
 
 export interface SsiOptions {
-  readonly language: CloudRunLanguage | undefined
+  readonly language: string | undefined
   readonly tracing: TracingMode | undefined
   readonly tracerVersion: string | undefined
   readonly tracerLibc: Libc | undefined
@@ -71,6 +72,18 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     return {
       kind: 'errors',
       errors: ['--tracing inject requires --language until automatic multi-language injection is supported.'],
+      warnings: [],
+    }
+  }
+
+  if (!isCloudRunLanguage(options.language)) {
+    return {
+      kind: 'errors',
+      errors: [
+        `Automatic instrumentation does not support language ${JSON.stringify(
+          options.language
+        )}. Use one of ${TRACER_INJECTION_LANGUAGES.map((language) => JSON.stringify(language)).join(', ')}.`,
+      ],
       warnings: [],
     }
   }
@@ -120,6 +133,9 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     tracerVolumeMedium,
   }
 }
+
+const isCloudRunLanguage = (language: string): language is CloudRunLanguage =>
+  CLOUD_RUN_LANGUAGES.some((supportedLanguage) => supportedLanguage === language)
 
 export const normalizeTracingMode = (tracing: TracingInput | undefined): TracingMode | undefined =>
   tracing === undefined ? undefined : TRACING_MODE_BY_INPUT[tracing]

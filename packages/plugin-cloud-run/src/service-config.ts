@@ -84,6 +84,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const sourceContainers = sourceTemplate.containers ?? []
   const hasTracerContainer = sourceContainers.some((container) => container.name === TRACER_CONTAINER_NAME)
+  const hasTracerVolume = sourceTemplate.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME) ?? false
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
   if (shouldRemoveSsi) {
@@ -97,11 +98,26 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       )
     }
   } else {
+    if (!hasSsi && (hasTracerContainer || hasTracerVolume)) {
+      const resources = [hasTracerContainer ? 'container' : undefined, hasTracerVolume ? 'volume' : undefined].filter(
+        (resource): resource is string => resource !== undefined
+      )
+      throw new SsiConfigError(
+        `Cannot enable automatic instrumentation because the service already has a ${resources.join(
+          ' and '
+        )} named '${TRACER_CONTAINER_NAME}' that is not managed by datadog-ci. Rename the existing ${
+          resources.length === 1 ? resources[0] : 'resources'
+        }, then retry.`
+      )
+    }
     const mainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
       new Set([options.sidecarName, TRACER_CONTAINER_NAME])
     )
     assertTracerReadinessPortAvailable(mainContainer, options.sidecarName, tracerReadinessPort, healthCheckPort)
+    if (!hasSsi) {
+      assertTracerMountPathAvailable(mainContainer)
+    }
     sourceTemplate =
       hasSsi || hasTracerContainer ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
@@ -312,6 +328,19 @@ const tracerVolumeConfig = (medium: TracerVolumeMedium) =>
 
 const atLeastBetaLaunchStage = (launchStage: IService['launchStage']) =>
   launchStage === 'ALPHA' ? launchStage : 'BETA'
+
+const assertTracerMountPathAvailable = (mainContainer: IContainer): void => {
+  const existingMount = mainContainer.volumeMounts?.find((mount) => mount.mountPath === TRACER_MOUNT_PATH)
+  if (existingMount) {
+    throw new SsiConfigError(
+      `Cannot enable automatic instrumentation because volume '${
+        existingMount.name || '<unnamed>'
+      }' already uses managed tracer mount path '${TRACER_MOUNT_PATH}' on container '${
+        mainContainer.name || '<unnamed>'
+      }'. Change the existing mount path, then retry.`
+    )
+  }
+}
 
 const assertTracerReadinessPortAvailable = (
   mainContainer: IContainer,

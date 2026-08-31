@@ -115,10 +115,9 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
   })
   protected language = Option.String('--language', {
-    description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Possible values: ${CLOUD_RUN_LANGUAGES.map(
+    description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: ${CLOUD_RUN_LANGUAGES.map(
       (language) => `"${language}"`
     ).join(', ')}.`,
-    validator: t.isEnum(CLOUD_RUN_LANGUAGES),
   })
   protected tracerVersion = Option.String('--tracer-version', {
     description: `The tracer image tag to use with --tracing inject. Defaults to '${DEFAULT_TRACER_VERSION}'.`,

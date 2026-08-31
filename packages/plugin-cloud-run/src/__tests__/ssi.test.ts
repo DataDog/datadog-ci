@@ -568,14 +568,13 @@ describe('SSI service preparation', () => {
     expect(instrumentServiceConfig(result, serviceConfigOptions('python'))).toEqual(result)
   })
 
-  test('replaces a markerless tracer container', () => {
+  test('rejects an unowned tracer container', () => {
     const service = serviceWithWorker()
     service.template!.containers!.push({name: TRACER_CONTAINER_NAME, image: 'customer-image'} as IContainer)
 
-    const result = instrumentServiceConfig(service, serviceConfigOptions('python'))
-    const tracers = result.template?.containers?.filter((container) => container.name === TRACER_CONTAINER_NAME)
-
-    expect(tracers).toEqual([expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:latest'})])
+    expect(() => instrumentServiceConfig(service, serviceConfigOptions('python'))).toThrow(
+      "the service already has a container named 'datadog-tracer' that is not managed by datadog-ci"
+    )
   })
 
   test.each([

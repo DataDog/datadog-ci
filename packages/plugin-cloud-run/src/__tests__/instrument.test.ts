@@ -141,6 +141,7 @@ describe('InstrumentCommand', () => {
       [['--tracer-version', 'latest'], 'require --tracing inject'],
       [['--tracer-volume-medium', 'disk'], 'require --tracing inject'],
       [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
+      [['--tracing', 'inject', '--language', 'rust'], 'does not support language "rust"'],
     ])('rejects incompatible options before network calls: %s', async (flags, expected) => {
       const {code, context} = await runCLI([...requiredFlags, ...flags])
 
@@ -153,7 +154,6 @@ describe('InstrumentCommand', () => {
 
     test.each([
       ['--tracing', 'automatic'],
-      ['--language', 'rust'],
       ['--tracer-libc', 'bionic'],
       ['--tracer-version', 'bad/tag'],
       ['--tracer-volume-medium', 'ramdisk'],
