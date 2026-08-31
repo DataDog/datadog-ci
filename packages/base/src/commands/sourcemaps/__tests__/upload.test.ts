@@ -376,7 +376,7 @@ describe('execute', () => {
     expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
   })
 
-  test('service/version mode allows a standalone debug ID without DD_SOURCE_CODE_CONTEXT', async () => {
+  test('service/version mode rejects a standalone debug ID', async () => {
     await withTempDirectory(async (directory) => {
       fs.writeFileSync(
         upath.join(directory, 'bundle.js'),
@@ -389,10 +389,9 @@ describe('execute', () => {
 
       const {context, code} = await runCLI([directory])
 
-      expect(code).toBe(0)
-      expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
-      expect(context.stdout.toString()).not.toContain('(debug ID:')
-      expect(context.stderr.toString()).not.toContain('A Datadog debug ID injection was found')
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('A Datadog debug ID injection was found')
+      expect(context.stdout.toString()).not.toContain('[DRYRUN] Uploading sourcemap')
     })
   })
 

@@ -31,7 +31,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {addDebugIdToPayloads, hasSourceCodeContext} from './debugId'
+import {addDebugIdToPayloads} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
@@ -147,12 +147,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
         return 1
       }
     } else {
-      const hasSourceCodeContextResults = await doWithMaxConcurrency(
-        this.maxConcurrency,
-        payloads,
-        ({minifiedFilePath}) => hasSourceCodeContext(minifiedFilePath)
-      )
-      if (hasSourceCodeContextResults.some(Boolean)) {
+      if (payloads.length > 0 && addDebugIdToPayloads(payloads)) {
         this.context.stderr.write(renderSourceCodeContextFoundWithoutDebugIdFlag())
 
         return 1

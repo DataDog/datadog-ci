@@ -10,25 +10,16 @@ import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
 const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
 const SOURCE_CODE_CONTEXT_MARKER = 'DD_SOURCE_CODE_CONTEXT'
-// DD_SOURCE_CODE_CONTEXT also carries non-debug metadata such as MFE attribution. Match the
-// generated context-object suffix instead of either marker alone: ddDebugId is emitted as the
-// final context property immediately before the DD_SOURCE_CODE_CONTEXT argument.
-const SOURCE_CODE_CONTEXT_WITH_DEBUG_ID_REGEX = new RegExp(
-  `${DEBUG_ID_REGEX.source}\\s*}\\s*,\\s*"${SOURCE_CODE_CONTEXT_MARKER}"`
-)
 
 // Keep this progressive scanner in sync with build-plugins PR #489:
 // https://github.com/DataDog/build-plugins/pull/489
 // Read progressively so the common case only needs the first KiB, while still supporting
 // bundlers or transforms that place the injected snippet later in the artifact.
 export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
-export const SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES = 64 * 1024
 
 // Keep enough content from the previous chunk to match a debug ID literal split across a read
 // boundary. The longest supported literal is shorter than this overlap.
 const FILE_SEARCH_OVERLAP_CHARACTERS = 64
-// The combined ddDebugId/context suffix is longer than a standalone debug ID literal.
-const SOURCE_CODE_CONTEXT_SEARCH_OVERLAP_CHARACTERS = 128
 const VARIANT_CHARS = ['8', '9', 'a', 'b'] as const
 
 const matchDebugId = (fileContent: string): string | undefined => DEBUG_ID_REGEX.exec(fileContent)?.[1]
@@ -68,40 +59,6 @@ const searchFile = <T>(filePath: string, match: (fileContent: string) => T | und
 }
 
 export const extractDebugId = (filePath: string): string | undefined => searchFile(filePath, matchDebugId)
-
-// Default service/version uploads may contain many large bundles. Scan them asynchronously in
-// larger chunks so checking marker-free files does not block the event loop with thousands of
-// small reads. Keep an overlap so markers split across chunk boundaries are still detected.
-export const hasSourceCodeContext = async (filePath: string): Promise<boolean> => {
-  try {
-    const fileHandle = await fs.promises.open(filePath, 'r')
-    try {
-      const buffer = Buffer.alloc(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES)
-      let overlap = ''
-      let position = 0
-
-      while (true) {
-        const {bytesRead} = await fileHandle.read(buffer, 0, SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES, position)
-        if (bytesRead === 0) {
-          return false
-        }
-
-        const searchableContent = overlap + buffer.toString('utf8', 0, bytesRead)
-        if (SOURCE_CODE_CONTEXT_WITH_DEBUG_ID_REGEX.test(searchableContent)) {
-          return true
-        }
-
-        overlap = searchableContent.slice(-SOURCE_CODE_CONTEXT_SEARCH_OVERLAP_CHARACTERS)
-        position += bytesRead
-      }
-    } finally {
-      await fileHandle.close()
-    }
-  } catch {
-    // Unreadable file: treated as not having the source code context marker.
-    return false
-  }
-}
 
 type ParsedSourcemap = RawSourceMap & Record<string, unknown>
 

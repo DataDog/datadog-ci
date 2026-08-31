@@ -11,10 +11,8 @@ import {
   DEBUG_ID_SEARCH_CHUNK_BYTES,
   extractDebugId,
   generateDebugId,
-  hasSourceCodeContext,
   injectMissingDebugIds,
   injectDebugIdSnippet,
-  SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES,
 } from '../debugId'
 import {Sourcemap} from '../interfaces'
 
@@ -104,48 +102,6 @@ describe('extractDebugId', () => {
 
   test('returns undefined when the file cannot be read', () => {
     expect(extractDebugId('nonexistent.js')).toBeUndefined()
-  })
-})
-
-describe('hasSourceCodeContext', () => {
-  test('detects DD_SOURCE_CODE_CONTEXT with a debug ID', async () => {
-    await withTempDirectory(async (directory) => {
-      const filePath = upath.join(directory, 'injected.min.js')
-      fs.writeFileSync(
-        filePath,
-        `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES + 100)}{"ddDebugId":"${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT"`
-      )
-
-      await expect(hasSourceCodeContext(filePath)).resolves.toBe(true)
-    })
-  })
-
-  test('detects a debug ID source code context split across two chunks', async () => {
-    await withTempDirectory(async (directory) => {
-      const filePath = upath.join(directory, 'split-context.min.js')
-      const context = `{"ddDebugId":"${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT"`
-      fs.writeFileSync(filePath, `${'x'.repeat(SOURCE_CODE_CONTEXT_SEARCH_CHUNK_BYTES - context.length + 1)}${context}`)
-
-      await expect(hasSourceCodeContext(filePath)).resolves.toBe(true)
-    })
-  })
-
-  test('does not treat DD_SOURCE_CODE_CONTEXT without a debug ID as debug ID injection', async () => {
-    await withTempDirectory(async (directory) => {
-      const filePath = upath.join(directory, 'mfe-context.min.js')
-      fs.writeFileSync(filePath, `({"ddDebugId":"${DEBUG_ID}"});({"mfeName":"checkout"},"DD_SOURCE_CODE_CONTEXT")`)
-
-      await expect(hasSourceCodeContext(filePath)).resolves.toBe(false)
-    })
-  })
-
-  test('does not treat a standalone debug ID as injected source code context', async () => {
-    await withTempDirectory(async (directory) => {
-      const filePath = upath.join(directory, 'debug-id-only.min.js')
-      fs.writeFileSync(filePath, `{"ddDebugId":"${DEBUG_ID}"}`)
-
-      await expect(hasSourceCodeContext(filePath)).resolves.toBe(false)
-    })
   })
 })
 
