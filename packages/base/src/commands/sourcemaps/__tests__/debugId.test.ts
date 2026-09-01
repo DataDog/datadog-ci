@@ -1,9 +1,10 @@
 import fs from 'fs'
-import os from 'os'
 import {Writable} from 'stream'
 
 import {SourceMapConsumer, SourceMapGenerator} from 'source-map'
 import upath from 'upath'
+
+import {withTempDirectory} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {
   addDebugIdToPayloads,
@@ -19,15 +20,6 @@ const DEBUG_ID = '2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91'
 
 const makeSourcemap = (minifiedFilePath: string) =>
   new Sourcemap(minifiedFilePath, `https://static.com/${minifiedFilePath}`, `${minifiedFilePath}.map`, minifiedFilePath)
-
-const withTempDirectory = (callback: (directory: string) => void): void => {
-  const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-debug-id-'))
-  try {
-    callback(directory)
-  } finally {
-    fs.rmSync(directory, {recursive: true, force: true})
-  }
-}
 
 describe('extractDebugId', () => {
   afterEach(() => {

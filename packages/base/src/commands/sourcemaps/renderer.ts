@@ -55,6 +55,9 @@ export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) =
 
 export const renderNoDebugIdFound = () => 'No debug ID found in any minified file. Aborting upload.\n'
 
+export const renderSourceCodeContextFoundWithoutDebugIdFlag = () =>
+  'A Datadog debug ID injection was found in at least one minified file, but --debug-id was not set. Debug-ID uploads and service/version uploads are mutually exclusive. Re-run with --debug-id or rebuild the bundles without the Datadog debug ID injection. Aborting upload.\n'
+
 export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, attempt: number) => {
   const sourcemapPathBold = `[${chalk.bold.dim(payload.sourcemapPath)}]`
 

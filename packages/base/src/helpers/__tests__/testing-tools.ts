@@ -1,3 +1,6 @@
+import fs from 'fs'
+import os from 'os'
+
 import type {MockCommandContext} from '../interfaces'
 import type {BaseContext, CommandClass} from 'clipanion'
 import type {CommandOption} from 'clipanion/lib/advanced/options'
@@ -13,6 +16,25 @@ export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_CWD = 'mock-folder'
 export const MOCK_FLARE_FOLDER_PATH = upath.join(MOCK_CWD, '.datadog-ci')
+
+export const withTempDirectory = <T>(callback: (directory: string) => T): T => {
+  const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-test-'))
+  const cleanup = () => fs.rmSync(directory, {recursive: true, force: true})
+
+  try {
+    const result = callback(directory)
+    if (result instanceof Promise) {
+      return result.finally(cleanup) as T
+    }
+
+    cleanup()
+
+    return result
+  } catch (error) {
+    cleanup()
+    throw error
+  }
+}
 
 interface MockContextOptions {
   /**
