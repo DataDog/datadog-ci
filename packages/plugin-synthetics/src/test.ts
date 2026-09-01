@@ -311,7 +311,8 @@ const getSuiteAsTest = async (api: APIHelper, publicId: string, suite?: string):
   try {
     const {data} = await api.getSyntheticsSuite(publicId)
 
-    // Placeholder test representing the test suite.
+    // Placeholder test representing the test suite. Its members' own name/type/etc. aren't fetched
+    // here: the batch results for them already carry that information directly (`test_name`, `test_type`).
     return {
       config: {assertions: [], variables: []},
       locations: [],

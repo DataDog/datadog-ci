@@ -371,7 +371,16 @@ const getResultFromBatch = (
   resultDisplayInfo: ResultDisplayInfo,
   safeDeadlineReached = false
 ): Result => {
-  const test = resultDisplayInfo.tests.find((t) => t.public_id === resultInBatch.test_public_id)!
+  const knownTest = resultDisplayInfo.tests.find((t) => t.public_id === resultInBatch.test_public_id)
+
+  // The batch result already carries the test's own name and type directly from the backend, which is the only
+  // way to get them for Test Suite members (the suite API only returns their public IDs, not their details).
+  const test: Test = {
+    ...(knownTest ?? {config: {assertions: [], variables: []}, locations: [], options: {}}),
+    name: resultInBatch.test_name,
+    public_id: resultInBatch.test_public_id,
+    type: resultInBatch.test_type,
+  }
 
   const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
   const timedOutRetry = isTimedOutRetry(resultInBatch.retries, resultInBatch.max_retries, resultInBatch.timed_out)

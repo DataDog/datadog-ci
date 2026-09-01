@@ -262,7 +262,9 @@ export interface BaseResultInBatch {
   max_retries: number | null
   selective_rerun?: SelectiveRerunDecision
   status: Status
+  test_name: string
   test_public_id: string
+  test_type: 'api' | 'browser' | 'mobile'
   timed_out: boolean | null
 }
 
