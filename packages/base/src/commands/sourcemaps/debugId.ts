@@ -8,10 +8,15 @@ import type {RawSourceMap} from 'webpack-sources'
 import {parse} from '@babel/parser'
 import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
+// Bundle scanner: keep this progressive scanner in sync with build-plugins PR #489:
+// https://github.com/DataDog/build-plugins/pull/489
 const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
 
-// Keep this progressive scanner in sync with build-plugins PR #489:
-// https://github.com/DataDog/build-plugins/pull/489
+// Single source of truth for the UUID v4-ish shape used by debug IDs. The sourcemap find command
+// and its sourcemap regex build from this fragment so the shape stays consistent.
+export const DEBUG_ID_VALUE_PATTERN = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const DEBUG_ID_VALUE_REGEX = new RegExp(`^${DEBUG_ID_VALUE_PATTERN}$`, 'i')
+
 // Read progressively so the common case only needs the first KiB, while still supporting
 // bundlers or transforms that place the injected snippet later in the artifact.
 export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
@@ -20,6 +25,8 @@ export const DEBUG_ID_SEARCH_CHUNK_BYTES = 1024
 // boundary. The longest supported literal is shorter than this overlap.
 const DEBUG_ID_SEARCH_OVERLAP_CHARACTERS = 64
 const VARIANT_CHARS = ['8', '9', 'a', 'b'] as const
+
+export const isValidDebugId = (debugId: string): boolean => DEBUG_ID_VALUE_REGEX.test(debugId)
 
 const matchDebugId = (fileContent: string): string | undefined => DEBUG_ID_REGEX.exec(fileContent)?.[1]
 

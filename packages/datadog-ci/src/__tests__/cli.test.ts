@@ -133,6 +133,7 @@ describe('cli', () => {
       'sarif upload': [NONEXISTENT_FILE],
       'sbom upload': [NONEXISTENT_FILE],
       'sourcemaps inject': [NONEXISTENT_FILE],
+      'sourcemaps find': [NONEXISTENT_FILE, '--missing-debug-id'],
       'sourcemaps upload': [NONEXISTENT_FILE],
       'terraform upload': ['plan', NONEXISTENT_FILE],
       trace: ['id'],

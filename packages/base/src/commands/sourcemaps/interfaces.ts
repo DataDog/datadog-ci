@@ -90,3 +90,8 @@ export interface GitData {
   gitRepositoryPayload?: string
   gitRepositoryURL: string
 }
+
+export interface SourcemapDebugIdMatch {
+  debugId?: string
+  sourcemapPath: string
+}
