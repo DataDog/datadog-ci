@@ -46,9 +46,6 @@ describe('instrumentTaskDefinition', () => {
       DD_APM_ENABLED: 'true',
       DD_USE_DOGSTATSD: 'true',
       DD_ECS_TASK_COLLECTION_ENABLED: 'true',
-      DD_INSTALL_INFO_TOOL: 'datadog-ci',
-      DD_INSTALL_INFO_TOOL_VERSION: 'datadog-ci-plugin-ecs-fargate',
-      DD_INSTALL_INFO_INSTALLER_VERSION: 'XXXX',
     })
     expect(agent?.healthCheck).toStrictEqual({
       command: ['CMD-SHELL', '/probe.sh'],
@@ -509,26 +506,6 @@ describe('isUpToDate', () => {
   test('a stale CLI version tag alone does not warrant a new revision', () => {
     const updated = instrumented()
     const original = {...stripReadOnlyFields(asDescribed(updated)), tags: [{key: 'dd_sls_ci', value: 'v0.0.0'}]}
-
-    expect(isUpToDate(original, updated)).toBe(true)
-  })
-
-  test('a stale CLI version in the Agent install info alone does not warrant a new revision', () => {
-    const updated = instrumented()
-    const registeredByAnOlderCli = {
-      ...updated,
-      containerDefinitions: updated.containerDefinitions?.map((container) =>
-        container.name === AGENT_CONTAINER_NAME
-          ? {
-              ...container,
-              environment: container.environment?.map((envVar) =>
-                envVar.name === 'DD_INSTALL_INFO_INSTALLER_VERSION' ? {...envVar, value: '0.0.0'} : envVar
-              ),
-            }
-          : container
-      ),
-    }
-    const original = {...stripReadOnlyFields(asDescribed(registeredByAnOlderCli)), tags: INSTRUMENTATION_TAGS}
 
     expect(isUpToDate(original, updated)).toBe(true)
   })

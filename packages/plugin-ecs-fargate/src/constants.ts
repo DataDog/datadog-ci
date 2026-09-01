@@ -48,16 +48,6 @@ export const DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR = 'DD_DOGSTATSD_TAG_CARDINALIT
 export const DD_TRACE_AGENT_URL_ENV_VAR = 'DD_TRACE_AGENT_URL'
 export const DD_DOGSTATSD_URL_ENV_VAR = 'DD_DOGSTATSD_URL'
 export const DD_AGENT_HOST_ENV_VAR = 'DD_AGENT_HOST'
-export const DD_INSTALL_INFO_TOOL_ENV_VAR = 'DD_INSTALL_INFO_TOOL'
-export const DD_INSTALL_INFO_TOOL_VERSION_ENV_VAR = 'DD_INSTALL_INFO_TOOL_VERSION'
-export const DD_INSTALL_INFO_INSTALLER_VERSION_ENV_VAR = 'DD_INSTALL_INFO_INSTALLER_VERSION'
-
-/**
- * How the Agent reports what instrumented it, so that installs done by this command can be told
- * apart from the ones done by hand or by another tool.
- */
-export const INSTALL_INFO_TOOL = 'datadog-ci'
-export const INSTALL_INFO_TOOL_VERSION = 'datadog-ci-plugin-ecs-fargate'
 
 /**
  * The volume carrying the Agent's APM and DogStatsD sockets. The tracers write to it and the Agent
