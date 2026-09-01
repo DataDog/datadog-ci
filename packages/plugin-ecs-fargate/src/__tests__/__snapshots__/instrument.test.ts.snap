@@ -29,7 +29,7 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -15,20 +31,118 @@
+@@ -15,20 +31,106 @@
             "awslogs-group": "/ecs/my-app",
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
@@ -77,18 +77,6 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +         {
 +           "name": "DD_ECS_TASK_COLLECTION_ENABLED",
 +           "value": "true"
-+         },
-+         {
-+           "name": "DD_INSTALL_INFO_TOOL",
-+           "value": "datadog-ci"
-+         },
-+         {
-+           "name": "DD_INSTALL_INFO_TOOL_VERSION",
-+           "value": "datadog-ci-plugin-ecs-fargate"
-+         },
-+         {
-+           "name": "DD_INSTALL_INFO_INSTALLER_VERSION",
-+           "value": "XXXX"
 +         }
 +       ],
 +       "essential": false,

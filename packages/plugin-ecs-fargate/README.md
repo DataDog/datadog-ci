@@ -38,7 +38,7 @@ Unlike the switches above, the command owns these: the two ways of reaching the 
 
 The Agent sidecar accepts custom metrics over DogStatsD: `DD_DOGSTATSD_ORIGIN_DETECTION` and `DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT` are turned on and `DD_DOGSTATSD_TAG_CARDINALITY` is set to `orchestrator`, so your metrics are tagged with the task that submitted them. These are filled in the same way, so a task definition that already sets them keeps its own values.
 
-Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it, and the Agent reports the same version through `DD_INSTALL_INFO_TOOL`, `DD_INSTALL_INFO_TOOL_VERSION`, and `DD_INSTALL_INFO_INSTALLER_VERSION`. Upgrading the CLI does not on its own produce a new revision, since neither the tag nor the reported version is part of the comparison.
+Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it. Upgrading the CLI does not on its own produce a new revision, since that tag is not part of the comparison.
 
 #### Deploying the new revision
 

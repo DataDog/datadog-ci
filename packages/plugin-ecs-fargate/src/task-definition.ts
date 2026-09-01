@@ -20,7 +20,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {
   AGENT_CONTAINER_NAME,
@@ -42,17 +41,12 @@ import {
   DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR,
   DD_DOGSTATSD_URL_ENV_VAR,
   DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR,
-  DD_INSTALL_INFO_INSTALLER_VERSION_ENV_VAR,
-  DD_INSTALL_INFO_TOOL_ENV_VAR,
-  DD_INSTALL_INFO_TOOL_VERSION_ENV_VAR,
   DD_TRACE_AGENT_URL_ENV_VAR,
   DD_USE_DOGSTATSD_ENV_VAR,
   DOGSTATSD_ORCHESTRATOR_CARDINALITY,
   DOGSTATSD_SOCKET_URL,
   ECS_FARGATE_ENV_VAR,
   ECS_TASK_COLLECTION_ACTIONS,
-  INSTALL_INFO_TOOL,
-  INSTALL_INFO_TOOL_VERSION,
   LAUNCH_TYPE_FARGATE,
   READ_ONLY_TASK_DEFINITION_FIELDS,
 } from './constants'
@@ -136,9 +130,6 @@ const getAgentEnvVars = (settings: InstrumentSettings): ManagedValues => ({
     [DD_APM_ENABLED_ENV_VAR]: 'true',
     [DD_USE_DOGSTATSD_ENV_VAR]: 'true',
     [DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR]: 'true',
-    [DD_INSTALL_INFO_TOOL_ENV_VAR]: INSTALL_INFO_TOOL,
-    [DD_INSTALL_INFO_TOOL_VERSION_ENV_VAR]: INSTALL_INFO_TOOL_VERSION,
-    [DD_INSTALL_INFO_INSTALLER_VERSION_ENV_VAR]: cliVersion,
     ...(settings.apiKey ? {[API_KEY_ENV_VAR]: settings.apiKey} : {}),
   },
   defaults: {
@@ -436,22 +427,12 @@ export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): Reg
 })
 
 /**
- * The task definition with everywhere the CLI version is recorded stripped out: the tag on the
- * revision, and the install info the Agent reports.
+ * The task definition without the tag recording the CLI version that produced it, which is the only
+ * place that version appears.
  */
 const withoutCliVersion = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => ({
   ...input,
   tags: (input.tags ?? []).filter((tag) => tag.key !== SERVERLESS_CLI_VERSION_TAG_NAME),
-  containerDefinitions: input.containerDefinitions?.map((container) =>
-    container.name === AGENT_CONTAINER_NAME
-      ? {
-          ...container,
-          environment: container.environment?.filter(
-            (envVar) => envVar.name !== DD_INSTALL_INFO_INSTALLER_VERSION_ENV_VAR
-          ),
-        }
-      : container
-  ),
 })
 
 /**
