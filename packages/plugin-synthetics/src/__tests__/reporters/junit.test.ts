@@ -10,7 +10,7 @@ import type {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
 import type {Device, Result, ServerTest} from '../../interfaces'
 import {ExecutionRule} from '../../interfaces'
 import type {Args, XMLTestCase} from '../../reporters/junit'
-import {getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter} from '../../reporters/junit'
+import {getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, stripInvalidXmlChars} from '../../reporters/junit'
 
 import {
   BATCH_ID,
@@ -72,6 +72,41 @@ describe('Junit reporter', () => {
       expect(reporter['builder'].buildObject).toHaveBeenCalledWith(reporter['json'])
       expect(fs.writeFileSync).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
       expect(writeMock).toHaveBeenCalledTimes(1)
+
+      // Cleaning
+      await fsp.unlink(reporter['destination'])
+    })
+
+    it('should still write the report when a result carries control characters', async () => {
+      const browserResult: Result = {
+        ...globalBrowserResultMock,
+        result: {
+          ...getBrowserServerResult(),
+          steps: [
+            {
+              ...getStep(),
+              browser_errors: [
+                {
+                  description: 'https://example.com/?q=\u0000\u001b binary',
+                  name: 'error name',
+                  type: 'error type',
+                },
+              ],
+              failure: {message: 'failed \u0001'},
+              warnings: [{message: 'warning \u0002', type: 'warning type'}],
+            },
+          ],
+        },
+      }
+      reporter.resultEnd(browserResult, '', '')
+      reporter.runEnd(globalSummaryMock, '')
+
+      expect(writeMock).not.toHaveBeenCalledWith(expect.stringContaining("Couldn't write the JUnit report"))
+      expect(fs.writeFileSync).toHaveBeenCalledWith('junit.xml', expect.any(String), 'utf8')
+
+      const xml = (fs.writeFileSync as jest.Mock).mock.calls[0][1] as string
+      expect(xml).toContain('https://example.com/?q= binary')
+      expect(xml).not.toMatch(/[\u0000-\u0008]/)
 
       // Cleaning
       await fsp.unlink(reporter['destination'])
@@ -604,5 +639,15 @@ describe('GitLab test report compatibility', () => {
         _: '- Assertion failed:\n    ▶ responseTime should be less than 1000. Actual: 1234',
       },
     ])
+  })
+})
+
+describe('stripInvalidXmlChars', () => {
+  it('drops the characters XML 1.0 cannot represent', () => {
+    expect(stripInvalidXmlChars('a\u0000b\u001fc')).toBe('abc')
+  })
+
+  it('keeps tab, newline, carriage return and astral characters', () => {
+    expect(stripInvalidXmlChars('a\tb\nc\rd\u{1F600}')).toBe('a\tb\nc\rd\u{1F600}')
   })
 })
