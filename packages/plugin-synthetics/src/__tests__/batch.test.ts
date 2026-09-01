@@ -243,10 +243,14 @@ describe('waitForResults', () => {
     ).toEqual([result])
   })
 
-  test('should match a batch result to a triggered suite by membership', async () => {
-    // The polled result carries no `test` details of its own here, to isolate the suite-membership matching
-    // (in reality the member test's own details would come back via `pollResult.test` and get merged in).
+  test('should match a batch result to a triggered suite member, using its own name and type from the result', async () => {
+    // The batch result is the only source of the member's own name/type here: the suite API only knows its
+    // public ID, and the polled result carries no `test` details of its own in this scenario.
     mockApi({
+      getBatchImplementation: async () => ({
+        ...deepExtend({}, batch),
+        results: [{...getPassedResultInBatch(), test_name: 'Member test', test_public_id: 'member-pid'}],
+      }),
       pollResultsImplementation: async () => [{...deepExtend({}, pollResult), test: {}} as PollResult],
     })
 
@@ -254,7 +258,7 @@ describe('waitForResults', () => {
       ...apiTest,
       public_id: 'suite-pid',
       type: 'suite',
-      memberPublicIds: [apiTest.public_id],
+      memberPublicIds: ['member-pid'],
     } as Test
 
     const results = await waitForResults(
@@ -270,9 +274,14 @@ describe('waitForResults', () => {
       mockReporter
     )
 
-    const memberTest = {...suiteTest, public_id: apiTest.public_id}
-    expect(results).toEqual([{...result, test: memberTest}])
-    expect(mockReporter.testsWait).toHaveBeenCalledWith([memberTest], expect.anything(), 'bid')
+    expect(results[0].test.name).toBe('Member test')
+    expect(results[0].test.public_id).toBe('member-pid')
+    expect(results[0].test.type).toBe('api')
+    expect(mockReporter.testsWait).toHaveBeenCalledWith(
+      [{...suiteTest, public_id: 'member-pid'}],
+      expect.anything(),
+      'bid'
+    )
   })
 
   test('should show results as they arrive', async () => {

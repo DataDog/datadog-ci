@@ -577,7 +577,9 @@ export const getInProgressResultInBatch = (): BaseResultInBatch => {
     // eslint-disable-next-line no-null/no-null
     max_retries: null,
     status: 'in_progress',
+    test_name: 'Test name',
     test_public_id: 'pid',
+    test_type: 'api',
     // eslint-disable-next-line no-null/no-null
     timed_out: null,
   }
@@ -585,7 +587,9 @@ export const getInProgressResultInBatch = (): BaseResultInBatch => {
 
 export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun => {
   return {
+    test_name: 'Test name',
     test_public_id: 'pid',
+    test_type: 'api',
     execution_rule: ExecutionRule.SKIPPED,
     // eslint-disable-next-line no-null/no-null
     retries: null,
