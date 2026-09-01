@@ -284,6 +284,51 @@ describe('waitForResults', () => {
     )
   })
 
+  test('should use the polled subtype/config for a triggered suite member, which is not known ahead of the batch results', async () => {
+    mockApi({
+      getBatchImplementation: async () => ({
+        ...deepExtend({}, batch),
+        results: [{...getPassedResultInBatch(), test_name: 'Member test', test_public_id: 'member-pid'}],
+      }),
+      pollResultsImplementation: async () => [
+        {
+          ...deepExtend({}, pollResult),
+          test: {
+            subtype: 'dns',
+            config: {request: {host: 'example.com', dnsServer: '1.1.1.1'}},
+          },
+        } as PollResult,
+      ],
+    })
+
+    const suiteTest: Test = {
+      ...apiTest,
+      public_id: 'suite-pid',
+      type: 'suite',
+      memberPublicIds: ['member-pid'],
+    } as Test
+
+    const results = await waitForResults(
+      api,
+      trigger,
+      [suiteTest],
+      {
+        batchTimeout: 120000,
+        datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+        failOnCriticalErrors: false,
+        subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+      },
+      mockReporter
+    )
+
+    const test = results[0].test as Test & {subtype: string}
+    expect(test.subtype).toBe('dns')
+    expect(test.config.request?.host).toBe('example.com')
+    expect(test.config.request?.dnsServer).toBe('1.1.1.1')
+    // Fields the suite member never had (from the placeholder) are untouched by the merge.
+    expect(test.config.assertions).toEqual([])
+  })
+
   test('should show results as they arrive', async () => {
     jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
@@ -445,6 +490,7 @@ describe('waitForResults', () => {
       3,
       {
         ...result,
+        test: {...result.test, public_id: 'other-public-id'},
         isNonFinal: true,
         resultId: 'rid-3',
         passed: false,
@@ -481,7 +527,13 @@ describe('waitForResults', () => {
     expect(await resultsPromise).toEqual([
       result,
       {...result, result: {...result.result, id: 'rid-2'}, resultId: 'rid-2'},
-      {...result, result: {...result.result, id: 'rid-3-final'}, resultId: 'rid-3-final', retries: 1},
+      {
+        ...result,
+        test: {...result.test, public_id: 'other-public-id'},
+        result: {...result.result, id: 'rid-3-final'},
+        resultId: 'rid-3-final',
+        retries: 1,
+      },
     ])
 
     // One result received
@@ -494,7 +546,13 @@ describe('waitForResults', () => {
     })
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
       4,
-      {...result, result: {...result.result, id: 'rid-3-final'}, resultId: 'rid-3-final', retries: 1},
+      {
+        ...result,
+        test: {...result.test, public_id: 'other-public-id'},
+        result: {...result.result, id: 'rid-3-final'},
+        resultId: 'rid-3-final',
+        retries: 1,
+      },
       MOCK_BASE_URL,
       'bid'
     )
@@ -573,7 +631,12 @@ describe('waitForResults', () => {
 
     expect(await resultsPromise).toEqual([
       {...skippedResult},
-      {...result, result: {...result.result, id: 'rid-2'}, resultId: 'rid-2'},
+      {
+        ...result,
+        test: {...result.test, public_id: 'other-public-id'},
+        result: {...result.result, id: 'rid-2'},
+        resultId: 'rid-2',
+      },
     ])
 
     // One result received
@@ -585,7 +648,12 @@ describe('waitForResults', () => {
     })
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
       2,
-      {...result, result: {...result.result, id: 'rid-2'}, resultId: 'rid-2'},
+      {
+        ...result,
+        test: {...result.test, public_id: 'other-public-id'},
+        result: {...result.result, id: 'rid-2'},
+        resultId: 'rid-2',
+      },
       MOCK_BASE_URL,
       'bid'
     )
@@ -695,7 +763,7 @@ describe('waitForResults', () => {
     expect(await resultsPromise).toEqual([
       {...result, resultId: 'rid', passed: false, result: undefined, timestamp: 123},
       {...result, resultId: 'rid-2'},
-      {...result, resultId: 'rid-3'},
+      {...result, test: {...result.test, public_id: 'other-public-id'}, resultId: 'rid-3'},
     ])
 
     // One result received
@@ -706,7 +774,12 @@ describe('waitForResults', () => {
       result_id: 'rid-3',
     })
     // Result 3 was available instantly
-    expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
+    expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
+      2,
+      {...result, test: {...result.test, public_id: 'other-public-id'}, resultId: 'rid-3'},
+      MOCK_BASE_URL,
+      'bid'
+    )
 
     // Result 1 never became available (but the batch says it did not pass)
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(

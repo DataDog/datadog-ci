@@ -14,10 +14,10 @@ import type {
   TriggerInfo,
 } from './interfaces'
 import type {Tunnel} from './tunnel'
+import type {FieldPath} from './utils/paths'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import chalk from 'chalk'
-import deepExtend from 'deep-extend'
 
 import {EndpointError, extractUnauthorizedTestPublicIds, formatBackendErrors, getErrorHttpStatus} from './api'
 import {BatchTimeoutRunawayError, CiError} from './errors'
@@ -30,6 +30,7 @@ import {
   getPublicIdOrPlaceholder,
   wait,
 } from './utils/internal'
+import {withPaths} from './utils/paths'
 import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
 
 export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
@@ -416,6 +417,21 @@ const getResultFromBatch = (
   return createResult(resultInBatch, pollResult, test, hasTimedOut, isUnhealthy, resultDisplayInfo)
 }
 
+// The poll results endpoint reports a test's live `subtype`/`config` (nothing else: no `name`, `options`, `tags`, etc.,
+// even when the test itself has them), which is the only source for them for Test Suite members. They're used by:
+// - `getLocation()`'s tunnel support check (`test.subtype === 'multi' && test.config.steps`, or `test.subtype === 'http'`).
+// - the default reporter's `renderApiRequestDescription()` (`test.subtype` and `test.config.{request,steps}`).
+const POLLED_TEST_FIELDS: readonly FieldPath[] = [
+  'subtype',
+  'config.request.host',
+  'config.request.port',
+  'config.request.dnsServer',
+  'config.request.dnsServerPort',
+  'config.request.method',
+  'config.request.url',
+  'config.steps[*].subtype',
+]
+
 const createResult = (
   resultInBatch: BaseResultInBatch,
   pollResult: PollResult | undefined,
@@ -437,7 +453,7 @@ const createResult = (
     retries: resultInBatch.retries || 0,
     maxRetries: resultInBatch.max_retries || 0,
     selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test, pollResult?.test),
+    test: withPaths(test, pollResult?.test, POLLED_TEST_FIELDS),
     timedOut: hasTimedOut,
     timestamp: pollResult?.result?.finished_at ?? Date.now(),
   }
