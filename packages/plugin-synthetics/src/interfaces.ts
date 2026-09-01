@@ -6,6 +6,7 @@ import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import type {Writable} from 'stream'
 
 export type SupportedReporter = 'junit' | 'json' | 'default'
+export type TestType = 'api' | 'browser' | 'mobile' | 'network'
 
 export interface MainReporter {
   log(log: string): void
@@ -116,7 +117,7 @@ export interface RawPollResult {
 
 export interface RawPollResultTest {
   id: string
-  type: 'browser' | 'api' | 'mobile'
+  type: TestType
   subtype?: string
   config: {
     request?: {
@@ -126,7 +127,7 @@ export interface RawPollResultTest {
 }
 
 export type PollResult = {
-  test_type: 'api' | 'browser' | 'mobile'
+  test_type: TestType
   test: RecursivePartial<Test>
   result?: ServerResult
   resultID: string
@@ -264,7 +265,7 @@ export interface BaseResultInBatch {
   status: Status
   test_name: string
   test_public_id: string
-  test_type: 'api' | 'browser' | 'mobile'
+  test_type: TestType
   timed_out: boolean | null
 }
 
@@ -373,7 +374,7 @@ export interface LocalTestDefinition {
   public_id?: string
   subtype?: string // This is optional in the browser and api schemas
   steps?: TestStepWithUnsupportedFields[] // From browser schema
-  type: 'api' | 'browser' | 'mobile'
+  type: TestType
 }
 
 interface Options {
