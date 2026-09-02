@@ -1,7 +1,7 @@
 import {DATADOG_CI_COMMAND, execPromise} from './helpers/exec'
 
 describe('sbom', () => {
-  // Exercise the SBOM upload path in PR CI.
+  // Exercise the SBOM upload path on every PR CI run.
   it('upload completes successfully', async () => {
     const result = await execPromise(
       `${DATADOG_CI_COMMAND} sbom upload --service=datadog-ci-e2e-tests-sbom --env test e2e/fixtures/sbom-reports/sbom.json`,
