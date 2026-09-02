@@ -60,7 +60,7 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
       verifySsiInstrumented(appName, resourceGroup, subscriptionId, runId, NODE_APPLICATION_IMAGE)
 
       const appUrl = getContainerAppUrl(appName, resourceGroup, subscriptionId)
-      await Promise.all([
+      const [traffic, telemetry] = await Promise.allSettled([
         triggerTraffic(appUrl, {attempts: 20, requiredSuccesses: 10, intervalSeconds: 10}),
         checkTelemetryFlowing(
           {
@@ -72,6 +72,12 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           {checkLogs: false}
         ),
       ])
+      if (traffic.status === 'rejected') {
+        throw traffic.reason
+      }
+      if (telemetry.status === 'rejected') {
+        throw telemetry.reason
+      }
 
       const retry = await execPromiseWithRetries(instrumentCommand, {
         DD_API_KEY: process.env.DATADOG_API_KEY,
