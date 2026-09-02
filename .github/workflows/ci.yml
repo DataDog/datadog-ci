@@ -233,6 +233,8 @@ jobs:
             container-app:
               - 'packages/plugin-container-app/**'
               - 'packages/base/package.json'
+              - 'packages/base/src/commands/container-app/**'
+              - 'packages/base/src/helpers/serverless/ssi/**'
               - 'packages/base/src/helpers/serverless/azure.ts'
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
