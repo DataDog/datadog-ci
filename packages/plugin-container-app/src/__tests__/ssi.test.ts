@@ -73,7 +73,7 @@ describe('Container Apps automatic APM instrumentation', () => {
 
     test.each([
       [{tracing: 'inject'}, '--language'],
-      [{tracing: 'inject', language: 'go'}, 'supports only these languages'],
+      [{tracing: 'inject', language: 'go'}, 'Install dd-trace-go'],
       [{tracing: 'inject', language: 'rust'}, 'supports only these languages'],
       [{tracerVersion: '1.2.3'}, '--tracing inject'],
       [{tracerLibc: 'musl'}, '--tracing inject'],

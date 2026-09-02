@@ -29,7 +29,7 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
-import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from '../common'
+import {DD_API_KEY_SECRET_NAME, getEnvVarsByName, redactSecrets} from '../common'
 import {
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
@@ -249,7 +249,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       return
     }
 
-    const configDiff = generateConfigDiff(containerApp, updatedAppConfig)
+    const configDiff = generateConfigDiff(redactSecrets(containerApp), redactSecrets(updatedAppConfig))
     this.context.stdout.write(
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )

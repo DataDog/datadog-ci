@@ -12,7 +12,7 @@ import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {DD_API_KEY_SECRET_NAME} from '../common'
+import {DD_API_KEY_SECRET_NAME, redactSecrets} from '../common'
 import {SSI_INJECTION_MODE_TAG, removeSsiState} from '../ssi'
 
 export class PluginCommand extends ContainerAppUninstrumentCommand {
@@ -206,13 +206,3 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     }
   }
 }
-
-const redactSecrets = (containerApp: ContainerApp): ContainerApp => ({
-  ...containerApp,
-  configuration: {
-    ...containerApp.configuration,
-    secrets: containerApp.configuration?.secrets?.map((secret) =>
-      secret.value === undefined ? secret : {...secret, value: '<redacted>'}
-    ),
-  },
-})

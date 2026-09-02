@@ -1,10 +1,20 @@
-import type {EnvironmentVar} from '@azure/arm-appcontainers'
+import type {ContainerApp, EnvironmentVar} from '@azure/arm-appcontainers'
 import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {DD_SOURCE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 export const DD_API_KEY_SECRET_NAME = 'dd-api-key'
+
+export const redactSecrets = (containerApp: ContainerApp): ContainerApp => ({
+  ...containerApp,
+  configuration: {
+    ...containerApp.configuration,
+    secrets: containerApp.configuration?.secrets?.map((secret) =>
+      secret.value === undefined ? secret : {...secret, value: '<redacted>'}
+    ),
+  },
+})
 
 export const getEnvVarsByName = (
   config: ContainerAppConfigOptions,

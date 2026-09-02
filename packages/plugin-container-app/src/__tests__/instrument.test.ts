@@ -274,6 +274,30 @@ Ensure you copied the value and not the Key ID.
       )
     })
 
+    test('Redacts secrets in the configuration diff without redacting the Azure update', async () => {
+      containerAppsOperations.listSecrets.mockResolvedValue({
+        value: [
+          {name: 'dd-api-key', value: 'source-dd-secret-value'},
+          {name: 'other-secret', value: 'sensitive-value'},
+        ],
+      })
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('sensitive-value')
+      expect(context.stdout.toString()).not.toContain('source-dd-secret-value')
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-container-app',
+        expect.objectContaining({
+          configuration: expect.objectContaining({
+            secrets: expect.arrayContaining([{name: 'other-secret', value: 'sensitive-value'}]),
+          }),
+        })
+      )
+    })
+
     test('Sets DD_SOURCE without injecting a tracer when only --language is provided', async () => {
       const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--language', 'python'])
 

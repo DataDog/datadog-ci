@@ -1,13 +1,9 @@
 import type {Container, ContainerApp, EnvironmentVar, InitContainer} from '@azure/arm-appcontainers'
+import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-import type {TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
-import {
-  CONTAINER_APP_TRACING_INPUTS,
-  type ContainerAppConfigOptions,
-} from '@datadog/datadog-ci-base/commands/container-app/common'
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
   TRACER_CONTAINER_NAME,
@@ -33,6 +29,7 @@ import {
   LANGUAGE_METADATA,
   TRACER_IMAGE_TAG_REG_EXP,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+import {TRACING_MODES, type TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
 export const SSI_INJECTION_MODE_TAG = 'dd_sls_injection_mode'
 export const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
@@ -89,6 +86,15 @@ export const resolveSsiConfig = (config: ContainerAppConfigOptions): SsiConfigRe
         `--tracing inject requires --language until automatic multi-language injection is supported. Possible values: ${TRACER_INJECTION_LANGUAGES.join(
           ', '
         )}.`,
+      ],
+      warnings: [],
+    }
+  }
+  if (config.language === 'go') {
+    return {
+      kind: 'errors',
+      errors: [
+        'Go automatic instrumentation is not supported. Install dd-trace-go in the application image and use --tracing manual.',
       ],
       warnings: [],
     }
@@ -340,10 +346,8 @@ export class SsiConfigError extends Error {
 
 const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
   const errors: string[] = []
-  if (config.tracing !== undefined && !(CONTAINER_APP_TRACING_INPUTS as readonly string[]).includes(config.tracing)) {
-    errors.push(
-      `Invalid tracing mode ${JSON.stringify(config.tracing)}. Possible values: ${CONTAINER_APP_TRACING_INPUTS.join(', ')}.`
-    )
+  if (config.tracing !== undefined && !(TRACING_MODES as readonly string[]).includes(config.tracing)) {
+    errors.push(`Invalid tracing mode ${JSON.stringify(config.tracing)}. Possible values: ${TRACING_MODES.join(', ')}.`)
   }
   if (config.language !== undefined && (typeof config.language !== 'string' || config.language.length === 0)) {
     errors.push(`Invalid language ${JSON.stringify(config.language)}.`)
