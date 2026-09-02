@@ -41,6 +41,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
+import {SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {
   CONTAINER_APP_ID,
@@ -248,6 +249,29 @@ Ensure you copied the value and not the Key ID.
       expect(validateApiKey).not.toHaveBeenCalled()
       expect(getToken).not.toHaveBeenCalled()
       expect(containerAppsOperations.get).not.toHaveBeenCalled()
+    })
+
+    test.each(['true', 'false', '1', '0'])('Rejects legacy tracing input %s', async (tracing) => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', tracing])
+
+      expect(code).toBe(1)
+      expect(validateApiKey).not.toHaveBeenCalled()
+      expect(getToken).not.toHaveBeenCalled()
+      expect(containerAppsOperations.get).not.toHaveBeenCalled()
+    })
+
+    test('Warns when omitted tracing removes automatic injection', async () => {
+      containerAppsOperations.get.mockResolvedValue({
+        ...DEFAULT_CONTAINER_APP,
+        tags: {[SSI_INJECTION_MODE_TAG]: SINGLE_LANGUAGE_SSI_MODE},
+      })
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain(
+        'Tracing defaults to manual. Use --tracing inject --language <language> to retain automatic tracer injection.'
+      )
     })
 
     test('Sets DD_SOURCE without injecting a tracer when only --language is provided', async () => {
@@ -1010,7 +1034,7 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
     })
 
-    test('leaves default variables alone on the main container', async () => {
+    test('enables tracing on the main container by default', async () => {
       const containerAppWithCorrectSidecar: ContainerApp = {
         ...DEFAULT_CONTAINER_APP,
         tags: {service: 'my-container-app'},
@@ -1081,7 +1105,20 @@ Ensure you copied the value and not the Key ID.
       }
 
       await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', containerAppWithCorrectSidecar)
-      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'rg',
+        'my-container-app',
+        expect.objectContaining({
+          template: expect.objectContaining({
+            containers: expect.arrayContaining([
+              expect.objectContaining({
+                name: 'main-container',
+                env: expect.arrayContaining([{name: 'DD_TRACE_ENABLED', value: 'true'}]),
+              }),
+            ]),
+          }),
+        })
+      )
     })
 
     test('does not call Azure APIs in dry run mode', async () => {

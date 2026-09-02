@@ -7,7 +7,8 @@ import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
 import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import type {Libc} from '../../helpers/serverless/ssi/injection-spec'
-import type {TracingInput} from '../../helpers/serverless/ssi/tracing'
+import {TRACING_INPUT_METADATA} from '../../helpers/serverless/ssi/tracing'
+import type {TracingInput, TracingMode} from '../../helpers/serverless/ssi/tracing'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -16,6 +17,11 @@ import {BaseCommand} from '../..'
  * Maps Subscription ID to Resource Group to Container App names.
  */
 export type ContainerAppBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+export type ContainerAppTracingInput = Extract<TracingInput, TracingMode>
+
+export const CONTAINER_APP_TRACING_INPUTS = TRACING_INPUT_METADATA.filter(({input, mode}) => input === mode).map(
+  ({input}) => input
+) as readonly ContainerAppTracingInput[]
 
 /**
  * Configuration options provided by the user through
@@ -40,7 +46,7 @@ export type ContainerAppConfigOptions = Partial<{
   sharedVolumePath: string
   logsPath: string
   envVars: string[]
-  tracing: TracingInput
+  tracing: ContainerAppTracingInput
   language: string
   tracerVersion: string
   tracerLibc: Libc

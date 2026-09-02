@@ -13,7 +13,7 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/
 import chalk from 'chalk'
 
 import {DD_API_KEY_SECRET_NAME} from '../common'
-import {SSI_INJECTION_MODE_TAG, hasSsi, removeSsiState} from '../ssi'
+import {SSI_INJECTION_MODE_TAG, removeSsiState} from '../ssi'
 
 export class PluginCommand extends ContainerAppUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -152,7 +152,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
   }
 
   public createUninstrumentedAppConfig(config: ContainerAppConfigOptions, containerApp: ContainerApp): ContainerApp {
-    const sourceApp = hasSsi(containerApp) ? removeSsiState(containerApp) : containerApp
+    const sourceApp = removeSsiState(containerApp)
     const containers = sourceApp.template?.containers ?? []
     const volumes = sourceApp.template?.volumes ?? []
     // Remove sidecar container

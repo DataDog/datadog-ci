@@ -33,7 +33,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
-import {SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {CONTAINER_APP_ID, DEFAULT_ARGS, DEFAULT_CONFIG, DEFAULT_CONTAINER_APP, NULL_SUBSCRIPTION_ID} from './common'
 
@@ -412,47 +411,47 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       expect(result.configuration?.secrets).toEqual([{name: 'other-secret', value: 'OTHER'}])
     })
 
-    test('removes recognizable tracer injection and preserves unrelated state', () => {
+    test('removes stale tracer injection and preserves unrelated state', () => {
       const app: ContainerApp = {
         ...INSTRUMENTED_CONTAINER_APP,
-        tags: {
-          ...INSTRUMENTED_CONTAINER_APP.tags,
-          owner: 'payments',
-          [SSI_INJECTION_MODE_TAG]: SINGLE_LANGUAGE_SSI_MODE,
-        },
+        tags: {...INSTRUMENTED_CONTAINER_APP.tags, owner: 'payments'},
         template: {
           ...INSTRUMENTED_CONTAINER_APP.template,
           initContainers: [
             {name: 'customer-init', image: 'customer'},
+            {name: TRACER_CONTAINER_NAME, image: 'stale-tracer'},
+          ],
+          containers: [
+            ...INSTRUMENTED_CONTAINER_APP.template!.containers!.map((container, index) =>
+              index === 0
+                ? {
+                    ...container,
+                    env: [
+                      ...(container.env ?? []),
+                      {
+                        name: 'NODE_OPTIONS',
+                        value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
+                      },
+                      {name: 'KEEP', value: 'value'},
+                    ],
+                    volumeMounts: [
+                      ...(container.volumeMounts ?? []),
+                      {volumeName: 'customer-volume', mountPath: '/customer'},
+                      {volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH},
+                    ],
+                  }
+                : container
+            ),
             {
-              name: TRACER_CONTAINER_NAME,
-              image: 'datadoghq.azurecr.io/dd-lib-js-init:latest',
-              command: ['/datadog-init/copy-lib.sh'],
-              args: [TRACER_MOUNT_PATH],
-              resources: {cpu: 0.25, memory: '0.5Gi'},
-              volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
+              name: 'worker',
+              image: 'worker',
+              env: [{name: 'PYTHONPATH', value: 'customer:/datadog-lib'}],
+              volumeMounts: [
+                {volumeName: 'customer-volume', mountPath: '/customer'},
+                {volumeName: 'legacy-volume', mountPath: TRACER_MOUNT_PATH},
+              ],
             },
           ],
-          containers: INSTRUMENTED_CONTAINER_APP.template!.containers!.map((container, index) =>
-            index === 0
-              ? {
-                  ...container,
-                  env: [
-                    ...(container.env ?? []),
-                    {
-                      name: 'NODE_OPTIONS',
-                      value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
-                    },
-                    {name: 'KEEP', value: 'value'},
-                  ],
-                  volumeMounts: [
-                    ...(container.volumeMounts ?? []),
-                    {volumeName: 'customer-volume', mountPath: '/customer'},
-                    {volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH},
-                  ],
-                }
-              : container
-          ),
           volumes: [
             ...(INSTRUMENTED_CONTAINER_APP.template!.volumes ?? []),
             {name: 'customer-volume', storageType: 'EmptyDir'},
@@ -463,6 +462,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 
       const result = command.createUninstrumentedAppConfig(DEFAULT_CONFIG, app)
       const main = result.template!.containers![0]
+      const worker = result.template!.containers![1]
 
       expect(result.template?.initContainers).toEqual([{name: 'customer-init', image: 'customer'}])
       expect(result.template?.volumes).toEqual([{name: 'customer-volume', storageType: 'EmptyDir'}])
@@ -472,6 +472,10 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
         {name: 'NODE_OPTIONS', value: '--inspect'},
         {name: 'KEEP', value: 'value'},
       ])
+      expect(worker).toMatchObject({
+        env: [{name: 'PYTHONPATH', value: 'customer'}],
+        volumeMounts: [{volumeName: 'customer-volume', mountPath: '/customer'}],
+      })
     })
 
     test('handles app with no sidecar or shared volume gracefully', () => {

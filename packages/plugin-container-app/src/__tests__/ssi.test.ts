@@ -43,13 +43,9 @@ const createInstrumentedApp = (config: ContainerAppConfigOptions, app: Container
 describe('Container Apps automatic APM instrumentation', () => {
   describe('input resolution', () => {
     test.each([
-      [undefined, undefined],
+      [undefined, 'manual'],
       ['manual', 'manual'],
-      ['true', 'manual'],
-      ['1', 'manual'],
       ['disabled', 'disabled'],
-      ['false', 'disabled'],
-      ['0', 'disabled'],
     ] as const)('resolves tracing input %s without injection', (tracing, expected) => {
       expect(resolveSsiConfig({...DEFAULT_CONFIG, tracing})).toEqual({
         kind: 'no-injection',
@@ -281,17 +277,82 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(() => createInstrumentedApp(injectConfig('python'), unsafe)).not.toThrow()
     })
 
-    test('replaces an owned tracer with another language', () => {
+    test('replaces owned injection across all application containers', () => {
       const node = createInstrumentedApp(injectConfig())
+      const app = node.template!.containers![0]
       const owned = {
         ...node,
         tags: {...node.tags, [SSI_INJECTION_MODE_TAG]: SINGLE_LANGUAGE_SSI_MODE},
+        template: {
+          ...node.template,
+          containers: [
+            app,
+            {
+              name: 'worker',
+              image: 'worker',
+              env: [
+                {
+                  name: 'JAVA_TOOL_OPTIONS',
+                  value: '-Xmx512m -javaagent:/datadog-lib/dd-java-agent.jar -XX:+IgnoreUnrecognizedVMOptions',
+                },
+                {name: 'CORECLR_ENABLE_PROFILING', value: '1'},
+                {name: 'CORECLR_PROFILER', value: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'},
+                {name: 'CORECLR_PROFILER_PATH', value: '/datadog-lib/Datadog.Trace.ClrProfiler.Native.so'},
+                {name: 'DD_DOTNET_TRACER_HOME', value: '/datadog-lib'},
+                {
+                  name: 'LD_PRELOAD',
+                  value: 'customer /datadog-lib/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so',
+                },
+                {name: 'PYTHONPATH', value: 'customer:/datadog-lib'},
+                {name: 'RUBYOPT', value: '-r/datadog-lib/auto_inject -W1'},
+                {
+                  name: 'PHP_INI_SCAN_DIR',
+                  value: ':/customer:/datadog-lib/linux-gnu/loader:/datadog-lib/linux-musl/loader',
+                },
+                {name: 'DD_LOADER_PACKAGE_PATH', value: '/datadog-lib'},
+                {name: 'DD_TAGS', value: `${SINGLE_LANGUAGE_INJECTION_MODE_TAG},team:worker`},
+              ],
+              volumeMounts: [
+                {volumeName: 'customer-volume', mountPath: '/customer'},
+                {volumeName: TRACER_VOLUME_NAME, mountPath: '/other'},
+                {volumeName: 'legacy-volume', mountPath: TRACER_MOUNT_PATH},
+              ],
+            },
+          ],
+        },
       }
-      const python = createInstrumentedApp(injectConfig('python'), owned)
-      const app = python.template!.containers![0]
+      const python = createInstrumentedApp({...injectConfig('python'), containerName: 'main-container'}, owned)
+      const pythonApp = python.template!.containers![0]
+      const worker = python.template!.containers![1]
 
-      expect(getEnv(app.env, 'NODE_OPTIONS')).toBeUndefined()
-      expect(getEnv(app.env, 'PYTHONPATH')?.value).toBe(TRACER_MOUNT_PATH)
+      expect(getEnv(pythonApp.env, 'NODE_OPTIONS')).toBeUndefined()
+      expect(getEnv(pythonApp.env, 'PYTHONPATH')?.value).toBe(TRACER_MOUNT_PATH)
+      expect(worker.env).toEqual(
+        expect.arrayContaining([
+          {name: 'JAVA_TOOL_OPTIONS', value: '-Xmx512m'},
+          {name: 'LD_PRELOAD', value: 'customer'},
+          {name: 'PYTHONPATH', value: 'customer'},
+          {name: 'RUBYOPT', value: '-W1'},
+          {name: 'PHP_INI_SCAN_DIR', value: ':/customer'},
+          {name: 'DD_TAGS', value: 'team:worker'},
+        ])
+      )
+      expect(
+        worker.env?.filter(({name}) =>
+          [
+            'CORECLR_ENABLE_PROFILING',
+            'CORECLR_PROFILER',
+            'CORECLR_PROFILER_PATH',
+            'DD_DOTNET_TRACER_HOME',
+            'DD_LOADER_PACKAGE_PATH',
+          ].includes(name!)
+        )
+      ).toEqual([])
+      expect(worker.volumeMounts).toEqual([
+        {volumeName: 'customer-volume', mountPath: '/customer'},
+        {volumeName: 'shared-volume', mountPath: '/shared-volume'},
+      ])
+      expect(python.tags?.[SSI_INJECTION_MODE_TAG]).toBe(SINGLE_LANGUAGE_SSI_MODE)
       expect(python.template?.initContainers).toHaveLength(1)
       expect(python.template?.volumes?.filter(({name}) => name === TRACER_VOLUME_NAME)).toHaveLength(1)
     })
@@ -324,7 +385,7 @@ describe('Container Apps automatic APM instrumentation', () => {
       ).toBe(true)
     })
 
-    test('omitted tracing removes existing injection', () => {
+    test('omitted tracing removes existing injection with manual tracing enabled', () => {
       const injected = createInstrumentedApp(injectConfig())
       const result = createInstrumentedApp(
         {...DEFAULT_CONFIG, service: 'my-container-app', extraTags: 'team:serverless'},
@@ -334,6 +395,7 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(result.template?.initContainers).toEqual([])
       expect(getEnv(result.template?.containers?.[0].env, 'NODE_OPTIONS')).toBeUndefined()
       expect(getEnv(result.template?.containers?.[0].env, 'DD_TAGS')?.value).toBe('team:serverless')
+      expect(getEnv(result.template?.containers?.[0].env, DD_TRACE_ENABLED_ENV_VAR)?.value).toBe('true')
     })
   })
 })

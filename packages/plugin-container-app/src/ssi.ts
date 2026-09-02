@@ -1,10 +1,13 @@
 import type {Container, ContainerApp, EnvironmentVar, InitContainer} from '@azure/arm-appcontainers'
-import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import type {TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
+import {
+  CONTAINER_APP_TRACING_INPUTS,
+  type ContainerAppConfigOptions,
+} from '@datadog/datadog-ci-base/commands/container-app/common'
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
   TRACER_CONTAINER_NAME,
@@ -30,7 +33,6 @@ import {
   LANGUAGE_METADATA,
   TRACER_IMAGE_TAG_REG_EXP,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-import {TRACING_INPUTS, normalizeTracingInput} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
 export const SSI_INJECTION_MODE_TAG = 'dd_sls_injection_mode'
 export const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
@@ -39,7 +41,7 @@ export const TRACER_INJECTION_LANGUAGES: readonly Language[] = Object.keys(LANGU
 
 export type SsiConfigResult = (
   | {kind: 'errors'; errors: readonly string[]}
-  | {kind: 'no-injection'; tracing: Exclude<TracingMode, 'inject'> | undefined}
+  | {kind: 'no-injection'; tracing: Exclude<TracingMode, 'inject'>}
   | {kind: 'single-language'; language: Language; libc: Libc; spec: LanguageInjectionSpec}
 ) & {warnings: readonly string[]}
 
@@ -50,7 +52,7 @@ export const resolveSsiConfig = (config: ContainerAppConfigOptions): SsiConfigRe
     return {kind: 'errors', errors, warnings: []}
   }
 
-  const tracing = normalizeTracingInput(config.tracing)
+  const tracing = config.tracing ?? 'manual'
   if (tracing !== 'inject') {
     const unusedFlags = [
       config.tracerVersion !== undefined ? '--tracer-version' : undefined,
@@ -270,19 +272,39 @@ export const hasCompleteSsiSignature = (containerApp: ContainerApp, targetIndex:
   )
 }
 
-export const removeSsiState = (containerApp: ContainerApp): ContainerApp => ({
-  ...containerApp,
-  template: {
-    ...containerApp.template,
-    initContainers: (containerApp.template?.initContainers ?? []).filter(({name}) => name !== TRACER_CONTAINER_NAME),
-    containers: (containerApp.template?.containers ?? []).map((container) => ({
-      ...container,
-      env: removeLanguageInjectionEnv(container.env),
-      volumeMounts: (container.volumeMounts ?? []).filter(({volumeName}) => volumeName !== TRACER_VOLUME_NAME),
-    })),
-    volumes: (containerApp.template?.volumes ?? []).filter(({name}) => name !== TRACER_VOLUME_NAME),
-  },
-})
+export const removeSsiState = (containerApp: ContainerApp): ContainerApp => {
+  const template = containerApp.template
+  const initContainers = template?.initContainers?.filter(({name}) => name !== TRACER_CONTAINER_NAME)
+  const volumes = template?.volumes?.filter(({name}) => name !== TRACER_VOLUME_NAME)
+  const containers = template?.containers?.map((container) => {
+    const env = removeLanguageInjectionEnv(container.env)
+    const volumeMounts = container.volumeMounts?.filter(
+      ({volumeName, mountPath}) => volumeName !== TRACER_VOLUME_NAME && mountPath !== TRACER_MOUNT_PATH
+    )
+    const envChanged =
+      env.length !== (container.env?.length ?? 0) || env.some((variable, index) => variable !== container.env?.[index])
+    const mountsChanged = volumeMounts?.length !== container.volumeMounts?.length
+
+    return envChanged || mountsChanged
+      ? {...container, ...(envChanged ? {env} : {}), ...(mountsChanged ? {volumeMounts} : {})}
+      : container
+  })
+  const containersChanged = containers?.some((container, index) => container !== template?.containers?.[index])
+
+  return {
+    ...containerApp,
+    ...(template === undefined
+      ? {}
+      : {
+          template: {
+            ...template,
+            ...(initContainers?.length !== template.initContainers?.length ? {initContainers} : {}),
+            ...(containersChanged ? {containers} : {}),
+            ...(volumes?.length !== template.volumes?.length ? {volumes} : {}),
+          },
+        }),
+  }
+}
 
 export const applySingleLanguageSsi = (
   containerApp: ContainerApp,
@@ -318,9 +340,9 @@ export class SsiConfigError extends Error {
 
 const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
   const errors: string[] = []
-  if (config.tracing !== undefined && !(TRACING_INPUTS as readonly string[]).includes(config.tracing)) {
+  if (config.tracing !== undefined && !(CONTAINER_APP_TRACING_INPUTS as readonly string[]).includes(config.tracing)) {
     errors.push(
-      `Invalid tracing mode ${JSON.stringify(config.tracing)}. Possible values: ${TRACING_INPUTS.join(', ')}.`
+      `Invalid tracing mode ${JSON.stringify(config.tracing)}. Possible values: ${CONTAINER_APP_TRACING_INPUTS.join(', ')}.`
     )
   }
   if (config.language !== undefined && (typeof config.language !== 'string' || config.language.length === 0)) {

@@ -158,6 +158,14 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
       config = {...config, service: config.service ?? containerAppName}
 
+      if (config.tracing === undefined && hasSsi(containerApp)) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            'Tracing defaults to manual. Use --tracing inject --language <language> to retain automatic tracer injection.'
+          )
+        )
+      }
+
       if (ssiConfig.kind === 'single-language' && (containerApp.template?.scale?.minReplicas ?? 0) === 0) {
         this.context.stdout.write(
           renderSoftWarning(
@@ -262,23 +270,19 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       throw new SsiConfigError(ssiConfig.errors.join('\n'))
     }
 
-    let sourceApp = containerApp
-    let targetIndex: number | undefined
     const ssiExists = hasSsi(containerApp)
+    const sourceApp = ssiExists ? removeSsiState(containerApp) : containerApp
+    let targetIndex: number | undefined
     if (ssiConfig.kind === 'single-language') {
       targetIndex = selectApplicationContainer(
-        containerApp.template?.containers ?? [],
+        sourceApp.template?.containers ?? [],
         config.sidecarName!,
         config.containerName
       )
-      assertLanguageInjectionEnvCanBeMerged(containerApp.template?.containers?.[targetIndex]?.env, ssiConfig.spec)
-      if (ssiExists) {
-        sourceApp = removeSsiState(containerApp)
-      } else {
+      assertLanguageInjectionEnvCanBeMerged(sourceApp.template?.containers?.[targetIndex]?.env, ssiConfig.spec)
+      if (!ssiExists) {
         assertSsiResourcesCanBeAdded(containerApp, targetIndex, config.sidecarName!)
       }
-    } else if (ssiExists) {
-      sourceApp = removeSsiState(containerApp)
     }
 
     const envVarsByName = getEnvVarsByName(config, subscriptionId, resourceGroup)
