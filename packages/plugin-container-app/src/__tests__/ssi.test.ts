@@ -74,6 +74,7 @@ describe('Container Apps automatic APM instrumentation', () => {
     test.each([
       [{tracing: 'inject'}, '--language'],
       [{tracing: 'inject', language: 'go'}, 'Install dd-trace-go'],
+      [{tracing: 'inject', language: 'dotnet'}, 'supports only these languages'],
       [{tracing: 'inject', language: 'rust'}, 'supports only these languages'],
       [{tracerVersion: '1.2.3'}, '--tracing inject'],
       [{tracerLibc: 'musl'}, '--tracing inject'],
@@ -185,6 +186,7 @@ describe('Container Apps automatic APM instrumentation', () => {
       const app = result.template!.containers![0]
 
       expect(getEnv(app.env, envName)?.value).toContain(value)
+      expect(getEnv(app.env, 'DD_SOURCE')?.value).toBe(language)
       expect(getEnv(app.env, DD_TRACE_ENABLED_ENV_VAR)?.value).toBe('true')
       expect(getEnv(app.env, 'DD_TAGS')?.value).toContain(SINGLE_LANGUAGE_INJECTION_MODE_TAG)
       expect(result.template?.initContainers).toContainEqual({
@@ -231,9 +233,20 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(() => createInstrumentedApp({...injectConfig(), [field]: value})).toThrow(message)
     })
 
-    test('retries markerless configuration without duplicating managed state', () => {
+    test('retries configuration without injection markers', () => {
       const first = createInstrumentedApp(injectConfig())
-      const second = createInstrumentedApp(injectConfig(), first)
+      const app = first.template!.containers![0]
+      const markerless = {
+        ...first,
+        template: {
+          ...first.template,
+          containers: [
+            {...app, env: app.env?.filter(({name}) => name !== 'DD_TAGS')},
+            ...first.template!.containers!.slice(1),
+          ],
+        },
+      }
+      const second = createInstrumentedApp(injectConfig(), markerless)
 
       expect(second.template).toEqual(first.template)
     })

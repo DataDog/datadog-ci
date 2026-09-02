@@ -12,7 +12,11 @@ import {
   SIDECAR_IMAGE,
 } from '../../helpers/serverless/constants'
 import {DEFAULT_TRACER_LIBC, LIBCS} from '../../helpers/serverless/ssi/injection-spec'
-import {DEFAULT_TRACER_VERSION, TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
+import {
+  DEFAULT_TRACER_VERSION,
+  TRACER_IMAGE_TAG_REG_EXP,
+  TRACER_INJECTION_LANGUAGES,
+} from '../../helpers/serverless/ssi/tracer'
 import {TRACING_MODES} from '../../helpers/serverless/ssi/tracing'
 
 import {ContainerAppCommand} from './common'
@@ -68,8 +72,9 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     validator: t.isEnum(TRACING_MODES),
   })
   private language: ContainerAppConfigOptions['language'] = Option.String('--language', {
-    description:
-      'Set the application language for log parsing. With `--tracing inject`, this selects a supported tracer.',
+    description: `Set the application language for log parsing. With \`--tracing inject\`, this selects a supported tracer. Supported injection values: ${TRACER_INJECTION_LANGUAGES.map(
+      (language) => `\`${language}\``
+    ).join(', ')}.`,
     validator: t.cascade(t.isString(), t.matchesRegExp(/.+/)),
   })
   private tracerVersion = Option.String('--tracer-version', {

@@ -270,7 +270,7 @@ Ensure you copied the value and not the Key ID.
 
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain(
-        'Tracing defaults to manual. Use --tracing inject --language <language> to retain automatic tracer injection.'
+        'Tracing defaults to manual for my-container-app. Use --tracing inject --language <language> to retain automatic tracer injection.'
       )
     })
 

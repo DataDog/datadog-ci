@@ -28,14 +28,14 @@ import {
   DEFAULT_TRACER_VERSION,
   LANGUAGE_METADATA,
   TRACER_IMAGE_TAG_REG_EXP,
+  TRACER_INJECTION_LANGUAGES,
+  isTracerInjectionLanguage,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import {TRACING_MODES, type TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
 export const SSI_INJECTION_MODE_TAG = 'dd_sls_injection_mode'
 export const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
 export const CONTAINER_APP_TRACER_REGISTRY = 'datadoghq.azurecr.io' as const
-export const TRACER_INJECTION_LANGUAGES: readonly Language[] = Object.keys(LANGUAGE_METADATA) as Language[]
-
 export type SsiConfigResult = (
   | {kind: 'errors'; errors: readonly string[]}
   | {kind: 'no-injection'; tracing: Exclude<TracingMode, 'inject'>}
@@ -242,14 +242,17 @@ export const removeLanguageInjectionEnv = (existingEnv: readonly EnvironmentVar[
     return value === undefined ? [] : [value === variable.value ? variable : {...variable, value}]
   })
 
-export const hasSsi = (containerApp: ContainerApp): boolean =>
+export const hasSsiMarker = (containerApp: ContainerApp): boolean =>
   (containerApp.tags !== undefined &&
     Object.prototype.hasOwnProperty.call(containerApp.tags, SSI_INJECTION_MODE_TAG)) ||
   (containerApp.template?.containers ?? []).some((container) =>
     container.env?.some(
       ({name, secretRef, value}) => name === DD_TAGS_ENV_VAR && !secretRef && hasInjectionModeTag(value)
     )
-  ) ||
+  )
+
+export const hasSsi = (containerApp: ContainerApp): boolean =>
+  hasSsiMarker(containerApp) ||
   (containerApp.template?.containers ?? []).some((_, index) => hasCompleteSsiSignature(containerApp, index))
 
 export const hasCompleteSsiSignature = (containerApp: ContainerApp, targetIndex: number): boolean => {
@@ -368,9 +371,6 @@ const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
   return errors
 }
 
-const isTracerInjectionLanguage = (language: string): language is Language =>
-  (TRACER_INJECTION_LANGUAGES as readonly string[]).includes(language)
-
 const formatContainerNames = (candidates: readonly {container: Container}[]): string =>
   candidates.map(({container}) => container.name || '<unnamed>').join(', ')
 
@@ -433,10 +433,6 @@ const hasManagedTracerEnvironment = (
   language: Language | undefined
 ): boolean => {
   const literalEnv = env ?? []
-  const tags = literalEnv.find(({name, secretRef}) => name === DD_TAGS_ENV_VAR && !secretRef)?.value
-  if (!hasInjectionModeTag(tags)) {
-    return false
-  }
 
   return LANGUAGE_ENV_VARIANTS.some(
     (variant) =>

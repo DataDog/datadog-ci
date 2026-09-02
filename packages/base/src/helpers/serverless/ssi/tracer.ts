@@ -18,6 +18,11 @@ export const LANGUAGE_METADATA = {
 export type Language = keyof typeof LANGUAGE_METADATA
 export type TracerLanguage = (typeof LANGUAGE_METADATA)[Language]['tracerLanguage']
 
+export const TRACER_INJECTION_LANGUAGES: readonly Language[] = Object.keys(LANGUAGE_METADATA) as Language[]
+
+export const isTracerInjectionLanguage = (language: string): language is Language =>
+  Object.prototype.hasOwnProperty.call(LANGUAGE_METADATA, language)
+
 export const DEFAULT_TRACER_VERSION = 'latest' as const
 export const TRACER_IMAGE_TAG_REG_EXP = /^[\w][\w.-]{0,127}$/
 

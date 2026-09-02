@@ -53,7 +53,7 @@ datadog-ci container-app instrument \
 
 ### Automatic APM instrumentation
 
-Use `--tracing inject --language <language>` to add a Java, Node.js, .NET, Python, Ruby, or PHP tracer without rebuilding the application image. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
+Use `--tracing inject --language <language>` to add a tracer without rebuilding the application image. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
 
 Tracer injection uses the `latest` tracer version and `glibc` by default. Use `--tracer-version` to pin an image tag, or `--tracer-libc musl` for a musl-based image. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Runtime support follows the [APM compatibility requirements](https://docs.datadoghq.com/tracing/trace_collection/compatibility/); `latest` can drop runtimes after they reach end of life.
 
@@ -124,7 +124,7 @@ You must expose these environment variables in the environment where you are run
 Configuration can be done using command-line arguments or a JSON configuration file (see the next section).
 
 #### `instrument`
-You can pass the following arguments to `instrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
+You can pass the following arguments to `instrument` to specify its behavior. Values in the configuration file override command-line arguments.
 
 <!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
@@ -147,7 +147,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--sidecar-memory` |  | The amount of memory (in GiB) to allocate to the sidecar container. | `1` |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. | `index.docker.io/datadog/serverless-init:latest` |
 | `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` with `--language` for automatic instrumentation, or `disabled` to turn tracing off. Defaults to `manual`. |  |
-| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects a supported tracer. |  |
+| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects a supported tracer. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. |  |
 | `--tracer-version` |  | Set the tracer image tag for automatic instrumentation. | `latest` |
 | `--tracer-libc` |  | Set the C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
 | `--container-name` |  | Select the application container to instrument when the Container App has multiple application containers. |  |

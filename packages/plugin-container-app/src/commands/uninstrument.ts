@@ -106,14 +106,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
     delete updatedTags[SSI_INJECTION_MODE_TAG]
 
-    const tagsChanged =
-      containerApp.tags?.service ||
-      containerApp.tags?.env ||
-      containerApp.tags?.version ||
-      containerApp.tags?.[SERVERLESS_CLI_VERSION_TAG_NAME] ||
-      containerApp.tags?.[SSI_INJECTION_MODE_TAG]
-
-    if (tagsChanged) {
+    if (!sortedEqual(containerApp.tags ?? {}, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Removing tags from ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
         try {

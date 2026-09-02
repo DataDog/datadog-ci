@@ -17,6 +17,7 @@ import {BaseCommand} from '../..'
  * Maps Subscription ID to Resource Group to Container App names.
  */
 export type ContainerAppBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+
 /**
  * Configuration options provided by the user through
  * the CLI in order to instrument properly.

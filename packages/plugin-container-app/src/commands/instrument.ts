@@ -37,6 +37,7 @@ import {
   assertLanguageInjectionEnvCanBeMerged,
   assertSsiResourcesCanBeAdded,
   hasSsi,
+  hasSsiMarker,
   removeSsiState,
   resolveSsiConfig,
   selectApplicationContainer,
@@ -158,10 +159,10 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
       config = {...config, service: config.service ?? containerAppName}
 
-      if (config.tracing === undefined && hasSsi(containerApp)) {
+      if (config.tracing === undefined && hasSsiMarker(containerApp)) {
         this.context.stdout.write(
           renderSoftWarning(
-            'Tracing defaults to manual. Use --tracing inject --language <language> to retain automatic tracer injection.'
+            `Tracing defaults to manual for ${containerAppName}. Use --tracing inject --language <language> to retain automatic tracer injection.`
           )
         )
       }
@@ -271,7 +272,8 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
 
     const ssiExists = hasSsi(containerApp)
-    const sourceApp = ssiExists ? removeSsiState(containerApp) : containerApp
+    const shouldReplaceSsi = hasSsiMarker(containerApp) || (ssiConfig.kind === 'single-language' && ssiExists)
+    const sourceApp = shouldReplaceSsi ? removeSsiState(containerApp) : containerApp
     let targetIndex: number | undefined
     if (ssiConfig.kind === 'single-language') {
       targetIndex = selectApplicationContainer(

@@ -33,6 +33,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
+import {SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {CONTAINER_APP_ID, DEFAULT_ARGS, DEFAULT_CONFIG, DEFAULT_CONTAINER_APP, NULL_SUBSCRIPTION_ID} from './common'
 
@@ -582,6 +583,17 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
         properties: {tags: {}},
+      })
+    })
+
+    test('removes managed tags with empty values', async () => {
+      await command.removeTags(NULL_SUBSCRIPTION_ID, 'my-resource-group', {
+        ...INSTRUMENTED_CONTAINER_APP,
+        tags: {[SSI_INJECTION_MODE_TAG]: '', owner: 'payments'},
+      })
+
+      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
+        properties: {tags: {owner: 'payments'}},
       })
     })
 
