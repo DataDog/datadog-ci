@@ -64,12 +64,12 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   })
   private tracing: ContainerAppConfigOptions['tracing'] = Option.String('--tracing', {
     description:
-      'Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled".',
+      'Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` with `--language` for automatic instrumentation, or `disabled` to turn tracing off. The legacy values `true`/`1` and `false`/`0` map to `manual` and `disabled`.',
     validator: t.isEnum(TRACING_INPUTS),
   })
   private language: ContainerAppConfigOptions['language'] = Option.String('--language', {
     description:
-      'Set the application language for log parsing. With --tracing inject, this selects a supported tracer.',
+      'Set the application language for log parsing. With `--tracing inject`, this selects a supported tracer.',
     validator: t.cascade(t.isString(), t.matchesRegExp(/.+/)),
   })
   private tracerVersion = Option.String('--tracer-version', {

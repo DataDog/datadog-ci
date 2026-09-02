@@ -149,8 +149,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--sidecar-cpu` |  | The number of CPUs to allocate to the sidecar container. | `0.5` |
 | `--sidecar-memory` |  | The amount of memory (in GiB) to allocate to the sidecar container. | `1` |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. | `index.docker.io/datadog/serverless-init:latest` |
-| `--tracing` |  | Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled". |  |
-| `--language` |  | Set the application language for log parsing. With --tracing inject, this selects a supported tracer. |  |
+| `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` with `--language` for automatic instrumentation, or `disabled` to turn tracing off. The legacy values `true`/`1` and `false`/`0` map to `manual` and `disabled`. |  |
+| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects a supported tracer. |  |
 | `--tracer-version` |  | Set the tracer image tag for automatic instrumentation. | `latest` |
 | `--tracer-libc` |  | Set the C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
 | `--container-name` |  | Select the application container to instrument when the Container App has multiple application containers. |  |
