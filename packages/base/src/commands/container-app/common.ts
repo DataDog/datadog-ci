@@ -6,6 +6,9 @@ import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
 import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
+import type {Libc} from '../../helpers/serverless/ssi/injection-spec'
+import {TRACING_MODES} from '../../helpers/serverless/ssi/tracing'
+import type {TracingMode} from '../../helpers/serverless/ssi/tracing'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -38,6 +41,11 @@ export type ContainerAppConfigOptions = Partial<{
   sharedVolumePath: string
   logsPath: string
   envVars: string[]
+  tracing: TracingMode
+  language: string
+  tracerVersion: string
+  tracerLibc: Libc
+  containerName: string
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   sourceCodeIntegration: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
@@ -97,17 +105,16 @@ export abstract class ContainerAppCommand extends BaseCommand {
   }
 
   public async ensureConfig(): Promise<[ContainerAppBySubscriptionAndGroup, ContainerAppConfigOptions, string[]]> {
+    const commandConfig = {
+      subscriptionId: this.subscriptionId,
+      resourceGroup: this.resourceGroup,
+      containerAppName: this.containerAppName,
+      envVars: this.envVars,
+      ...this.additionalConfig,
+    }
     const config = (
       await resolveConfigFromFile<{containerApp: ContainerAppConfigOptions}>(
-        {
-          containerApp: {
-            subscriptionId: this.subscriptionId,
-            resourceGroup: this.resourceGroup,
-            containerAppName: this.containerAppName,
-            envVars: this.envVars,
-            ...this.additionalConfig,
-          },
-        },
+        {containerApp: commandConfig},
         {
           configPath: this.configPath,
           defaultConfigPaths: DEFAULT_CONFIG_PATHS,

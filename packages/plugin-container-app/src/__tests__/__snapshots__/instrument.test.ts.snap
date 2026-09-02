@@ -9,7 +9,7 @@ Updating configuration for my-container-app:
 +     "secrets": [
 +       {
 +         "name": "dd-api-key",
-+         "value": "PLACEHOLDER"
++         "value": "<redacted>"
 +       }
 +     ]
     },
@@ -176,7 +176,7 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +     "secrets": [
 +       {
 +         "name": "dd-api-key",
-+         "value": "PLACEHOLDER"
++         "value": "<redacted>"
 +       }
 +     ]
     },

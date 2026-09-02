@@ -9,11 +9,11 @@ Updating configuration for my-container-app:
       "secrets": [
         {
 -         "name": "dd-api-key",
--         "value": "PLACEHOLDER"
+-         "value": "<redacted>"
 -       },
 -       {
           "name": "other-secret",
-          "value": "OTHER"
+          "value": "<redacted>"
         }
       ]
     },
@@ -114,11 +114,11 @@ exports[`container-app uninstrument snapshot tests prints dry run data 1`] = `
       "secrets": [
         {
 -         "name": "dd-api-key",
--         "value": "PLACEHOLDER"
+-         "value": "<redacted>"
 -       },
 -       {
           "name": "other-secret",
-          "value": "OTHER"
+          "value": "<redacted>"
         }
       ]
     },

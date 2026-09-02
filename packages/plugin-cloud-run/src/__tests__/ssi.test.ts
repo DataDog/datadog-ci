@@ -1,7 +1,6 @@
 import type {InstrumentServiceConfigOptions} from '../service-config'
 import type {IContainer, IEnvVar, IService} from '../types'
 import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
-import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {
   DD_TRACE_ENABLED_ENV_VAR,
@@ -14,10 +13,10 @@ import {
   getLanguageCompatibilityErrors,
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import {TRACER_INJECTION_LANGUAGES, type Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {instrumentServiceConfig} from '../service-config'
 import {
-  TRACER_INJECTION_LANGUAGES,
   mergeLanguageInjectionEnv,
   removeLanguageInjectionEnv,
   resolveSsiConfig,

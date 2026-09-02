@@ -10,7 +10,6 @@ import {
   DEFAULT_SIDECAR_CPU,
   DEFAULT_SIDECAR_MEMORY,
 } from '@datadog/datadog-ci-base/commands/container-app/instrument'
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
@@ -20,13 +19,31 @@ import {
   generateConfigDiff,
   sortedEqual,
 } from '@datadog/datadog-ci-base/helpers/serverless/common'
-import {DEFAULT_HEALTH_CHECK_PORT, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  DD_TRACE_ENABLED_ENV_VAR,
+  DEFAULT_HEALTH_CHECK_PORT,
+  SIDECAR_IMAGE,
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
-import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from '../common'
+import {DD_API_KEY_SECRET_NAME, getEnvVarsByName, redactSecrets} from '../common'
+import {
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
+  applySingleLanguageSsi,
+  assertLanguageInjectionEnvCanBeMerged,
+  assertSsiResourcesCanBeAdded,
+  hasSsi,
+  hasSsiMarker,
+  removeSsiState,
+  resolveSsiConfig,
+  selectApplicationContainer,
+  SsiConfigError,
+  type SsiConfigResult,
+} from '../ssi'
 
 export class PluginCommand extends ContainerAppInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -35,12 +52,23 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [containerAppsToInstrument, config, errors] = await this.ensureConfig()
+    const ssiConfig = resolveSsiConfig(config)
+    if (ssiConfig.kind === 'errors') {
+      for (const error of ssiConfig.errors) {
+        this.context.stdout.write(renderError(error))
+      }
+
+      return 1
+    }
     if (errors.length > 0) {
       for (const error of errors) {
         this.context.stdout.write(renderError(error))
       }
 
       return 1
+    }
+    for (const warning of ssiConfig.warnings) {
+      this.context.stdout.write(renderSoftWarning(warning))
     }
 
     try {
@@ -80,7 +108,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure Container App(s)\n`)
     const results = await Promise.all(
       Object.entries(containerAppsToInstrument).map(([subscriptionId, resourceGroupToNames]) =>
-        this.processSubscription(subscriptionId, resourceGroupToNames, config)
+        this.processSubscription(subscriptionId, resourceGroupToNames, config, ssiConfig)
       )
     )
     const success = results.every((result) => result)
@@ -96,13 +124,14 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
   public async processSubscription(
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,
-    config: ContainerAppConfigOptions
+    config: ContainerAppConfigOptions,
+    ssiConfig: SsiConfigResult = resolveSsiConfig(config)
   ): Promise<boolean> {
     const containerAppClient = new ContainerAppsAPIClient(this.cred, subscriptionId)
     const results = await Promise.all(
       Object.entries(resourceGroupToNames).flatMap(([resourceGroup, containerAppNames]) =>
         containerAppNames.map((containerAppName) =>
-          this.processContainerApp(containerAppClient, config, resourceGroup, containerAppName)
+          this.processContainerApp(containerAppClient, config, resourceGroup, containerAppName, ssiConfig)
         )
       )
     )
@@ -118,7 +147,8 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     containerAppClient: ContainerAppsAPIClient,
     config: ContainerAppConfigOptions,
     resourceGroup: string,
-    containerAppName: string
+    containerAppName: string,
+    ssiConfig: SsiConfigResult = resolveSsiConfig(config)
   ): Promise<boolean> {
     try {
       const [containerApp, secrets] = await Promise.all([
@@ -129,8 +159,24 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
       config = {...config, service: config.service ?? containerAppName}
 
-      await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerApp)
-      await this.addTags(config, containerAppClient.subscriptionId, resourceGroup, containerApp)
+      if (config.tracing === undefined && hasSsiMarker(containerApp)) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Tracing defaults to manual for ${containerAppName}. Use --tracing inject --language <language> to retain automatic tracer injection.`
+          )
+        )
+      }
+
+      if (ssiConfig.kind === 'single-language' && (containerApp.template?.scale?.minReplicas ?? 0) === 0) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Automatic APM instrumentation can increase cold-start delays for ${containerAppName} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
+          )
+        )
+      }
+
+      await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerApp, ssiConfig)
+      await this.addTags(config, containerAppClient.subscriptionId, resourceGroup, containerApp, ssiConfig)
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${containerAppName}: ${formatError(error)}`))
 
@@ -144,7 +190,8 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     config: ContainerAppConfigOptions,
     subscriptionId: string,
     resourceGroup: string,
-    containerApp: ContainerApp
+    containerApp: ContainerApp,
+    ssiConfig: SsiConfigResult = resolveSsiConfig(config)
   ): Promise<void> {
     const updatedTags: Record<string, string> = {
       ...containerApp.tags,
@@ -157,6 +204,11 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     if (config.version) {
       updatedTags.version = config.version
     }
+    if (ssiConfig.kind === 'single-language') {
+      updatedTags[SSI_INJECTION_MODE_TAG] = SINGLE_LANGUAGE_SSI_MODE
+    } else if (ssiConfig.kind === 'no-injection') {
+      delete updatedTags[SSI_INJECTION_MODE_TAG]
+    }
     if (!sortedEqual(containerApp.tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
@@ -167,7 +219,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
           )
         } catch (error) {
           this.context.stdout.write(
-            renderError(`Failed to update tags for ${chalk.bold(containerApp.name)}: ${formatError(error)}`)
+            renderError(`Failed to update tags for ${containerApp.name}: ${formatError(error)}`)
           )
         }
       }
@@ -178,13 +230,15 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     client: ContainerAppsAPIClient,
     config: ContainerAppConfigOptions,
     resourceGroup: string,
-    containerApp: ContainerApp
+    containerApp: ContainerApp,
+    ssiConfig: SsiConfigResult = resolveSsiConfig(config)
   ) {
     const updatedAppConfig = this.createInstrumentedAppConfig(
       config,
       client.subscriptionId,
       resourceGroup,
-      containerApp
+      containerApp,
+      ssiConfig
     )
     if (sortedEqual(containerApp, updatedAppConfig)) {
       this.context.stdout.write(
@@ -196,7 +250,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       return
     }
 
-    const configDiff = generateConfigDiff(containerApp, updatedAppConfig)
+    const configDiff = generateConfigDiff(redactSecrets(containerApp), redactSecrets(updatedAppConfig))
     this.context.stdout.write(
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )
@@ -210,9 +264,35 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     config: ContainerAppConfigOptions,
     subscriptionId: string,
     resourceGroup: string,
-    containerApp: ContainerApp
+    containerApp: ContainerApp,
+    ssiConfig: SsiConfigResult = resolveSsiConfig(config)
   ): ContainerApp {
+    if (ssiConfig.kind === 'errors') {
+      throw new SsiConfigError(ssiConfig.errors.join('\n'))
+    }
+
+    const ssiExists = hasSsi(containerApp)
+    const shouldReplaceSsi = hasSsiMarker(containerApp) || (ssiConfig.kind === 'single-language' && ssiExists)
+    const sourceApp = shouldReplaceSsi ? removeSsiState(containerApp) : containerApp
+    let targetIndex: number | undefined
+    if (ssiConfig.kind === 'single-language') {
+      targetIndex = selectApplicationContainer(
+        sourceApp.template?.containers ?? [],
+        config.sidecarName!,
+        config.containerName
+      )
+      assertLanguageInjectionEnvCanBeMerged(sourceApp.template?.containers?.[targetIndex]?.env, ssiConfig.spec)
+      if (!ssiExists) {
+        assertSsiResourcesCanBeAdded(containerApp, targetIndex, config.sidecarName!)
+      }
+    }
+
     const envVarsByName = getEnvVarsByName(config, subscriptionId, resourceGroup)
+    if (ssiConfig.kind === 'single-language' || ssiConfig.tracing === 'manual') {
+      envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
+    } else if (ssiConfig.tracing === 'disabled') {
+      envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'}
+    }
     // Build base sidecar container
     const baseSidecar: Container = {
       name: config.sidecarName,
@@ -237,7 +317,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
 
     // Use shared helper to create instrumented template
     const updatedTemplate = createInstrumentedTemplate(
-      containerApp.template ?? {},
+      sourceApp.template ?? {},
       baseSidecar,
       {
         name: config.sharedVolumeName!,
@@ -247,8 +327,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       },
       envVarsByName
     )
-
-    const secrets = containerApp.configuration?.secrets ?? []
+    const secrets = sourceApp.configuration?.secrets ?? []
     const hasApiKey = secrets.some(({name}) => name === DD_API_KEY_SECRET_NAME)
     const updatedSecrets: Secret[] = secrets.map((secret) =>
       secret.name === DD_API_KEY_SECRET_NAME ? {name: DD_API_KEY_SECRET_NAME, value: process.env.DD_API_KEY!} : secret
@@ -257,10 +336,14 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       updatedSecrets.push({name: DD_API_KEY_SECRET_NAME, value: process.env.DD_API_KEY!})
     }
 
-    return {
-      ...containerApp,
-      configuration: {...containerApp.configuration, secrets: updatedSecrets},
+    const instrumentedApp = {
+      ...sourceApp,
+      configuration: {...sourceApp.configuration, secrets: updatedSecrets},
       template: updatedTemplate,
     }
+
+    return ssiConfig.kind === 'single-language'
+      ? applySingleLanguageSsi(instrumentedApp, targetIndex!, ssiConfig.spec)
+      : instrumentedApp
   }
 }

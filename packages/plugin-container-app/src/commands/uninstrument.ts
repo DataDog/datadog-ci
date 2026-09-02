@@ -1,4 +1,4 @@
-import type {ContainerApp, Container, VolumeMount} from '@azure/arm-appcontainers'
+import type {ContainerApp, Container} from '@azure/arm-appcontainers'
 import type {TagsOperations} from '@azure/arm-resources'
 import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 
@@ -8,11 +8,12 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {DD_API_KEY_SECRET_NAME} from '../common'
+import {DD_API_KEY_SECRET_NAME, redactSecrets} from '../common'
+import {SSI_INJECTION_MODE_TAG, removeSsiState} from '../ssi'
 
 export class PluginCommand extends ContainerAppUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -80,7 +81,11 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     subscriptionId: string
   ): Promise<boolean> {
     try {
-      const containerApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
+      const [containerApp, secrets] = await Promise.all([
+        containerAppClient.containerApps.get(resourceGroup, containerAppName),
+        containerAppClient.containerApps.listSecrets(resourceGroup, containerAppName),
+      ])
+      containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
 
       await this.uninstrumentSidecar(containerAppClient, config, resourceGroup, containerApp)
       await this.removeTags(subscriptionId, resourceGroup, containerApp)
@@ -99,14 +104,9 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     delete updatedTags.env
     delete updatedTags.version
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
+    delete updatedTags[SSI_INJECTION_MODE_TAG]
 
-    const tagsChanged =
-      containerApp.tags?.service ||
-      containerApp.tags?.env ||
-      containerApp.tags?.version ||
-      containerApp.tags?.[SERVERLESS_CLI_VERSION_TAG_NAME]
-
-    if (tagsChanged) {
+    if (!sortedEqual(containerApp.tags ?? {}, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Removing tags from ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
         try {
@@ -116,7 +116,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
           )
         } catch (error) {
           this.context.stdout.write(
-            renderError(`Failed to remove tags from ${chalk.bold(containerApp.name)}: ${formatError(error)}`)
+            renderError(`Failed to remove tags for ${containerApp.name}: ${formatError(error)}`)
           )
         }
       }
@@ -130,8 +130,11 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     containerApp: ContainerApp
   ) {
     const updatedAppConfig = this.createUninstrumentedAppConfig(config, containerApp)
+    if (sortedEqual(containerApp, updatedAppConfig)) {
+      return
+    }
 
-    const configDiff = generateConfigDiff(containerApp, updatedAppConfig)
+    const configDiff = generateConfigDiff(redactSecrets(containerApp), redactSecrets(updatedAppConfig))
     this.context.stdout.write(
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )
@@ -142,9 +145,9 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
   }
 
   public createUninstrumentedAppConfig(config: ContainerAppConfigOptions, containerApp: ContainerApp): ContainerApp {
-    const containers = containerApp?.template?.containers ?? []
-    const volumes = containerApp?.template?.volumes || []
-
+    const sourceApp = removeSsiState(containerApp)
+    const containers = sourceApp.template?.containers ?? []
+    const volumes = sourceApp.template?.volumes ?? []
     // Remove sidecar container
     let updatedContainers = containers.filter((c) => c.name !== config.sidecarName)
 
@@ -163,39 +166,36 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     updatedContainers = updatedContainers.map((c) => this.updateAppContainer(c, config))
 
     // Remove DD_API_KEY secret
-    const secrets = containerApp.configuration?.secrets ?? []
+    const secrets = sourceApp.configuration?.secrets ?? []
     const updatedSecrets = secrets.filter((secret) => secret.name !== DD_API_KEY_SECRET_NAME)
 
     return {
-      ...containerApp,
-      configuration: {...containerApp.configuration, secrets: updatedSecrets},
+      ...sourceApp,
+      configuration: {...sourceApp.configuration, secrets: updatedSecrets},
       template: {
-        ...containerApp.template,
+        ...sourceApp.template,
         containers: updatedContainers,
-        volumes: updatedVolumes,
+        ...(updatedVolumes.length !== volumes.length ? {volumes: updatedVolumes} : {}),
       },
     }
   }
 
   // Remove volume mount, DD_* env vars, and custom env vars
   private updateAppContainer(appContainer: Container, config: ContainerAppConfigOptions): Container {
-    const existingVolumeMounts = appContainer.volumeMounts || []
-    const updatedVolumeMounts = existingVolumeMounts.filter(
-      (v: VolumeMount) => v.volumeName !== config.sharedVolumeName
-    )
+    const existingVolumeMounts = appContainer.volumeMounts ?? []
+    const updatedVolumeMounts = existingVolumeMounts.filter((v) => v.volumeName !== config.sharedVolumeName)
 
     const customEnvVars = parseEnvVars(config.envVars)
 
-    const existingEnvVars = appContainer.env || []
     // Remove env vars beginning with DD_ and custom env vars
-    const updatedEnvVars = existingEnvVars.filter(
+    const updatedEnvVars = (appContainer.env ?? []).filter(
       (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars)
     )
 
     return {
       ...appContainer,
-      volumeMounts: updatedVolumeMounts,
-      env: updatedEnvVars,
+      ...(updatedVolumeMounts.length !== existingVolumeMounts.length ? {volumeMounts: updatedVolumeMounts} : {}),
+      ...(updatedEnvVars.length !== (appContainer.env?.length ?? 0) ? {env: updatedEnvVars} : {}),
     }
   }
 }

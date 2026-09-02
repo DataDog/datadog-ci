@@ -41,6 +41,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
+import {SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {
   CONTAINER_APP_ID,
@@ -232,6 +233,91 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.get).not.toHaveBeenCalled()
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
+    })
+
+    test.each<[string[], string]>([
+      [['--tracing', 'inject'], '--tracing inject requires --language'],
+      [
+        ['--tracing', 'inject', '--language', 'nodejs', '--shared-volume-name', 'datadog-tracer'],
+        '--shared-volume-name',
+      ],
+    ])('Validates tracer configuration before authentication or API calls', async (args, message) => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, ...args])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(message)
+      expect(validateApiKey).not.toHaveBeenCalled()
+      expect(getToken).not.toHaveBeenCalled()
+      expect(containerAppsOperations.get).not.toHaveBeenCalled()
+    })
+
+    test.each(['true', 'false', '1', '0'])('Rejects legacy tracing input %s', async (tracing) => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', tracing])
+
+      expect(code).toBe(1)
+      expect(validateApiKey).not.toHaveBeenCalled()
+      expect(getToken).not.toHaveBeenCalled()
+      expect(containerAppsOperations.get).not.toHaveBeenCalled()
+    })
+
+    test('Warns when omitted tracing removes automatic injection', async () => {
+      containerAppsOperations.get.mockResolvedValue({
+        ...DEFAULT_CONTAINER_APP,
+        tags: {[SSI_INJECTION_MODE_TAG]: SINGLE_LANGUAGE_SSI_MODE},
+      })
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain(
+        'Tracing defaults to manual for my-container-app. Use --tracing inject --language <language> to retain automatic tracer injection.'
+      )
+    })
+
+    test('Redacts secrets in the configuration diff without redacting the Azure update', async () => {
+      containerAppsOperations.listSecrets.mockResolvedValue({
+        value: [
+          {name: 'dd-api-key', value: 'source-dd-secret-value'},
+          {name: 'other-secret', value: 'sensitive-value'},
+        ],
+      })
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('sensitive-value')
+      expect(context.stdout.toString()).not.toContain('source-dd-secret-value')
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-container-app',
+        expect.objectContaining({
+          configuration: expect.objectContaining({
+            secrets: expect.arrayContaining([{name: 'other-secret', value: 'sensitive-value'}]),
+          }),
+        })
+      )
+    })
+
+    test('Sets DD_SOURCE without injecting a tracer when only --language is provided', async () => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--language', 'python'])
+
+      expect(code).toBe(0)
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-container-app',
+        expect.objectContaining({
+          template: expect.objectContaining({
+            containers: expect.arrayContaining([
+              expect.objectContaining({
+                name: 'main-container',
+                env: expect.arrayContaining([{name: 'DD_SOURCE', value: 'python'}]),
+              }),
+            ]),
+          }),
+        })
+      )
+      const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+      expect(updatedApp.template?.initContainers).toBeUndefined()
     })
 
     test('Handles errors during sidecar instrumentation', async () => {
@@ -972,7 +1058,7 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
     })
 
-    test('leaves default variables alone on the main container', async () => {
+    test('enables tracing on the main container by default', async () => {
       const containerAppWithCorrectSidecar: ContainerApp = {
         ...DEFAULT_CONTAINER_APP,
         tags: {service: 'my-container-app'},
@@ -1043,7 +1129,20 @@ Ensure you copied the value and not the Key ID.
       }
 
       await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', containerAppWithCorrectSidecar)
-      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith(
+        'rg',
+        'my-container-app',
+        expect.objectContaining({
+          template: expect.objectContaining({
+            containers: expect.arrayContaining([
+              expect.objectContaining({
+                name: 'main-container',
+                env: expect.arrayContaining([{name: 'DD_TRACE_ENABLED', value: 'true'}]),
+              }),
+            ]),
+          }),
+        })
+      )
     })
 
     test('does not call Azure APIs in dry run mode', async () => {
@@ -1372,16 +1471,33 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.get).toHaveBeenCalledWith('rg2', 'app2')
     })
 
-    test('Tag update failure does not fail entire operation', async () => {
-      updateTags.mockClear().mockRejectedValue(new Error('tag update error'))
+    test('Continues after a tracer tag update failure without duplicating configuration', async () => {
+      updateTags.mockClear().mockRejectedValueOnce(new Error('tag update error'))
 
-      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(code).toEqual(0)
-      const output = context.stdout.toString()
-      expect(output).toContain('Updating configuration for my-container-app')
-      expect(output).toContain('[Error] Failed to update tags for my-container-app')
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
-      expect(updateTags).toHaveBeenCalled()
+      const first = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
+      expect(first.code).toEqual(0)
+      expect(first.context.stdout.toString()).toContain(
+        '[Error] Failed to update tags for my-container-app: Error: tag update error'
+      )
+      const updatedApp = containerAppsOperations.beginUpdateAndWait.mock.calls[0][2] as ContainerApp
+
+      containerAppsOperations.get.mockResolvedValue(updatedApp)
+      containerAppsOperations.listSecrets.mockResolvedValue({value: updatedApp.configuration?.secrets})
+      containerAppsOperations.beginUpdateAndWait.mockClear()
+      updateTags.mockResolvedValue({})
+
+      const retry = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
+      expect(retry.code).toEqual(0)
+      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenLastCalledWith(CONTAINER_APP_ID, {
+        properties: {
+          tags: {
+            service: 'my-container-app',
+            dd_sls_ci: 'vXXXX',
+            dd_sls_injection_mode: 'single_language',
+          },
+        },
+      })
     })
 
     test('Uses custom sidecar name', async () => {
