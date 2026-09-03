@@ -34,8 +34,6 @@ const SHARED_VOLUME_NAME = 'shared-volume'
 const DD_API_KEY_SECRET_NAME = 'dd-api-key'
 const TRACER_NAME = 'datadog-tracer'
 const TRACER_MOUNT_PATH = '/datadog-lib'
-const NODE_TRACER_IMAGE = 'datadoghq.azurecr.io/dd-lib-js-init:latest'
-const NODE_OPTIONS_FRAGMENT = '--require /datadog-lib/node_modules/dd-trace/init.js'
 const INJECTION_MODE_TAG = '_dd.injection.mode:serverless-single-lang'
 const EXPECTED_ENV = 'e2e'
 const REQUIRED_ENV_VARS = [
@@ -64,6 +62,28 @@ const envByName = (
   container: ContainerApp['properties']['template']['containers'][number]
 ): Record<string, {name: string; value?: string; secretRef?: string}> => {
   return Object.fromEntries((container.env || []).map((env) => [env.name, env]))
+}
+
+const verifyDatadogEnv = (
+  containers: ContainerApp['properties']['template']['containers'],
+  appName: string,
+  runId: string
+): void => {
+  for (const container of containers) {
+    const env = envByName(container)
+    for (const varName of REQUIRED_ENV_VARS) {
+      expect(env[varName]).toBeDefined()
+    }
+    expect(env.DD_API_KEY.secretRef).toBe(DD_API_KEY_SECRET_NAME)
+    expect(env.DD_SERVICE.value).toBe(appName)
+    expect(env.DD_ENV.value).toBe(EXPECTED_ENV)
+    expect(env.DD_VERSION.value).toBe(runId)
+    expect(env.DD_TRACE_ENABLED.value).toBe('true')
+    expect(env.DD_LOGS_INJECTION.value).toBe('true')
+    expect(env.DD_HEALTH_PORT.value).toBe('5555')
+    expect(env.DD_TAGS.value).toContain(`one_e2e_run_id:${runId}`)
+    expect(env.DD_APM_ENABLED.value).toBe('true')
+  }
 }
 
 export const getContainerAppUrl = (appName: string, resourceGroup: string, subscriptionId: string): string => {
@@ -110,21 +130,7 @@ export const verifyInstrumented = (
   const sidecarMounts = sidecar!.volumeMounts || []
   expect(sidecarMounts.some((m) => m.volumeName === SHARED_VOLUME_NAME)).toBe(true)
 
-  for (const container of containers) {
-    const env = envByName(container)
-    for (const varName of REQUIRED_ENV_VARS) {
-      expect(env[varName]).toBeDefined()
-    }
-    expect(env.DD_API_KEY.secretRef).toBe(DD_API_KEY_SECRET_NAME)
-    expect(env.DD_SERVICE.value).toBe(appName)
-    expect(env.DD_ENV.value).toBe(EXPECTED_ENV)
-    expect(env.DD_VERSION.value).toBe(runId)
-    expect(env.DD_TRACE_ENABLED.value).toBe('true')
-    expect(env.DD_LOGS_INJECTION.value).toBe('true')
-    expect(env.DD_HEALTH_PORT.value).toBe('5555')
-    expect(env.DD_TAGS.value).toContain(`one_e2e_run_id:${runId}`)
-    expect(env.DD_APM_ENABLED.value).toBe('true')
-  }
+  verifyDatadogEnv(containers, appName, runId)
 
   const apiKeySecret = secrets.find((s) => s.name === DD_API_KEY_SECRET_NAME)
   expect(apiKeySecret).toBeDefined()
@@ -138,12 +144,23 @@ export const verifyInstrumented = (
   console.log('\nAll instrumented checks passed.')
 }
 
+interface NativeEnvExpectation {
+  name: string
+  fragment: string
+}
+
+interface SsiExpectation {
+  applicationImage: string
+  tracerRepository: string
+  nativeEnv: NativeEnvExpectation
+  runId: string
+}
+
 export const verifySsiInstrumented = (
   appName: string,
   resourceGroup: string,
   subscriptionId: string,
-  runId: string,
-  applicationImage: string
+  expectation: SsiExpectation
 ): void => {
   console.log(`Fetching container app "${appName}"...`)
   const app = getContainerApp(appName, resourceGroup, subscriptionId)
@@ -158,13 +175,16 @@ export const verifySsiInstrumented = (
   const applicationContainers = containers.filter(({name}) => name !== SIDECAR_NAME)
   expect(applicationContainers).toHaveLength(1)
   const application = applicationContainers[0]
-  expect(application.image).toBe(applicationImage)
+  expect(application.image).toBe(expectation.applicationImage)
 
+  verifyDatadogEnv(containers, appName, expectation.runId)
+
+  const tracerImage = `datadoghq.azurecr.io/dd-lib-${expectation.tracerRepository}-init:latest`
   const tracerContainers = initContainers.filter(({name}) => name === TRACER_NAME)
   expect(tracerContainers).toHaveLength(1)
   expect(tracerContainers[0]).toEqual(
     expect.objectContaining({
-      image: NODE_TRACER_IMAGE,
+      image: tracerImage,
       command: ['/datadog-init/copy-lib.sh'],
       args: [TRACER_MOUNT_PATH],
       resources: expect.objectContaining({cpu: 0.25, memory: '0.5Gi'}),
@@ -198,23 +218,29 @@ export const verifySsiInstrumented = (
   ])
   expect(sidecar!.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
   expect(sidecar!.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({mountPath: TRACER_MOUNT_PATH}))
-  expect(sidecar!.env?.some(({value}) => value?.includes(NODE_OPTIONS_FRAGMENT))).not.toBe(true)
+  expect(
+    sidecar!.env?.some(
+      ({name, value}) => name === expectation.nativeEnv.name && value?.includes(expectation.nativeEnv.fragment)
+    )
+  ).not.toBe(true)
 
-  const nodeOptions = application.env?.filter(({name}) => name === 'NODE_OPTIONS') ?? []
-  expect(nodeOptions).toHaveLength(1)
-  expect(nodeOptions[0].value?.split(NODE_OPTIONS_FRAGMENT)).toHaveLength(2)
-  const traceEnabled = application.env?.filter(({name}) => name === 'DD_TRACE_ENABLED') ?? []
-  const ddTags = application.env?.filter(({name}) => name === 'DD_TAGS') ?? []
-  expect(traceEnabled).toHaveLength(1)
-  expect(ddTags).toHaveLength(1)
-  const env = envByName(application)
-  expect(env.DD_TRACE_ENABLED.value).toBe('true')
-  expect(env.DD_TAGS.value?.split(INJECTION_MODE_TAG)).toHaveLength(2)
-  expect(env.DD_TAGS.value).toContain(`one_e2e_run_id:${runId}`)
+  const applicationEnv = envByName(application)
+  expect(applicationEnv[expectation.nativeEnv.name]?.value ?? '').toContain(expectation.nativeEnv.fragment)
+  expect(applicationEnv.DD_TAGS.value).toContain(INJECTION_MODE_TAG)
+  expect(tags.service).toBe(appName)
+  expect(tags.env).toBe(EXPECTED_ENV)
+  expect(tags.version).toBe(expectation.runId)
+  expect(tags.dd_sls_ci).toBeDefined()
   expect(tags.dd_sls_injection_mode).toBe('single_language')
+  expect(tags.one_e2e_created).toBeDefined()
 }
 
-export const verifyUninstrumented = (appName: string, resourceGroup: string, subscriptionId: string): void => {
+export const verifyUninstrumented = (
+  appName: string,
+  resourceGroup: string,
+  subscriptionId: string,
+  nativeEnv?: NativeEnvExpectation
+): void => {
   console.log(`Fetching container app "${appName}"...`)
   const app = getContainerApp(appName, resourceGroup, subscriptionId)
   console.log('\nVerifying uninstrumented state:\n')
@@ -240,7 +266,9 @@ export const verifyUninstrumented = (appName: string, resourceGroup: string, sub
     const ddVars = env.filter((e) => e.name.startsWith('DD_'))
     expect(ddVars).toHaveLength(0)
     expect(container.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
-    expect(env.find(({name}) => name === 'NODE_OPTIONS')?.value ?? '').not.toContain(NODE_OPTIONS_FRAGMENT)
+    if (nativeEnv) {
+      expect(env.find(({name}) => name === nativeEnv.name)?.value ?? '').not.toContain(nativeEnv.fragment)
+    }
   }
 
   const apiKeySecret = secrets.find((s) => s.name === DD_API_KEY_SECRET_NAME)
