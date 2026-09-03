@@ -61,10 +61,10 @@ export const checkForError = (filePath: string): string[] => {
   const res: string[] = []
 
   if ('runs' in report) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
     for (const run of report['runs']) {
       const rules: string[] = []
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if ('tool' in run && 'driver' in run['tool'] && 'rules' in run['tool']['driver']) {
         for (const rule of run['tool']['driver']['rules']) {
           if ('id' in rule) {
@@ -72,7 +72,7 @@ export const checkForError = (filePath: string): string[] => {
           }
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if ('tool' in run && 'extensions' in run['tool']) {
         for (const extension of run['tool']['extensions']) {
           if ('rules' in extension) {

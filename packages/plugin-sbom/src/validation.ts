@@ -44,7 +44,7 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
     const validateFunctionCycloneDx16 = ajv.compile(cycloneDxSchema16)
     const validateFunctionCycloneDx15 = ajv.compile(cycloneDxSchema15)
@@ -106,7 +106,7 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
  */
 export const validateFileAgainstToolRequirements = (path: string, debug: boolean): boolean => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
     if (!fileContent) {
       return false

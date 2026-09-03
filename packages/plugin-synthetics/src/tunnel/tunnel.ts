@@ -22,11 +22,11 @@ import {WebSocket} from './websocket'
 /**
  * Use `DEBUG=synthetics:tunnel` to enable debug logs.
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-call
+// oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-call
 const debug = require('debug')('synthetics:tunnel') as (arg: string) => void
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+// oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
 const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
+// oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
 const {KexInit} = require('ssh2/lib/protocol/kex')
 
 export interface TunnelInfo {

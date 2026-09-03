@@ -178,7 +178,7 @@ describe('gitdb', () => {
         params.forEach((param) => {
           if (param.output instanceof Error) {
             mock = mock.mockImplementationOnce((..._: any) => {
-              // eslint-disable-next-line @typescript-eslint/only-throw-error
+              // oxlint-disable-next-line @typescript-eslint/only-throw-error
               throw param.output
             })
           } else {

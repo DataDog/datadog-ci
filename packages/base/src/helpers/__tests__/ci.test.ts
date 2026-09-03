@@ -147,12 +147,12 @@ describe('getCIMetadata', () => {
 
       // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
       if (envVars && expectedEnvVars) {
-        // eslint-disable-next-line jest/no-conditional-expect
+        // oxlint-disable-next-line jest/no-conditional-expect
         expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
       }
       // `CI_NODE_LABELS` key contains an array, so we JSON parse it
       if (nodeLabels && expectedNodeLabels) {
-        // eslint-disable-next-line jest/no-conditional-expect
+        // oxlint-disable-next-line jest/no-conditional-expect
         expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
       }
     })
@@ -310,12 +310,12 @@ describe('ci spec', () => {
 
         // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
         if (envVars && expectedEnvVars) {
-          // eslint-disable-next-line jest/no-conditional-expect
+          // oxlint-disable-next-line jest/no-conditional-expect
           expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
         }
         // `CI_NODE_LABELS` key contains an array, so we JSON parse it
         if (nodeLabels && expectedNodeLabels) {
-          // eslint-disable-next-line jest/no-conditional-expect
+          // oxlint-disable-next-line jest/no-conditional-expect
           expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
         }
       })
@@ -903,7 +903,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     const stringErr = 'hello error'
     jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      // oxlint-disable-next-line @typescript-eslint/only-throw-error
       throw stringErr
     })
 

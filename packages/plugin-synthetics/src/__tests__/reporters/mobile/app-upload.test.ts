@@ -13,7 +13,7 @@ import type {CommandContext} from '@datadog/datadog-ci-base'
 
 import {AppUploadReporter} from '../../../reporters/mobile/app-upload'
 
-/* eslint-disable jest/no-conditional-expect */
+/* oxlint-disable jest/no-conditional-expect */
 describe('AppUploadReporter', () => {
   let initialCiEnv: string | undefined
   let simulatedTerminalOutput: string

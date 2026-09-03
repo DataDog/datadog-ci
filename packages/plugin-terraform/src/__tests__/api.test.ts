@@ -24,7 +24,7 @@ describe('uploadTerraformArtifact', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -89,7 +89,7 @@ describe('uploadTerraformArtifact', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -128,7 +128,7 @@ describe('uploadTerraformArtifact', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -161,7 +161,7 @@ describe('uploadTerraformArtifact', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -194,7 +194,7 @@ describe('uploadTerraformArtifact', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -237,7 +237,7 @@ describe('uploadTerraformArtifact', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 

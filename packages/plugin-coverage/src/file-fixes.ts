@@ -77,11 +77,11 @@ for (const lang of LANGUAGE_PATTERNS) {
   }
 }
 
-/* eslint-disable no-bitwise */
+/* oxlint-disable no-bitwise */
 const setBit = (bitmap: Buffer, index: number): void => {
   bitmap[Math.floor(index / 8)] |= 1 << (index % 8)
 }
-/* eslint-enable no-bitwise */
+/* oxlint-enable no-bitwise */
 
 const getExtension = (filePath: string): string => {
   return upath.extname(filePath).toLowerCase()

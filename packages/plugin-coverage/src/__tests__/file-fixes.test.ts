@@ -22,7 +22,7 @@ const getMatchedLines = (entry: {lines: number; bitmap: string}): number[] => {
   for (let i = 0; i < entry.lines; i++) {
     const byteIndex = Math.floor(i / 8)
     const bitOffset = i % 8
-    // eslint-disable-next-line no-bitwise
+    // oxlint-disable-next-line no-bitwise
     if (buf[byteIndex] & (1 << bitOffset)) {
       result.push(i + 1)
     }
@@ -41,7 +41,7 @@ const hasLine = (fileFixes: FileFixes, file: string, line: number): boolean => {
   const byteIndex = Math.floor(bitIndex / 8)
   const bitOffset = bitIndex % 8
 
-  // eslint-disable-next-line no-bitwise
+  // oxlint-disable-next-line no-bitwise
   return (buf[byteIndex] & (1 << bitOffset)) !== 0
 }
 

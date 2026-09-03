@@ -247,7 +247,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
 
       // throw an error if top-level directory is not readable
-      // eslint-disable-next-line no-bitwise
+      // oxlint-disable-next-line no-bitwise
       await fs.promises.access(symbolsLocation, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
         throw Error(`Directory ${symbolsLocation} is not readable`)
       })
@@ -264,7 +264,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       const pathStat = await fs.promises.lstat(p)
       if (pathStat.isDirectory()) {
         // check if directory is readable and if not emit a warning
-        // eslint-disable-next-line no-bitwise
+        // oxlint-disable-next-line no-bitwise
         await fs.promises.access(p, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
           reportFailure(`Skipped directory ${p} because it is not readable`)
         })

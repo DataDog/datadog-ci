@@ -1,5 +1,5 @@
 import fs from 'fs'
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import path from 'path'
 
 import chalk from 'chalk'

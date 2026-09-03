@@ -58,7 +58,7 @@ describe('cli', () => {
 
       if (commandName !== 'version') {
         // Please categorize the commands by product. You can refer to the CODEOWNERS file.
-        // eslint-disable-next-line jest/no-conditional-expect
+        // oxlint-disable-next-line jest/no-conditional-expect
         expect(command.usage).toHaveProperty('category')
       }
 

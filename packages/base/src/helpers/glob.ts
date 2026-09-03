@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import * as globModule from 'glob'
 import upath from 'upath'
 

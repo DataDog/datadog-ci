@@ -1,0 +1,703 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "import",
+    "unicorn",
+    "jest"
+  ],
+  "jsPlugins": [
+    "./scripts/oxlint-plugin-datadog.mjs",
+    "eslint-plugin-no-null",
+    "eslint-plugin-prefer-arrow"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "env": {
+    "builtin": true,
+    "jest": true
+  },
+  "settings": {
+    "import-x/extensions": [
+      ".ts",
+      ".tsx",
+      ".cts",
+      ".mts",
+      ".js",
+      ".jsx",
+      ".cjs",
+      ".mjs"
+    ],
+    "import-x/external-module-folders": [
+      "node_modules",
+      "node_modules/@types"
+    ],
+    "import-x/parsers": {
+      "@typescript-eslint/parser": [
+        ".ts",
+        ".tsx",
+        ".cts",
+        ".mts"
+      ]
+    },
+    "import-x/resolver": {
+      "typescript": true
+    }
+  },
+  "ignorePatterns": [
+    "jest.config*",
+    "scripts/**",
+    "**/fixtures/**",
+    "**/__mocks__/**",
+    "eslint.config.mjs",
+    "packages/*/dist/**",
+    "packages/datadog-ci/shims/injected-plugin-submodules.js",
+    "packages/datadog-ci/shims/intl-collator.js",
+    "bin/*.js",
+    ".github/dependabot.yml",
+    "packages/base/src/commands/flutter-symbols/__tests__/fixtures/pubspecs/invalidPubspec.yaml",
+    "packages/base/src/helpers/__tests__/tags-fixtures/invalid/not-a-json.yaml"
+  ],
+  "rules": {
+    "datadog/no-dev-null": "error",
+    "datadog/no-os-eol": "error",
+    "jest/no-standalone-expect": "off",
+    "constructor-super": "error",
+    "for-direction": "error",
+    "getter-return": "error",
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    "no-class-assign": "error",
+    "no-compare-neg-zero": "error",
+    "no-cond-assign": "error",
+    "no-const-assign": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-delete-var": "error",
+    "no-dupe-class-members": "error",
+    "no-dupe-else-if": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-empty": "error",
+    "no-empty-character-class": "error",
+    "no-empty-pattern": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-fallthrough": "error",
+    "no-func-assign": "error",
+    "no-global-assign": "error",
+    "no-import-assign": "error",
+    "no-inner-declarations": "error",
+    "no-invalid-regexp": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-misleading-character-class": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-obj-calls": "error",
+    "no-prototype-builtins": "error",
+    "no-redeclare": "error",
+    "no-regex-spaces": "error",
+    "no-self-assign": "error",
+    "no-setter-return": "error",
+    "no-shadow-restricted-names": "error",
+    "no-sparse-arrays": "error",
+    "no-this-before-super": "error",
+    "no-unreachable": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unused-labels": "error",
+    "no-unused-vars": "error",
+    "no-useless-backreference": "error",
+    "no-useless-catch": "error",
+    "no-useless-escape": "error",
+    "no-with": "error",
+    "require-yield": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+    "no-array-constructor": "error",
+    "no-unused-expressions": "error",
+    "jest/expect-expect": "warn",
+    "jest/no-alias-methods": "error",
+    "jest/no-commented-out-tests": "warn",
+    "jest/no-conditional-expect": "error",
+    "jest/no-deprecated-functions": "error",
+    "jest/no-disabled-tests": "warn",
+    "jest/no-done-callback": "error",
+    "jest/no-export": "error",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/no-interpolation-in-snapshots": "error",
+    "jest/no-jasmine-globals": "error",
+    "jest/no-mocks-import": "error",
+    "jest/no-test-prefixes": "error",
+    "jest/valid-describe-callback": "error",
+    "jest/valid-expect": "error",
+    "jest/valid-expect-in-promise": "error",
+    "jest/valid-title": "error",
+    "import/namespace": "error",
+    "import/default": "error",
+    "import/no-named-as-default": "warn",
+    "import/no-named-as-default-member": "warn",
+    "import/no-duplicates": "warn",
+    "typescript/await-thenable": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-array-delete": "error",
+    "typescript/no-base-to-string": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-duplicate-type-constituents": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-for-in-array": "error",
+    "typescript/no-implied-eval": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-redundant-type-constituents": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-assertion": "off",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-enum-comparison": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-unary-minus": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/require-await": "error",
+    "typescript/restrict-plus-operands": "error",
+    "typescript/restrict-template-expressions": "error",
+    "typescript/triple-slash-reference": "error",
+    "typescript/unbound-method": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mts",
+        "**/*.cts"
+      ],
+      "rules": {
+        "constructor-super": "off",
+        "getter-return": "off",
+        "no-class-assign": "off",
+        "no-const-assign": "off",
+        "no-dupe-class-members": "off",
+        "no-dupe-keys": "off",
+        "no-func-assign": "off",
+        "no-import-assign": "off",
+        "no-new-native-nonconstructor": "off",
+        "no-obj-calls": "off",
+        "no-redeclare": "off",
+        "no-setter-return": "off",
+        "no-this-before-super": "off",
+        "no-unreachable": "off",
+        "no-unsafe-negation": "off",
+        "no-var": "error",
+        "no-with": "off",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.cts",
+        "**/*.mts",
+        "**/*.js"
+      ],
+      "rules": {
+        "complexity": "off",
+        "constructor-super": "error",
+        "curly": "error",
+        "eqeqeq": [
+          "error",
+          "smart"
+        ],
+        "guard-for-in": "error",
+        "id-denylist": "error",
+        "id-match": "error",
+        "max-classes-per-file": [
+          "error",
+          3
+        ],
+        "no-bitwise": "error",
+        "no-caller": "error",
+        "no-console": "off",
+        "no-control-regex": "off",
+        "no-empty-function": "off",
+        "no-eval": "error",
+        "no-extra-boolean-cast": "off",
+        "no-fallthrough": "off",
+        "no-new-wrappers": "error",
+        "no-shadow": [
+          "error",
+          {
+            "hoist": "all"
+          }
+        ],
+        "no-throw-literal": "error",
+        "no-underscore-dangle": "off",
+        "no-unused-vars": [
+          "error",
+          {
+            "args": "none",
+            "ignoreRestSiblings": true,
+            "varsIgnorePattern": "_",
+            "caughtErrors": "none"
+          }
+        ],
+        "no-use-before-define": "off",
+        "no-var": "error",
+        "no-null/no-null": "error",
+        "object-shorthand": "error",
+        "one-var": [
+          "error",
+          "never"
+        ],
+        "prefer-arrow/prefer-arrow-functions": "error",
+        "prefer-const": "error",
+        "prefer-object-spread": "error",
+        "radix": "error",
+        "valid-typeof": "off",
+        "jest/no-interpolation-in-snapshots": "off",
+        "jest/padding-around-test-blocks": "error",
+        "no-prototype-builtins": "off",
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "chalk",
+                "importNames": [
+                  "Instance",
+                  "level",
+                  "hex",
+                  "keyword",
+                  "rgb",
+                  "hsl",
+                  "hsv",
+                  "hwb",
+                  "ansi",
+                  "ansi256",
+                  "bgHex",
+                  "bgKeyword",
+                  "bgRgb",
+                  "bgHsl",
+                  "bgHsv",
+                  "bgHwb",
+                  "bgAnsi",
+                  "bgAnsi256",
+                  "reset",
+                  "bold",
+                  "dim",
+                  "italic",
+                  "underline",
+                  "inverse",
+                  "hidden",
+                  "strikethrough",
+                  "visible",
+                  "black",
+                  "red",
+                  "green",
+                  "yellow",
+                  "blue",
+                  "magenta",
+                  "cyan",
+                  "white",
+                  "gray",
+                  "grey",
+                  "blackBright",
+                  "redBright",
+                  "greenBright",
+                  "yellowBright",
+                  "blueBright",
+                  "magentaBright",
+                  "cyanBright",
+                  "whiteBright",
+                  "bgBlack",
+                  "bgRed",
+                  "bgGreen",
+                  "bgYellow",
+                  "bgBlue",
+                  "bgMagenta",
+                  "bgCyan",
+                  "bgWhite",
+                  "bgGray",
+                  "bgGrey",
+                  "bgBlackBright",
+                  "bgRedBright",
+                  "bgGreenBright",
+                  "bgYellowBright",
+                  "bgBlueBright",
+                  "bgMagentaBright",
+                  "bgCyanBright",
+                  "bgWhiteBright"
+                ],
+                "message": "Please use a default import instead, e.g. `import chalk from 'chalk'`"
+              },
+              {
+                "name": "path",
+                "message": "Please use `upath` instead of `path` to support Windows. This is a drop-in replacement."
+              },
+              {
+                "name": "glob",
+                "message": "Please use our glob helpers (`globSync` or `globAsync`) which support Windows out-of-the-box instead of using the `glob` package directly."
+              },
+              {
+                "name": "os",
+                "importNames": [
+                  "EOL"
+                ],
+                "message": "Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines."
+              }
+            ]
+          }
+        ],
+        "import/no-duplicates": "error",
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/array-type": [
+          "error",
+          {
+            "default": "array"
+          }
+        ],
+        "typescript/no-base-to-string": "off",
+        "typescript/no-require-imports": "off",
+        "typescript/no-restricted-types": [
+          "error",
+          {
+            "types": {
+              "Object": {
+                "message": "Avoid using the `Object` type. Did you mean `object`?"
+              },
+              "Function": {
+                "message": "Avoid using the `Function` type. Prefer a specific function type, like `() => void`."
+              },
+              "Boolean": {
+                "message": "Avoid using the `Boolean` type. Did you mean `boolean`?"
+              },
+              "Number": {
+                "message": "Avoid using the `Number` type. Did you mean `number`?"
+              },
+              "String": {
+                "message": "Avoid using the `String` type. Did you mean `string`?"
+              },
+              "Symbol": {
+                "message": "Avoid using the `Symbol` type. Did you mean `symbol`?"
+              }
+            }
+          }
+        ],
+        "typescript/consistent-type-assertions": "error",
+        "typescript/consistent-type-imports": "error",
+        "typescript/explicit-function-return-type": "off",
+        "typescript/explicit-member-accessibility": [
+          "error",
+          {
+            "accessibility": "explicit",
+            "overrides": {
+              "constructors": "no-public"
+            }
+          }
+        ],
+        "typescript/explicit-module-boundary-types": "off",
+        "typescript/no-explicit-any": "off",
+        "typescript/no-inferrable-types": "error",
+        "typescript/prefer-promise-reject-errors": "off",
+        "typescript/prefer-regexp-exec": "off",
+        "typescript/unbound-method": "warn",
+        "typescript/no-unsafe-assignment": "warn",
+        "typescript/no-unsafe-return": "warn",
+        "typescript/no-unsafe-member-access": "warn",
+        "typescript/no-unsafe-call": "warn",
+        "typescript/no-unsafe-argument": "warn",
+        "typescript/require-await": "off",
+        "typescript/restrict-template-expressions": "warn",
+        "typescript/no-unnecessary-boolean-literal-compare": "error",
+        "typescript/no-unnecessary-qualifier": "error",
+        "typescript/no-var-requires": "warn",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-function-type": "error",
+        "typescript/triple-slash-reference": [
+          "error",
+          {
+            "path": "always",
+            "types": "prefer-import",
+            "lib": "always"
+          }
+        ],
+        "typescript/unified-signatures": "error",
+        "typescript/dot-notation": "off"
+      },
+      "jsPlugins": [
+        "eslint-plugin-no-null",
+        "eslint-plugin-prefer-arrow"
+      ],
+      "globals": {
+        "__dirname": "readonly",
+        "__filename": "readonly",
+        "AbortController": "readonly",
+        "AbortSignal": "readonly",
+        "atob": "readonly",
+        "Blob": "readonly",
+        "BroadcastChannel": "readonly",
+        "btoa": "readonly",
+        "Buffer": "readonly",
+        "ByteLengthQueuingStrategy": "readonly",
+        "clearImmediate": "readonly",
+        "clearInterval": "readonly",
+        "clearTimeout": "readonly",
+        "CompressionStream": "readonly",
+        "console": "readonly",
+        "CountQueuingStrategy": "readonly",
+        "crypto": "readonly",
+        "Crypto": "readonly",
+        "CryptoKey": "readonly",
+        "CustomEvent": "readonly",
+        "DecompressionStream": "readonly",
+        "DOMException": "readonly",
+        "Event": "readonly",
+        "EventTarget": "readonly",
+        "fetch": "readonly",
+        "File": "readonly",
+        "FormData": "readonly",
+        "Headers": "readonly",
+        "Intl": "readonly",
+        "MessageChannel": "readonly",
+        "MessageEvent": "readonly",
+        "MessagePort": "readonly",
+        "performance": "readonly",
+        "PerformanceEntry": "readonly",
+        "PerformanceMark": "readonly",
+        "PerformanceMeasure": "readonly",
+        "PerformanceObserver": "readonly",
+        "PerformanceObserverEntryList": "readonly",
+        "PerformanceResourceTiming": "readonly",
+        "process": "readonly",
+        "queueMicrotask": "readonly",
+        "ReadableByteStreamController": "readonly",
+        "ReadableStream": "readonly",
+        "ReadableStreamBYOBReader": "readonly",
+        "ReadableStreamBYOBRequest": "readonly",
+        "ReadableStreamDefaultController": "readonly",
+        "ReadableStreamDefaultReader": "readonly",
+        "Request": "readonly",
+        "Response": "readonly",
+        "setImmediate": "readonly",
+        "setInterval": "readonly",
+        "setTimeout": "readonly",
+        "structuredClone": "readonly",
+        "SubtleCrypto": "readonly",
+        "TextDecoder": "readonly",
+        "TextDecoderStream": "readonly",
+        "TextEncoder": "readonly",
+        "TextEncoderStream": "readonly",
+        "TransformStream": "readonly",
+        "TransformStreamDefaultController": "readonly",
+        "URL": "readonly",
+        "URLSearchParams": "readonly",
+        "WebAssembly": "readonly",
+        "WritableStream": "readonly",
+        "WritableStreamDefaultController": "readonly",
+        "WritableStreamDefaultWriter": "readonly"
+      },
+      "env": {
+        "commonjs": true
+      }
+    },
+    {
+      "files": [
+        "jest.config*.mjs",
+        "jest.setup.ts",
+        "bin/*.ts",
+        "scripts/*.mjs",
+        "packages/datadog-ci/shims/*.mjs"
+      ],
+      "rules": {
+        "typescript/await-thenable": "off",
+        "typescript/consistent-return": "off",
+        "typescript/consistent-type-exports": "off",
+        "typescript/dot-notation": "off",
+        "typescript/no-array-delete": "off",
+        "typescript/no-base-to-string": "off",
+        "typescript/no-confusing-void-expression": "off",
+        "typescript/no-deprecated": "off",
+        "typescript/no-duplicate-type-constituents": "off",
+        "typescript/no-floating-promises": "off",
+        "typescript/no-for-in-array": "off",
+        "typescript/no-implied-eval": "off",
+        "typescript/no-meaningless-void-operator": "off",
+        "typescript/no-misused-promises": "off",
+        "typescript/no-misused-spread": "off",
+        "typescript/no-mixed-enums": "off",
+        "typescript/no-redundant-type-constituents": "off",
+        "typescript/no-unnecessary-boolean-literal-compare": "off",
+        "typescript/no-unnecessary-qualifier": "off",
+        "typescript/no-unnecessary-template-expression": "off",
+        "typescript/no-unnecessary-type-arguments": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
+        "typescript/no-unnecessary-type-conversion": "off",
+        "typescript/no-unnecessary-type-parameters": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-enum-comparison": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "typescript/no-unsafe-unary-minus": "off",
+        "typescript/non-nullable-type-assertion-style": "off",
+        "typescript/only-throw-error": "off",
+        "typescript/prefer-find": "off",
+        "typescript/prefer-includes": "off",
+        "typescript/prefer-nullish-coalescing": "off",
+        "typescript/prefer-promise-reject-errors": "off",
+        "typescript/prefer-readonly": "off",
+        "typescript/prefer-readonly-parameter-types": "off",
+        "typescript/prefer-reduce-type-parameter": "off",
+        "typescript/prefer-regexp-exec": "off",
+        "typescript/prefer-return-this-type": "off",
+        "typescript/prefer-string-starts-ends-with": "off",
+        "typescript/promise-function-async": "off",
+        "typescript/related-getter-setter-pairs": "off",
+        "typescript/require-array-sort-compare": "off",
+        "typescript/require-await": "off",
+        "typescript/restrict-plus-operands": "off",
+        "typescript/restrict-template-expressions": "off",
+        "typescript/return-await": "off",
+        "typescript/strict-boolean-expressions": "off",
+        "typescript/switch-exhaustiveness-check": "off",
+        "typescript/unbound-method": "off",
+        "typescript/use-unknown-in-catch-callback-variable": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "chalk",
+                "importNames": [
+                  "Instance",
+                  "level",
+                  "hex",
+                  "keyword",
+                  "rgb",
+                  "hsl",
+                  "hsv",
+                  "hwb",
+                  "ansi",
+                  "ansi256",
+                  "bgHex",
+                  "bgKeyword",
+                  "bgRgb",
+                  "bgHsl",
+                  "bgHsv",
+                  "bgHwb",
+                  "bgAnsi",
+                  "bgAnsi256",
+                  "reset",
+                  "bold",
+                  "dim",
+                  "italic",
+                  "underline",
+                  "inverse",
+                  "hidden",
+                  "strikethrough",
+                  "visible",
+                  "black",
+                  "red",
+                  "green",
+                  "yellow",
+                  "blue",
+                  "magenta",
+                  "cyan",
+                  "white",
+                  "gray",
+                  "grey",
+                  "blackBright",
+                  "redBright",
+                  "greenBright",
+                  "yellowBright",
+                  "blueBright",
+                  "magentaBright",
+                  "cyanBright",
+                  "whiteBright",
+                  "bgBlack",
+                  "bgRed",
+                  "bgGreen",
+                  "bgYellow",
+                  "bgBlue",
+                  "bgMagenta",
+                  "bgCyan",
+                  "bgWhite",
+                  "bgGray",
+                  "bgGrey",
+                  "bgBlackBright",
+                  "bgRedBright",
+                  "bgGreenBright",
+                  "bgYellowBright",
+                  "bgBlueBright",
+                  "bgMagentaBright",
+                  "bgCyanBright",
+                  "bgWhiteBright"
+                ],
+                "message": "Please use a default import instead, e.g. `import chalk from 'chalk'`"
+              },
+              {
+                "name": "path",
+                "message": "Please use `upath` instead of `path` to support Windows. This is a drop-in replacement."
+              },
+              {
+                "name": "glob",
+                "message": "Please use our glob helpers (`globSync` or `globAsync`) which support Windows out-of-the-box instead of using the `glob` package directly."
+              },
+              {
+                "name": "os",
+                "importNames": [
+                  "EOL"
+                ],
+                "message": "Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/base/src/index.ts"
+      ],
+      "rules": {
+        "datadog/no-direct-stream-write": "error"
+      }
+    }
+  ]
+}

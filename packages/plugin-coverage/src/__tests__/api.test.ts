@@ -34,7 +34,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -97,7 +97,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -149,7 +149,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -193,7 +193,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -237,7 +237,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -288,7 +288,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -335,7 +335,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -383,7 +383,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -428,7 +428,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
@@ -480,7 +480,7 @@ describe('uploadCodeCoverageReport', () => {
       getHeaders: getHeadersMock,
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 

@@ -205,7 +205,7 @@ const decode = (base64: string | undefined): Set<number> => {
   for (let i = 0; i < bytes.length; i++) {
     const byte = bytes[i]
     for (let bit = 0; bit < 8; bit++) {
-      // eslint-disable-next-line no-bitwise
+      // oxlint-disable-next-line no-bitwise
       if (byte & (1 << bit)) {
         out.add(i * 8 + bit + 1) // 1-based
       }

@@ -38,7 +38,7 @@ File config -> environment variables -> CLI args (highest priority).
 
 ## Code style
 
-Oxfmt + ESLint enforce formatting and style. Run `yarn format` to auto-fix or `yarn lint` to check. A post-commit hook runs formatting automatically.
+Oxfmt + Oxlint enforce formatting and style. Run `yarn format` to auto-fix or `yarn lint` to check. A post-commit hook runs formatting automatically.
 
 Not enforced by lint -- follow manually:
 - Use `getRequestBuilder()` from `helpers/utils` or `httpRequest()` from `helpers/request` for HTTP -- not raw fetch or axios

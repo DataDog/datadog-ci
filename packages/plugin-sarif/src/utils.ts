@@ -28,22 +28,22 @@ export const getServiceFromSarifTool = (filePath: string): string => {
   let otherTool: string = SERVICE_THIRD_PARTY_ANALYZER
   const ruleTypes: Set<string> = new Set()
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const report: any = JSON.parse(String(fs.readFileSync(filePath)))
 
     if ('runs' in report) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
       for (const run of report['runs']) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if ('tool' in run && 'driver' in run['tool'] && 'rules' in run['tool']['driver']) {
           for (const rule of run['tool']['driver']['rules']) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
             if ('properties' in rule && 'tags' in rule['properties']) {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
               for (const tag of rule['properties']['tags']) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
                 if (tag.includes('DATADOG_RULE_TYPE')) {
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+                  // oxlint-disable-next-line @typescript-eslint/no-unsafe-argument
                   ruleTypes.add(tag)
                 }
               }

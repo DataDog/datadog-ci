@@ -200,7 +200,7 @@ describe('Default reporter', () => {
       expect(output).toMatchSnapshot()
     })
 
-    /* eslint-disable jest/no-conditional-expect */
+    /* oxlint-disable jest/no-conditional-expect */
     test.each([false, true])('the spinner text is updated and cleared at the end (in CI: %s)', async (inCI) => {
       let simulatedTerminalOutput = ''
 
@@ -280,7 +280,7 @@ describe('Default reporter', () => {
       ttyReporter['removeSpinner']()
     })
   })
-  /* eslint-enable jest/no-conditional-expect */
+  /* oxlint-enable jest/no-conditional-expect */
 
   describe('resultEnd', () => {
     const createFakeResult = (

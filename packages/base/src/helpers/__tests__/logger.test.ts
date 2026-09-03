@@ -85,7 +85,7 @@ describe('Logger', () => {
 
       const entry = JSON.parse(lines[0].trim()) as Record<string, string>
       expect(entry.message).toBe('boom')
-      // eslint-disable-next-line no-control-regex
+      // oxlint-disable-next-line no-control-regex
       expect(lines[0]).not.toMatch(/\[/)
     })
 

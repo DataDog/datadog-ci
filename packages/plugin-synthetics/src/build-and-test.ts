@@ -186,7 +186,7 @@ const spawnDevServer = async (): Promise<{builds: ReportedBuild[]; server: http.
     },
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  // oxlint-disable-next-line @typescript-eslint/no-misused-promises
   const server = http.createServer(requestHandler)
   server.listen()
 

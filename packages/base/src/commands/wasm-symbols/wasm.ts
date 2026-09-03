@@ -39,10 +39,10 @@ export const readUnsignedLEB128 = (buffer: Buffer, offset: number): {value: numb
     }
     byte = buffer.readUInt8(pos)
     pos += 1
-    // eslint-disable-next-line no-bitwise
+    // oxlint-disable-next-line no-bitwise
     result |= BigInt(byte & 0x7f) << shift
     shift += BigInt(7)
-    // eslint-disable-next-line no-bitwise
+    // oxlint-disable-next-line no-bitwise
   } while ((byte & 0x80) !== 0)
 
   if (result > BigInt(Number.MAX_SAFE_INTEGER)) {

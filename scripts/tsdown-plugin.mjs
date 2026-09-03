@@ -2,7 +2,7 @@ import {access, mkdir, readFile, readdir, writeFile} from 'node:fs/promises'
 import path from 'node:path'
 
 import chalk from 'chalk'
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import {glob} from 'glob'
 import {build} from 'tsdown'
 

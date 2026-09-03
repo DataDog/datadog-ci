@@ -187,7 +187,7 @@ const base64Encode = (set: Set<number>): string => {
   }
   const bytes = new Uint8Array(Math.ceil(maxBit / 8))
   for (const n of set) {
-    // eslint-disable-next-line no-bitwise
+    // oxlint-disable-next-line no-bitwise
     bytes[n >> 3] |= 1 << (n & 7)
   }
 

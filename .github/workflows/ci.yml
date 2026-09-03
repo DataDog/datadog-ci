@@ -39,7 +39,7 @@ jobs:
       - name: Run yarn lint:ci
         run: |
           if ! yarn lint:ci ; then
-            echo "ESLint failed with the following errors:"
+            echo "Oxlint failed with the following errors:"
             jq '.runs[].results' sarif-datadog-ci.sarif
 
             echo ""

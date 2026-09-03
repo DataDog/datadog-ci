@@ -4,12 +4,12 @@ export const encodeUnsignedLEB128 = (value: number): Buffer => {
   const bytes: number[] = []
   let remaining = BigInt(value)
   do {
-    // eslint-disable-next-line no-bitwise
+    // oxlint-disable-next-line no-bitwise
     let byte = Number(remaining & BigInt(0x7f))
-    // eslint-disable-next-line no-bitwise
+    // oxlint-disable-next-line no-bitwise
     remaining >>= BigInt(7)
     if (remaining !== BigInt(0)) {
-      // eslint-disable-next-line no-bitwise
+      // oxlint-disable-next-line no-bitwise
       byte |= 0x80
     }
     bytes.push(byte)
