@@ -79,7 +79,7 @@ for (const lang of LANGUAGE_PATTERNS) {
 
 /* eslint-disable no-bitwise */
 const setBit = (bitmap: Buffer, index: number): void => {
-  bitmap[Math.floor(index / 8)] |= 1 << index % 8
+  bitmap[Math.floor(index / 8)] |= 1 << (index % 8)
 }
 /* eslint-enable no-bitwise */
 

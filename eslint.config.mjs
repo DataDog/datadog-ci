@@ -8,7 +8,7 @@ import {createTypeScriptImportResolver} from 'eslint-import-resolver-typescript'
 import jest from 'eslint-plugin-jest'
 import noNull from 'eslint-plugin-no-null'
 import preferArrow from 'eslint-plugin-prefer-arrow'
-import prettierRecommended from 'eslint-plugin-prettier/recommended'
+import eslintConfigPrettier from 'eslint-config-prettier'
 import tseslint from 'typescript-eslint'
 
 const tsFiles = ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.cts', '**/*.mts', '**/*.js']
@@ -150,7 +150,7 @@ export default defineConfig(
   tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
-  prettierRecommended,
+  eslintConfigPrettier,
   jest.configs['flat/recommended'],
   {
     files: tsFiles,
@@ -446,7 +446,6 @@ export default defineConfig(
     files: yamlFiles,
     extends: [tseslint.configs.disableTypeChecked],
     rules: {
-      'prettier/prettier': 'off',
       'yml/plain-scalar': 'off',
       'yml/quotes': 'off',
       'yml/no-empty-mapping-value': 'off',

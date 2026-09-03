@@ -51,7 +51,7 @@ js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 knip,dev,ISC,Copyright 2022-2025 Lars Kappert
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 packageurl-js,import,MIT,Copyright (c) the purl authors
-prettier,dev,MIT,Copyright © James Long and contributors
+oxfmt,dev,MIT,"Copyright (c) 2024-present VoidZero Inc. & Contributors"
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 rimraf,dev,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
@@ -77,7 +77,6 @@ eslint-import-resolver-typescript,dev,ISC,Copyright 2021 Alex Gorbatchev <alex.g
 eslint-plugin-import-x,dev,MIT,Copyright (c) 2015 Ben Mosher
 eslint-plugin-jest,dev,MIT,Copyright (c) 2018 Jonathan Kim
 eslint-plugin-prefer-arrow,dev,MIT,Copyright (c) 2018 Triston Jones
-eslint-plugin-prettier,dev,MIT,Copyright © 2017 Andres Suarez and Teddy Katz
 eslint-plugin-yml,dev,MIT,Copyright (c) 2020 Yosuke Ota
 eslint-plugin-no-null,dev,MIT,Copyright (c) 2016 Rene Saarsoo
 @microsoft/eslint-formatter-sarif,dev,MIT,Copyright (c) Microsoft Corporation

@@ -42,7 +42,7 @@ jobs:
 
             echo ""
             echo "Find the full SARIF report in the Artifacts section here: https://github.com/DataDog/datadog-ci/actions/runs/${{ github.run_id }}"
-            echo "You can fix this by running ==> yarn format <=="
+            echo "You can fix this by running ==> yarn lint:fix <=="
             echo ""
             exit 1
           fi

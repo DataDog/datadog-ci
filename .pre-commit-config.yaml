@@ -5,7 +5,8 @@ repos:
         name: format
         entry: yarn format
         language: system
-        types: [ts]
+        files: ^(packages/plugin-synthetics/src/test-config\.schema\.json|.*\.ts)$
+        pass_filenames: false
       - id: lint-packages
         name: lint packages
         entry: yarn lint:packages --fix

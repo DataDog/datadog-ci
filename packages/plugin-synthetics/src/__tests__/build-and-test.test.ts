@@ -7,7 +7,7 @@ const NODE_COMMAND = process.execPath
 describe('build-and-test - buildAssets', () => {
   const tearDowns: (() => Promise<void>)[] = []
   afterEach(async () => {
-    for (let tearDown; (tearDown = tearDowns.pop()); ) {
+    for (let tearDown; (tearDown = tearDowns.pop());) {
       await tearDown()
     }
   })
