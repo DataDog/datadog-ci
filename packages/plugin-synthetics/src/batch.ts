@@ -429,7 +429,7 @@ const POLLED_TEST_FIELDS: readonly FieldPath[] = [
   'config.request.dnsServerPort',
   'config.request.method',
   'config.request.url',
-  'config.steps[*].subtype',
+  'config.steps[].subtype',
 ]
 
 const createResult = (

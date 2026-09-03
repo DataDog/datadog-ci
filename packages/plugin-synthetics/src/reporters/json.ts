@@ -50,17 +50,17 @@ export const JSON_REPORTER_EXPOSED_FIELDS: readonly FieldPath[] = [
   'result.failure.message',
 
   // Browser test steps and multistep API test steps.
-  'result.steps[*].status',
-  'result.steps[*].allow_failure',
-  'result.steps[*].description',
-  'result.steps[*].name',
-  'result.steps[*].failure.code',
-  'result.steps[*].failure.message',
-  'result.steps[*].browser_errors[*].type',
-  'result.steps[*].browser_errors[*].name',
-  'result.steps[*].browser_errors[*].description',
-  'result.steps[*].warnings[*].type',
-  'result.steps[*].warnings[*].message',
+  'result.steps[].status',
+  'result.steps[].allow_failure',
+  'result.steps[].description',
+  'result.steps[].name',
+  'result.steps[].failure.code',
+  'result.steps[].failure.message',
+  'result.steps[].browser_errors[].type',
+  'result.steps[].browser_errors[].name',
+  'result.steps[].browser_errors[].description',
+  'result.steps[].warnings[].type',
+  'result.steps[].warnings[].message',
 ]
 
 export class JSONReporter extends FileReporter implements Reporter {

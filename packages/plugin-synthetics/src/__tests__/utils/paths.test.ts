@@ -42,32 +42,32 @@ describe('pickPaths', () => {
         {status: 'failed', other: 2},
       ],
     }
-    expect(pickPaths(source, ['steps[*].status'])).toEqual({steps: [{status: 'passed'}, {status: 'failed'}]})
+    expect(pickPaths(source, ['steps[].status'])).toEqual({steps: [{status: 'passed'}, {status: 'failed'}]})
   })
 
   test('omits a missing field for one element without dropping the others', () => {
     const source = {steps: [{failure: {message: 'oops'}}, {}]}
-    expect(pickPaths(source, ['steps[*].failure.message'])).toEqual({steps: [{failure: {message: 'oops'}}, {}]})
+    expect(pickPaths(source, ['steps[].failure.message'])).toEqual({steps: [{failure: {message: 'oops'}}, {}]})
   })
 
   test('returns an empty array for a wildcard path over an empty array', () => {
-    expect(pickPaths({steps: []}, ['steps[*].status'])).toEqual({steps: []})
+    expect(pickPaths({steps: []}, ['steps[].status'])).toEqual({steps: []})
   })
 
   test('omits a wildcard path entirely when the array itself is missing', () => {
-    expect(pickPaths({}, ['steps[*].status'])).toEqual({})
+    expect(pickPaths({}, ['steps[].status'])).toEqual({})
   })
 
   test('accumulates multiple fields picked from the same wildcard array element', () => {
     const source = {steps: [{status: 'passed', name: 'step 1', unused: true}]}
-    expect(pickPaths(source, ['steps[*].status', 'steps[*].name'])).toEqual({
+    expect(pickPaths(source, ['steps[].status', 'steps[].name'])).toEqual({
       steps: [{status: 'passed', name: 'step 1'}],
     })
   })
 
   test('supports nested wildcard arrays', () => {
     const source = {steps: [{browserErrors: [{type: 'x', message: 'boom'}]}]}
-    expect(pickPaths(source, ['steps[*].browserErrors[*].type'])).toEqual({
+    expect(pickPaths(source, ['steps[].browserErrors[].type'])).toEqual({
       steps: [{browserErrors: [{type: 'x'}]}],
     })
   })
@@ -101,6 +101,6 @@ describe('withPaths', () => {
   test('replaces a whole array rather than merging it element-wise', () => {
     const base = {config: {steps: [{subtype: 'http'}, {subtype: 'http'}]}}
     const source = {config: {steps: [{subtype: 'dns'}]}}
-    expect(withPaths(base, source, ['config.steps[*].subtype'])).toEqual({config: {steps: [{subtype: 'dns'}]}})
+    expect(withPaths(base, source, ['config.steps[].subtype'])).toEqual({config: {steps: [{subtype: 'dns'}]}})
   })
 })

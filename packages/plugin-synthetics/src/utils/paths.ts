@@ -1,10 +1,10 @@
 /**
- * A dot-separated property path, e.g. `'test.name'`. A segment can end with `[*]` to project over every element
- * of an array at that key, e.g. `'result.steps[*].failure.message'`.
+ * A dot-separated property path, e.g. `'test.name'`. A segment can end with `[]` to project over every element
+ * of an array at that key, e.g. `'result.steps[].failure.message'`.
  */
 export type FieldPath = string
 
-const WILDCARD_SUFFIX = '[*]'
+const WILDCARD_SUFFIX = '[]'
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   // eslint-disable-next-line no-null/no-null
