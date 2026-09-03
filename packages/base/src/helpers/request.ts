@@ -141,7 +141,7 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
   // Strip null/undefined header values (callers pass null to explicitly unset a header)
   const cleanHeaders: Record<string, string> = {}
   for (const [k, v] of Object.entries(headersWithUserAgent)) {
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     if (v !== undefined && v !== null) {
       cleanHeaders[k] = String(v)
     }

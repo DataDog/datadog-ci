@@ -41,7 +41,7 @@ describe('deploy-tests', () => {
       expect(apiHelper.getTest).toHaveBeenNthCalledWith(1, '123-456-789')
       expect(apiHelper.getTest).toHaveBeenNthCalledWith(2, '987-654-321')
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention, prefer-const
+      // oxlint-disable-next-line prefer-const
       let {public_id, monitor_id, ...expectedUpdate} = getApiTest('123-456-789')
       expect(apiHelper.editTest).toHaveBeenNthCalledWith(1, '123-456-789', expectedUpdate)
       ;({public_id, monitor_id, ...expectedUpdate} = getBrowserTest('987-654-321'))
@@ -75,7 +75,6 @@ describe('deploy-tests', () => {
 
       expect(apiHelper.getTest).toHaveBeenNthCalledWith(1, '123-456-789')
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const {public_id, monitor_id, ...expectedUpdate} = getApiTest('123-456-789')
       expect(apiHelper.editTest).toHaveBeenNthCalledWith(1, '123-456-789', expectedUpdate)
     })
@@ -143,7 +142,6 @@ describe('deploy-tests', () => {
         status: 'live',
         tags: [],
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const {public_id, ...expectedUpdate} = expectedTest
       expect(apiHelper.editTest).toHaveBeenCalledWith('123-456-789', expectedUpdate)
     })
@@ -199,7 +197,6 @@ describe('deploy-tests', () => {
         status: 'live',
         tags: [],
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const {public_id, ...expectedUpdate} = expectedTest
       expect(apiHelper.editTest).toHaveBeenCalledWith('123-456-789', expectedUpdate)
     })

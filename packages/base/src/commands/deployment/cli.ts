@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {DeploymentCorrelateImageCommand} from './correlate-image'
 import {DeploymentCorrelateCommand} from './correlate'
 import {DeploymentGateCommand} from './gate'

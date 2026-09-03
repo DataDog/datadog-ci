@@ -314,7 +314,7 @@ describe('execute', () => {
 
       await git.init()
 
-      // eslint-disable-next-line no-null/no-null
+      // oxlint-disable-next-line no-null/no-null
       await git.commit('Initial commit', [], {'--allow-empty': null})
       const repositoryParam = `--git-repository=${tmpdir}`
 

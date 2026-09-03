@@ -36,7 +36,7 @@ describe('import-tests', () => {
           },
         ],
       }
-      // eslint-disable-next-line no-null/no-null
+      // oxlint-disable-next-line no-null/no-null
       const jsonData = JSON.stringify(mockLTD, null, 2)
 
       const apiHelper = mockApi({
@@ -78,7 +78,7 @@ describe('import-tests', () => {
           },
         ],
       }
-      // eslint-disable-next-line no-null/no-null
+      // oxlint-disable-next-line no-null/no-null
       const expectedJsonData = JSON.stringify(mockLTD, null, 2)
 
       const apiHelper = mockApi({
@@ -109,7 +109,6 @@ describe('import-tests', () => {
         options: {device_ids: ['chrome.laptop_large']},
         type: 'browser',
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const mockLTD = {
         tests: [
           {
@@ -120,7 +119,7 @@ describe('import-tests', () => {
           },
         ],
       }
-      // eslint-disable-next-line no-null/no-null
+      // oxlint-disable-next-line no-null/no-null
       const jsonData = JSON.stringify(mockLTD, null, 2)
 
       const apiHelper = mockApi({
@@ -186,7 +185,7 @@ describe('import-tests', () => {
           },
         ],
       }
-      // eslint-disable-next-line no-null/no-null
+      // oxlint-disable-next-line no-null/no-null
       const expectedJsonData = JSON.stringify(expectedLTD, null, 2)
 
       const apiHelper = mockApi({

@@ -91,7 +91,7 @@ export const checkForError = (filePath: string): string[] => {
             res.push('a result should have a ruleId')
             continue
           }
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
+          // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
           const ruleId: string = result['ruleId']
           if (rules.indexOf(ruleId) === -1) {
             res.push(`result references rule ${ruleId} but rule not found in the tool section`)

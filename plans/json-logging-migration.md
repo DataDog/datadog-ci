@@ -90,11 +90,11 @@ Files:
   must default `env` to a defined (empty) object; clipanion's `{env}` option reads
   `context.env[...]` and would crash on `undefined`. Production is unaffected
   (clipanion merges its `Cli.defaultContext.env = process.env`).
-- `eslint.config.mjs` — `no-restricted-syntax` selectors forbidding direct
+- `.oxlintrc.json` — `datadog/no-direct-stream-write` rule forbidding direct
   `this.context.stdout/stderr` and `process.stdout/stderr`, steering everyone to
-  `this.logger`. Scoped to a `noDirectStreamWriteFiles` allowlist that **grows as
+  `this.logger`. Scoped to an override that **grows as
   commands migrate**; becomes repo-wide in the final PR. The `BaseCommand` getter
-  carries an `eslint-disable` as the sanctioned sink.
+  carries an `oxlint-disable` as the sanctioned sink.
 - Migrate the ~11 `Logger`-using commands onto the inherited `this.logger`
   (delete the per-command field; replace `if (verbose) this.logger = new Logger(..., DEBUG)`
   with `this.logger.setLogLevel(LogLevel.DEBUG)`). e.g. `commands/git-metadata/upload.ts`,
@@ -113,12 +113,12 @@ as-is (they return strings); only change the sink and pick a level by semantics:
 - warnings (`renderSoftWarning`, dry-run, yellow) → `this.logger.warn(...)`
 - errors (`renderError`, red, failures) → `this.logger.error(...)`
 
-Then add the plugin's files to the eslint `noDirectStreamWriteFiles` allowlist.
+Then add the plugin's files to the `.oxlintrc.json` `datadog/no-direct-stream-write` override.
 
 **Important nuance:** lines that are *primary data output* (a command printing a
 JSON result or a value meant for piping) must **stay** as direct
 `context.stdout.write` — only *log/diagnostic* messages move to the logger.
-Annotate those few lines with an `eslint-disable` for the stream-access rule.
+Annotate those few lines with an `oxlint-disable` for the stream-access rule.
 
 **Icons/emojis — refactor only, no visual change (this round):** many renderers
 embed emojis, ASCII art and ANSI colours inline. The end goal is a **shared bank
@@ -151,7 +151,7 @@ Synthetics needs its own work because output goes through `MainReporter`, not `L
 Once all commands (incl. synthetics) honour `--log-format`:
 - Remove `hidden: true` from the `--log-format` option.
 - Enable the stream-access rule across all `tsFiles` (remove the allowlist
-  scoping), with `eslint-disable` only on legitimate data-output / reporter lines.
+  scoping), with `oxlint-disable` only on legitimate data-output / reporter lines.
 - README + `CONTRIBUTING.md`: document `--log-format` / `DD_LOG_FORMAT` as a
   supported global option.
 

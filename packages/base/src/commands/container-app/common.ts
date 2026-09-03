@@ -79,7 +79,6 @@ export abstract class ContainerAppCommand extends BaseCommand {
     description: 'Path to the configuration file.',
   })
 
-  // eslint-disable-next-line @typescript-eslint/member-ordering -- needed for ordering of arguments in readme
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description:
       'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',

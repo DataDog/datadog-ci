@@ -421,11 +421,9 @@ export enum SectionHeaderType {
   SHT_GNU_LIBLIST = 0x6ffffff7, // Prelink library list
   SHT_CHECKSUM = 0x6ffffff8, // Checksum for DSO content.
   /* oxlint-disable typescript/no-duplicate-enum-values */
-  /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
   SHT_LOSUNW = 0x6ffffffa, // Sun-specific low bound.
   SHT_SUNW_move = 0x6ffffffa,
   /* oxlint-enable typescript/no-duplicate-enum-values */
-  /* eslint-enable @typescript-eslint/no-duplicate-enum-values */
   SHT_SUNW_COMDAT = 0x6ffffffb,
   SHT_SUNW_syminfo = 0x6ffffffc,
   SHT_GNU_verdef = 0x6ffffffd, // Version definition section.
@@ -449,14 +447,12 @@ export enum ProgramHeaderType {
   PT_GNU_RELRO = 0x6474e552, // Read-only after relocation
   PT_GNU_PROPERTY = 0x6474e553, // GNU property
   /* oxlint-disable typescript/no-duplicate-enum-values */
-  /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
   PT_LOSUNW = 0x6ffffffa, // Sun Specific segment and Stack segment (shared value)
   PT_SUNWBSS = 0x6ffffffa, // Sun Specific segment
   PT_SUNWSTACK = 0x6ffffffb, // Stack segment
   PT_HISUNW = 0x6fffffff, // End of OS-specific
   PT_HIOS = 0x6fffffff, // End of OS-specific
   /* oxlint-enable typescript/no-duplicate-enum-values */
-  /* eslint-enable @typescript-eslint/no-duplicate-enum-values */
   PT_LOPROC = 0x70000000, // Start of processor-specific
   PT_HIPROC = 0x7fffffff, // End of processor-specific
 }

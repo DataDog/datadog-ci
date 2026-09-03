@@ -97,7 +97,7 @@ describe('gitdb', () => {
     key: 'clone.defaultRemoteName',
     paths: [],
     scopes: new Map<string, string[]>(),
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     value: null,
     values: [],
   }

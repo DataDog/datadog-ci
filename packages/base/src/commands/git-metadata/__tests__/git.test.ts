@@ -13,7 +13,7 @@ interface MockConfig {
 }
 
 const createMockSimpleGit = (conf: MockConfig) => ({
-  // eslint-disable-next-line no-null/no-null
+  // oxlint-disable-next-line no-null/no-null
   getConfig: (_: string) => ({value: null}),
   getRemotes: async (_: boolean) => {
     if (conf.remotes === undefined) {

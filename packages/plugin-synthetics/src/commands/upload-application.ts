@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/member-ordering */
 import type {UploadApplicationCommandConfig} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
 

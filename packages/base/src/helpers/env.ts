@@ -36,7 +36,7 @@ export const toStringMap = (env: string | undefined): StringMap | undefined => {
 
   try {
     const parsed = JSON.parse(cleanedEnv)
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     if (typeof parsed === 'object' && parsed !== null) {
       for (const key in parsed as object) {
         if (typeof parsed[key] !== 'string') {

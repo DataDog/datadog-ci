@@ -41,7 +41,7 @@ export const getServiceFromSarifTool = (filePath: string): string => {
             if ('properties' in rule && 'tags' in rule['properties']) {
               // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access
               for (const tag of rule['properties']['tags']) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+                // oxlint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
                 if (tag.includes('DATADOG_RULE_TYPE')) {
                   // oxlint-disable-next-line @typescript-eslint/no-unsafe-argument
                   ruleTypes.add(tag)
@@ -53,7 +53,7 @@ export const getServiceFromSarifTool = (filePath: string): string => {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
+    // oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
     otherTool = report['runs'][0]['tool']['driver']['name']
   } catch (error) {
     // ignore

@@ -17,7 +17,6 @@ describe('multilocator', () => {
   let mockTestConfig: {tests: {localTestDefinition: LocalTestDefinition}[]}
 
   const browserTest = getBrowserTest('test-1')
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const {message, monitor_id, status, tags, ...baseBrowserLTD} = browserTest
 
   beforeEach(() => {

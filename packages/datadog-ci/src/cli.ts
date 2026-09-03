@@ -51,7 +51,6 @@ Object.entries(commandDeclarations).forEach(([scope, commands]) => {
 // `__getInjectedPlugins` is injected by tsdown.
 // SEA has all plugins, while the NPM bundle has only the builtin ones.
 // In development mode, read from package.json devDependencies.
-// eslint-disable-next-line @typescript-eslint/naming-convention
 declare const __getInjectedPlugins:
   | (() => {
       injectedPluginSubmodules?: Record<string, Record<string, PluginSubModule>>

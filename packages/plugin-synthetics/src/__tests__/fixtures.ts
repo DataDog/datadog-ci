@@ -572,15 +572,15 @@ export const getInProgressResultInBatch = (): BaseResultInBatch => {
     execution_rule: ExecutionRule.BLOCKING,
     location: mockLocation.name,
     result_id: 'rid',
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     retries: null,
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     max_retries: null,
     status: 'in_progress',
     test_name: 'Test name',
     test_public_id: 'pid',
     test_type: 'api',
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     timed_out: null,
   }
 }
@@ -591,9 +591,9 @@ export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun 
     test_public_id: 'pid',
     test_type: 'api',
     execution_rule: ExecutionRule.SKIPPED,
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     retries: null,
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     max_retries: null,
     status: 'skipped',
     selective_rerun: {
@@ -601,7 +601,7 @@ export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun 
       reason: 'passed',
       linked_result_id: '123',
     },
-    // eslint-disable-next-line no-null/no-null
+    // oxlint-disable-next-line no-null/no-null
     timed_out: null,
   }
 }

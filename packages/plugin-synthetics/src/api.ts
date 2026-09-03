@@ -347,7 +347,7 @@ const uploadMobileApplicationPart =
             'Content-MD5': parts[Number(partNumber) - 1].md5,
             // Presigned URL *requires* unset content-type since it's used for signature
             // Pass null to strip the header (handled in httpRequest)
-            // eslint-disable-next-line no-null/no-null
+            // oxlint-disable-next-line no-null/no-null
             'Content-Type': null,
           },
           method: 'PUT',

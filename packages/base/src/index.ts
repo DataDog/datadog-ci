@@ -29,7 +29,6 @@ export abstract class BaseCommand extends Command<CommandContext> {
   public get logger(): Logger {
     if (!this._logger) {
       // The sanctioned sink: this is the single place allowed to write to the raw stream.
-      // eslint-disable-next-line no-restricted-syntax
       // oxlint-disable-next-line datadog/no-direct-stream-write
       this._logger = new Logger((s) => this.context.stdout.write(s), LogLevel.INFO, {
         jsonOutput: this.logFormat === 'json',

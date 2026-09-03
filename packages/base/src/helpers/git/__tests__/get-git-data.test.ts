@@ -5,7 +5,7 @@ describe('git', () => {
     const createMockSimpleGit = (remotes: any[], defaultOrigin: string | undefined) => ({
       getRemotes: (arg: boolean) => remotes,
       getConfig: (arg: string) => ({
-        // eslint-disable-next-line no-null/no-null
+        // oxlint-disable-next-line no-null/no-null
         value: defaultOrigin ?? null,
       }),
     })

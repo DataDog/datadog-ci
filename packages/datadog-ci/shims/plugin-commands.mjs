@@ -1,4 +1,3 @@
-/* eslint-disable quote-props */
 export const builtinPluginCommands = {
   'coverage': ['upload'],
   'deployment': ['correlate-image', 'correlate', 'gate', 'mark'],

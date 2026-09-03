@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {LambdaCloudwatchCommand} from './cloudwatch'
 import {LambdaFlareCommand} from './flare'
 import {LambdaInstrumentCommand} from './instrument'

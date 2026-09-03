@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/member-ordering */
 import type {DeployTestsCommandConfig, MainReporter} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
 

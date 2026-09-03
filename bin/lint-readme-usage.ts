@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 
 import chalk from 'chalk'
-// eslint-disable-next-line import-x/no-extraneous-dependencies
 import {Cli} from 'clipanion'
 import {diff} from 'jest-diff'
 
@@ -52,7 +51,7 @@ const extractSourceInfo = (sourceCode: string): SourceInfo => {
   const booleanDefaultRegex = /Option\.Boolean\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*(true|false)/g
 
   let match
-  // eslint-disable-next-line no-null/no-null
+  // oxlint-disable-next-line no-null/no-null
   while ((match = booleanDefaultRegex.exec(sourceCode)) !== null) {
     const flagsString = match[1]
     const defaultVal = match[2]
@@ -70,7 +69,7 @@ const extractSourceInfo = (sourceCode: string): SourceInfo => {
   // Positional args have no flag string as first argument — either bare () or ({...})
   const positionalRegex = /(public|protected|private)\s+(\w+)\s*=\s*Option\.String\((\{[^}]*\})?\)/g
 
-  // eslint-disable-next-line no-null/no-null
+  // oxlint-disable-next-line no-null/no-null
   while ((match = positionalRegex.exec(sourceCode)) !== null) {
     const name = match[2]
     const opts = match[3] || ''

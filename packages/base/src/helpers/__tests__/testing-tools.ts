@@ -112,7 +112,7 @@ export const makeRunCLI =
   }
 
 const isCommandOption = <T = unknown>(value: unknown): value is CommandOption<T> => {
-  // eslint-disable-next-line no-null/no-null
+  // oxlint-disable-next-line no-null/no-null
   return typeof value === `object` && value !== null && Command.isOption in value && !!value[Command.isOption]
 }
 

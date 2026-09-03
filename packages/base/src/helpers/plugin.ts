@@ -298,7 +298,6 @@ const printPluginVersion = (plugin: PackageInfo) => {
 }
 
 // Injected by esbuild in bundled builds (SEA and NPM bundle).
-// eslint-disable-next-line @typescript-eslint/naming-convention
 declare const __getInjectedPlugins:
   | (() => {
       injectedPluginSubmodules?: Record<string, Record<string, PluginSubModule>>

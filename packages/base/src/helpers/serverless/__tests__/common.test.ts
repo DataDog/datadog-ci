@@ -1,4 +1,4 @@
-/* eslint-disable no-null/no-null */
+/* oxlint-disable no-null/no-null */
 import {
   createInstrumentedTemplate,
   generateConfigDiff,

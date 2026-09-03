@@ -343,7 +343,7 @@ describe('generation of payload', () => {
     // Check that all locations are valid
     for (const d of dependencies) {
       expect(d.locations).not.toBeNull()
-      // just to avoid eslint warnings
+      // just to avoid linter warnings
       if (!d.locations) {
         continue
       }
@@ -385,7 +385,7 @@ describe('generation of payload', () => {
       const git = simpleGit(tmpdir)
       setupLocalGitConfig(tmpdir)
       await git.init()
-      // eslint-disable-next-line no-null/no-null
+      // oxlint-disable-next-line no-null/no-null
       await git.commit('Initial commit', [], {'--allow-empty': null})
 
       const sbomFile = './src/__tests__/fixtures/sbom.1.4.ok.json'

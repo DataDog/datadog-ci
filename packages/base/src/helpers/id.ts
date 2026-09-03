@@ -1,5 +1,5 @@
-/* eslint-disable */
-// Eslint disabled because we're doing bitwise logic, which isn't allowed by the linter
+/* oxlint-disable no-bitwise */
+// Bitwise logic is required here:
 // From https://github.com/DataDog/dd-trace-js/blob/e4b9a268f0429b6f1e92c384b61a0d104aeb1259/packages/dd-trace/src/id.js
 import {randomFillSync} from 'crypto'
 
