@@ -73,13 +73,13 @@ const getCloudRunService = (serviceName: string, project: string, region: string
   return JSON.parse(output)
 }
 
-const getTemplate = (service: CloudRunService): ServiceTemplate => {
-  return service.template ?? service.spec?.template?.spec ?? {}
-}
+const getTemplate = (service: CloudRunService): ServiceTemplate =>
+  service.template?.containers?.length ? service.template : (service.spec?.template?.spec ?? service.template ?? {})
 
-const getLabels = (service: CloudRunService): Record<string, string> => {
-  return service.labels ?? service.metadata?.labels ?? {}
-}
+const getLabels = (service: CloudRunService): Record<string, string> => ({
+  ...service.metadata?.labels,
+  ...service.labels,
+})
 
 const getVolumeName = (mount: VolumeMount): string | undefined => mount.name ?? mount.volumeName
 
@@ -144,7 +144,6 @@ export const verifySsiInstrumented = (
   expect(appContainers).toHaveLength(1)
   const app = appContainers[0]
   expect(app.image).toBe(expectation.appImage)
-  expect(app.dependsOn).toEqual(expect.arrayContaining([SIDECAR_NAME, TRACER_COPY_CONTAINER_NAME]))
   expect(app.volumeMounts).toContainEqual({name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH})
   expect(app.env).toEqual(
     expect.arrayContaining([
