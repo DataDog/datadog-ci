@@ -5,7 +5,12 @@ import {DATADOG_CI_COMMAND, execPromiseWithRetries} from '../../helpers/exec'
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
-import {getContainerAppUrl, verifySsiInstrumented, verifyUninstrumented} from './container-app-verifier'
+import {
+  getContainerAppUrl,
+  verifyMultiLanguageSsiInstrumented,
+  verifySsiInstrumented,
+  verifyUninstrumented,
+} from './container-app-verifier'
 
 const SSI_CASES = [
   {
@@ -58,110 +63,142 @@ const describeOrSkip =
     ? describe.skip
     : describe
 
+type Verify = (appName: string, resourceGroup: string, subscriptionId: string, runId: string) => void
+
+interface SsiCase {
+  appNamePrefix: string
+  applicationImage: string
+  extraArgs?: string
+  nativeEnv?: {name: string; fragment: string}
+  retry: boolean
+  verify: Verify
+}
+
 describeOrSkip('container-app automatic APM instrumentation', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
 
+  const runSsiLifecycle = async ({
+    appNamePrefix,
+    applicationImage,
+    extraArgs = '',
+    nativeEnv,
+    retry,
+    verify,
+  }: SsiCase) => {
+    const runId = crypto.randomBytes(4).toString('hex')
+    const appName = `${appNamePrefix}-${runId}`
+    const instrumentCommand =
+      `${DATADOG_CI_COMMAND} container-app instrument` +
+      ` -s "${subscriptionId}"` +
+      ` -g "${resourceGroup}"` +
+      ` -n "${appName}"` +
+      ` --service "${appName}"` +
+      ` --env e2e` +
+      ` --version "${runId}"` +
+      ` --extra-tags "one_e2e_run_id:${runId}"` +
+      ` --tracing inject` +
+      extraArgs +
+      ` --no-source-code-integration`
+    let lifecycleError: Error | undefined
+    let cleanupError: Error | undefined
+
+    try {
+      const create = await execPromiseWithRetries(
+        `az containerapp create` +
+          ` --name "${appName}"` +
+          ` --resource-group "${resourceGroup}"` +
+          ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
+          ` --image "${applicationImage}"` +
+          ` --cpu 0.25 --memory 0.5Gi` +
+          ` --min-replicas 0 --max-replicas 1` +
+          ` --ingress external --target-port 8080` +
+          ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
+          ` --output none`
+      )
+      assertCommandSucceeded('create', create)
+
+      const instrument = async () => {
+        const result = await execPromiseWithRetries(instrumentCommand, {DD_API_KEY: process.env.DATADOG_API_KEY})
+        assertCommandSucceeded('instrument', result)
+        verify(appName, resourceGroup, subscriptionId, runId)
+      }
+      await instrument()
+
+      const appUrl = getContainerAppUrl(appName, resourceGroup, subscriptionId)
+      const [traffic, telemetry] = await Promise.allSettled([
+        triggerTraffic(appUrl, {attempts: 20, requiredSuccesses: 10, intervalSeconds: 10}),
+        checkTelemetryFlowing(
+          {serviceName: appName, env: 'e2e', version: runId, tags: [`one_e2e_run_id:${runId}`]},
+          {checkLogs: false}
+        ),
+      ])
+      if (traffic.status === 'rejected') {
+        throw traffic.reason
+      }
+      if (telemetry.status === 'rejected') {
+        throw telemetry.reason
+      }
+
+      if (retry) {
+        await instrument()
+      }
+
+      const uninstrument = await execPromiseWithRetries(
+        `${DATADOG_CI_COMMAND} container-app uninstrument` +
+          ` -s "${subscriptionId}"` +
+          ` -g "${resourceGroup}"` +
+          ` -n "${appName}"`,
+        {DD_API_KEY: process.env.DATADOG_API_KEY}
+      )
+      assertCommandSucceeded('uninstrument', uninstrument)
+      verifyUninstrumented(appName, resourceGroup, subscriptionId, nativeEnv)
+    } catch (error) {
+      lifecycleError = error instanceof Error ? error : new Error(String(error))
+    } finally {
+      const cleanup = await execPromiseWithRetries(
+        `az containerapp delete --name "${appName}" --resource-group "${resourceGroup}" --yes --output none`
+      )
+      if (cleanup.exitCode !== 0) {
+        const output = [cleanup.stderr, cleanup.stdout].filter(Boolean).join('\n') || 'no command output'
+        cleanupError = new Error(`Failed to delete container app (exit code ${cleanup.exitCode}): ${output}`)
+      }
+    }
+
+    if (lifecycleError && cleanupError) {
+      throw new Error(`${String(lifecycleError)}\n${cleanupError.message}`)
+    }
+    if (cleanupError) {
+      throw cleanupError
+    }
+    if (lifecycleError) {
+      throw lifecycleError
+    }
+  }
+
   it.concurrent.each(SSI_CASES)(
     'injects, retries, traces, and removes the $language tracer',
-    async (ssiCase) => {
-      const {language, applicationImage, tracerRepository, nativeEnv} = ssiCase
-      const runId = crypto.randomBytes(4).toString('hex')
-      const appName = `one-e2e-capp-ssi-${language}-${runId}`
-      const instrumentCommand =
-        `${DATADOG_CI_COMMAND} container-app instrument` +
-        ` -s "${subscriptionId}"` +
-        ` -g "${resourceGroup}"` +
-        ` -n "${appName}"` +
-        ` --service "${appName}"` +
-        ` --env e2e` +
-        ` --version "${runId}"` +
-        ` --extra-tags "one_e2e_run_id:${runId}"` +
-        ` --tracing inject` +
-        ` --language "${language}"` +
-        ` --no-source-code-integration`
-      const expectation = {applicationImage, tracerRepository, nativeEnv, runId}
+    (ssiCase) =>
+      runSsiLifecycle({
+        ...ssiCase,
+        appNamePrefix: `one-e2e-capp-ssi-${ssiCase.language}`,
+        extraArgs: ` --language ${ssiCase.language}`,
+        retry: true,
+        verify: (appName, rg, sub, runId) => verifySsiInstrumented(appName, rg, sub, {...ssiCase, runId}),
+      }),
+    1_200_000
+  )
 
-      let lifecycleError: Error | undefined
-      let cleanupError: Error | undefined
-      try {
-        const create = await execPromiseWithRetries(
-          `az containerapp create` +
-            ` --name "${appName}"` +
-            ` --resource-group "${resourceGroup}"` +
-            ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
-            ` --image "${applicationImage}"` +
-            ` --cpu 0.25 --memory 0.5Gi` +
-            ` --min-replicas 0 --max-replicas 1` +
-            ` --ingress external --target-port 8080` +
-            ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
-            ` --output none`
-        )
-        assertCommandSucceeded('create', create)
-
-        const instrument = await execPromiseWithRetries(instrumentCommand, {
-          DD_API_KEY: process.env.DATADOG_API_KEY,
-        })
-        assertCommandSucceeded('instrument', instrument)
-        verifySsiInstrumented(appName, resourceGroup, subscriptionId, expectation)
-
-        const appUrl = getContainerAppUrl(appName, resourceGroup, subscriptionId)
-        const [traffic, telemetry] = await Promise.allSettled([
-          triggerTraffic(appUrl, {attempts: 20, requiredSuccesses: 10, intervalSeconds: 10}),
-          checkTelemetryFlowing(
-            {
-              serviceName: appName,
-              env: 'e2e',
-              version: runId,
-              tags: [`one_e2e_run_id:${runId}`],
-            },
-            {checkLogs: false}
-          ),
-        ])
-        if (traffic.status === 'rejected') {
-          throw traffic.reason
-        }
-        if (telemetry.status === 'rejected') {
-          throw telemetry.reason
-        }
-
-        const retry = await execPromiseWithRetries(instrumentCommand, {
-          DD_API_KEY: process.env.DATADOG_API_KEY,
-        })
-        assertCommandSucceeded('re-instrument', retry)
-        verifySsiInstrumented(appName, resourceGroup, subscriptionId, expectation)
-
-        const uninstrument = await execPromiseWithRetries(
-          `${DATADOG_CI_COMMAND} container-app uninstrument` +
-            ` -s "${subscriptionId}"` +
-            ` -g "${resourceGroup}"` +
-            ` -n "${appName}"`,
-          {DD_API_KEY: process.env.DATADOG_API_KEY}
-        )
-        assertCommandSucceeded('uninstrument', uninstrument)
-        verifyUninstrumented(appName, resourceGroup, subscriptionId, nativeEnv)
-      } catch (error) {
-        lifecycleError = error instanceof Error ? error : new Error(String(error))
-      } finally {
-        const cleanup = await execPromiseWithRetries(
-          `az containerapp delete --name "${appName}" --resource-group "${resourceGroup}" --yes --output none`
-        )
-        if (cleanup.exitCode !== 0) {
-          const output = [cleanup.stderr, cleanup.stdout].filter(Boolean).join('\n') || 'no command output'
-          cleanupError = new Error(`Failed to delete container app (exit code ${cleanup.exitCode}): ${output}`)
-        }
-      }
-
-      if (lifecycleError && cleanupError) {
-        throw new Error(`${String(lifecycleError)}\n${cleanupError.message}`)
-      }
-      if (cleanupError) {
-        throw cleanupError
-      }
-      if (lifecycleError) {
-        throw lifecycleError
-      }
-    },
+  it(
+    'detects Node.js, injects its tracer, and removes the composite',
+    () =>
+      runSsiLifecycle({
+        appNamePrefix: 'one-e2e-capp-ssi-auto',
+        applicationImage: SSI_CASES[2].applicationImage,
+        retry: false,
+        verify: (appName, rg, sub, runId) =>
+          verifyMultiLanguageSsiInstrumented(appName, rg, sub, runId, SSI_CASES[2].applicationImage),
+      }),
     1_200_000
   )
 })
