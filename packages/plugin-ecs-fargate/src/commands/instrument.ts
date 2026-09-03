@@ -283,6 +283,7 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     return {
       agentImage: config.agentImage,
       agentSocket: config.agentSocket ?? true,
+      logCollection: config.logCollection ?? false,
       site: getDatadogSite(),
       service: config.service,
       environment: config.environment,

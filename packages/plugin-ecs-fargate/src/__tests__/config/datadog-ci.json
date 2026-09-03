@@ -5,6 +5,7 @@
     "environment": "staging",
     "sourceCodeIntegration": false,
     "agentImage": "public.ecr.aws/datadog/agent:7-from-config",
-    "agentSocket": false
+    "agentSocket": false,
+    "logCollection": true
   }
 }

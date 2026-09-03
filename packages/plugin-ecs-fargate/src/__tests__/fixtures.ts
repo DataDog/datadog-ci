@@ -1,6 +1,7 @@
 import type {InstrumentSettings} from '../task-definition'
 import type {
   ContainerDefinition,
+  LogConfiguration,
   MountPoint,
   RegisterTaskDefinitionCommandInput,
   Service,
@@ -35,6 +36,27 @@ export const MOCK_SETTINGS: InstrumentSettings = {
   apiKeySecretArn: MOCK_API_KEY_SECRET_ARN,
 }
 
+/** The same, with the log router collecting the containers' logs. */
+export const MOCK_LOG_COLLECTION_SETTINGS: InstrumentSettings = {...MOCK_SETTINGS, logCollection: true}
+
+/** The log driver every container the router collects is given. */
+export const firelensLogConfiguration = (
+  apiKey: {secretArn: string} | {plaintext: string} = {secretArn: MOCK_API_KEY_SECRET_ARN}
+): LogConfiguration => ({
+  logDriver: 'awsfirelens',
+  options: {
+    Name: 'datadog',
+    Host: 'http-intake.logs.datadoghq.com',
+    TLS: 'on',
+    provider: 'ecs',
+    retry_limit: '2',
+    ...('plaintext' in apiKey ? {apikey: apiKey.plaintext} : {}),
+  },
+  ...('secretArn' in apiKey ? {secretOptions: [{name: 'apikey', valueFrom: apiKey.secretArn}]} : {}),
+})
+
+export const FIRELENS_LOG_CONFIGURATION = firelensLogConfiguration()
+
 /** What carries the Agent's APM and DogStatsD sockets between the containers sharing them. */
 export const SOCKET_VOLUME: Volume = {name: 'dd-sockets'}
 export const SOCKET_MOUNT: MountPoint = {
@@ -56,6 +78,29 @@ export const APP_CONTAINER: ContainerDefinition = {
       'awslogs-stream-prefix': 'ecs',
     },
   },
+}
+
+/**
+ * The log router sidecar as the command writes it, keeping the `awslogs` configuration it borrows
+ * from the application container so that its own output is not routed through itself.
+ */
+export const LOG_ROUTER_CONTAINER: ContainerDefinition = {
+  name: 'datadog-log-router',
+  image: 'public.ecr.aws/aws-observability/aws-for-fluent-bit:stable',
+  essential: false,
+  user: '0',
+  firelensConfiguration: {
+    type: 'fluentbit',
+    options: {'enable-ecs-log-metadata': 'true'},
+  },
+  healthCheck: {
+    command: ['CMD-SHELL', 'exit 0'],
+    interval: 5,
+    timeout: 5,
+    retries: 3,
+    startPeriod: 15,
+  },
+  logConfiguration: APP_CONTAINER.logConfiguration,
 }
 
 /**

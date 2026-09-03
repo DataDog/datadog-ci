@@ -38,11 +38,12 @@ import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {PluginCommand} from '../commands/instrument'
-import {AGENT_CONTAINER_NAME} from '../constants'
+import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
 import {instrumentTaskDefinition} from '../task-definition'
 
 import {
   CLI_VERSION_TAG,
+  FIRELENS_LOG_CONFIGURATION,
   INSTRUMENTATION_TAGS,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
@@ -300,6 +301,28 @@ describe('ecs-fargate instrument', () => {
       expect(envVarsOf(registeredContainers(), MOCK_FAMILY)).toMatchObject({DD_AGENT_HOST: '127.0.0.1'})
     })
 
+    test('collects no logs unless it is asked to', async () => {
+      await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(registeredContainers().map((container) => container.name)).not.toContain(LOG_ROUTER_CONTAINER_NAME)
+    })
+
+    test('adds the log router and routes every container through it when told to collect logs', async () => {
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--log-collection'])
+
+      expect(code).toBe(0)
+      const containers = registeredContainers()
+      expect(containers.map((container) => container.name)).toStrictEqual([
+        MOCK_FAMILY,
+        AGENT_CONTAINER_NAME,
+        LOG_ROUTER_CONTAINER_NAME,
+      ])
+      expect(containers.find((container) => container.name === MOCK_FAMILY)?.logConfiguration).toStrictEqual(
+        FIRELENS_LOG_CONFIGURATION
+      )
+      expect(context.stdout.toString()).toContain('replacing the awslogs log configuration it declares')
+    })
+
     test('reads the task definitions and their configuration from a config file', async () => {
       const runWithConfig = makeRunCLI(PluginCommand, ['ecs-fargate', 'instrument', '-r', MOCK_REGION])
 
@@ -319,8 +342,9 @@ describe('ecs-fargate instrument', () => {
       expect(registeredContainers().find((container) => container.name === AGENT_CONTAINER_NAME)?.image).toBe(
         'public.ecr.aws/datadog/agent:7-from-config'
       )
-      // Leaving --no-agent-socket off does not override the choice the file made.
+      // Leaving the flags off does not override the choices the file made.
       expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.volumes).toStrictEqual([])
+      expect(registeredContainers().map((container) => container.name)).toContain(LOG_ROUTER_CONTAINER_NAME)
     })
 
     test('prefers a command-line argument over the configuration file', async () => {
@@ -848,6 +872,19 @@ describe('ecs-fargate instrument', () => {
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toContain('DD_API_KEY')
+      expect(output).not.toContain(MOCK_API_KEY)
+    })
+
+    // The log driver carries the key too, on every container the router collects.
+    test('keeps a plaintext API key out of the diff when it collects logs', async () => {
+      const {code, context} = await runCLI(['--dry-run', '--log-collection'], {
+        DATADOG_API_KEY: '',
+        DD_API_KEY: MOCK_API_KEY,
+      })
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('apikey')
       expect(output).not.toContain(MOCK_API_KEY)
     })
 
