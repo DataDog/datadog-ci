@@ -28,6 +28,8 @@ const DISK_VOLUME_SIZE_LIMIT = '10Gi'
 const GEN2_EXECUTION_ENVIRONMENT = 2 as const // google.cloud.run.v2.ExecutionEnvironment.EXECUTION_ENVIRONMENT_GEN2
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
+const LEGACY_TRACER_CONTAINER_NAME = 'datadog-tracer-copy'
+const MANAGED_TRACER_CONTAINER_NAMES = new Set([TRACER_CONTAINER_NAME, LEGACY_TRACER_CONTAINER_NAME])
 const UNIFIED_SERVICE_TAG_LABELS = {
   service: 'service',
   environment: 'env',
@@ -83,7 +85,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   }
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const sourceContainers = sourceTemplate.containers ?? []
-  const hasTracerContainer = sourceContainers.some((container) => container.name === TRACER_CONTAINER_NAME)
+  const hasTracerContainer = sourceContainers.some(isManagedTracerContainer)
   const hasTracerVolume = sourceTemplate.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME) ?? false
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
@@ -93,7 +95,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     if (hasTracerContainer) {
       targetContainers = new Set(
         sourceContainers.filter(
-          (container) => container.name !== options.sidecarName && container.name !== TRACER_CONTAINER_NAME
+          (container) => container.name !== options.sidecarName && !isManagedTracerContainer(container)
         )
       )
     }
@@ -112,7 +114,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     }
     const mainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
+      reservedContainerNames(options.sidecarName)
     )
     assertTracerReadinessPortAvailable(mainContainer, options.sidecarName, tracerReadinessPort, healthCheckPort)
     if (!hasSsi) {
@@ -122,7 +124,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       hasSsi || hasTracerContainer ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
+      reservedContainerNames(options.sidecarName)
     )
     targetContainers = new Set([updatedMainContainer])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
@@ -157,10 +159,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   }
 
   if (ssiConfig.kind === 'single-language') {
-    const mainContainer = selectMainContainer(
-      template.containers ?? [],
-      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
-    )
+    const mainContainer = selectMainContainer(template.containers ?? [], reservedContainerNames(options.sidecarName))
     const configuredMainContainer = {
       ...mainContainer,
       env: mergeLanguageInjectionEnv(mainContainer.env, ssiConfig.spec),
@@ -210,9 +209,7 @@ export const uninstrumentServiceConfig = (
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const updatedContainers = containers
-    .filter(
-      (container) => container.name !== options.sidecarName && (!hasSsi || container.name !== TRACER_CONTAINER_NAME)
-    )
+    .filter((container) => container.name !== options.sidecarName && (!hasSsi || !isManagedTracerContainer(container)))
     .map((container) =>
       removeContainerInstrumentation(
         container,
@@ -288,7 +285,7 @@ const applyTracerContainer = (
   mainContainer: IContainer,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
-  const managedDependencies = new Set([TRACER_CONTAINER_NAME, ...dependencyNames])
+  const managedDependencies = new Set([...MANAGED_TRACER_CONTAINER_NAMES, ...dependencyNames])
   const containers = (template.containers ?? []).map((container) =>
     container === mainContainer
       ? {
@@ -366,7 +363,7 @@ const assertTracerReadinessPortAvailable = (
 const removeExistingSsiState = (template: IServiceTemplate, mainContainer?: IContainer): IServiceTemplate => ({
   ...template,
   containers: (template.containers ?? [])
-    .filter((container) => container.name !== TRACER_CONTAINER_NAME)
+    .filter((container) => !isManagedTracerContainer(container))
     .map((container) =>
       removeExistingSsiContainer(
         container,
@@ -393,8 +390,17 @@ const removeExistingSsiContainer = (container: IContainer, isMainContainer: bool
     cleaned = {...cleaned, volumeMounts}
   }
 
-  return removeDependency(cleaned, TRACER_CONTAINER_NAME)
+  return removeDependencies(cleaned, MANAGED_TRACER_CONTAINER_NAMES)
 }
+
+const isManagedTracerContainer = (container: IContainer): boolean =>
+  typeof container.name === 'string' && MANAGED_TRACER_CONTAINER_NAMES.has(container.name)
+
+const reservedContainerNames = (sidecarName: string): ReadonlySet<string> =>
+  new Set([sidecarName, ...MANAGED_TRACER_CONTAINER_NAMES])
+
+const removeDependencies = (container: IContainer, names: ReadonlySet<string>): IContainer =>
+  [...names].reduce((updated, name) => removeDependency(updated, name), container)
 
 const removeDependency = (container: IContainer, name: string): IContainer => {
   if (!container.dependsOn?.includes(name)) {

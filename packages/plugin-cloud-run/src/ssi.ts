@@ -31,7 +31,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-
 export interface SsiOptions {
   readonly language: string | undefined
   readonly tracing: TracingMode | undefined
