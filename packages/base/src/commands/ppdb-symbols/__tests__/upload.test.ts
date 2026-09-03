@@ -6,9 +6,9 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {uploadMultipartHelper} from '../helpers'
 import {renderArgumentMissingError, renderManifestNotFound, renderMissingManifestEntry} from '../renderer'
-import {MauiSymbolsUploadCommand} from '../upload'
+import {PpdbSymbolsUploadCommand} from '../upload'
 
-const fixtureDir = 'src/commands/maui-symbols/__tests__/fixtures'
+const fixtureDir = 'src/commands/ppdb-symbols/__tests__/fixtures'
 const manifestPath = `${fixtureDir}/manifest.json`
 const pdbsDir = `${fixtureDir}/pdbs`
 
@@ -22,9 +22,9 @@ jest.mock('../helpers', () => ({
   uploadMultipartHelper: jest.fn(),
 }))
 
-describe('maui-symbols upload', () => {
-  const runCommand = async (prepFunction: (command: MauiSymbolsUploadCommand) => void) => {
-    const command = createCommand(MauiSymbolsUploadCommand)
+describe('ppdb-symbols upload', () => {
+  const runCommand = async (prepFunction: (command: PpdbSymbolsUploadCommand) => void) => {
+    const command = createCommand(PpdbSymbolsUploadCommand)
     prepFunction(command)
 
     const exitCode = await command.execute()

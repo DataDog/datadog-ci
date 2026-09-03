@@ -7,12 +7,12 @@ import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {datadogRoute} from '../../helpers/request/datadog-route'
 
-export const getMauiSymbolsRequestBuilder = (apiKey: string, cliVersion: string, site: string) =>
+export const getPpdbSymbolsRequestBuilder = (apiKey: string, cliVersion: string, site: string) =>
   getRequestBuilder({
     apiKey,
     baseUrl: getBaseSourcemapIntakeUrl(site),
     headers: new Map([
-      ['DD-EVP-ORIGIN', 'datadog-ci_maui-symbols'],
+      ['DD-EVP-ORIGIN', 'datadog-ci_ppdb-symbols'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
     overrideUrl: datadogRoute('/api/v2/srcmap'),

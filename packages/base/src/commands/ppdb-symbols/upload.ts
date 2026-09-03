@@ -29,7 +29,7 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {getMauiSymbolsRequestBuilder, uploadMultipartHelper} from './helpers'
+import {getPpdbSymbolsRequestBuilder, uploadMultipartHelper} from './helpers'
 import {PORTABLE_PDB_FILENAME, TYPE_PORTABLE_PDB, VALUE_NAME_PORTABLE_PDB} from './interfaces'
 import {readDebugIdManifest} from './manifest'
 import {
@@ -48,8 +48,8 @@ import {
   renderUpload,
 } from './renderer'
 
-export class MauiSymbolsUploadCommand extends BaseCommand {
-  public static paths = [['maui-symbols', 'upload']]
+export class PpdbSymbolsUploadCommand extends BaseCommand {
+  public static paths = [['ppdb-symbols', 'upload']]
 
   public static usage = Command.Usage({
     category: 'RUM',
@@ -62,7 +62,7 @@ export class MauiSymbolsUploadCommand extends BaseCommand {
     examples: [
       [
         'Upload Portable PDBs for all assemblies in the given directory',
-        'datadog-ci maui-symbols upload ./bin/Release/net8.0-android --debug-id-manifest ./obj/Release/net8.0-android/dd_debug_ids.json',
+        'datadog-ci ppdb-symbols upload ./bin/Release/net8.0-android --debug-id-manifest ./obj/Release/net8.0-android/dd_debug_ids.json',
       ],
     ],
   })
@@ -134,7 +134,7 @@ export class MauiSymbolsUploadCommand extends BaseCommand {
 
     const callResults: UploadStatus[] = []
     try {
-      callResults.push(...(await this.performMauiSymbolsUpload(manifest)))
+      callResults.push(...(await this.performPpdbSymbolsUpload(manifest)))
 
       const totalTime = (Date.now() - initialTime) / 1000
 
@@ -206,7 +206,7 @@ export class MauiSymbolsUploadCommand extends BaseCommand {
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`, 'platform:maui'],
-      prefix: 'datadog.ci.maui_symbols.',
+      prefix: 'datadog.ci.ppdb_symbols.',
     })
   }
 
@@ -233,13 +233,13 @@ export class MauiSymbolsUploadCommand extends BaseCommand {
     return paths.sort((a, b) => a.localeCompare(b))
   }
 
-  private async performMauiSymbolsUpload(manifest: DebugIdManifest): Promise<UploadStatus[]> {
+  private async performPpdbSymbolsUpload(manifest: DebugIdManifest): Promise<UploadStatus[]> {
     const metricsLogger = this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const pdbPaths = (await Promise.all(this.symbolsLocations.map((location) => this.getPdbFiles(location)))).flat()
 
-    const requestBuilder = getMauiSymbolsRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getPpdbSymbolsRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, pdbPaths, async (pdbPath) => {

@@ -1,6 +1,6 @@
 import {readDebugIdManifest} from '../manifest'
 
-const fixtureDir = 'src/commands/maui-symbols/__tests__/fixtures'
+const fixtureDir = 'src/commands/ppdb-symbols/__tests__/fixtures'
 
 describe('readDebugIdManifest', () => {
   test('parses a valid manifest into an assembly name -> debug ID map', () => {
