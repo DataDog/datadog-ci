@@ -28,6 +28,10 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
   --service my-service --env prod --version 1.0.0
 
+# Send container logs to Datadog
+datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
+  --log-collection
+
 # Preview the changes without registering a revision
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> --dry-run
 ```
@@ -44,7 +48,12 @@ Unlike the switches above, the command owns these: the two ways of reaching the 
 
 The Agent sidecar accepts custom metrics over DogStatsD: `DD_DOGSTATSD_ORIGIN_DETECTION` and `DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT` are turned on and `DD_DOGSTATSD_TAG_CARDINALITY` is set to `orchestrator`, so your metrics are tagged with the task that submitted them. These are filled in the same way, so a task definition that already sets them keeps its own values.
 
-Running the command twice is safe: the Agent container is matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it. Upgrading the CLI does not on its own produce a new revision, since that tag is not part of the comparison.
+Running the command twice is safe: the sidecars are matched by name, so an already instrumented task definition is reported as such and no revision is registered. Each revision the command registers is tagged `dd_sls_ci` with the version of `datadog-ci` that created it. Upgrading the CLI does not on its own produce a new revision, since that tag is not part of the comparison.
+
+#### Collecting logs
+
+Pass `--log-collection` to send the task's logs to Datadog. A `datadog-log-router` sidecar running [AWS for Fluent Bit](https://github.com/aws/aws-for-fluent-bit) is added and the other containers, including the Agent, are routed through it.
+Existing log configurations are replaced. Omitting `--log-collection` on a later run does not restore them or remove the router.
 
 #### Deploying the new revision
 
@@ -95,6 +104,7 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
 | `--no-agent-socket` |  | Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. |  |
+| `--log-collection` or `--logCollection` |  | Send the task's logs to Datadog. Replaces each container's existing log configuration. |  |
 | `--service` |  | The value for the service tag. Use this to group related tasks belonging to similar workloads. For example, `my-service`. If not provided, the task definition family is used. |  |
 | `--env` or `--environment` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
@@ -125,7 +135,8 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "environment": "prod",
     "version": "1.0.0",
     "extraTags": "team:backend,project:api",
-    "envVars": ["CUSTOM_VAR1=value1", "CUSTOM_VAR2=value2"]
+    "envVars": ["CUSTOM_VAR1=value1", "CUSTOM_VAR2=value2"],
+    "logCollection": true
   }
 }
 ```

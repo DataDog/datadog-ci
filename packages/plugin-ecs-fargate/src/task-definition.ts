@@ -41,8 +41,10 @@ import {
   AGENT_SOCKET_MOUNT_PATH,
   AGENT_SOCKET_VOLUME_NAME,
   APM_SOCKET_URL,
+  AWSFIRELENS_LOG_DRIVER,
   AWSLOGS_LOG_DRIVER,
   AWSVPC_NETWORK_MODE,
+  DATADOG_FLUENTBIT_OUTPUT,
   DD_AGENT_HOST_ENV_VAR,
   DD_APM_ENABLED_ENV_VAR,
   DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT_ENV_VAR,
@@ -60,7 +62,19 @@ import {
   ECS_FARGATE_ENV_VAR,
   ECS_TASK_COLLECTION_ACTIONS,
   ENVIRONMENT_TAG_KEY,
+  FIRELENS_API_KEY_OPTION,
+  FLUENTBIT_FIRELENS_TYPE,
   LAUNCH_TYPE_FARGATE,
+  LOGS_INTAKE_HOST_PREFIX,
+  LOG_ROUTER_CONTAINER_NAME,
+  LOG_ROUTER_HEALTH_CHECK_COMMAND,
+  LOG_ROUTER_HEALTH_CHECK_INTERVAL,
+  LOG_ROUTER_HEALTH_CHECK_RETRIES,
+  LOG_ROUTER_HEALTH_CHECK_START_PERIOD,
+  LOG_ROUTER_HEALTH_CHECK_TIMEOUT,
+  LOG_ROUTER_IMAGE,
+  LOG_ROUTER_RETRY_LIMIT,
+  LOG_ROUTER_USER,
   READ_ONLY_TASK_DEFINITION_FIELDS,
   SERVICE_TAG_KEY,
   VERSION_TAG_KEY,
@@ -85,6 +99,8 @@ export type InstrumentSettings = {
    * address. Absent enables it.
    */
   agentSocket?: boolean
+  /** Whether to collect container logs. Absent leaves it off. */
+  logCollection?: boolean
   /** The service name the user asked for. Absent means the task definition family is used instead. */
   service?: string
   environment?: string
@@ -347,7 +363,39 @@ const toDockerLabels = (
   return merged.size > 0 ? Object.fromEntries(merged) : undefined
 }
 
-export type AgentContainerResult = {
+/**
+ * The FireLens log configuration given to containers the router collects.
+ */
+const firelensLogConfiguration = (settings: InstrumentSettings): LogConfiguration =>
+  removeUndefinedValues({
+    logDriver: AWSFIRELENS_LOG_DRIVER,
+    options: {
+      Name: DATADOG_FLUENTBIT_OUTPUT,
+      Host: `${LOGS_INTAKE_HOST_PREFIX}${settings.site}`,
+      TLS: 'on',
+      provider: 'ecs',
+      retry_limit: LOG_ROUTER_RETRY_LIMIT,
+      ...(settings.apiKey ? {[FIRELENS_API_KEY_OPTION]: settings.apiKey} : {}),
+    },
+    secretOptions: settings.apiKeySecretArn
+      ? [{name: FIRELENS_API_KEY_OPTION, valueFrom: settings.apiKeySecretArn}]
+      : undefined,
+  })
+
+/**
+ * A warning when a container's log configuration is being replaced, or undefined if it already
+ * matches or there is nothing to replace.
+ */
+const logConfigurationTakeoverWarning = (
+  name: string | undefined,
+  existing: LogConfiguration | undefined,
+  firelens: LogConfiguration
+): string | undefined =>
+  existing && !sortedEqual(existing, firelens)
+    ? `Routing the logs of the ${name} container through ${LOG_ROUTER_CONTAINER_NAME}, replacing the ${existing.logDriver} log configuration it declares. Turning log collection back off does not put that configuration back.`
+    : undefined
+
+export type SidecarContainerResult = {
   container: ContainerDefinition
   warnings: string[]
 }
@@ -361,8 +409,10 @@ type AgentContainerContext = {
   family?: string
   /** The Agent container already on the task definition, if any. */
   existing?: ContainerDefinition
-  /** A log configuration borrowed from an application container, when the Agent has none. */
-  logConfiguration?: LogConfiguration
+  /** FireLens log configuration, when log collection is on. */
+  firelens?: LogConfiguration
+  /** Fallback log configuration borrowed from an application container. */
+  borrowed?: LogConfiguration
 }
 
 /**
@@ -374,8 +424,9 @@ const buildAgentContainer = ({
   settings,
   family,
   existing,
-  logConfiguration,
-}: AgentContainerContext): AgentContainerResult => {
+  firelens,
+  borrowed,
+}: AgentContainerContext): SidecarContainerResult => {
   const warnings: string[] = []
 
   // The API key lives either in `secrets` or in `environment`, never both, so switching between the
@@ -410,6 +461,13 @@ const buildAgentContainer = ({
     warnings.push(`Replacing the health check on the ${AGENT_CONTAINER_NAME} container with the Agent's own probe.`)
   }
 
+  if (firelens) {
+    const takeover = logConfigurationTakeoverWarning(AGENT_CONTAINER_NAME, existing?.logConfiguration, firelens)
+    if (takeover) {
+      warnings.push(takeover)
+    }
+  }
+
   const container = removeUndefinedValues({
     ...existing,
     name: AGENT_CONTAINER_NAME,
@@ -423,22 +481,73 @@ const buildAgentContainer = ({
     // The other end of the socket the tracers write to. The Agent image already listens on this
     // path, so mounting the volume is all it takes.
     mountPoints: withSocketMount(existing?.mountPoints, settings.agentSocket !== false),
-    // Without one, a Fargate container's output goes nowhere, which would leave an Agent that
-    // cannot pull its image or reach Datadog impossible to diagnose.
-    logConfiguration: existing?.logConfiguration ?? logConfiguration,
+    logConfiguration: firelens ?? existing?.logConfiguration ?? borrowed,
   })
 
   return {container, warnings}
 }
 
 /**
- * The log configuration to give the Agent sidecar: the first `awslogs` one found on an application
- * container, whose log group the execution role can already write to.
+ * Inputs for the log router sidecar.
+ */
+type LogRouterContainerContext = {
+  /** The log router already on the task definition, if any. */
+  existing?: ContainerDefinition
+  /** Fallback log configuration when the router has none. */
+  borrowed?: LogConfiguration
+}
+
+/**
+ * Builds the log router sidecar, merging into `existing` when one is already present.
+ */
+const buildLogRouterContainer = ({existing, borrowed}: LogRouterContainerContext): SidecarContainerResult => {
+  const warnings: string[] = []
+
+  if (existing !== undefined && existing.essential !== false) {
+    warnings.push(
+      `Marking the ${LOG_ROUTER_CONTAINER_NAME} container non-essential, overriding the task definition: a crashed log router should cost logs, not availability.`
+    )
+  }
+
+  const healthCheck = {
+    command: [...LOG_ROUTER_HEALTH_CHECK_COMMAND],
+    interval: LOG_ROUTER_HEALTH_CHECK_INTERVAL,
+    timeout: LOG_ROUTER_HEALTH_CHECK_TIMEOUT,
+    retries: LOG_ROUTER_HEALTH_CHECK_RETRIES,
+    startPeriod: LOG_ROUTER_HEALTH_CHECK_START_PERIOD,
+  }
+  if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
+    warnings.push(
+      `Replacing the health check on the ${LOG_ROUTER_CONTAINER_NAME} container with the log router's own probe.`
+    )
+  }
+
+  const container = removeUndefinedValues({
+    ...existing,
+    name: LOG_ROUTER_CONTAINER_NAME,
+    image: LOG_ROUTER_IMAGE,
+    essential: false,
+    user: LOG_ROUTER_USER,
+    firelensConfiguration: {
+      type: FLUENTBIT_FIRELENS_TYPE,
+      options: {'enable-ecs-log-metadata': 'true'},
+    },
+    healthCheck,
+    logConfiguration: existing?.logConfiguration ?? borrowed,
+  })
+
+  return {container, warnings}
+}
+
+/**
+ * The first awslogs configuration on an application container.
  */
 const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfiguration | undefined =>
   containers.find(
     (container) =>
-      container.name !== AGENT_CONTAINER_NAME && container.logConfiguration?.logDriver === AWSLOGS_LOG_DRIVER
+      container.name !== AGENT_CONTAINER_NAME &&
+      container.name !== LOG_ROUTER_CONTAINER_NAME &&
+      container.logConfiguration?.logDriver === AWSLOGS_LOG_DRIVER
   )?.logConfiguration
 
 /**
@@ -466,9 +575,10 @@ const instrumentationTags = (tags: Tag[], settings: InstrumentSettings, service?
 
 /**
  * Rewrites a Fargate task definition to run the Datadog Agent as a sidecar alongside the
- * application containers, which are given the environment their tracers read.
+ * application containers, which are given the environment their tracers read. With log collection
+ * on, also adds the log router sidecar.
  *
- * The Agent container is keyed by name, so instrumenting an already instrumented task definition
+ * Both sidecars are keyed by name, so instrumenting an already instrumented task definition
  * produces an identical result and does not burn a revision.
  */
 export const instrumentTaskDefinition = (
@@ -505,18 +615,32 @@ export const instrumentTaskDefinition = (
   }
 
   const containers = taskDefinition.containerDefinitions ?? []
+  const borrowed = borrowedLogConfiguration(containers)
+  const firelens = settings.logCollection ? firelensLogConfiguration(settings) : undefined
+
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer({
     settings,
     family,
     existing: existingAgent,
-    logConfiguration: borrowedLogConfiguration(containers),
+    firelens,
+    borrowed,
   })
 
-  if (!agentContainer.logConfiguration) {
-    warnings.push(
-      `The ${AGENT_CONTAINER_NAME} container has no logConfiguration, so its own logs will not be collected and a failing Agent will be hard to diagnose. Add one to the task definition.`
-    )
+  const existingLogRouter = containers.find((container) => container.name === LOG_ROUTER_CONTAINER_NAME)
+  let logRouterContainer: ContainerDefinition | undefined
+  if (firelens) {
+    const built = buildLogRouterContainer({existing: existingLogRouter, borrowed})
+    logRouterContainer = built.container
+    warnings.push(...built.warnings)
+  }
+
+  for (const sidecar of [agentContainer, logRouterContainer]) {
+    if (sidecar && !sidecar.logConfiguration) {
+      warnings.push(
+        `The ${sidecar.name} container has no logConfiguration, so its own logs will not be collected and a failure will be hard to diagnose. Add one to the task definition.`
+      )
+    }
   }
 
   // Task collection reads the ECS API as the task role, so a task definition without one collects
@@ -533,18 +657,35 @@ export const instrumentTaskDefinition = (
   const socketEnabled = settings.agentSocket !== false
   const appEnvironment = getAppContainerEnvVars(settings, family)
   const appLabels = getUstDockerLabels(settings, family)
-  const containerDefinitions = containers.map((container) =>
-    container.name === AGENT_CONTAINER_NAME
-      ? agentContainer
-      : removeUndefinedValues({
-          ...container,
-          environment: toEnvironment(appEnvironment, container.environment),
-          dockerLabels: toDockerLabels(appLabels, container.dockerLabels),
-          mountPoints: withSocketMount(container.mountPoints, socketEnabled),
-        })
-  )
+  const containerDefinitions = containers.map((container) => {
+    if (container.name === AGENT_CONTAINER_NAME) {
+      return agentContainer
+    }
+
+    if (container.name === LOG_ROUTER_CONTAINER_NAME) {
+      return logRouterContainer ?? container
+    }
+
+    if (firelens) {
+      const takeover = logConfigurationTakeoverWarning(container.name, container.logConfiguration, firelens)
+      if (takeover) {
+        warnings.push(takeover)
+      }
+    }
+
+    return removeUndefinedValues({
+      ...container,
+      environment: toEnvironment(appEnvironment, container.environment),
+      dockerLabels: toDockerLabels(appLabels, container.dockerLabels),
+      mountPoints: withSocketMount(container.mountPoints, socketEnabled),
+      logConfiguration: firelens ?? container.logConfiguration,
+    })
+  })
   if (!existingAgent) {
     containerDefinitions.push(agentContainer)
+  }
+  if (logRouterContainer && !existingLogRouter) {
+    containerDefinitions.push(logRouterContainer)
   }
 
   return {
@@ -566,20 +707,37 @@ const maskApiKey = (apiKey: string): string =>
   apiKey.length < 12 ? '*'.repeat(16) : `${apiKey.slice(0, 2)}${'*'.repeat(10)}${apiKey.slice(-4)}`
 
 /**
- * The task definition with any plaintext API key masked, for printing. The diff goes to stdout,
- * which in CI is a log that outlives the run, so the key a `DD_API_KEY` fallback writes must not
- * reach it.
+ * Masks a plaintext API key in FireLens log driver options.
+ */
+const withMaskedLogConfiguration = (logConfiguration: LogConfiguration): LogConfiguration => {
+  const apiKey = logConfiguration.options?.[FIRELENS_API_KEY_OPTION]
+  if (apiKey === undefined) {
+    return logConfiguration
+  }
+
+  return {
+    ...logConfiguration,
+    options: {...logConfiguration.options, [FIRELENS_API_KEY_OPTION]: maskApiKey(apiKey)},
+  }
+}
+
+/**
+ * The task definition with any plaintext API key masked, for printing. Covers the Agent's
+ * environment and FireLens log driver options.
  */
 export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => ({
   ...input,
-  containerDefinitions: input.containerDefinitions?.map((container) => ({
-    ...container,
-    environment: container.environment?.map((envVar) =>
-      envVar.name === API_KEY_ENV_VAR && envVar.value !== undefined
-        ? {...envVar, value: maskApiKey(envVar.value)}
-        : envVar
-    ),
-  })),
+  containerDefinitions: input.containerDefinitions?.map((container) =>
+    removeUndefinedValues({
+      ...container,
+      environment: container.environment?.map((envVar) =>
+        envVar.name === API_KEY_ENV_VAR && envVar.value !== undefined
+          ? {...envVar, value: maskApiKey(envVar.value)}
+          : envVar
+      ),
+      logConfiguration: container.logConfiguration && withMaskedLogConfiguration(container.logConfiguration),
+    })
+  ),
 })
 
 /**

@@ -24,6 +24,7 @@ export type EcsFargateConfigOptions = Partial<{
   apiKeySecretArn: string
   agentImage: string
   agentSocket: boolean
+  logCollection: boolean
   service: string
   environment: string
   version: string
@@ -146,6 +147,9 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
     description:
       'Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default.',
   })
+  private logCollection = Option.Boolean('--log-collection,--logCollection', {
+    description: `Send the task's logs to Datadog. Replaces each container's existing log configuration.`,
+  })
   private service = Option.String('--service', {
     description:
       'The value for the service tag. Use this to group related tasks belonging to similar workloads. For example, `my-service`. If not provided, the task definition family is used.',
@@ -218,6 +222,7 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       apiKeySecretArn: this.apiKeySecretArn,
       agentImage: this.agentImage,
       agentSocket: this.noAgentSocket === undefined ? undefined : !this.noAgentSocket,
+      logCollection: this.logCollection,
       service: this.service,
       environment: this.environment,
       version: this.version,
