@@ -12,7 +12,8 @@
     "useUnknownInCatchVariables": false,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "rootDir": ".."
+    "rootDir": "..",
+    "types": ["node", "jest"]
   },
   "include": ["."]
 }

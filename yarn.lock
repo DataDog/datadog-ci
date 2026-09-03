@@ -5924,6 +5924,7 @@ __metadata:
   resolution: "datadog-ci-monorepo@workspace:."
   dependencies:
     "@datadog/datadog-api-client": "npm:1.53.0"
+    "@types/jest": "npm:29.5.3"
     "@types/node": "npm:20.19.37"
     "@yao-pkg/pkg": "npm:6.19.0"
     chalk: "npm:3.0.0"

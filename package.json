@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@datadog/datadog-api-client": "1.53.0",
+    "@types/jest": "29.5.3",
     "@types/node": "20.19.37",
     "@yao-pkg/pkg": "6.19.0",
     "chalk": "3.0.0",
