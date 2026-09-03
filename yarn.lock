@@ -179,6 +179,54 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aws-sdk/client-ecs@npm:3.1045.0":
+  version: 3.1045.0
+  resolution: "@aws-sdk/client-ecs@npm:3.1045.0"
+  dependencies:
+    "@aws-crypto/sha256-browser": "npm:5.2.0"
+    "@aws-crypto/sha256-js": "npm:5.2.0"
+    "@aws-sdk/core": "npm:^3.974.8"
+    "@aws-sdk/credential-provider-node": "npm:^3.972.39"
+    "@aws-sdk/middleware-host-header": "npm:^3.972.10"
+    "@aws-sdk/middleware-logger": "npm:^3.972.10"
+    "@aws-sdk/middleware-recursion-detection": "npm:^3.972.11"
+    "@aws-sdk/middleware-user-agent": "npm:^3.972.38"
+    "@aws-sdk/region-config-resolver": "npm:^3.972.13"
+    "@aws-sdk/types": "npm:^3.973.8"
+    "@aws-sdk/util-endpoints": "npm:^3.996.8"
+    "@aws-sdk/util-user-agent-browser": "npm:^3.972.10"
+    "@aws-sdk/util-user-agent-node": "npm:^3.973.24"
+    "@smithy/config-resolver": "npm:^4.4.17"
+    "@smithy/core": "npm:^3.23.17"
+    "@smithy/fetch-http-handler": "npm:^5.3.17"
+    "@smithy/hash-node": "npm:^4.2.14"
+    "@smithy/invalid-dependency": "npm:^4.2.14"
+    "@smithy/middleware-content-length": "npm:^4.2.14"
+    "@smithy/middleware-endpoint": "npm:^4.4.32"
+    "@smithy/middleware-retry": "npm:^4.5.7"
+    "@smithy/middleware-serde": "npm:^4.2.20"
+    "@smithy/middleware-stack": "npm:^4.2.14"
+    "@smithy/node-config-provider": "npm:^4.3.14"
+    "@smithy/node-http-handler": "npm:^4.6.1"
+    "@smithy/protocol-http": "npm:^5.3.14"
+    "@smithy/smithy-client": "npm:^4.12.13"
+    "@smithy/types": "npm:^4.14.1"
+    "@smithy/url-parser": "npm:^4.2.14"
+    "@smithy/util-base64": "npm:^4.3.2"
+    "@smithy/util-body-length-browser": "npm:^4.2.2"
+    "@smithy/util-body-length-node": "npm:^4.2.3"
+    "@smithy/util-defaults-mode-browser": "npm:^4.3.49"
+    "@smithy/util-defaults-mode-node": "npm:^4.2.54"
+    "@smithy/util-endpoints": "npm:^3.4.2"
+    "@smithy/util-middleware": "npm:^4.2.14"
+    "@smithy/util-retry": "npm:^4.3.6"
+    "@smithy/util-utf8": "npm:^4.2.2"
+    "@smithy/util-waiter": "npm:^4.3.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/919666612a6fa632249d0d2ca45a4f5f6a0013729b36d56d4f984b81f8f33c0eed7cfc39e569ff7116495ca2dab9c164f964c65fc821b10c37caed87a5a4bd6a
+  languageName: node
+  linkType: hard
+
 "@aws-sdk/client-iam@npm:3.1045.0":
   version: 3.1045.0
   resolution: "@aws-sdk/client-iam@npm:3.1045.0"
@@ -1450,6 +1498,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-coverage": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
+    "@datadog/datadog-ci-plugin-ecs-fargate": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
     "@datadog/datadog-ci-plugin-junit": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
@@ -1470,6 +1519,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-deployment":
       optional: true
     "@datadog/datadog-ci-plugin-dora":
+      optional: true
+    "@datadog/datadog-ci-plugin-ecs-fargate":
       optional: true
     "@datadog/datadog-ci-plugin-gate":
       optional: true
@@ -1559,6 +1610,36 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.36.0"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-ecs-fargate@workspace:packages/plugin-ecs-fargate":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-ecs-fargate@workspace:packages/plugin-ecs-fargate"
+  dependencies:
+    "@aws-sdk/client-ecs": "npm:3.1045.0"
+    "@aws-sdk/credential-provider-ini": "npm:3.972.38"
+    "@aws-sdk/credential-providers": "npm:3.1045.0"
+    "@aws-sdk/types": "npm:3.973.8"
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@smithy/property-provider": "npm:2.2.0"
+    "@smithy/util-retry": "npm:2.2.0"
+    aws-sdk-client-mock: "npm:4.1.0"
+    chalk: "npm:3.0.0"
+  peerDependencies:
+    "@aws-sdk/client-ecs": ^3.1045.0
+    "@aws-sdk/credential-providers": ^3.1045.0
+    "@smithy/property-provider": 2.2.0
+    "@smithy/util-retry": 2.2.0
+  peerDependenciesMeta:
+    "@aws-sdk/client-ecs":
+      optional: true
+    "@aws-sdk/credential-providers":
+      optional: true
+    "@smithy/property-provider":
+      optional: true
+    "@smithy/util-retry":
+      optional: true
   languageName: unknown
   linkType: soft
 

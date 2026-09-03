@@ -50,6 +50,18 @@ describe('generateConfigDiff', () => {
     expect(result).toContain('No changes detected.')
   })
 
+  test('should show arrays in the order they will be written', () => {
+    const original = {command: []}
+    const updated = {command: ['CMD-SHELL', '/probe.sh']}
+
+    const expected = `+   "command": [
++     "CMD-SHELL",
++     "/probe.sh"
++   ]`
+    const result = generateConfigDiff(original, updated)
+    expect(result).toContain(expected)
+  })
+
   test('should obfuscate sensitive values', () => {
     const original = {api_key: 'abc123'}
     const updated = {api_key: '1234567890abcdef1234567890abcdef'}

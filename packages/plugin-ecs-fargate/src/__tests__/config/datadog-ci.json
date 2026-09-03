@@ -1,0 +1,8 @@
+{
+  "ecsFargate": {
+    "taskDefinitions": ["my-app"],
+    "service": "from-config",
+    "environment": "staging",
+    "sourceCodeIntegration": false
+  }
+}
