@@ -167,17 +167,6 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         )
       }
 
-      if (
-        (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
-        (containerApp.template?.scale?.minReplicas ?? 0) === 0
-      ) {
-        this.context.stdout.write(
-          renderSoftWarning(
-            `Automatic APM instrumentation can increase cold-start delays for ${containerAppName} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
-          )
-        )
-      }
-
       await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerApp, ssiConfig)
       await this.addTags(config, containerAppClient.subscriptionId, resourceGroup, containerApp, ssiConfig)
     } catch (error) {
@@ -259,6 +248,17 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     this.context.stdout.write(
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )
+
+    if (
+      (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
+      (containerApp.template?.scale?.minReplicas ?? 0) === 0
+    ) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Automatic APM instrumentation can increase cold-start delays for ${containerApp.name} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
+        )
+      )
+    }
 
     if (!this.dryRun) {
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)
