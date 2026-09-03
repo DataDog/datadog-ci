@@ -15,6 +15,7 @@ const noPluginExceptions = new Set([
   'elf-symbols',
   'flutter-symbols',
   'git-metadata',
+  'maui-symbols',
   'measure',
   'pe-symbols',
   'plugin',
