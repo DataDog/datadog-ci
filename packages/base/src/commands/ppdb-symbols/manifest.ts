@@ -20,3 +20,16 @@ export const readDebugIdManifest = (manifestPath: string): DebugIdManifest => {
 
   return parsed as DebugIdManifest
 }
+
+// Assembly names are effectively case-insensitive (Windows file systems, .NET simple-name resolution),
+// so an exact-case manifest key mismatch shouldn't cause a real first-party assembly to be skipped.
+export const lookupDebugId = (manifest: DebugIdManifest, assemblyName: string): string | undefined => {
+  if (assemblyName in manifest) {
+    return manifest[assemblyName]
+  }
+
+  const lowerAssemblyName = assemblyName.toLowerCase()
+  const matchingKey = Object.keys(manifest).find((key) => key.toLowerCase() === lowerAssemblyName)
+
+  return matchingKey === undefined ? undefined : manifest[matchingKey]
+}
