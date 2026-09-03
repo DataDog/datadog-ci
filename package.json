@@ -24,7 +24,7 @@
     "launch:dist": "node packages/datadog-ci/dist/bundle.js",
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn lint:fix <==\n\" && false)",
     "lint:all": "oxlint --quiet",
-    "lint:ci": "oxlint --quiet --format sarif > sarif-datadog-ci.sarif",
+    "lint:ci": "sh -c 'oxlint --quiet --format sarif > sarif-datadog-ci.sarif'",
     "lint:packages": "FORCE_COLOR=1 tsx --conditions=development bin/lint-packages.ts",
     "lint:readme-usage": "FORCE_COLOR=1 tsx --conditions=development bin/lint-readme-usage.ts",
     "lint:yaml": "eslint --cache --quiet '**/*.yml' '**/*.yaml'",
