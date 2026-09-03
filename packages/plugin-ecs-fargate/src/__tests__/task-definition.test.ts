@@ -2,27 +2,34 @@ import type {ContainerDefinition} from '@aws-sdk/client-ecs'
 
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
-import {AGENT_CONTAINER_NAME} from '../constants'
+import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
 import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
 
 import {
   APP_CONTAINER,
   CLI_VERSION_TAG,
+  FIRELENS_LOG_CONFIGURATION,
   INSTRUMENTATION_TAGS,
+  LOG_ROUTER_CONTAINER,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
+  MOCK_LOG_COLLECTION_SETTINGS,
   MOCK_SETTINGS,
   SERVICE_TAG,
   SOCKET_MOUNT,
   SOCKET_VOLUME,
   asDescribed,
   fargateTaskDefinition,
+  firelensLogConfiguration,
 } from './fixtures'
 
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 const agentContainerOf = (containers: ContainerDefinition[] | undefined) =>
   containers?.find((container) => container.name === AGENT_CONTAINER_NAME)
+
+const logRouterContainerOf = (containers: ContainerDefinition[] | undefined) =>
+  containers?.find((container) => container.name === LOG_ROUTER_CONTAINER_NAME)
 
 const appContainerOf = (containers: ContainerDefinition[] | undefined) =>
   containers?.find((container) => container.name === APP_CONTAINER.name)
@@ -620,6 +627,219 @@ describe('instrumentTaskDefinition', () => {
     })
   })
 
+  describe('log collection', () => {
+    test('collects no logs unless it is asked to', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+
+      expect(logRouterContainerOf(taskDefinition.containerDefinitions)).toBeUndefined()
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        APP_CONTAINER.logConfiguration
+      )
+    })
+
+    test('adds the log router sidecar', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      expect(logRouterContainerOf(taskDefinition.containerDefinitions)).toStrictEqual(LOG_ROUTER_CONTAINER)
+    })
+
+    test('routes the application containers and the Agent through the router', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        FIRELENS_LOG_CONFIGURATION
+      )
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        FIRELENS_LOG_CONFIGURATION
+      )
+    })
+
+    test('references the API key secret rather than writing the key into the log driver', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      const logConfiguration = appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration
+      expect(logConfiguration?.secretOptions).toStrictEqual([{name: 'apikey', valueFrom: MOCK_API_KEY_SECRET_ARN}])
+      expect(logConfiguration?.options).not.toHaveProperty('apikey')
+    })
+
+    test('writes the API key into the log driver when no secret ARN is given', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        site: 'datadoghq.com',
+        apiKey: MOCK_API_KEY,
+        logCollection: true,
+      })
+
+      const logConfiguration = appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration
+      expect(logConfiguration).toStrictEqual(firelensLogConfiguration({plaintext: MOCK_API_KEY}))
+      expect(logConfiguration?.secretOptions).toBeUndefined()
+    })
+
+    test('sends the logs to the intake of the site it is given', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_LOG_COLLECTION_SETTINGS,
+        site: 'datadoghq.eu',
+      })
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration?.options).toMatchObject({
+        Host: 'http-intake.logs.datadoghq.eu',
+      })
+    })
+
+    // The router cannot route its own logs, so a router that fails to start would take the task's
+    // logs with it and leave nothing behind to say why.
+    test('keeps a log configuration of its own on the router', () => {
+      const {taskDefinition, warnings} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      expect(logRouterContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        APP_CONTAINER.logConfiguration
+      )
+      expect(warnings).not.toContainEqual(expect.stringContaining('no logConfiguration'))
+    })
+
+    test('warns when there is no log configuration to give the router', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, logConfiguration: undefined}],
+      })
+
+      const {taskDefinition, warnings} = instrumentTaskDefinition(original, MOCK_LOG_COLLECTION_SETTINGS)
+
+      expect(logRouterContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toBeUndefined()
+      expect(warnings).toContainEqual(expect.stringContaining('datadog-log-router container has no logConfiguration'))
+    })
+
+    test('names the containers whose log configuration the router takes over', () => {
+      const {warnings} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      expect(warnings).toStrictEqual([
+        expect.stringContaining('Routing the logs of the my-app container through datadog-log-router, replacing the'),
+      ])
+    })
+
+    test('says nothing about a container that declared no log configuration', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, logConfiguration: undefined}],
+      })
+
+      const {warnings} = instrumentTaskDefinition(original, MOCK_LOG_COLLECTION_SETTINGS)
+
+      expect(warnings).not.toContainEqual(expect.stringContaining('Routing the logs'))
+    })
+
+    test('gives the router none of what the application containers get', () => {
+      const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      const {taskDefinition} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_LOG_COLLECTION_SETTINGS)
+
+      const router = logRouterContainerOf(taskDefinition.containerDefinitions)
+      expect(router?.environment).toBeUndefined()
+      expect(router?.mountPoints).toBeUndefined()
+      expect(router?.dockerLabels).toBeUndefined()
+    })
+
+    describe('idempotency', () => {
+      test('re-instrumenting produces an identical task definition', () => {
+        const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+        const second = instrumentTaskDefinition(
+          asDescribed(first.taskDefinition, {revision: 2}),
+          MOCK_LOG_COLLECTION_SETTINGS
+        )
+
+        expect(second.taskDefinition).toStrictEqual(first.taskDefinition)
+        expect(second.warnings).toHaveLength(0)
+      })
+
+      test('does not add a second log router container', () => {
+        const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+        const {taskDefinition} = instrumentTaskDefinition(
+          asDescribed(first.taskDefinition),
+          MOCK_LOG_COLLECTION_SETTINGS
+        )
+
+        expect(
+          taskDefinition.containerDefinitions?.filter((container) => container.name === LOG_ROUTER_CONTAINER_NAME)
+        ).toHaveLength(1)
+      })
+
+      test('turning log collection on warrants a new revision', () => {
+        const original = {
+          ...stripReadOnlyFields(
+            asDescribed(instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS).taskDefinition)
+          ),
+          tags: INSTRUMENTATION_TAGS,
+        }
+        const {taskDefinition: updated} = instrumentTaskDefinition(
+          fargateTaskDefinition(),
+          MOCK_LOG_COLLECTION_SETTINGS
+        )
+
+        expect(isUpToDate(original, updated)).toBe(false)
+      })
+
+      // The command cannot put back the log configuration it replaced, so taking the router away
+      // would leave the containers pointing at a router that is no longer there.
+      test('leaves an instrumented task definition alone when log collection is turned back off', () => {
+        const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+        const {taskDefinition, warnings} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_SETTINGS)
+
+        expect(taskDefinition).toStrictEqual(first.taskDefinition)
+        expect(warnings).toHaveLength(0)
+      })
+    })
+
+    describe('existing log router container', () => {
+      test('preserves what the user added by hand', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [
+            {...APP_CONTAINER},
+            {
+              name: LOG_ROUTER_CONTAINER_NAME,
+              image: 'public.ecr.aws/aws-observability/aws-for-fluent-bit:2.32.0',
+              memory: 128,
+              environment: [{name: 'FLB_LOG_LEVEL', value: 'debug'}],
+            },
+          ],
+        })
+
+        const {taskDefinition} = instrumentTaskDefinition(original, MOCK_LOG_COLLECTION_SETTINGS)
+
+        const router = logRouterContainerOf(taskDefinition.containerDefinitions)
+        expect(router?.memory).toBe(128)
+        expect(router?.environment).toStrictEqual([{name: 'FLB_LOG_LEVEL', value: 'debug'}])
+        // The command owns the image.
+        expect(router?.image).toBe(LOG_ROUTER_CONTAINER.image)
+      })
+
+      test('warns when it has to override an essential log router container', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [{...APP_CONTAINER}, {name: LOG_ROUTER_CONTAINER_NAME, essential: true}],
+        })
+
+        const {taskDefinition, warnings} = instrumentTaskDefinition(original, MOCK_LOG_COLLECTION_SETTINGS)
+
+        expect(logRouterContainerOf(taskDefinition.containerDefinitions)?.essential).toBe(false)
+        expect(warnings).toContainEqual(
+          expect.stringContaining(`Marking the ${LOG_ROUTER_CONTAINER_NAME} container non-essential`)
+        )
+      })
+
+      test('warns when it replaces a health check the user wrote', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [
+            {...APP_CONTAINER},
+            {name: LOG_ROUTER_CONTAINER_NAME, essential: false, healthCheck: {command: ['CMD-SHELL', 'exit 1']}},
+          ],
+        })
+
+        const {warnings} = instrumentTaskDefinition(original, MOCK_LOG_COLLECTION_SETTINGS)
+
+        expect(warnings).toContainEqual(expect.stringContaining('health check'))
+      })
+    })
+  })
+
   describe('validation', () => {
     test('rejects a task definition that is not awsvpc', () => {
       const original = fargateTaskDefinition({networkMode: 'bridge'})
@@ -664,6 +884,27 @@ describe('withMaskedApiKey', () => {
     expect(value).not.toBe(MOCK_API_KEY)
     expect(value).not.toContain(MOCK_API_KEY.slice(2, -4))
     expect(JSON.stringify(masked)).not.toContain(MOCK_API_KEY)
+  })
+
+  test('masks the plaintext API key the log driver carries', () => {
+    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+      site: 'datadoghq.com',
+      apiKey: MOCK_API_KEY,
+      logCollection: true,
+    })
+
+    const masked = withMaskedApiKey(taskDefinition)
+
+    const value = appContainerOf(masked.containerDefinitions)?.logConfiguration?.options?.apikey
+    expect(value).toBeDefined()
+    expect(value).not.toBe(MOCK_API_KEY)
+    expect(JSON.stringify(masked)).not.toContain(MOCK_API_KEY)
+  })
+
+  test('leaves the secret reference in the log driver alone', () => {
+    const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+    expect(withMaskedApiKey(taskDefinition)).toStrictEqual(taskDefinition)
   })
 
   test('masks an API key that looks like a number', () => {

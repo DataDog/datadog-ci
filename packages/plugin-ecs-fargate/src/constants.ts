@@ -1,3 +1,5 @@
+import type {FirelensConfigurationType, LogDriver} from '@aws-sdk/client-ecs'
+
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
 export const AWS_SHARED_CREDENTIALS_FILE_ENV_VAR = 'AWS_SHARED_CREDENTIALS_FILE'
@@ -48,11 +50,56 @@ export const AGENT_HEALTH_CHECK_RETRIES = 3
 export const AGENT_HEALTH_CHECK_START_PERIOD = 60
 
 /**
- * The only log driver whose configuration can be shared with the Agent sidecar as-is. Other
- * drivers, `awsfirelens` in particular, route through a container that may not be configured to
- * accept the Agent's logs.
+ * The only log driver whose configuration can be borrowed for a sidecar as-is. Other drivers route
+ * through a container this command did not write, which may not be configured to accept the logs of
+ * a container it was never told about.
  */
-export const AWSLOGS_LOG_DRIVER = 'awslogs'
+export const AWSLOGS_LOG_DRIVER: LogDriver = 'awslogs'
+
+// Log router sidecar defaults
+export const LOG_ROUTER_CONTAINER_NAME = 'datadog-log-router'
+
+/**
+ * The Fluent Bit build AWS publishes for FireLens, which ships the Datadog output plugin.
+ */
+export const LOG_ROUTER_IMAGE = 'public.ecr.aws/aws-observability/aws-for-fluent-bit:stable'
+
+export const AWSFIRELENS_LOG_DRIVER: LogDriver = 'awsfirelens'
+export const FLUENTBIT_FIRELENS_TYPE: FirelensConfigurationType = 'fluentbit'
+
+/**
+ * The Fluent Bit output plugin the log router routes to, and how the plugin is told which Datadog
+ * account the logs belong to. The key is read from the log driver options, or from `secretOptions`
+ * when it comes from Secrets Manager.
+ */
+export const DATADOG_FLUENTBIT_OUTPUT = 'datadog'
+export const FIRELENS_API_KEY_OPTION = 'apikey'
+
+/**
+ * How many times Fluent Bit retries a batch the log intake did not accept before dropping it.
+ */
+export const LOG_ROUTER_RETRY_LIMIT = '2'
+
+/**
+ * The log intake the router sends to, which is the site-specific host the Datadog output plugin
+ * expects.
+ */
+export const LOGS_INTAKE_HOST_PREFIX = 'http-intake.logs.'
+
+/**
+ * The log router's health probe, which is what an application container would gate its startup on
+ * to avoid dropping the logs it writes before the router is listening.
+ */
+export const LOG_ROUTER_HEALTH_CHECK_COMMAND = ['CMD-SHELL', 'exit 0']
+export const LOG_ROUTER_HEALTH_CHECK_INTERVAL = 5
+export const LOG_ROUTER_HEALTH_CHECK_TIMEOUT = 5
+export const LOG_ROUTER_HEALTH_CHECK_RETRIES = 3
+export const LOG_ROUTER_HEALTH_CHECK_START_PERIOD = 15
+
+/**
+ * FireLens runs the log router as root so that it can read the other containers' log streams.
+ */
+export const LOG_ROUTER_USER = '0'
 
 // Datadog environment variables not already declared in helpers/serverless/constants.ts
 export const ECS_FARGATE_ENV_VAR = 'ECS_FARGATE'
