@@ -5,7 +5,12 @@ import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/h
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {uploadMultipartHelper} from '../helpers'
-import {renderArgumentMissingError, renderManifestNotFound, renderMissingManifestEntry} from '../renderer'
+import {
+  renderAmbiguousManifestEntry,
+  renderArgumentMissingError,
+  renderManifestNotFound,
+  renderMissingManifestEntry,
+} from '../renderer'
 import {PpdbSymbolsUploadCommand} from '../upload'
 
 const fixtureDir = 'src/commands/ppdb-symbols/__tests__/fixtures'
@@ -210,6 +215,21 @@ describe('ppdb-symbols upload', () => {
 
       const output = context.stdout.toString()
       expect(output).not.toContain(renderMissingManifestEntry('MyApp', `${pdbsDir}/MyApp.pdb`))
+    })
+
+    test('skips and warns when the manifest has case-colliding entries with different debug IDs', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['symbolsLocations'] = [`${pdbsDir}/MyApp.pdb`]
+        cmd['debugIdManifestPath'] = `${fixtureDir}/ambiguousCaseManifest.json`
+      })
+
+      expect(exitCode).toBe(0)
+      expect(uploadMultipartHelper).not.toHaveBeenCalled()
+
+      const output = context.stdout.toString()
+      expect(output).toContain(renderAmbiguousManifestEntry('MyApp', `${pdbsDir}/MyApp.pdb`, ['myapp', 'MYAPP']))
     })
 
     test('does not attach git metadata when --disable-git is passed', async () => {

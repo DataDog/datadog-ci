@@ -31,8 +31,9 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {getPpdbSymbolsRequestBuilder, uploadMultipartHelper} from './helpers'
 import {PORTABLE_PDB_FILENAME, TYPE_PORTABLE_PDB, VALUE_NAME_PORTABLE_PDB} from './interfaces'
-import {lookupDebugId, readDebugIdManifest} from './manifest'
+import {AmbiguousManifestEntryError, lookupDebugId, readDebugIdManifest} from './manifest'
 import {
+  renderAmbiguousManifestEntry,
   renderArgumentMissingError,
   renderCommandInfo,
   renderCommandSummary,
@@ -244,7 +245,18 @@ export class PpdbSymbolsUploadCommand extends BaseCommand {
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, pdbPaths, async (pdbPath) => {
         const assemblyName = upath.basename(pdbPath, '.pdb')
-        const debugId = lookupDebugId(manifest, assemblyName)
+
+        let debugId: string | undefined
+        try {
+          debugId = lookupDebugId(manifest, assemblyName)
+        } catch (error) {
+          if (error instanceof AmbiguousManifestEntryError) {
+            this.context.stdout.write(renderAmbiguousManifestEntry(assemblyName, pdbPath, error.matchingKeys))
+
+            return UploadStatus.Skipped
+          }
+          throw error
+        }
 
         if (debugId === undefined) {
           this.context.stdout.write(renderMissingManifestEntry(assemblyName, pdbPath))

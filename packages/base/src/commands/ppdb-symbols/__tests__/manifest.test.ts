@@ -1,4 +1,4 @@
-import {lookupDebugId, readDebugIdManifest} from '../manifest'
+import {AmbiguousManifestEntryError, lookupDebugId, readDebugIdManifest} from '../manifest'
 
 const fixtureDir = 'src/commands/ppdb-symbols/__tests__/fixtures'
 
@@ -56,5 +56,23 @@ describe('lookupDebugId', () => {
 
   test('returns undefined when no entry matches, case-insensitively', () => {
     expect(lookupDebugId(manifest, 'SomeOtherApp')).toBeUndefined()
+  })
+
+  test('throws AmbiguousManifestEntryError when case-insensitive matches disagree on debug ID', () => {
+    const ambiguousManifest = {
+      MyApp: 'aabbccdd11223344aabbccdd1122334455667788',
+      myapp: '11223344aabbccdd11223344aabbccdd11223344',
+    }
+
+    expect(() => lookupDebugId(ambiguousManifest, 'MYAPP')).toThrow(AmbiguousManifestEntryError)
+  })
+
+  test('does not throw when case-insensitive matches agree on the same debug ID', () => {
+    const consistentManifest = {
+      MyApp: 'aabbccdd11223344aabbccdd1122334455667788',
+      myapp: 'aabbccdd11223344aabbccdd1122334455667788',
+    }
+
+    expect(lookupDebugId(consistentManifest, 'MYAPP')).toBe('aabbccdd11223344aabbccdd1122334455667788')
   })
 })

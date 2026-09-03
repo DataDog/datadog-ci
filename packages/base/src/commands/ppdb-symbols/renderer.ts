@@ -71,6 +71,12 @@ export const renderEventPayload = (payload: string) => chalk.gray(`${ICONS.SUCCE
 export const renderMissingManifestEntry = (assemblyName: string, pdbPath: string) =>
   chalk.yellow(`${ICONS.WARNING} Skipped '${pdbPath}': no debug ID manifest entry found for assembly "${assemblyName}"`)
 
+export const renderAmbiguousManifestEntry = (assemblyName: string, pdbPath: string, matchingKeys: string[]) =>
+  chalk.yellow(
+    `${ICONS.WARNING} Skipped '${pdbPath}': debug ID manifest has multiple entries matching assembly ` +
+      `"${assemblyName}" case-insensitively (${matchingKeys.join(', ')}) with different debug IDs`
+  )
+
 export const renderManifestNotFound = (manifestPath: string) =>
   chalk.red(`${ICONS.FAILED} Error: debug ID manifest file '${manifestPath}' does not exist.\n`)
 

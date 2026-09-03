@@ -21,6 +21,18 @@ export const readDebugIdManifest = (manifestPath: string): DebugIdManifest => {
   return parsed as DebugIdManifest
 }
 
+export class AmbiguousManifestEntryError extends Error {
+  constructor(
+    public readonly assemblyName: string,
+    public readonly matchingKeys: string[]
+  ) {
+    super(
+      `Debug ID manifest has multiple entries matching assembly "${assemblyName}" case-insensitively ` +
+        `(${matchingKeys.join(', ')}) with different debug IDs`
+    )
+  }
+}
+
 // Assembly names are effectively case-insensitive (Windows file systems, .NET simple-name resolution),
 // so an exact-case manifest key mismatch shouldn't cause a real first-party assembly to be skipped.
 export const lookupDebugId = (manifest: DebugIdManifest, assemblyName: string): string | undefined => {
@@ -29,7 +41,16 @@ export const lookupDebugId = (manifest: DebugIdManifest, assemblyName: string): 
   }
 
   const lowerAssemblyName = assemblyName.toLowerCase()
-  const matchingKey = Object.keys(manifest).find((key) => key.toLowerCase() === lowerAssemblyName)
+  const matchingKeys = Object.keys(manifest).filter((key) => key.toLowerCase() === lowerAssemblyName)
 
-  return matchingKey === undefined ? undefined : manifest[matchingKey]
+  if (matchingKeys.length === 0) {
+    return undefined
+  }
+
+  const distinctDebugIds = new Set(matchingKeys.map((key) => manifest[key]))
+  if (distinctDebugIds.size > 1) {
+    throw new AmbiguousManifestEntryError(assemblyName, matchingKeys)
+  }
+
+  return manifest[matchingKeys[0]]
 }
