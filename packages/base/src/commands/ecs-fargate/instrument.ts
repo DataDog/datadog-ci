@@ -148,7 +148,7 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       'Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default.',
   })
   private logCollection = Option.Boolean('--log-collection,--logCollection', {
-    description: `Send the task's logs to Datadog. Replaces each container's existing log configuration.`,
+    description: `Send the task's logs to Datadog. Replaces each container's existing log configuration. Not supported on Windows.`,
   })
   private service = Option.String('--service', {
     description:
