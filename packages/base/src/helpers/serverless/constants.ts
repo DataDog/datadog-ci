@@ -84,6 +84,7 @@ export const FLARE_PROJECT_FILES = [
  */
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
+export const AGENT_IMAGE = 'public.ecr.aws/datadog/agent:latest'
 export const SIDECAR_PORT = 8126
 export const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
 export const DEFAULT_VOLUME_NAME = 'shared-volume'
