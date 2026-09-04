@@ -5,7 +5,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {executePluginCommand} from '../../helpers/plugin'
 import {dryRunTag} from '../../helpers/renderer'
-import {AGENT_IMAGE} from '../../helpers/serverless/constants'
+import {AGENT_IMAGE, ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import {DEFAULT_CONFIG_PATHS, removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -24,6 +24,21 @@ export type EcsFargateConfigOptions = Partial<{
   apiKeySecretArn: string
   agentImage: string
   agentSocket: boolean
+  logCollection: boolean
+  service: string
+  environment: string
+  version: string
+  extraTags: string
+  envVars: string[]
+  // no-dd-sa:typescript-best-practices/boolean-prop-naming
+  sourceCodeIntegration: boolean
+  // no-dd-sa:typescript-best-practices/boolean-prop-naming
+  uploadGitMetadata: boolean
+  tracing: string
+  logLevel: string
+  // no-dd-sa:typescript-best-practices/boolean-prop-naming
+  appsec: boolean
+  llmobs: string
 }>
 
 /**
@@ -132,6 +147,48 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
     description:
       'Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default.',
   })
+  private logCollection = Option.Boolean('--log-collection,--logCollection', {
+    description: `Send the task's logs to Datadog. Replaces each container's existing log configuration.`,
+  })
+  private service = Option.String('--service', {
+    description:
+      'The value for the service tag. Use this to group related tasks belonging to similar workloads. For example, `my-service`. If not provided, the task definition family is used.',
+  })
+  private environment = Option.String('--env,--environment', {
+    description:
+      'The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`.',
+  })
+  private version = Option.String('--version', {
+    description:
+      'The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`.',
+  })
+  private extraTags = Option.String('--extra-tags,--extraTags', {
+    description: 'Additional tags to add to the task in the format "key1:value1,key2:value2".',
+  })
+  private envVars = Option.Array('-e,--env-vars', {
+    description:
+      'Additional environment variables to set on every container in the task. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+  })
+  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', {
+    description: `Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify \`--no-source-code-integration\` to disable. Defaults to 'true'`,
+  })
+  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', {
+    description: `Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify \`--no-upload-git-metadata\` to disable. Defaults to 'true'`,
+  })
+  private tracing = Option.String('--tracing', {
+    description:
+      'Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`.',
+  })
+  private logLevel = Option.String('--log-level,--logLevel', {
+    description: 'Specify your Datadog log level.',
+  })
+  private appsec = Option.Boolean('--appsec', {
+    description: `Enable Application Security Monitoring for the instrumented task. Defaults to 'false'`,
+  })
+  private llmobs = Option.String('--llmobs', {
+    description:
+      'If specified, enables LLM Observability for the instrumented task with the provided ML application name.',
+  })
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file.',
   })
@@ -165,6 +222,18 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       apiKeySecretArn: this.apiKeySecretArn,
       agentImage: this.agentImage,
       agentSocket: this.noAgentSocket === undefined ? undefined : !this.noAgentSocket,
+      logCollection: this.logCollection,
+      service: this.service,
+      environment: this.environment,
+      version: this.version,
+      extraTags: this.extraTags,
+      envVars: this.envVars,
+      sourceCodeIntegration: this.sourceCodeIntegration,
+      uploadGitMetadata: this.uploadGitMetadata,
+      tracing: this.tracing,
+      logLevel: this.logLevel,
+      appsec: this.appsec,
+      llmobs: this.llmobs,
     }
 
     let fileConfig: EcsFargateConfigOptions
@@ -195,6 +264,15 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
       )
     }
 
+    if (config.envVars?.some((envVar) => !ENV_VAR_REGEX.test(envVar))) {
+      errors.push('All env vars must be in the format `KEY=VALUE`')
+    }
+    if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
+      errors.push('Extra tags do not comply with the <key>:<value> array.')
+    }
+    if (config.tracing !== undefined && toBoolean(config.tracing) === undefined) {
+      errors.push('--tracing must be either `true` or `false`.')
+    }
     if (config.cluster && !config.ecsServices?.length) {
       errors.push('--cluster names the cluster of the services to update, so it only applies with --ecs-service.')
     }
