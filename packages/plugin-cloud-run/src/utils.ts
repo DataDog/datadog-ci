@@ -39,9 +39,13 @@ export const fetchServiceConfigs = async (
 
           return serv
         } catch (error) {
-          throw new Error(
-            `Service ${serviceName} not found in project ${project}, region ${region}.\n\nNo services were instrumented.\n`
-          )
+          const cause = error instanceof Error ? error.message : String(error)
+          const message =
+            error instanceof Error && 'code' in error && error.code === 5
+              ? `Service ${serviceName} not found in project ${project}, region ${region}.`
+              : `Failed to fetch service ${serviceName} in project ${project}, region ${region}: ${cause}`
+
+          throw new Error(`${message}\n\nNo services were changed.\n`)
         }
       },
       `Fetched service configuration for ${chalk.bold(serviceName)}`

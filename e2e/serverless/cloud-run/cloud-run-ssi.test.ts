@@ -5,7 +5,7 @@ import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../hel
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
-import {verifySsiInstrumented} from './cloud-run-verifier'
+import {verifyMultiLanguageSsiInstrumented, verifySsiInstrumented} from './cloud-run-verifier'
 
 const describeOrSkip =
   process.env.SKIP_CLOUD_RUN_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -98,6 +98,67 @@ describeOrSkip('cloud-run SSI', () => {
           envName,
           envValue,
         })
+
+        const urlResult = await execPromise(
+          `gcloud run services describe "${serviceName}"` +
+            ` --project "${project}"` +
+            ` --region "${region}"` +
+            ` --format="value(status.url)"`
+        )
+        expect(urlResult.exitCode).toBe(0)
+
+        await triggerTraffic(urlResult.stdout.trim())
+        await checkTelemetryFlowing({serviceName}, {checkLogs: false})
+      } finally {
+        const deleteResult = await execPromise(
+          `gcloud run services delete "${serviceName}"` +
+            ` --project "${project}"` +
+            ` --region "${region}"` +
+            ` --platform managed` +
+            ` --quiet` +
+            ` --format=none`
+        )
+        if (deleteResult.exitCode !== 0) {
+          console.error(`Failed to delete Cloud Run service "${serviceName}": ${deleteResult.stderr}`)
+        }
+      }
+    },
+    600_000
+  )
+
+  it.concurrent.each(SSI_CASES)(
+    'detects and injects the $language tracer',
+    async ({language, image}) => {
+      const serviceName = `one-e2e-ci-cr-ssi-multi-${language}-${crypto.randomBytes(4).toString('hex')}`
+
+      try {
+        const deployResult = await execPromiseWithRetries(
+          `gcloud run deploy "${serviceName}"` +
+            ` --project "${project}"` +
+            ` --region "${region}"` +
+            ` --platform managed` +
+            ` --image "${image}"` +
+            ` --allow-unauthenticated` +
+            ` --min-instances 0` +
+            ` --max-instances 1` +
+            ` --quiet` +
+            ` --format=none` +
+            ` --labels one_e2e_created=${Math.floor(Date.now() / 1000)}`
+        )
+        expect(deployResult).toEqual(expect.objectContaining({exitCode: 0}))
+
+        const instrumentResult = await execPromiseWithRetries(
+          `${DATADOG_CI_COMMAND} cloud-run instrument` +
+            ` --project "${project}"` +
+            ` --region "${region}"` +
+            ` --service "${serviceName}"` +
+            ` --tracing inject` +
+            ` --no-source-code-integration`,
+          {DD_API_KEY: process.env.DATADOG_API_KEY}
+        )
+        expect(instrumentResult).toEqual(expect.objectContaining({exitCode: 0}))
+
+        verifyMultiLanguageSsiInstrumented(serviceName, project, region, {appImage: image})
 
         const urlResult = await execPromise(
           `gcloud run services describe "${serviceName}"` +

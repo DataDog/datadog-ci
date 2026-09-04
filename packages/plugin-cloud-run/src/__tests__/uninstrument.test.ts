@@ -34,6 +34,7 @@ const mockServicesClient = {
 }
 
 jest.mock('@google-cloud/run', () => ({
+  ...jest.requireActual('@google-cloud/run'),
   ServicesClient: jest.fn(() => mockServicesClient),
 }))
 
@@ -47,6 +48,12 @@ describe('UninstrumentCommand', () => {
       (project: string, region: string, service: string) =>
         `projects/${project}/locations/${region}/services/${service}`
     )
+    mockServicesClient.updateService.mockImplementation(({service}) => [
+      {
+        metadata: service,
+        promise: jest.fn().mockResolvedValue([]),
+      },
+    ])
   })
 
   describe('validates required variables', () => {
@@ -129,7 +136,6 @@ describe('UninstrumentCommand', () => {
 
     beforeEach(() => {
       mockServicesClient.getService.mockResolvedValue([mockService])
-      mockServicesClient.updateService.mockResolvedValue([{promise: jest.fn().mockResolvedValue([])}])
       jest.restoreAllMocks()
       ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(true)
     })
@@ -277,6 +283,46 @@ describe('UninstrumentCommand', () => {
         }),
       ])
       expect(result.template?.volumes).toEqual([{name: 'customer-volume', emptyDir: {}}])
+    })
+
+    test('preserves unowned tracer resources', () => {
+      const preload = '/opt/datadog-packages/datadog-apm-inject/stable/inject/launcher.preload.so'
+      const service: IService = {
+        labels: {customer: 'keep-me'},
+        template: {
+          containers: [
+            {
+              name: 'app',
+              env: [
+                {name: 'LD_PRELOAD', value: `${preload} /customer/preload.so`},
+                {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
+                {name: 'CUSTOM_VAR', value: 'keep-me'},
+              ],
+              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/opt/datadog-packages'}],
+              dependsOn: [TRACER_CONTAINER_NAME, 'database'],
+            },
+            {name: TRACER_CONTAINER_NAME},
+          ],
+          volumes: [{name: TRACER_VOLUME_NAME, emptyDir: {}}],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      expect(result.labels).toEqual({customer: 'keep-me'})
+      expect(result.template?.containers).toEqual([
+        expect.objectContaining({
+          name: 'app',
+          env: [
+            {name: 'LD_PRELOAD', value: `${preload} /customer/preload.so`},
+            {name: 'CUSTOM_VAR', value: 'keep-me'},
+          ],
+          volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/opt/datadog-packages'}],
+          dependsOn: [TRACER_CONTAINER_NAME, 'database'],
+        }),
+        expect.objectContaining({name: TRACER_CONTAINER_NAME}),
+      ])
+      expect(result.template?.volumes).toEqual([{name: TRACER_VOLUME_NAME, emptyDir: {}}])
     })
 
     test('keeps an unnamed main container unnamed', () => {

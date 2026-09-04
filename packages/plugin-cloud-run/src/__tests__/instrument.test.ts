@@ -27,6 +27,7 @@ const mockServicesClient = {
   updateService: jest.fn(),
 }
 jest.mock('@google-cloud/run', () => ({
+  ...jest.requireActual('@google-cloud/run'),
   ServicesClient: jest.fn(() => mockServicesClient),
 }))
 
@@ -47,6 +48,12 @@ describe('InstrumentCommand', () => {
     mockServicesClient.servicePath.mockImplementation(
       (project, region, service) => `projects/${project}/locations/${region}/services/${service}`
     )
+    mockServicesClient.updateService.mockImplementation(({service}) => [
+      {
+        metadata: service,
+        promise: jest.fn().mockResolvedValue([]),
+      },
+    ])
   })
 
   describe('validates required variables', () => {
@@ -137,7 +144,8 @@ describe('InstrumentCommand', () => {
     ]
 
     test.each([
-      [['--tracing', 'inject'], 'requires --language'],
+      [['--tracing', 'inject', '--tracer-version', 'latest'], 'requires --language'],
+      [['--tracing', 'inject', '--tracer-libc', 'glibc'], 'requires --language'],
       [['--tracer-version', 'latest'], 'require --tracing inject'],
       [['--tracer-volume-medium', 'disk'], 'require --tracing inject'],
       [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
@@ -185,6 +193,20 @@ describe('InstrumentCommand', () => {
       const options = instrumentConfig.mock.calls[0][1]
       expect(options.ssiConfig?.kind).toBe(configKind)
       expect(options.envVarsByName.DD_TRACE_ENABLED?.value).toBe(traceEnabled)
+    })
+
+    test('--tracing inject without a language selects multi-language injection', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+
+      const {code} = await runCLI([...requiredFlags, '--dry-run', '--tracing', 'inject'])
+
+      expect(code).toBe(0)
+      expect(instrumentConfig.mock.calls[0][1].ssiConfig).toEqual({
+        kind: 'multi-language',
+        tracerVolumeMedium: 'memory',
+        warnings: [],
+      })
     })
 
     test('--language sets the log source without automatic instrumentation', async () => {
@@ -290,11 +312,6 @@ describe('InstrumentCommand', () => {
       process.env[SERVICE_ENV_VAR] = 'test-service'
 
       mockServicesClient.getService.mockResolvedValue([mockService])
-
-      const mockOperation = {
-        promise: jest.fn().mockResolvedValue([]),
-      }
-      mockServicesClient.updateService.mockResolvedValue([mockOperation])
 
       jest.restoreAllMocks()
 
