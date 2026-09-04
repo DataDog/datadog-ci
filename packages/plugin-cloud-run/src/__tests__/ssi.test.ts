@@ -1,12 +1,17 @@
 import type {InstrumentServiceConfigOptions} from '../service-config'
 import type {IContainer, IEnvVar, IService} from '../types'
+import type {TracingInput} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
 import {
   DD_TRACE_ENABLED_ENV_VAR,
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {TRACER_MOUNT_PATH, TRACER_READINESS_PORT} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {
+  TRACER_CONTAINER_NAME,
+  TRACER_MOUNT_PATH,
+  TRACER_READINESS_PORT,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
   LIBCS,
@@ -17,7 +22,9 @@ import {TRACER_INJECTION_LANGUAGES, type Language} from '@datadog/datadog-ci-bas
 
 import {instrumentServiceConfig} from '../service-config'
 import {
+  getTracingEnvValue,
   mergeLanguageInjectionEnv,
+  normalizeTracingMode,
   removeLanguageInjectionEnv,
   resolveSsiConfig,
   selectMainContainer,
@@ -28,25 +35,25 @@ import {
 const defaultOptions: SsiOptions = {
   language: undefined,
   tracing: undefined,
-  tracerVersion: 'latest',
-  tracerRegistry: 'gcr.io/datadoghq',
-  tracerLibc: 'glibc',
+  tracerVersion: undefined,
+  tracerLibc: undefined,
+  tracerVolumeMedium: undefined,
 }
 
-const getSpec = (language: Language, libc: Libc = defaultOptions.tracerLibc) =>
+const getSpec = (language: Language, libc: Libc = 'glibc') =>
   getLanguageInjectionSpec({
     language,
-    registry: defaultOptions.tracerRegistry,
-    version: defaultOptions.tracerVersion,
+    registry: 'gcr.io/datadoghq',
+    version: 'latest',
     libc,
     root: TRACER_MOUNT_PATH,
   })
 
 const nodeSpec = getSpec('nodejs')
 const supportedLanguageVariants = TRACER_INJECTION_LANGUAGES.flatMap((language) =>
-  LIBCS.filter(
-    (libc) => getLanguageCompatibilityErrors({language, libc, version: defaultOptions.tracerVersion}).length === 0
-  ).map((libc) => [language, libc] as const)
+  LIBCS.filter((libc) => getLanguageCompatibilityErrors({language, libc, version: 'latest'}).length === 0).map(
+    (libc) => [language, libc] as const
+  )
 )
 
 const getErrors = (overrides: Partial<SsiOptions>) => {
@@ -54,6 +61,22 @@ const getErrors = (overrides: Partial<SsiOptions>) => {
 
   return result.kind === 'errors' ? result.errors.join('\n') : ''
 }
+
+describe('tracing modes', () => {
+  test.each<[TracingInput | undefined, SsiOptions['tracing'], string | undefined]>([
+    [undefined, undefined, undefined],
+    ['true', 'manual', 'true'],
+    ['1', 'manual', '1'],
+    ['manual', 'manual', 'true'],
+    ['false', 'disabled', 'false'],
+    ['0', 'disabled', '0'],
+    ['disabled', 'disabled', 'false'],
+    ['inject', 'inject', 'true'],
+  ])('normalizes %s', (input, mode, envValue) => {
+    expect(normalizeTracingMode(input)).toBe(mode)
+    expect(getTracingEnvValue(input)).toBe(envValue)
+  })
+})
 
 describe('resolveSsiConfig', () => {
   test.each<[string, SsiOptions['tracing']]>([
@@ -68,14 +91,29 @@ describe('resolveSsiConfig', () => {
     })
   })
 
-  test('requires injection for tracer flags', () => {
-    expect(getErrors({tracerVersion: '1.2.3', tracerLibc: 'musl'})).toContain('--tracer-version, --tracer-libc')
+  test('requires injection for tracer options, including explicit defaults', () => {
+    expect(getErrors({tracerVersion: 'latest', tracerLibc: 'glibc', tracerVolumeMedium: 'memory'})).toContain(
+      '--tracer-version, --tracer-libc, --tracer-volume-medium'
+    )
+  })
+
+  test('defaults the tracer volume to memory and accepts disk', () => {
+    const memory = resolveSsiConfig({...defaultOptions, tracing: 'inject', language: 'nodejs'})
+    const disk = resolveSsiConfig({
+      ...defaultOptions,
+      tracing: 'inject',
+      language: 'nodejs',
+      tracerVolumeMedium: 'disk',
+    })
+
+    expect(memory).toMatchObject({kind: 'single-language', tracerVolumeMedium: 'memory'})
+    expect(disk).toMatchObject({kind: 'single-language', tracerVolumeMedium: 'disk'})
   })
 
   test.each([
     [{tracing: 'inject'}, '--language'],
     [{tracing: 'inject', language: 'go'}, '--tracing manual'],
-    [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'Use glibc'],
+    [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'musl'],
     [{tracing: 'inject', language: 'csharp', tracerVersion: '2.51.0'}, 'Use tracer version 3.0'],
   ] satisfies [Partial<SsiOptions>, string][])('rejects incompatible options %#', (options, message) => {
     expect(getErrors(options)).toContain(message)
@@ -189,7 +227,7 @@ describe('language injection environment', () => {
 })
 
 describe('selectMainContainer', () => {
-  const reserved = new Set(['datadog-sidecar', 'datadog-tracer-copy'])
+  const reserved = new Set(['datadog-sidecar', 'datadog-tracer'])
 
   test('selects the sole application port and ignores reserved and probe ports', () => {
     const containers: IContainer[] = [
@@ -222,11 +260,15 @@ describe('selectMainContainer', () => {
   })
 })
 
-const serviceConfigOptions = (language: Language | 'none' = 'nodejs'): InstrumentServiceConfigOptions => ({
+const serviceConfigOptions = (
+  language: Language | 'none' = 'nodejs',
+  tracerVolumeMedium: SsiOptions['tracerVolumeMedium'] = undefined
+): InstrumentServiceConfigOptions => ({
   ssiConfig: resolveSsiConfig({
     ...defaultOptions,
     tracing: language === 'none' ? undefined : 'inject',
     language: language === 'none' ? undefined : language,
+    tracerVolumeMedium,
   }),
   ddService: 'service',
   environment: undefined,
@@ -283,7 +325,7 @@ describe('SSI service preparation', () => {
       {name: 'shared-volume', mountPath: '/shared-volume'},
       {name: 'datadog-tracer', mountPath: '/datadog-lib'},
     ])
-    expect(app?.dependsOn).toEqual(['datadog-tracer-copy', 'datadog-sidecar'])
+    expect(app?.dependsOn).toEqual(['datadog-tracer', 'datadog-sidecar'])
     expect(app?.env).toContainEqual({name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'})
     expect(app?.env).toContainEqual({
       name: 'NODE_OPTIONS',
@@ -293,9 +335,17 @@ describe('SSI service preparation', () => {
     expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
   })
 
-  test('applies the tracer-copy sidecar and sized Memory volume', () => {
+  test('preserves existing Node configuration when injecting Python', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions('python'))
+    const app = result.template?.containers?.find((container) => container.name === 'app')
+
+    expect(app?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
+    expect(app?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
+  })
+
+  test('applies the tracer container and sized Memory volume', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
-    const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')
+    const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer')
 
     expect(tracer).toMatchObject({
       image: 'gcr.io/datadoghq/dd-lib-js-init:latest',
@@ -310,7 +360,7 @@ describe('SSI service preparation', () => {
       },
     })
     expect(tracer?.args?.slice(2)).toEqual([
-      'datadog-tracer-copy',
+      'datadog-tracer',
       '/datadog-lib',
       '/datadog-lib/.dd-trace-js-copy-finished',
       '18999',
@@ -324,12 +374,77 @@ describe('SSI service preparation', () => {
     })
   })
 
-  test('uses the configured readiness port for the tracer-copy container', () => {
+  test.each([
+    [undefined, 'BETA'],
+    ['LAUNCH_STAGE_UNSPECIFIED', 'BETA'],
+    ['GA', 'BETA'],
+    ['BETA', 'BETA'],
+    ['ALPHA', 'ALPHA'],
+  ] as const)('uses a 10 GiB disk volume and launch stage %s', (launchStage, expectedLaunchStage) => {
+    const service = serviceWithWorker()
+    service.description = 'keep me'
+    service.launchStage = launchStage
+    service.template!.executionEnvironment = 1
+    service.template!.serviceAccount = 'customer-service-account'
+
+    const result = instrumentServiceConfig(service, serviceConfigOptions('nodejs', 'disk'))
+
+    expect(result.launchStage).toBe(expectedLaunchStage)
+    expect(result.description).toBe('keep me')
+    expect(result.template).toMatchObject({
+      executionEnvironment: 2,
+      serviceAccount: 'customer-service-account',
+    })
+    expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
+      name: 'datadog-tracer',
+      emptyDir: {medium: 2, sizeLimit: '10Gi'},
+    })
+  })
+
+  test('switches tracer storage without resetting disk requirements', () => {
+    const memory = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const disk = instrumentServiceConfig(memory, serviceConfigOptions('nodejs', 'disk'))
+    const retry = instrumentServiceConfig(disk, serviceConfigOptions('nodejs', 'disk'))
+    const memoryAgain = instrumentServiceConfig(disk, serviceConfigOptions())
+
+    expect(disk.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toMatchObject({
+      emptyDir: {medium: 2, sizeLimit: '10Gi'},
+    })
+    expect(retry).toEqual(disk)
+    expect(memoryAgain.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toMatchObject({
+      emptyDir: {medium: 1, sizeLimit: '500Mi'},
+    })
+    expect(memoryAgain.launchStage).toBe('BETA')
+    expect(memoryAgain.template?.executionEnvironment).toBe(2)
+  })
+
+  test.each([
+    ['manual', 'true'],
+    ['disabled', 'false'],
+  ] as const)('removes disk injection for %s without resetting service requirements', (tracing, traceEnabled) => {
+    const injected = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions('nodejs', 'disk'))
+    const noInjectionOptions = serviceConfigOptions('none')
+    const result = instrumentServiceConfig(injected, {
+      ...noInjectionOptions,
+      ssiConfig: resolveSsiConfig({...defaultOptions, tracing, language: 'nodejs'}),
+      envVarsByName: {
+        ...noInjectionOptions.envVarsByName,
+        [DD_TRACE_ENABLED_ENV_VAR]: {name: DD_TRACE_ENABLED_ENV_VAR, value: traceEnabled},
+      },
+    })
+
+    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer')).toBeUndefined()
+    expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toBeUndefined()
+    expect(result.launchStage).toBe('BETA')
+    expect(result.template?.executionEnvironment).toBe(2)
+  })
+
+  test('uses the configured readiness port for the tracer container', () => {
     const result = instrumentServiceConfig(serviceWithWorker(), {
       ...serviceConfigOptions(),
       tracerReadinessPort: 19000,
     })
-    const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')
+    const tracer = result.template?.containers?.find((container) => container.name === 'datadog-tracer')
 
     expect(tracer?.args?.at(-1)).toBe('19000')
     expect(tracer?.startupProbe?.tcpSocket?.port).toBe(19000)
@@ -366,7 +481,7 @@ describe('SSI service preparation', () => {
     expect(() =>
       instrumentServiceConfig(serviceWithWorker(), {
         ...serviceConfigOptions(),
-        healthCheckPort: String(TRACER_READINESS_PORT),
+        healthCheckPort: TRACER_READINESS_PORT,
       })
     ).toThrow(/Datadog Agent health port 18999.*--tracer-readiness-port or --health-check-port/)
   })
@@ -383,18 +498,40 @@ describe('SSI service preparation', () => {
     )
   })
 
-  test('uses --health-check-port before the existing Agent DD_HEALTH_PORT', () => {
+  test('uses an explicit health port for the Agent environment and startup probe', () => {
     const service = serviceWithWorker()
     service.template!.containers!.push({
       name: 'datadog-sidecar',
-      env: [{name: 'DD_HEALTH_PORT', value: String(TRACER_READINESS_PORT)}],
+      env: [{name: 'DD_HEALTH_PORT', value: '8128'}],
     } as IContainer)
 
-    const result = instrumentServiceConfig(service, {...serviceConfigOptions(), healthCheckPort: '5555'})
+    const result = instrumentServiceConfig(service, {...serviceConfigOptions(), healthCheckPort: 8127})
+    const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
 
-    expect(
-      result.template?.containers?.find((container) => container.name === 'datadog-sidecar')?.startupProbe
-    ).toEqual(expect.objectContaining({tcpSocket: {port: 5555}}))
+    expect(sidecar?.startupProbe?.tcpSocket?.port).toBe(8127)
+    expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: '8127'})
+  })
+
+  test('uses the existing Agent DD_HEALTH_PORT when there is no explicit port', () => {
+    const service = serviceWithWorker()
+    service.template!.containers!.push({
+      name: 'datadog-sidecar',
+      env: [{name: 'DD_HEALTH_PORT', value: '8127'}],
+    } as IContainer)
+
+    const result = instrumentServiceConfig(service, serviceConfigOptions())
+    const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
+
+    expect(sidecar?.startupProbe?.tcpSocket?.port).toBe(8127)
+    expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: '8127'})
+  })
+
+  test('uses the default Agent health port when no port is configured', () => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
+    const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
+
+    expect(sidecar?.startupProbe?.tcpSocket?.port).toBe(DEFAULT_HEALTH_CHECK_PORT)
+    expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: String(DEFAULT_HEALTH_CHECK_PORT)})
   })
 
   test('keeps an unnamed main container unnamed during injection and replacement', () => {
@@ -410,8 +547,8 @@ describe('SSI service preparation', () => {
     const node = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
     const app = node.template!.containers![0]
     const worker = node.template!.containers![1]
-    app.dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
-    worker.dependsOn = ['datadog-tracer-copy', 'datadog-sidecar']
+    app.dependsOn = ['datadog-tracer', 'datadog-sidecar']
+    worker.dependsOn = ['datadog-tracer', 'datadog-sidecar']
     worker.env = mergeLanguageInjectionEnv(worker.env, getSpec('nodejs'))
 
     const result = instrumentServiceConfig(node, serviceConfigOptions('python'))
@@ -420,15 +557,24 @@ describe('SSI service preparation', () => {
 
     expect(updatedApp?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
     expect(updatedApp?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
-    expect(updatedApp?.dependsOn).toEqual(['datadog-tracer-copy', 'datadog-sidecar'])
+    expect(updatedApp?.dependsOn).toEqual(['datadog-tracer', 'datadog-sidecar'])
     expect(updatedWorker?.env).toEqual(worker.env)
     expect(updatedWorker?.dependsOn).toEqual(['datadog-sidecar'])
-    expect(result.template?.containers?.filter((container) => container.name === 'datadog-tracer-copy')).toHaveLength(1)
-    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')?.image).toBe(
+    expect(result.template?.containers?.filter((container) => container.name === 'datadog-tracer')).toHaveLength(1)
+    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer')?.image).toBe(
       'gcr.io/datadoghq/dd-lib-python-init:latest'
     )
     expect(result.template?.volumes?.filter((volume) => volume.name === 'datadog-tracer')).toHaveLength(1)
     expect(instrumentServiceConfig(result, serviceConfigOptions('python'))).toEqual(result)
+  })
+
+  test('rejects an unowned tracer container', () => {
+    const service = serviceWithWorker()
+    service.template!.containers!.push({name: TRACER_CONTAINER_NAME, image: 'customer-image'} as IContainer)
+
+    expect(() => instrumentServiceConfig(service, serviceConfigOptions('python'))).toThrow(
+      "the service already has a container named 'datadog-tracer' that is not managed by datadog-ci"
+    )
   })
 
   test.each([
@@ -454,7 +600,7 @@ describe('SSI service preparation', () => {
     const app = result.template!.containers![0]
 
     expect(result.labels).not.toHaveProperty('dd_sls_injection_mode')
-    expect(result.template!.containers!.map((container) => container.name)).not.toContain('datadog-tracer-copy')
+    expect(result.template!.containers!.map((container) => container.name)).not.toContain('datadog-tracer')
     expect(result.template!.volumes!.map((volume) => volume.name)).toEqual(
       expect.arrayContaining(['shared-volume', 'customer-volume'])
     )
@@ -481,13 +627,30 @@ describe('SSI service preparation', () => {
     const result = instrumentServiceConfig(injected, {...serviceConfigOptions('none'), ssiConfig: undefined})
 
     expect(result.labels?.dd_sls_injection_mode).toBe('single_language')
-    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer-copy')).toBeDefined()
+    expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer')).toBeDefined()
     expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toBeDefined()
+  })
+
+  test('unset tracing preserves an existing DD_TRACE_ENABLED value', () => {
+    const service = serviceWithWorker()
+    service.template!.containers![0].env!.push({name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'})
+    const options = serviceConfigOptions('none')
+    const {[DD_TRACE_ENABLED_ENV_VAR]: _tracing, ...envVarsByName} = options.envVarsByName
+    const result = instrumentServiceConfig(service, {...options, envVarsByName})
+
+    expect(result.template?.containers?.[0].env).toContainEqual({
+      name: DD_TRACE_ENABLED_ENV_VAR,
+      value: 'false',
+    })
+    expect(result.template?.containers?.[1].env).toContainEqual({
+      name: DD_TRACE_ENABLED_ENV_VAR,
+      value: 'true',
+    })
   })
 
   test('no-injection preserves unrelated containers and the requested tracing state', () => {
     const service = serviceWithWorker()
-    const tracer = {name: 'datadog-tracer-copy', image: 'old-tracer', env: [{name: 'KEEP', value: 'true'}]}
+    const tracer = {name: 'datadog-tracer', image: 'old-tracer', env: [{name: 'KEEP', value: 'true'}]}
     service.template!.containers!.push(tracer)
 
     const result = instrumentServiceConfig(service, serviceConfigOptions('none'))

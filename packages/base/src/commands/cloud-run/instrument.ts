@@ -1,14 +1,21 @@
 import {Command, Option} from 'clipanion'
+import * as t from 'typanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 import {
   DEFAULT_VOLUME_PATH,
   DEFAULT_LOGS_PATH,
+  DEFAULT_HEALTH_CHECK_PORT,
   DEFAULT_SIDECAR_NAME,
   DEFAULT_VOLUME_NAME,
 } from '../../helpers/serverless/constants'
+import {TRACER_READINESS_PORT} from '../../helpers/serverless/ssi/constants'
+import {LIBCS} from '../../helpers/serverless/ssi/injection-spec'
+import {TRACER_IMAGE_TAG_REG_EXP, TRACER_INJECTION_LANGUAGES} from '../../helpers/serverless/ssi/tracer'
 
 import {BaseCommand} from '../..'
+
+import {DEFAULT_TRACER_LIBC, DEFAULT_TRACER_VERSION, TRACER_VOLUME_MEDIA, TRACING_INPUTS} from './constants'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
@@ -57,7 +64,8 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   })
   protected tracing = Option.String('--tracing', {
     description:
-      'Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`.',
+      'Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled".',
+    validator: t.isEnum(TRACING_INPUTS),
   })
   protected serviceTag = Option.String('--service-tag,--serviceTag', {
     description:
@@ -75,7 +83,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description:
       'If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name.',
   })
-  protected healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
+  protected healthCheckPort: number | undefined = Option.String('--port,--health-check-port,--healthCheckPort', {
+    description: `Set the Datadog Agent health port. The Agent listens on this port, and its Cloud Run startup probe checks it. If omitted, the command uses the existing sidecar DD_HEALTH_PORT, or ${DEFAULT_HEALTH_CHECK_PORT}.`,
+    validator: t.cascade(t.isNumber(), t.isInteger(), t.isInInclusiveRange(1, 65535)),
+  })
   protected sidecarImage = Option.String('--image,--sidecar-image', DEFAULT_SIDECAR_IMAGE, {
     description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,
   })
@@ -98,7 +109,31 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
   })
   protected language = Option.String('--language', {
-    description: `Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php".`,
+    description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: ${TRACER_INJECTION_LANGUAGES.map(
+      (language) => `"${language}"`
+    ).join(', ')}.`,
+  })
+  protected tracerVersion = Option.String('--tracer-version', {
+    description: `The tracer image tag to use with --tracing inject. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
+    validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
+  })
+  protected tracerLibc = Option.String('--tracer-libc', {
+    description: `The C standard library used by the application image for automatic instrumentation. Possible values: ${LIBCS.map(
+      (libc) => `"${libc}"`
+    ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
+    validator: t.isEnum(LIBCS),
+  })
+  protected tracerVolumeMedium = Option.String('--tracer-volume-medium', {
+    description: `Storage medium for the injected tracer volume. Possible values: ${TRACER_VOLUME_MEDIA.map(
+      (medium) => `"${medium}"`
+    ).join(
+      ', '
+    )}. Defaults to "memory". "disk" uses a 10 GiB Preview volume, promotes the launch stage to at least BETA, and requires the second generation execution environment.`,
+    validator: t.isEnum(TRACER_VOLUME_MEDIA),
+  })
+  protected tracerReadinessPort: number = Option.String('--tracer-readiness-port', String(TRACER_READINESS_PORT), {
+    description: `The tracer container readiness port. Must not conflict with the main application port or the Agent health-check port. Defaults to ${TRACER_READINESS_PORT}.`,
+    validator: t.cascade(t.isNumber(), t.isInteger(), t.isInInclusiveRange(1024, 65535)),
   })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

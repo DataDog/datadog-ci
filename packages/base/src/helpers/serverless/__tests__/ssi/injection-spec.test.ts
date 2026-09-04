@@ -130,9 +130,33 @@ describe('language injection specifications', () => {
   })
 
   test.each(['2.56.0', 'v2.60.1'])('reports .NET 2.x layouts as incompatible', (version) => {
-    expect(getLanguageCompatibilityErrors({language: 'csharp', libc: 'glibc', version})).toEqual([
-      expect.stringContaining('versions before 3.0 require architecture-specific package paths'),
+    expect(getLanguageCompatibilityErrors({language: 'csharp', libc: 'glibc', version})).toContainEqual(
+      expect.stringContaining('versions before 3.0 require architecture-specific package paths')
+    )
+  })
+
+  test.each([
+    ['java', '1.65.1'],
+    ['nodejs', '6.10.0'],
+    ['csharp', '3.51.1'],
+    ['python', '4.13.0'],
+    ['ruby', '2.41.0'],
+    ['php', '1.23.3'],
+  ] as const)('requires a tracer version newer than the %s probe-server baseline', (language, baseline) => {
+    expect(getLanguageCompatibilityErrors({language, libc: 'glibc', version: baseline})).toEqual([
+      expect.stringContaining(`later than ${baseline}`),
     ])
+  })
+
+  test.each([
+    ['4.13.1', []],
+    ['v4.13.1', []],
+    ['latest', []],
+    ['4.12.9', [expect.stringContaining('later than 4.13.0')]],
+    ['4.13.0', [expect.stringContaining('later than 4.13.0')]],
+    ['release-2026', []],
+  ])('handles the Python tracer tag %s', (version, expected) => {
+    expect(getLanguageCompatibilityErrors({language: 'python', libc: 'glibc', version})).toEqual(expected)
   })
 
   test.each(['glibc', 'musl'] as const)('uses the current universal .NET package paths for %s', (libc) => {
@@ -166,6 +190,6 @@ describe('language injection specifications', () => {
 
   test('accepts compatible language options', () => {
     expect(getLanguageCompatibilityErrors({language: 'java', libc: 'musl', version: 'latest'})).toEqual([])
-    expect(getLanguageCompatibilityErrors({language: 'csharp', libc: 'glibc', version: '3.0.0'})).toEqual([])
+    expect(getLanguageCompatibilityErrors({language: 'csharp', libc: 'glibc', version: '3.52.0'})).toEqual([])
   })
 })

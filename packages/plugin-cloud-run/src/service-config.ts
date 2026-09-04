@@ -1,5 +1,6 @@
 import type {SsiConfigResult} from './ssi'
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume} from './types'
+import type {TracerVolumeMedium} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 
 import {createInstrumentedTemplate} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
@@ -8,7 +9,7 @@ import {
   DEFAULT_HEALTH_CHECK_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
-  TRACER_COPY_CONTAINER_NAME,
+  TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_READINESS_PORT,
   TRACER_VOLUME_NAME,
@@ -19,9 +20,16 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 
 import {mergeLanguageInjectionEnv, removeLanguageInjectionEnv, selectMainContainer, SsiConfigError} from './ssi'
 
+type EmptyDirMedium = NonNullable<NonNullable<IVolume['emptyDir']>['medium']>
+
 const MEMORY_VOLUME_MEDIUM = 1 as const // google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
+const DISK_VOLUME_MEDIUM = 2 as EmptyDirMedium // Cloud Run API DISK; the installed SDK enum has not caught up.
+const DISK_VOLUME_SIZE_LIMIT = '10Gi'
+const GEN2_EXECUTION_ENVIRONMENT = 2 as const // google.cloud.run.v2.ExecutionEnvironment.EXECUTION_ENVIRONMENT_GEN2
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
+const LEGACY_TRACER_CONTAINER_NAME = 'datadog-tracer-copy'
+const MANAGED_TRACER_CONTAINER_NAMES = new Set([TRACER_CONTAINER_NAME, LEGACY_TRACER_CONTAINER_NAME])
 const UNIFIED_SERVICE_TAG_LABELS = {
   service: 'service',
   environment: 'env',
@@ -39,7 +47,7 @@ export interface InstrumentServiceConfigOptions {
   readonly environment: string | undefined
   readonly version: string | undefined
   readonly envVarsByName: Readonly<Record<string, IEnvVar>>
-  readonly healthCheckPort: string | undefined
+  readonly healthCheckPort: number | undefined
   readonly tracerReadinessPort?: number
   readonly sidecarName: string
   readonly sidecarImage: string
@@ -70,30 +78,53 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
 
   let sourceTemplate: IServiceTemplate = service.template || {}
   let targetContainers: ReadonlySet<IContainer> | undefined
-  const envVarsByName = {...options.envVarsByName}
+  const healthCheckPort = resolveHealthCheckPort(sourceTemplate, options)
+  const envVarsByName: Record<string, IEnvVar> = {
+    ...options.envVarsByName,
+    [HEALTH_PORT_ENV_VAR]: {name: HEALTH_PORT_ENV_VAR, value: String(healthCheckPort)},
+  }
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
+  const sourceContainers = sourceTemplate.containers ?? []
+  const hasTracerContainer = sourceContainers.some(isManagedTracerContainer)
+  const hasTracerVolume = sourceTemplate.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME) ?? false
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
   if (shouldRemoveSsi) {
     sourceTemplate = removeExistingSsiState(sourceTemplate)
   } else if (ssiConfig.kind === 'no-injection') {
-    if (sourceTemplate.containers?.some((container) => container.name === TRACER_COPY_CONTAINER_NAME)) {
+    if (hasTracerContainer) {
       targetContainers = new Set(
-        sourceTemplate.containers.filter(
-          (container) => container.name !== options.sidecarName && container.name !== TRACER_COPY_CONTAINER_NAME
+        sourceContainers.filter(
+          (container) => container.name !== options.sidecarName && !isManagedTracerContainer(container)
         )
       )
     }
   } else {
+    if (!hasSsi && (hasTracerContainer || hasTracerVolume)) {
+      const resources = [hasTracerContainer ? 'container' : undefined, hasTracerVolume ? 'volume' : undefined].filter(
+        (resource): resource is string => resource !== undefined
+      )
+      throw new SsiConfigError(
+        `Cannot enable automatic instrumentation because the service already has a ${resources.join(
+          ' and '
+        )} named '${TRACER_CONTAINER_NAME}' that is not managed by datadog-ci. Rename the existing ${
+          resources.length === 1 ? resources[0] : 'resources'
+        }, then retry.`
+      )
+    }
     const mainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+      reservedContainerNames(options.sidecarName)
     )
-    assertTracerReadinessPortAvailable(sourceTemplate, mainContainer, options, tracerReadinessPort)
-    sourceTemplate = hasSsi ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
+    assertTracerReadinessPortAvailable(mainContainer, options.sidecarName, tracerReadinessPort, healthCheckPort)
+    if (!hasSsi) {
+      assertTracerMountPathAvailable(mainContainer)
+    }
+    sourceTemplate =
+      hasSsi || hasTracerContainer ? removeExistingSsiState(sourceTemplate, mainContainer) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
+      reservedContainerNames(options.sidecarName)
     )
     targetContainers = new Set([updatedMainContainer])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
@@ -101,7 +132,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
 
   let template = createInstrumentedTemplate(
     sourceTemplate,
-    buildSidecarContainer(sourceTemplate, options),
+    buildSidecarContainer(sourceTemplate, options, healthCheckPort),
     {
       name: options.sharedVolumeName,
       mountPath: options.sharedVolumePath,
@@ -111,7 +142,6 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     envVarsByName,
     targetContainers
   ) as IServiceTemplate
-
   const labels: Record<string, string> = {
     ...service.labels,
     [UNIFIED_SERVICE_TAG_LABELS.service]: options.ddService,
@@ -129,10 +159,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   }
 
   if (ssiConfig.kind === 'single-language') {
-    const mainContainer = selectMainContainer(
-      template.containers ?? [],
-      new Set([options.sidecarName, TRACER_COPY_CONTAINER_NAME])
-    )
+    const mainContainer = selectMainContainer(template.containers ?? [], reservedContainerNames(options.sidecarName))
     const configuredMainContainer = {
       ...mainContainer,
       env: mergeLanguageInjectionEnv(mainContainer.env, ssiConfig.spec),
@@ -143,12 +170,13 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         container === mainContainer ? configuredMainContainer : container
       ),
     }
-    template = applyTracerCopy(
+    template = applyTracerContainer(
       template,
       {
         image: ssiConfig.spec.image,
         completionMarker: getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
         readinessPort: tracerReadinessPort,
+        tracerVolumeMedium: ssiConfig.tracerVolumeMedium,
       },
       configuredMainContainer,
       [options.sidecarName]
@@ -156,7 +184,18 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     labels[SSI_INJECTION_MODE_LABEL] = SINGLE_LANGUAGE_SSI_MODE
   }
 
-  return {...service, labels, template: {...template, revision: undefined}}
+  const usesDiskTracerVolume = ssiConfig.kind === 'single-language' && ssiConfig.tracerVolumeMedium === 'disk'
+
+  return {
+    ...service,
+    ...(usesDiskTracerVolume ? {launchStage: atLeastBetaLaunchStage(service.launchStage)} : {}),
+    labels,
+    template: {
+      ...template,
+      ...(usesDiskTracerVolume ? {executionEnvironment: GEN2_EXECUTION_ENVIRONMENT} : {}),
+      revision: undefined,
+    },
+  }
 }
 
 export const uninstrumentServiceConfig = (
@@ -170,10 +209,7 @@ export const uninstrumentServiceConfig = (
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
   const hasSsi = service.labels?.[SSI_INJECTION_MODE_LABEL] === SINGLE_LANGUAGE_SSI_MODE
   const updatedContainers = containers
-    .filter(
-      (container) =>
-        container.name !== options.sidecarName && (!hasSsi || container.name !== TRACER_COPY_CONTAINER_NAME)
-    )
+    .filter((container) => container.name !== options.sidecarName && (!hasSsi || !isManagedTracerContainer(container)))
     .map((container) =>
       removeContainerInstrumentation(
         container,
@@ -206,27 +242,28 @@ export const uninstrumentServiceConfig = (
   }
 }
 
-const TRACER_COPY_SCRIPT = [
+const TRACER_RUNTIME_SCRIPT = [
   'set -e',
   '/datadog-init/copy-lib.sh "$1"',
   '[ -f "$2" ]',
   'exec /datadog-init/probe-server "$3"',
 ].join('\n')
 
-interface TracerCopyConfig {
+interface TracerContainerConfig {
   image: string
   completionMarker: string
   readinessPort: number
+  tracerVolumeMedium: TracerVolumeMedium
 }
 
-const buildTracerCopyContainer = (config: TracerCopyConfig): IContainer => ({
-  name: TRACER_COPY_CONTAINER_NAME,
+const buildTracerContainer = (config: TracerContainerConfig): IContainer => ({
+  name: TRACER_CONTAINER_NAME,
   image: config.image,
   command: ['/bin/sh'],
   args: [
     '-c',
-    TRACER_COPY_SCRIPT,
-    TRACER_COPY_CONTAINER_NAME,
+    TRACER_RUNTIME_SCRIPT,
+    TRACER_CONTAINER_NAME,
     TRACER_MOUNT_PATH,
     config.completionMarker,
     String(config.readinessPort),
@@ -242,13 +279,13 @@ const buildTracerCopyContainer = (config: TracerCopyConfig): IContainer => ({
   },
 })
 
-const applyTracerCopy = (
+const applyTracerContainer = (
   template: IServiceTemplate,
-  config: TracerCopyConfig,
+  config: TracerContainerConfig,
   mainContainer: IContainer,
   dependencyNames: readonly string[]
 ): IServiceTemplate => {
-  const managedDependencies = new Set([TRACER_COPY_CONTAINER_NAME, ...dependencyNames])
+  const managedDependencies = new Set([...MANAGED_TRACER_CONTAINER_NAMES, ...dependencyNames])
   const containers = (template.containers ?? []).map((container) =>
     container === mainContainer
       ? {
@@ -259,14 +296,14 @@ const applyTracerCopy = (
           ],
           dependsOn: [
             ...(container.dependsOn ?? []).filter((name) => !managedDependencies.has(name)),
-            TRACER_COPY_CONTAINER_NAME,
+            TRACER_CONTAINER_NAME,
             ...dependencyNames,
           ],
         }
       : container
   )
 
-  containers.push(buildTracerCopyContainer(config))
+  containers.push(buildTracerContainer(config))
 
   return {
     ...template,
@@ -275,17 +312,38 @@ const applyTracerCopy = (
       ...(template.volumes ?? []),
       {
         name: TRACER_VOLUME_NAME,
-        emptyDir: {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT},
+        emptyDir: tracerVolumeConfig(config.tracerVolumeMedium),
       },
     ],
   }
 }
 
+const tracerVolumeConfig = (medium: TracerVolumeMedium) =>
+  medium === 'disk'
+    ? {medium: DISK_VOLUME_MEDIUM, sizeLimit: DISK_VOLUME_SIZE_LIMIT}
+    : {medium: MEMORY_VOLUME_MEDIUM, sizeLimit: TRACER_VOLUME_SIZE_LIMIT}
+
+const atLeastBetaLaunchStage = (launchStage: IService['launchStage']) =>
+  launchStage === 'ALPHA' ? launchStage : 'BETA'
+
+const assertTracerMountPathAvailable = (mainContainer: IContainer): void => {
+  const existingMount = mainContainer.volumeMounts?.find((mount) => mount.mountPath === TRACER_MOUNT_PATH)
+  if (existingMount) {
+    throw new SsiConfigError(
+      `Cannot enable automatic instrumentation because volume '${
+        existingMount.name || '<unnamed>'
+      }' already uses managed tracer mount path '${TRACER_MOUNT_PATH}' on container '${
+        mainContainer.name || '<unnamed>'
+      }'. Change the existing mount path, then retry.`
+    )
+  }
+}
+
 const assertTracerReadinessPortAvailable = (
-  template: IServiceTemplate,
   mainContainer: IContainer,
-  options: InstrumentServiceConfigOptions,
-  tracerReadinessPort: number
+  sidecarName: string,
+  tracerReadinessPort: number,
+  healthCheckPort: number
 ): void => {
   if (mainContainer.ports?.some(({containerPort}) => containerPort === tracerReadinessPort)) {
     const containerName = mainContainer.name || '<unnamed>'
@@ -294,9 +352,8 @@ const assertTracerReadinessPortAvailable = (
     )
   }
 
-  const healthCheckPort = resolveHealthCheckPort(template, options)
   if (healthCheckPort === tracerReadinessPort) {
-    const containerName = options.sidecarName || '<unnamed>'
+    const containerName = sidecarName || '<unnamed>'
     throw new SsiConfigError(
       `--tracer-readiness-port ${tracerReadinessPort} conflicts with Datadog Agent health port ${healthCheckPort} for container '${containerName}'. Change --tracer-readiness-port or --health-check-port.`
     )
@@ -306,7 +363,7 @@ const assertTracerReadinessPortAvailable = (
 const removeExistingSsiState = (template: IServiceTemplate, mainContainer?: IContainer): IServiceTemplate => ({
   ...template,
   containers: (template.containers ?? [])
-    .filter((container) => container.name !== TRACER_COPY_CONTAINER_NAME)
+    .filter((container) => !isManagedTracerContainer(container))
     .map((container) =>
       removeExistingSsiContainer(
         container,
@@ -333,8 +390,17 @@ const removeExistingSsiContainer = (container: IContainer, isMainContainer: bool
     cleaned = {...cleaned, volumeMounts}
   }
 
-  return removeDependency(cleaned, TRACER_COPY_CONTAINER_NAME)
+  return removeDependencies(cleaned, MANAGED_TRACER_CONTAINER_NAMES)
 }
+
+const isManagedTracerContainer = (container: IContainer): boolean =>
+  typeof container.name === 'string' && MANAGED_TRACER_CONTAINER_NAMES.has(container.name)
+
+const reservedContainerNames = (sidecarName: string): ReadonlySet<string> =>
+  new Set([sidecarName, ...MANAGED_TRACER_CONTAINER_NAMES])
+
+const removeDependencies = (container: IContainer, names: ReadonlySet<string>): IContainer =>
+  [...names].reduce((updated, name) => removeDependency(updated, name), container)
 
 const removeDependency = (container: IContainer, name: string): IContainer => {
   if (!container.dependsOn?.includes(name)) {
@@ -350,7 +416,11 @@ const removeDependency = (container: IContainer, name: string): IContainer => {
   return {...container, dependsOn}
 }
 
-const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentServiceConfigOptions): IContainer => {
+const buildSidecarContainer = (
+  template: IServiceTemplate,
+  options: InstrumentServiceConfigOptions,
+  healthCheckPort: number
+): IContainer => {
   const existingSidecar = template.containers?.find((container) => container.name === options.sidecarName)
 
   return {
@@ -358,7 +428,7 @@ const buildSidecarContainer = (template: IServiceTemplate, options: InstrumentSe
     name: options.sidecarName,
     image: options.sidecarImage,
     startupProbe: {
-      tcpSocket: {port: resolveHealthCheckPort(template, options)},
+      tcpSocket: {port: healthCheckPort},
       initialDelaySeconds: 0,
       periodSeconds: 10,
       failureThreshold: 3,
