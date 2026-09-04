@@ -13,48 +13,42 @@ const describeOrSkip =
 const SSI_CASES = [
   {
     language: 'csharp',
-    image:
-      'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/dotnet-ssi@sha256:3c7ce68221fb7703cb6b925d791a98fd22b05489dbbac1fad94ed60b6fedb366',
+    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/dotnet-ssi:latest',
     tracerRepository: 'dotnet',
     envName: 'CORECLR_PROFILER_PATH',
     envValue: '/datadog-lib/Datadog.Trace.ClrProfiler.Native.so',
   },
   {
     language: 'java',
-    image:
-      'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/java-ssi@sha256:9951a0cf3626ea7beb98fa8cc42a82f0efc17937f884c4bd9da29a69146f2fdd',
+    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/java-ssi:latest',
     tracerRepository: 'java',
     envName: 'JAVA_TOOL_OPTIONS',
     envValue: '-javaagent:/datadog-lib/dd-java-agent.jar',
   },
   {
     language: 'nodejs',
-    image:
-      'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/node-ssi@sha256:5943fc61fc30fd77fd847819b37b2cf32dbc394c107116621610bd4b13099ce2',
+    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/node-ssi:latest',
     tracerRepository: 'js',
     envName: 'NODE_OPTIONS',
     envValue: '--require /datadog-lib/node_modules/dd-trace/init.js',
   },
   {
     language: 'php',
-    image:
-      'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/php-ssi@sha256:9dac8b55bdf31c5416f9e02ec1d79e3eb163d67658fc54123072ae773d1ca1c6',
+    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/php-ssi:latest',
     tracerRepository: 'php',
     envName: 'PHP_INI_SCAN_DIR',
     envValue: '/datadog-lib/linux-gnu/loader',
   },
   {
     language: 'python',
-    image:
-      'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/python-ssi@sha256:8d231a35ca52b04db5ffab295b195ce7b6c4feae68cb02ae6496199e853681ff',
+    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/python-ssi:latest',
     tracerRepository: 'python',
     envName: 'PYTHONPATH',
     envValue: '/datadog-lib',
   },
   {
     language: 'ruby',
-    image:
-      'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/ruby-ssi@sha256:7863a6cb7c029ef551789a9ea555d97a642f5012dee5412dfb4b3f78b3ad4ea5',
+    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/ruby-ssi:latest',
     tracerRepository: 'ruby',
     envName: 'RUBYOPT',
     envValue: '-r/datadog-lib/auto_inject',
