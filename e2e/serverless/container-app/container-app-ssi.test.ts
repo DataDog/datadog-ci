@@ -5,7 +5,12 @@ import {DATADOG_CI_COMMAND, execPromiseWithRetries} from '../../helpers/exec'
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
-import {getContainerAppUrl, verifySsiInstrumented, verifyUninstrumented} from './container-app-verifier'
+import {
+  getContainerAppUrl,
+  verifyMultiLanguageSsiInstrumented,
+  verifySsiInstrumented,
+  verifyUninstrumented,
+} from './container-app-verifier'
 
 const SSI_CASES = [
   {
@@ -164,4 +169,88 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
     },
     1_200_000
   )
+
+  it('detects Node.js, injects its tracer, and removes the composite', async () => {
+    const applicationImage = SSI_CASES.find(({language}) => language === 'nodejs')!.applicationImage
+    const runId = crypto.randomBytes(4).toString('hex')
+    const appName = `one-e2e-capp-ssi-auto-${runId}`
+    const instrumentCommand =
+      `${DATADOG_CI_COMMAND} container-app instrument` +
+      ` -s "${subscriptionId}"` +
+      ` -g "${resourceGroup}"` +
+      ` -n "${appName}"` +
+      ` --service "${appName}"` +
+      ` --env e2e` +
+      ` --version "${runId}"` +
+      ` --extra-tags "one_e2e_run_id:${runId}"` +
+      ` --tracing inject` +
+      ` --no-source-code-integration`
+
+    let lifecycleError: Error | undefined
+    let cleanupError: Error | undefined
+    try {
+      const create = await execPromiseWithRetries(
+        `az containerapp create` +
+          ` --name "${appName}"` +
+          ` --resource-group "${resourceGroup}"` +
+          ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
+          ` --image "${applicationImage}"` +
+          ` --cpu 0.25 --memory 0.5Gi` +
+          ` --min-replicas 0 --max-replicas 1` +
+          ` --ingress external --target-port 8080` +
+          ` --tags one_e2e_created=${Math.floor(Date.now() / 1000)}` +
+          ` --output none`
+      )
+      assertCommandSucceeded('create', create)
+
+      const instrument = await execPromiseWithRetries(instrumentCommand, {DD_API_KEY: process.env.DATADOG_API_KEY})
+      assertCommandSucceeded('instrument', instrument)
+      verifyMultiLanguageSsiInstrumented(appName, resourceGroup, subscriptionId, runId, applicationImage)
+
+      const appUrl = getContainerAppUrl(appName, resourceGroup, subscriptionId)
+      const [traffic, telemetry] = await Promise.allSettled([
+        triggerTraffic(appUrl, {attempts: 20, requiredSuccesses: 10, intervalSeconds: 10}),
+        checkTelemetryFlowing(
+          {serviceName: appName, env: 'e2e', version: runId, tags: [`one_e2e_run_id:${runId}`]},
+          {checkLogs: false}
+        ),
+      ])
+      if (traffic.status === 'rejected') {
+        throw traffic.reason
+      }
+      if (telemetry.status === 'rejected') {
+        throw telemetry.reason
+      }
+
+      const uninstrument = await execPromiseWithRetries(
+        `${DATADOG_CI_COMMAND} container-app uninstrument` +
+          ` -s "${subscriptionId}"` +
+          ` -g "${resourceGroup}"` +
+          ` -n "${appName}"`,
+        {DD_API_KEY: process.env.DATADOG_API_KEY}
+      )
+      assertCommandSucceeded('uninstrument', uninstrument)
+      verifyUninstrumented(appName, resourceGroup, subscriptionId)
+    } catch (error) {
+      lifecycleError = error instanceof Error ? error : new Error(String(error))
+    } finally {
+      const cleanup = await execPromiseWithRetries(
+        `az containerapp delete --name "${appName}" --resource-group "${resourceGroup}" --yes --output none`
+      )
+      if (cleanup.exitCode !== 0) {
+        const output = [cleanup.stderr, cleanup.stdout].filter(Boolean).join('\n') || 'no command output'
+        cleanupError = new Error(`Failed to delete container app (exit code ${cleanup.exitCode}): ${output}`)
+      }
+    }
+
+    if (lifecycleError && cleanupError) {
+      throw new Error(`${String(lifecycleError)}\n${cleanupError.message}`)
+    }
+    if (cleanupError) {
+      throw cleanupError
+    }
+    if (lifecycleError) {
+      throw lifecycleError
+    }
+  }, 1_200_000)
 })

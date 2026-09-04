@@ -34,6 +34,11 @@ const SHARED_VOLUME_NAME = 'shared-volume'
 const DD_API_KEY_SECRET_NAME = 'dd-api-key'
 const TRACER_NAME = 'datadog-tracer'
 const TRACER_MOUNT_PATH = '/datadog-lib'
+const COMPOSITE_TRACER_MOUNT_PATH = '/opt/datadog-packages'
+const COMPOSITE_TRACER_IMAGE = 'datadoghq.azurecr.io/dd-lib-composite-init:latest'
+const COMPOSITE_PRELOAD = `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so`
+const NODE_TRACER_IMAGE = 'datadoghq.azurecr.io/dd-lib-js-init:latest'
+const NODE_OPTIONS_FRAGMENT = '--require /datadog-lib/node_modules/dd-trace/init.js'
 const INJECTION_MODE_TAG = '_dd.injection.mode:serverless-single-lang'
 const EXPECTED_ENV = 'e2e'
 const REQUIRED_ENV_VARS = [
@@ -235,6 +240,52 @@ export const verifySsiInstrumented = (
   expect(tags.one_e2e_created).toBeDefined()
 }
 
+export const verifyMultiLanguageSsiInstrumented = (
+  appName: string,
+  resourceGroup: string,
+  subscriptionId: string,
+  runId: string,
+  applicationImage: string
+): void => {
+  console.log(`Fetching container app "${appName}"...`)
+  const app = getContainerApp(appName, resourceGroup, subscriptionId)
+  const template = app.properties.template
+  const containers = template.containers ?? []
+  const initContainers = template.initContainers ?? []
+  const volumes = template.volumes ?? []
+  const tags = app.tags ?? {}
+
+  const sidecar = containers.find(({name}) => name === SIDECAR_NAME)
+  expect(sidecar).toBeDefined()
+  const applicationContainers = containers.filter(({name}) => name !== SIDECAR_NAME)
+  expect(applicationContainers).toHaveLength(1)
+  const application = applicationContainers[0]
+  expect(application.image).toBe(applicationImage)
+
+  expect(initContainers.filter(({name}) => name === TRACER_NAME)).toEqual([
+    expect.objectContaining({
+      image: COMPOSITE_TRACER_IMAGE,
+      command: ['/datadog-init/copy-lib.sh'],
+      args: [COMPOSITE_TRACER_MOUNT_PATH],
+      resources: expect.objectContaining({cpu: 0.25, memory: '0.5Gi'}),
+      volumeMounts: [{volumeName: TRACER_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH}],
+    }),
+  ])
+  expect(volumes.filter(({name}) => name === TRACER_NAME)).toEqual([expect.objectContaining({storageType: 'EmptyDir'})])
+  expect(application.volumeMounts?.filter(({volumeName}) => volumeName === TRACER_NAME)).toEqual([
+    {volumeName: TRACER_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH},
+  ])
+  expect(sidecar!.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
+
+  const env = envByName(application)
+  expect(env.DD_TRACE_ENABLED.value).toBe('true')
+  expect(env.LD_PRELOAD.value?.split(COMPOSITE_PRELOAD)).toHaveLength(2)
+  expect(env.DD_INJECT_SENDER_TYPE.value).toBe('serverless')
+  expect(env.DD_TAGS.value).toContain(`one_e2e_run_id:${runId}`)
+  expect(env.DD_TAGS.value).not.toContain(INJECTION_MODE_TAG)
+  expect(tags.dd_sls_injection_mode).toBe('multi_language')
+}
+
 export const verifyUninstrumented = (
   appName: string,
   resourceGroup: string,
@@ -266,6 +317,11 @@ export const verifyUninstrumented = (
     const ddVars = env.filter((e) => e.name.startsWith('DD_'))
     expect(ddVars).toHaveLength(0)
     expect(container.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
+    expect(container.volumeMounts ?? []).not.toContainEqual(
+      expect.objectContaining({mountPath: COMPOSITE_TRACER_MOUNT_PATH})
+    )
+    expect(env.find(({name}) => name === 'NODE_OPTIONS')?.value ?? '').not.toContain(NODE_OPTIONS_FRAGMENT)
+    expect(env.find(({name}) => name === 'LD_PRELOAD')?.value ?? '').not.toContain(COMPOSITE_PRELOAD)
     if (nativeEnv) {
       expect(env.find(({name}) => name === nativeEnv.name)?.value ?? '').not.toContain(nativeEnv.fragment)
     }

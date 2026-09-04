@@ -35,7 +35,14 @@ datadog-ci container-app instrument \
   --env prod \
   --version 1.0.0
 
-# Add a Python tracer automatically
+# Detect the application language and add its tracer automatically
+datadog-ci container-app instrument \
+  --subscription-id <subscription-id> \
+  --resource-group <resource-group-name> \
+  --name <container-app-name> \
+  --tracing inject
+
+# Add only the Python tracer
 datadog-ci container-app instrument \
   --subscription-id <subscription-id> \
   --resource-group <resource-group-name> \
@@ -53,11 +60,13 @@ datadog-ci container-app instrument \
 
 ### Automatic APM instrumentation
 
-Use `--tracing inject --language <language>` to add a tracer without rebuilding the application image. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
+Use `--tracing inject` to detect the application language and add its tracer without rebuilding the application image. Add `--language <language>` to copy only one tracer. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
 
-Tracer injection uses the `latest` tracer version and `glibc` by default. Use `--tracer-version` to pin an image tag, or `--tracer-libc musl` for a musl-based image. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Runtime support follows the [APM compatibility requirements](https://docs.datadoghq.com/tracing/trace_collection/compatibility/); `latest` can drop runtimes after they reach end of life.
+`--tracer-version` and `--tracer-libc` require `--language`. Single-language injection uses the `latest` tracer version and `glibc` by default. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Runtime support follows the [APM compatibility requirements](https://docs.datadoghq.com/tracing/trace_collection/compatibility/); `latest` can drop runtimes after they reach end of life.
 
-Automatic instrumentation can increase cold-start delays when the app scales to zero. For scale-to-zero workloads, install the tracer in the application image, and use `--tracing manual`.
+Go tracers cannot be injected. Install `dd-trace-go` in the application image, and use `--tracing manual`.
+
+Automatic instrumentation can increase cold-start delays when the app scales to zero. Automatic language detection copies a larger composite tracer image than selecting one language. For scale-to-zero workloads, install the tracer in the application image, and use `--tracing manual`.
 
 For a Container App with multiple application containers, use `--container-name` to select one container. This differs from `--name`, which selects the Container App resource.
 
@@ -146,10 +155,10 @@ You can pass the following arguments to `instrument` to specify its behavior. Va
 | `--sidecar-cpu` |  | The number of CPUs to allocate to the sidecar container. | `0.5` |
 | `--sidecar-memory` |  | The amount of memory (in GiB) to allocate to the sidecar container. | `1` |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. | `index.docker.io/datadog/serverless-init:latest` |
-| `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` with `--language` for automatic instrumentation, or `disabled` to turn tracing off. Defaults to `manual`. |  |
-| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects a supported tracer. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. |  |
-| `--tracer-version` |  | Set the tracer image tag for automatic instrumentation. | `latest` |
-| `--tracer-libc` |  | Set the C standard library used by the application image. Possible values: "glibc", "musl". | `glibc` |
+| `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` to detect the language and add a tracer automatically, or `disabled` to turn tracing off. Add `--language` with `inject` to select one tracer. Defaults to `manual`. |  |
+| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects one tracer instead of detecting the language automatically. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. |  |
+| `--tracer-version` |  | Set the tracer image tag for automatic instrumentation with `--language`. | `latest` |
+| `--tracer-libc` |  | Set the C standard library used by the application image with `--language`. Possible values: "glibc", "musl". | `glibc` |
 | `--container-name` |  | Select the application container to instrument when the Container App has multiple application containers. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |

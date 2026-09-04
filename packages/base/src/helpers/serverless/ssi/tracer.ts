@@ -4,7 +4,8 @@ export const SINGLE_LANGUAGE_TRACER_REGISTRIES = [
   'datadoghq.azurecr.io',
 ] as const
 
-export type SingleLanguageTracerRegistry = (typeof SINGLE_LANGUAGE_TRACER_REGISTRIES)[number]
+export type TracerRegistry = (typeof SINGLE_LANGUAGE_TRACER_REGISTRIES)[number]
+export type SingleLanguageTracerRegistry = TracerRegistry
 
 export const LANGUAGE_METADATA = {
   java: {tracerLanguage: 'java', repository: 'dd-trace-java'},
