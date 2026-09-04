@@ -643,6 +643,14 @@ export const instrumentTaskDefinition = (
     )
   }
 
+  const windows = isWindowsTask(taskDefinition)
+  // FireLens does not support Windows Fargate
+  if (settings.logCollection && windows) {
+    throw Error(
+      `Task definition ${family} runs Windows, which the ${LOG_ROUTER_CONTAINER_NAME} sidecar does not support. FireLens is Linux-only, so log collection cannot be enabled on this task.`
+    )
+  }
+
   const containers = taskDefinition.containerDefinitions ?? []
   const borrowed = borrowedLogConfiguration(containers)
   const firelens = settings.logCollection ? firelensLogConfiguration(settings) : undefined
@@ -650,7 +658,7 @@ export const instrumentTaskDefinition = (
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer({
     settings,
-    windows: isWindowsTask(taskDefinition),
+    windows,
     family,
     existing: existingAgent,
     firelens,

@@ -81,6 +81,7 @@ export const LOG_ROUTER_CONTAINER_NAME = 'datadog-log-router'
 
 /**
  * The Fluent Bit build AWS publishes for FireLens, which ships the Datadog output plugin.
+ * Linux only: FireLens does not run on Windows Fargate.
  */
 export const LOG_ROUTER_IMAGE = 'public.ecr.aws/aws-observability/aws-for-fluent-bit:stable'
 

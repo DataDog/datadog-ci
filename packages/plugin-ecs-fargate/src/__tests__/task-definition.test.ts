@@ -668,6 +668,12 @@ describe('instrumentTaskDefinition', () => {
       expect(app?.dockerLabels).toStrictEqual({'com.datadoghq.tags.service': 'payments'})
     })
 
+    test('rejects log collection, since FireLens does not run on Windows', () => {
+      expect(() => instrumentTaskDefinition(windowsTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)).toThrow(
+        'the datadog-log-router sidecar does not support'
+      )
+    })
+
     test('re-instrumenting produces an identical task definition', () => {
       const first = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
       const described = asDescribed(first.taskDefinition, {
