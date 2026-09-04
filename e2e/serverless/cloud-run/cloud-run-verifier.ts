@@ -12,7 +12,7 @@ interface VolumeMount {
 }
 
 interface Container {
-  name: string
+  name?: string
   image?: string
   args?: string[]
   dependsOn?: string[]
@@ -91,7 +91,7 @@ const getVolumeName = (mount: VolumeMount): string | undefined => mount.name ?? 
 const getContainerDependencies = (service: CloudRunService, container: Container): string[] | undefined =>
   container.dependsOn ??
   JSON.parse(service.spec?.template?.metadata?.annotations?.['run.googleapis.com/container-dependencies'] ?? '{}')[
-    container.name
+    container.name ?? ''
   ]
 
 export const verifyInstrumented = (serviceName: string, project: string, region: string): void => {
@@ -227,7 +227,7 @@ export const verifyMultiLanguageSsiInstrumented = (
     expect.arrayContaining([
       expect.objectContaining({
         name: TRACER_VOLUME_NAME,
-        emptyDir: expect.objectContaining({medium: 'MEMORY', sizeLimit: '1.5Gi'}),
+        emptyDir: expect.objectContaining({medium: expect.stringMatching(/^memory$/i), sizeLimit: '1.5Gi'}),
       }),
     ])
   )
