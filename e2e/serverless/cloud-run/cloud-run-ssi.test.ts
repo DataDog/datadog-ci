@@ -154,7 +154,7 @@ describeOrSkip('cloud-run SSI', () => {
             ` --service "${serviceName}"` +
             ` --tracing inject` +
             ` --no-source-code-integration`,
-          {DATADOG_API_KEY: process.env.DATADOG_API_KEY}
+          {DD_API_KEY: process.env.DATADOG_API_KEY}
         )
         expect(instrumentResult).toEqual(expect.objectContaining({exitCode: 0}))
 

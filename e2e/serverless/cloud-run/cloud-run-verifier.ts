@@ -42,6 +42,7 @@ interface CloudRunService {
   template?: ServiceTemplate
   spec?: {
     template?: {
+      metadata?: {annotations?: Record<string, string>}
       spec?: ServiceTemplate
     }
   }
@@ -86,6 +87,12 @@ const getLabels = (service: CloudRunService): Record<string, string> => ({
 })
 
 const getVolumeName = (mount: VolumeMount): string | undefined => mount.name ?? mount.volumeName
+
+const getContainerDependencies = (service: CloudRunService, container: Container): string[] | undefined =>
+  container.dependsOn ??
+  JSON.parse(service.spec?.template?.metadata?.annotations?.['run.googleapis.com/container-dependencies'] ?? '{}')[
+    container.name
+  ]
 
 export const verifyInstrumented = (serviceName: string, project: string, region: string): void => {
   console.log(`Fetching Cloud Run service "${serviceName}"...`)
@@ -191,7 +198,9 @@ export const verifyMultiLanguageSsiInstrumented = (
   expect(appContainers).toHaveLength(1)
   const app = appContainers[0]
   expect(app.image).toBe(expectation.appImage)
-  expect(app.dependsOn).toEqual(expect.arrayContaining([SIDECAR_NAME, TRACER_COPY_CONTAINER_NAME]))
+  expect(getContainerDependencies(service, app)).toEqual(
+    expect.arrayContaining([SIDECAR_NAME, TRACER_COPY_CONTAINER_NAME])
+  )
   expect(app.volumeMounts).toContainEqual({name: TRACER_VOLUME_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH})
   expect(app.env).toEqual(
     expect.arrayContaining([
