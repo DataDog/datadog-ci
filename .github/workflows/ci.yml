@@ -264,6 +264,7 @@ jobs:
               - 'packages/base/src/helpers/serverless/common.ts'
               - 'packages/base/src/helpers/serverless/constants.ts'
               - 'packages/base/src/helpers/serverless/source-code-integration.ts'
+              - 'packages/base/src/helpers/serverless/ssi/**'
               - 'e2e/serverless/cloud-run/**'
               - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'

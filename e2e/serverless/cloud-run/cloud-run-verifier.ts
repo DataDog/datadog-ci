@@ -14,7 +14,12 @@ interface VolumeMount {
 interface Container {
   name: string
   image?: string
+  args?: string[]
+  dependsOn?: string[]
   env?: EnvVar[]
+  startupProbe?: {
+    tcpSocket?: {port?: number}
+  }
   volumeMounts?: VolumeMount[]
 }
 
@@ -43,6 +48,10 @@ interface CloudRunService {
 
 const SIDECAR_NAME = 'datadog-sidecar'
 const SHARED_VOLUME_NAME = 'shared-volume'
+const TRACER_COPY_CONTAINER_NAME = 'datadog-tracer'
+const TRACER_MOUNT_PATH = '/datadog-lib'
+const TRACER_READINESS_PORT = 18999
+const TRACER_VOLUME_NAME = 'datadog-tracer'
 const REQUIRED_ENV_VARS = [
   'DD_API_KEY',
   'DD_SITE',
@@ -64,13 +73,13 @@ const getCloudRunService = (serviceName: string, project: string, region: string
   return JSON.parse(output)
 }
 
-const getTemplate = (service: CloudRunService): ServiceTemplate => {
-  return service.template ?? service.spec?.template?.spec ?? {}
-}
+const getTemplate = (service: CloudRunService): ServiceTemplate =>
+  service.template?.containers?.length ? service.template : (service.spec?.template?.spec ?? service.template ?? {})
 
-const getLabels = (service: CloudRunService): Record<string, string> => {
-  return service.labels ?? service.metadata?.labels ?? {}
-}
+const getLabels = (service: CloudRunService): Record<string, string> => ({
+  ...service.metadata?.labels,
+  ...service.labels,
+})
 
 const getVolumeName = (mount: VolumeMount): string | undefined => mount.name ?? mount.volumeName
 
@@ -111,6 +120,49 @@ export const verifyInstrumented = (serviceName: string, project: string, region:
   expect(labels.dd_sls_ci).toBeDefined()
 
   console.log('\nAll instrumented checks passed.')
+}
+
+interface SsiExpectation {
+  appImage: string
+  tracerRepository: string
+  envName: string
+  envValue: string
+}
+
+export const verifySsiInstrumented = (
+  serviceName: string,
+  project: string,
+  region: string,
+  expectation: SsiExpectation
+): void => {
+  const service = getCloudRunService(serviceName, project, region)
+  const template = getTemplate(service)
+  const containers = template.containers ?? []
+  const labels = getLabels(service)
+  const appContainers = containers.filter(({name}) => name !== SIDECAR_NAME && name !== TRACER_COPY_CONTAINER_NAME)
+
+  expect(appContainers).toHaveLength(1)
+  const app = appContainers[0]
+  expect(app.image).toBe(expectation.appImage)
+  expect(app.volumeMounts).toContainEqual({name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH})
+  expect(app.env).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({name: 'DD_TRACE_ENABLED', value: 'true'}),
+      expect.objectContaining({name: expectation.envName, value: expect.stringContaining(expectation.envValue)}),
+    ])
+  )
+
+  const tracerCopy = containers.find(({name}) => name === TRACER_COPY_CONTAINER_NAME)
+  expect(tracerCopy).toBeDefined()
+  expect(tracerCopy!.image).toContain(`/dd-lib-${expectation.tracerRepository}-init:latest`)
+  expect(tracerCopy!.volumeMounts).toContainEqual({name: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH})
+  expect(tracerCopy!.startupProbe?.tcpSocket?.port).toBe(TRACER_READINESS_PORT)
+  expect(tracerCopy!.args).toContain(String(TRACER_READINESS_PORT))
+
+  expect(template.volumes).toEqual(
+    expect.arrayContaining([expect.objectContaining({name: TRACER_VOLUME_NAME, emptyDir: expect.anything()})])
+  )
+  expect(labels.dd_sls_injection_mode).toBe('single_language')
 }
 
 export const verifyUninstrumented = (serviceName: string, project: string, region: string): void => {
