@@ -11,17 +11,11 @@ import {
 } from '../../helpers/serverless/constants'
 import {TRACER_READINESS_PORT} from '../../helpers/serverless/ssi/constants'
 import {LIBCS} from '../../helpers/serverless/ssi/injection-spec'
-import {TRACER_IMAGE_TAG_REG_EXP} from '../../helpers/serverless/ssi/tracer'
+import {TRACER_IMAGE_TAG_REG_EXP, TRACER_INJECTION_LANGUAGES} from '../../helpers/serverless/ssi/tracer'
 
 import {BaseCommand} from '../..'
 
-import {
-  CLOUD_RUN_LANGUAGES,
-  DEFAULT_TRACER_LIBC,
-  DEFAULT_TRACER_VERSION,
-  TRACER_VOLUME_MEDIA,
-  TRACING_INPUTS,
-} from './constants'
+import {DEFAULT_TRACER_LIBC, DEFAULT_TRACER_VERSION, TRACER_VOLUME_MEDIA, TRACING_INPUTS} from './constants'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
@@ -115,7 +109,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
   })
   protected language = Option.String('--language', {
-    description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: ${CLOUD_RUN_LANGUAGES.map(
+    description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: ${TRACER_INJECTION_LANGUAGES.map(
       (language) => `"${language}"`
     ).join(', ')}.`,
   })
