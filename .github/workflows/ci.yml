@@ -34,6 +34,8 @@ jobs:
       - run: yarn lint:packages
       - run: yarn lint:readme-usage
       - run: yarn build
+      - name: Check formatting
+        run: yarn format:check || (echo "You can fix this by running ==> yarn format <==" && false)
       - name: Run yarn lint:ci
         run: |
           if ! yarn lint:ci ; then
@@ -42,7 +44,7 @@ jobs:
 
             echo ""
             echo "Find the full SARIF report in the Artifacts section here: https://github.com/DataDog/datadog-ci/actions/runs/${{ github.run_id }}"
-            echo "You can fix this by running ==> yarn lint:fix <=="
+            echo "You can fix this by running ==> yarn format <=="
             echo ""
             exit 1
           fi

@@ -12,9 +12,8 @@ yarn build            # compile TypeScript
 yarn launch <scope> <cmd> [args]  # run a command in dev (no build needed)
 yarn test             # run all tests
 yarn test <path>      # run tests for a specific package/file
-yarn lint             # lint (fails on errors)
-yarn lint:fix         # auto-fix lint errors
-yarn format           # format code with Oxfmt
+yarn lint             # lint and check formatting
+yarn format           # format and auto-fix lint errors
 ```
 
 ## Architecture
@@ -39,7 +38,7 @@ File config -> environment variables -> CLI args (highest priority).
 
 ## Code style
 
-Oxfmt + ESLint enforce formatting and style. Run `yarn format` to format, `yarn lint` to check (or `yarn lint:fix` to auto-fix lint errors). A post-commit hook runs formatting automatically.
+Oxfmt + ESLint enforce formatting and style. Run `yarn format` to auto-fix or `yarn lint` to check. A post-commit hook runs formatting automatically.
 
 Not enforced by lint -- follow manually:
 - Use `getRequestBuilder()` from `helpers/utils` or `httpRequest()` from `helpers/request` for HTTP -- not raw fetch or axios
@@ -57,5 +56,5 @@ Not enforced by lint -- follow manually:
 
 After making changes, always verify by running:
 1. `yarn build` -- ensure TypeScript compiles cleanly
-2. `yarn lint` -- ensure no lint errors (use `yarn lint:fix` to auto-fix)
+2. `yarn lint` -- ensure no lint or formatting errors (use `yarn format` to auto-fix)
 3. `yarn test <path to relevant test files>` -- ensure tests pass for affected packages
