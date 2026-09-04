@@ -60,6 +60,7 @@ import {
   fargateTaskDefinition,
   serviceArn,
   taskDefinitionArn,
+  windowsTaskDefinition,
 } from './fixtures'
 
 const ecsMock = mockClient(ECSClient)
@@ -321,6 +322,16 @@ describe('ecs-fargate instrument', () => {
         FIRELENS_LOG_CONFIGURATION
       )
       expect(context.stdout.toString()).toContain('replacing the awslogs log configuration it declares')
+    })
+
+    test('does not add the log router to a Windows task', async () => {
+      ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: windowsTaskDefinition(), tags: []})
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--log-collection'])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('the datadog-log-router sidecar does not support')
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
     })
 
     test('reads the task definitions and their configuration from a config file', async () => {
