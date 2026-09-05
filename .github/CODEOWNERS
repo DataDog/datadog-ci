@@ -4,6 +4,8 @@
 # Commands (grouped by product)
 
 ## Software Delivery (label: software-delivery)
+packages/plugin-auth                           @DataDog/datadog-ci-admins
+packages/base/src/commands/auth                @DataDog/datadog-ci-admins
 packages/plugin-coverage                       @DataDog/datadog-ci-admins @DataDog/ci-app-backend
 packages/base/src/commands/coverage            @DataDog/datadog-ci-admins @DataDog/ci-app-backend
 packages/plugin-deployment                     @DataDog/datadog-ci-admins @DataDog/ci-app-backend

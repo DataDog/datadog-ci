@@ -129,4 +129,4 @@ export type RequestBuilder = (args: RequestConfig) => Promise<RequestResponse>
 /**
  * A subset of Clipanion's {@link BaseContext}.
  */
-export type MockCommandContext = Pick<BaseContext, 'stdout' | 'stderr'> & Partial<Pick<BaseContext, 'env'>>
+export type MockCommandContext = Pick<BaseContext, 'stdin' | 'stdout' | 'stderr'> & Partial<Pick<BaseContext, 'env'>>

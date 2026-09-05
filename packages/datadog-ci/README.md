@@ -56,7 +56,7 @@ datadog-ci plugin list
 datadog-ci plugin install <scope>
 ```
 
-If you are using the [standalone binary](#standalone-binary), all plugins are already included, so you don't need to install them separately.
+If you are using the [standalone binary](#standalone-binary), supported standalone plugins are already included, so you don't need to install them separately. `auth login` is npm-only and is not included in the standalone binary or the official `datadog/ci` container.
 
 ### Plugin auto-installation
 
@@ -79,6 +79,12 @@ The following `<scope>` and `<command>` values are available.
 
 - `instrument`: Apply Datadog instrumentation to the given Azure Web Apps (or slots).
 - `uninstrument`: Revert Datadog instrumentation from the given Azure Web Apps (or slots).
+
+#### `auth`
+
+<sub>**README:** [📚](/packages/plugin-auth) | **Plugin:** `@datadog/datadog-ci-plugin-auth` (installed on demand)</sub>
+
+- `login`: Authenticate the npm CLI with Datadog OAuth. Cloud shells use a copy-and-paste callback flow.
 
 #### `cloud-run`
 

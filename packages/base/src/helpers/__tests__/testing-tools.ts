@@ -1,10 +1,11 @@
 import fs from 'fs'
 import os from 'os'
+import {PassThrough} from 'stream'
 
 import type {MockCommandContext} from '../interfaces'
 import type {BaseContext, CommandClass} from 'clipanion'
 import type {CommandOption} from 'clipanion/lib/advanced/options'
-import type {Writable} from 'stream'
+import type {Readable, Writable} from 'stream'
 
 import {Cli, Command} from 'clipanion'
 import upath from 'upath'
@@ -47,6 +48,8 @@ interface MockContextOptions {
    * Define a custom environment for the command. That's only useful if your command uses `this.env` instead of `process.env`.
    */
   env?: MockCommandContext['env']
+  /** Override stdin, for example to test an interactive command. */
+  stdin?: Readable
 }
 
 interface MakeRunCLIOptions extends MockContextOptions {
@@ -64,6 +67,7 @@ export const createMockContext = (opts?: MockContextOptions): MockCommandContext
     // Default to a defined (but empty) env so clipanion options using `{env: ...}` don't
     // crash on `context.env[...]`, while keeping tests deterministic (no shell-env leakage).
     env: opts?.env ?? {},
+    stdin: opts?.stdin ?? new PassThrough(),
     stdout: {
       toString: () => out,
       write: (chunk: string) => {

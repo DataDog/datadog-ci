@@ -20,7 +20,9 @@ export const DATADOG_ROUTE_PATHS = [
   '/api/v2/dora/deployment',
   '/api/v2/git/repository/packfile',
   '/api/v2/git/repository/search_commits',
+  '/api/v2/oauth2/register',
   '/api/v2/quality-gates/evaluate',
+  '/api/v2/users/me',
   '/api/v2/srcmap',
   '/api/v2/static-analysis-sca/dependencies',
   '/synthetics/ci/batch/:batchId',
@@ -37,6 +39,7 @@ export const DATADOG_ROUTE_PATHS = [
   '/synthetics/tests/search',
   '/synthetics/tests/trigger/ci',
   '/v1/input',
+  '/oauth2/v1/token',
 ] as const
 
 /**
