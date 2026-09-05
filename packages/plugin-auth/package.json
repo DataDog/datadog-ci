@@ -1,0 +1,58 @@
+{
+  "name": "@datadog/datadog-ci-plugin-auth",
+  "version": "5.23.0",
+  "description": "Datadog CI plugin for `auth` commands",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-auth",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-auth"
+  },
+  "main": "dist/bundle.js",
+  "types": "dist/bundle.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/bundle.d.ts",
+      "default": "./dist/bundle.js"
+    },
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/bundle.d.ts",
+    "dist/commands/*.js",
+    "README",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "2.0.0"
+  },
+  "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
+    "open": "11.0.2"
+  },
+  "datadogCi": {
+    "officialContainer": false,
+    "standalone": false
+  }
+}

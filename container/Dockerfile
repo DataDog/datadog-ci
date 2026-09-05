@@ -1,5 +1,7 @@
 FROM alpine
 
+ENV DD_CI_DISTRIBUTION=official-container
+
 WORKDIR /w
 RUN apk add --update npm git
 

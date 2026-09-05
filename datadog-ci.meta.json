@@ -10,6 +10,13 @@
           "@smithy/"
         ]
       }
+    },
+    "@datadog/datadog-ci-plugin-auth": {
+      "bundle": {
+        "externalPatterns": [
+          "@napi-rs/keyring"
+        ]
+      }
     }
   }
 }

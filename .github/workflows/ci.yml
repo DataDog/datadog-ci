@@ -149,6 +149,7 @@ jobs:
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-auth": "./artifacts/@datadog-datadog-ci-plugin-auth-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-cloud-run": "./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-container-app": "./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
@@ -388,6 +389,7 @@ jobs:
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-auth": "./artifacts/@datadog-datadog-ci-plugin-auth-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-cloud-run": "./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-container-app": "./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
