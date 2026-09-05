@@ -66,6 +66,10 @@ type Package = {
     dependencies: Record<string, string>
     devDependencies: Record<string, string>
     peerDependencies: Record<string, string>
+    datadogCi?: {
+      officialContainer?: boolean
+      standalone?: boolean
+    }
   }
 }
 
@@ -103,6 +107,7 @@ const loadPackage = (folderName: string): Package => {
       dependencies: (packageJson.dependencies ?? {}) as Record<string, string>,
       devDependencies: (packageJson.devDependencies ?? {}) as Record<string, string>,
       peerDependencies: (packageJson.peerDependencies ?? {}) as Record<string, string>,
+      datadogCi: packageJson.datadogCi,
     },
   }
 }
@@ -289,6 +294,8 @@ const builtinPlugins = pluginPackages.filter((p) => p.packageJson.name in datado
 const installablePlugins = pluginPackages.filter(
   (p) => !(p.packageJson.name in datadogCiPackage.packageJson.devDependencies)
 )
+const containerPlugins = installablePlugins.filter((p) => p.packageJson.datadogCi?.officialContainer !== false)
+const standalonePlugins = pluginPackages.filter((p) => p.packageJson.datadogCi?.standalone !== false)
 
 const exceptionScopes: CommandScope[] = [...noPluginExceptions].map((scope) => ({
   scope,
@@ -583,7 +590,7 @@ ${builtinPlugins.map(formatCommandList).join('\n')}
 }
 
 export const allPluginCommands = {
-${pluginPackages.map(formatCommandList).join('\n')}
+${standalonePlugins.map(formatCommandList).join('\n')}
 }
 `
   )
@@ -593,7 +600,7 @@ ${pluginPackages.map(formatCommandList).join('\n')}
 // #region - Format file: container/Dockerfile
 TO_APPLY.push(matchAndReplace('container/Dockerfile')`
 RUN npm install -g @datadog/datadog-ci@$VERSION \\
-    ${installablePlugins.map((p) => `@datadog/datadog-ci-plugin-${p.scope}@$VERSION \\`).join('\n')}
+    ${containerPlugins.map((p) => `@datadog/datadog-ci-plugin-${p.scope}@$VERSION \\`).join('\n')}
     && echo -e "Installed packages:\\n$(npm list -g | grep -o '@datadog/.*')"
 `)
 // #endregion
