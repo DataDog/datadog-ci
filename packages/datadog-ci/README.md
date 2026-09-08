@@ -163,6 +163,12 @@ The following `<scope>` and `<command>` values are available.
 
 - `upload`: Upload Windows PE debug info files for Profiling.
 
+#### `ppdb-symbols`
+
+<sub>**README:** [📚](/packages/base/src/commands/ppdb-symbols)</sub>
+
+- `upload`: Upload .NET MAUI Portable PDB files for Error Tracking.
+
 #### `react-native`
 
 <sub>**README:** [📚](/packages/base/src/commands/react-native) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)</sub>

@@ -25,6 +25,7 @@ packages/base/src/commands/sbom          @DataDog/datadog-ci-admins @DataDog/k9-
 ## RUM (label: rum)
 packages/base/src/commands/dsyms            @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/flutter-symbols  @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
+packages/base/src/commands/ppdb-symbols     @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/react-native     @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser @DataDog/rum-backend
 packages/base/src/commands/unity-symbols    @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
