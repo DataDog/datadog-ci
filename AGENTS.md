@@ -62,4 +62,4 @@ After making changes, always verify by running:
 
 ## Per domain info
 
-When changing Serverless instrumentation functionality (for `aas`, `cloud-run`, `container-app`, `lambda`, or `stepfunctions`, or shared Serverless helpers), read and follow the shared Serverless guidance in `packages/base/src/helpers/serverless/AGENTS.md`.
+When changing Serverless instrumentation functionality (for `aas`, `cloud-run`, `container-app`, `lambda`, `ecs-fargate`, or `stepfunctions`, or shared Serverless helpers), read and follow the shared Serverless guidance in `packages/base/src/helpers/serverless/AGENTS.md`.
