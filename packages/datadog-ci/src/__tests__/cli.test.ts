@@ -107,7 +107,6 @@ describe('cli', () => {
         }
 
         // Using `await import()` in Jest causes `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG`, so we use `require()` instead.
-
         const submodule = require(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`) as PluginSubModule
         submodule.PluginCommand.paths = submodule.PluginCommand.paths?.map((paths) => {
           pluginCommandPaths.add(paths.join(' '))

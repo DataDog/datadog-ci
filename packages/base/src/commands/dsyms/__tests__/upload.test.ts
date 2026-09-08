@@ -20,7 +20,6 @@ import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
 const mockDwarfdumpAndLipoIfNotMacOS = () => {
   if (platform() !== 'darwin') {
     // For `dwarfdump --uuid` mock, return the same output as the command would give on macOS:
-
     require('../utils').executeDwarfdump = jest.fn().mockImplementation((dsymPath: string) => {
       let fixture = dsymPath.includes('multiple-archs') ? fatDSYMFixture : undefined
       fixture = fixture || (dsymPath.includes('single-arch') ? slimDSYMFixture : undefined)
@@ -40,7 +39,6 @@ const mockDwarfdumpAndLipoIfNotMacOS = () => {
     })
 
     // For `lipo -thin` mock, just copy the object to new location (without extracting the slice as macOS would do):
-
     require('../utils').executeLipo = jest
       .fn()
       .mockImplementation(async (objectPath: string, arch: string, newObjectPath: string) => {
