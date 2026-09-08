@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {VersionCommand} from './version'
 
 // prettier-ignore

@@ -227,15 +227,16 @@ const formatBasePackageScopeCliFile = ({scope, commands}: CommandScope) => {
   const file = `packages/base/src/commands/${scope}/cli.ts`
   const originalContent = fs.readFileSync(file, 'utf8')
 
-  const imports = commands.map((command) => ({
-    importName: scopeLessCommandExceptions.has(scope)
-      ? `${upperCamelCase(command)}Command`
-      : `${upperCamelCase(scope)}${upperCamelCase(command)}Command`,
-    importPath: `./${command}`,
-  }))
+  const imports = commands
+    .map((command) => ({
+      importName: scopeLessCommandExceptions.has(scope)
+        ? `${upperCamelCase(command)}Command`
+        : `${upperCamelCase(scope)}${upperCamelCase(command)}Command`,
+      importPath: `./${command}`,
+    }))
+    .sort((a, b) => a.importPath.localeCompare(b.importPath))
 
-  const newContent = `/* eslint-disable import-x/order */
-${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
+  const newContent = `${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
 
 // prettier-ignore
 export const commands = [
