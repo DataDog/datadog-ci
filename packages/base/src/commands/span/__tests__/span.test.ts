@@ -1,5 +1,3 @@
-/* eslint-disable no-null/no-null */
-
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {makeCIProviderTests} from '../../trace/test-utils'

@@ -19,6 +19,7 @@ describe('synthetics', () => {
 
 describeOrSkip('synthetics plugin API', () => {
   it('importing exposed plugin API works', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const {executeTests} = require('@datadog/datadog-ci-plugin-synthetics')
     expect(executeTests).toBeDefined()
   })

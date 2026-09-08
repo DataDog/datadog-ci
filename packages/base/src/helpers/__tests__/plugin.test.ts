@@ -102,6 +102,7 @@ describe('checkPlugin', () => {
 })
 
 describe('executePluginCommand', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const module = require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests')
   const SyntheticsRunTestsPluginCommand = module.PluginCommand.prototype
 

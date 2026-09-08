@@ -164,7 +164,6 @@ describe('dd-api', () => {
         jest.runOnlyPendingTimers()
         // Wait for the retry to happen, and for the next `setTimeout`.
         // This is used to flush promises, and requires `nextTick` not to be faked.
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         await new Promise(process.nextTick)
       }
     }
