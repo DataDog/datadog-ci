@@ -122,7 +122,6 @@ describe('getCIMetadata', () => {
   })
 
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
       {[tag: string]: string},
@@ -189,7 +188,6 @@ describe('getCIMetadata', () => {
 
     const expectedMetadata = ddMetadataToSpanTags(DD_METADATA)
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
       {[tag: string]: string},
@@ -224,7 +222,6 @@ describe('ci spec', () => {
   })
 
   CI_PROVIDERS.forEach((ciProvider) => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
       {[key: string]: string},
