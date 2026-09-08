@@ -75,4 +75,13 @@ describe('lookupDebugId', () => {
 
     expect(lookupDebugId(consistentManifest, 'MYAPP')).toBe('aabbccdd11223344aabbccdd1122334455667788')
   })
+
+  test('throws AmbiguousManifestEntryError even when the lookup name exactly matches one entry', () => {
+    const ambiguousManifest = {
+      MyApp: 'aabbccdd11223344aabbccdd1122334455667788',
+      myapp: '11223344aabbccdd11223344aabbccdd11223344',
+    }
+
+    expect(() => lookupDebugId(ambiguousManifest, 'MyApp')).toThrow(AmbiguousManifestEntryError)
+  })
 })

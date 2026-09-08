@@ -244,7 +244,7 @@ export class PpdbSymbolsUploadCommand extends BaseCommand {
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, pdbPaths, async (pdbPath) => {
-        const assemblyName = upath.basename(pdbPath, '.pdb')
+        const assemblyName = upath.basename(pdbPath, upath.extname(pdbPath))
 
         let debugId: string | undefined
         try {

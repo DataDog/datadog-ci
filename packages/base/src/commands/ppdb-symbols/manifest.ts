@@ -36,10 +36,6 @@ export class AmbiguousManifestEntryError extends Error {
 // Assembly names are effectively case-insensitive (Windows file systems, .NET simple-name resolution),
 // so an exact-case manifest key mismatch shouldn't cause a real first-party assembly to be skipped.
 export const lookupDebugId = (manifest: DebugIdManifest, assemblyName: string): string | undefined => {
-  if (assemblyName in manifest) {
-    return manifest[assemblyName]
-  }
-
   const lowerAssemblyName = assemblyName.toLowerCase()
   const matchingKeys = Object.keys(manifest).filter((key) => key.toLowerCase() === lowerAssemblyName)
 

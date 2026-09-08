@@ -232,6 +232,37 @@ describe('ppdb-symbols upload', () => {
       expect(output).toContain(renderAmbiguousManifestEntry('MyApp', `${pdbsDir}/MyApp.pdb`, ['myapp', 'MYAPP']))
     })
 
+    test('skips and warns when the manifest has an exact-case match that also collides with another entry', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['symbolsLocations'] = [`${pdbsDir}/MyApp.pdb`]
+        cmd['debugIdManifestPath'] = `${fixtureDir}/exactMatchAmbiguousManifest.json`
+      })
+
+      expect(exitCode).toBe(0)
+      expect(uploadMultipartHelper).not.toHaveBeenCalled()
+
+      const output = context.stdout.toString()
+      expect(output).toContain(renderAmbiguousManifestEntry('MyApp', `${pdbsDir}/MyApp.pdb`, ['MyApp', 'myapp']))
+    })
+
+    test('matches a manifest entry when the .pdb file has an uppercase extension', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['symbolsLocations'] = [`${fixtureDir}/UppercaseExt.PDB`]
+        cmd['debugIdManifestPath'] = `${fixtureDir}/uppercaseExtManifest.json`
+      })
+
+      expect(exitCode).toBe(0)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(1)
+      const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+      const event = JSON.parse((payload.content.get('event') as MultipartStringValue).value)
+      expect(event.assembly_name).toBe('UppercaseExt')
+      expect(event.debug_id).toBe('aabbccdd11223344aabbccdd1122334455667788')
+    })
+
     test('does not attach git metadata when --disable-git is passed', async () => {
       ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
 
