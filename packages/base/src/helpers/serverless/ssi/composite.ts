@@ -2,12 +2,10 @@ import type {EnvFragment} from './env'
 import type {TracerRegistry} from './tracer'
 
 export const COMPOSITE_TRACER_MOUNT_PATH = '/opt/datadog-packages'
-export const COMPOSITE_TRACER_COMPLETION_MARKER = `${COMPOSITE_TRACER_MOUNT_PATH}/.datadog-composite-copy-finished`
 
 export interface CompositeInjectionSpec {
   readonly image: string
   readonly mountPath: string
-  readonly completionMarker: string
   readonly env: readonly EnvFragment[]
 }
 
@@ -15,7 +13,6 @@ export interface CompositeInjectionSpec {
 export const getCompositeInjectionSpec = (registry: TracerRegistry): CompositeInjectionSpec => ({
   image: `${registry}/dd-lib-composite-init:latest`,
   mountPath: COMPOSITE_TRACER_MOUNT_PATH,
-  completionMarker: COMPOSITE_TRACER_COMPLETION_MARKER,
   env: [
     {
       name: 'LD_PRELOAD',

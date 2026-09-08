@@ -257,9 +257,17 @@ describe('Container Apps automatic APM instrumentation', () => {
       ).not.toContainEqual(expect.objectContaining({volumeName: TRACER_VOLUME_NAME}))
     })
 
-    test('adds composite activation to the selected application container', () => {
-      const result = createInstrumentedApp(multiLanguageConfig())
+    test('adds composite activation only to the selected application container', () => {
+      const sidecar = {name: 'datadog-sidecar', image: 'datadog/serverless-init', env: [{name: 'KEEP', value: 'value'}]}
+      const result = createInstrumentedApp(multiLanguageConfig(), {
+        ...DEFAULT_CONTAINER_APP,
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [...DEFAULT_CONTAINER_APP.template!.containers!, sidecar],
+        },
+      })
       const app = result.template!.containers![0]
+      const resultSidecar = result.template!.containers![1]
 
       expect(getEnv(app.env, 'LD_PRELOAD')?.value).toBe(compositeSpec.env[0].value)
       expect(getEnv(app.env, 'DD_INJECT_SENDER_TYPE')?.value).toBe('serverless')
@@ -278,6 +286,12 @@ describe('Container Apps automatic APM instrumentation', () => {
         volumeName: TRACER_VOLUME_NAME,
         mountPath: COMPOSITE_TRACER_MOUNT_PATH,
       })
+      expect(getEnv(resultSidecar.env, 'LD_PRELOAD')).toBeUndefined()
+      expect(getEnv(resultSidecar.env, 'DD_INJECT_SENDER_TYPE')).toBeUndefined()
+      expect(resultSidecar.volumeMounts).not.toContainEqual(expect.objectContaining({volumeName: TRACER_VOLUME_NAME}))
+      expect(resultSidecar.volumeMounts).not.toContainEqual(
+        expect.objectContaining({mountPath: COMPOSITE_TRACER_MOUNT_PATH})
+      )
     })
 
     test('instruments only the explicitly selected application container', () => {

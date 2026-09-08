@@ -37,7 +37,6 @@ const TRACER_MOUNT_PATH = '/datadog-lib'
 const COMPOSITE_TRACER_MOUNT_PATH = '/opt/datadog-packages'
 const COMPOSITE_TRACER_IMAGE = 'datadoghq.azurecr.io/dd-lib-composite-init:latest'
 const COMPOSITE_PRELOAD = `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so`
-const NODE_TRACER_IMAGE = 'datadoghq.azurecr.io/dd-lib-js-init:latest'
 const NODE_OPTIONS_FRAGMENT = '--require /datadog-lib/node_modules/dd-trace/init.js'
 const INJECTION_MODE_TAG = '_dd.injection.mode:serverless-single-lang'
 const EXPECTED_ENV = 'e2e'
@@ -276,14 +275,25 @@ export const verifyMultiLanguageSsiInstrumented = (
     {volumeName: TRACER_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH},
   ])
   expect(sidecar!.volumeMounts ?? []).not.toContainEqual(expect.objectContaining({volumeName: TRACER_NAME}))
+  expect(sidecar!.volumeMounts ?? []).not.toContainEqual(
+    expect.objectContaining({mountPath: COMPOSITE_TRACER_MOUNT_PATH})
+  )
+
+  verifyDatadogEnv(containers, appName, runId)
 
   const env = envByName(application)
-  expect(env.DD_TRACE_ENABLED.value).toBe('true')
+  const sidecarEnv = envByName(sidecar!)
   expect(env.LD_PRELOAD.value?.split(COMPOSITE_PRELOAD)).toHaveLength(2)
   expect(env.DD_INJECT_SENDER_TYPE.value).toBe('serverless')
-  expect(env.DD_TAGS.value).toContain(`one_e2e_run_id:${runId}`)
   expect(env.DD_TAGS.value).not.toContain(INJECTION_MODE_TAG)
+  expect(sidecarEnv.LD_PRELOAD?.value ?? '').not.toContain(COMPOSITE_PRELOAD)
+  expect(sidecarEnv.DD_INJECT_SENDER_TYPE).toBeUndefined()
+  expect(tags.service).toBe(appName)
+  expect(tags.env).toBe(EXPECTED_ENV)
+  expect(tags.version).toBe(runId)
+  expect(tags.dd_sls_ci).toBeDefined()
   expect(tags.dd_sls_injection_mode).toBe('multi_language')
+  expect(tags.one_e2e_created).toBeDefined()
 }
 
 export const verifyUninstrumented = (
