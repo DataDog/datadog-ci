@@ -16,8 +16,9 @@ export const previewServiceUpdate = async (
   updatedService: IService
 ): Promise<ServiceUpdatePreview> => {
   const [operation] = await client.updateService({service: updatedService, validateOnly: true})
+  const [validatedService] = await operation.promise()
   const existingPreview = normalizeService(existingService)
-  const updatedPreview = normalizeService(operation.metadata as IService)
+  const updatedPreview = normalizeService(validatedService as IService)
 
   return {
     diff: generateConfigDiff(existingPreview, updatedPreview),

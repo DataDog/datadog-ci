@@ -25,9 +25,7 @@ import {
   COMPOSITE_TRACER_MOUNT_PATH,
   mergeCompositeInjectionEnv,
   mergeLanguageInjectionEnv,
-  removeCompositeInjectionEnv,
   removeInjectionEnv,
-  removeSingleLanguageInjectionEnv,
   selectMainContainer,
   SsiConfigError,
 } from './ssi'
@@ -40,10 +38,10 @@ const DISK_VOLUME_SIZE_LIMIT = '10Gi'
 const GEN2_EXECUTION_ENVIRONMENT = 2 as const // google.cloud.run.v2.ExecutionEnvironment.EXECUTION_ENVIRONMENT_GEN2
 const SSI_INJECTION_MODE_LABEL = 'dd_sls_injection_mode'
 const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
+const MULTI_LANGUAGE_SSI_MODE = 'multi_language'
 const LEGACY_TRACER_CONTAINER_NAME = 'datadog-tracer-copy'
 const MANAGED_TRACER_CONTAINER_NAMES = new Set([TRACER_CONTAINER_NAME, LEGACY_TRACER_CONTAINER_NAME])
-const MULTI_LANGUAGE_SSI_MODE = 'multi_language'
-type OwnedSsiMode = typeof SINGLE_LANGUAGE_SSI_MODE | typeof MULTI_LANGUAGE_SSI_MODE
+const MANAGED_TRACER_MOUNT_PATHS = new Set([TRACER_MOUNT_PATH, COMPOSITE_TRACER_MOUNT_PATH])
 const MULTI_LANGUAGE_VOLUME_SIZE_LIMIT = '1.5Gi'
 const MULTI_LANGUAGE_TRACER_MEMORY_LIMIT = '2Gi'
 const UNIFIED_SERVICE_TAG_LABELS = {
@@ -99,19 +97,14 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     ...options.envVarsByName,
     [HEALTH_PORT_ENV_VAR]: {name: HEALTH_PORT_ENV_VAR, value: String(healthCheckPort)},
   }
-  const existingSsiMode = getOwnedSsiMode(service.labels?.[SSI_INJECTION_MODE_LABEL])
+  const hasSsi = hasSsiState(service)
   const sourceContainers = sourceTemplate.containers ?? []
   const hasTracerContainer = sourceContainers.some(isManagedTracerContainer)
   const hasTracerVolume = sourceTemplate.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME) ?? false
-  const shouldRemoveSsi =
-    existingSsiMode !== undefined && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
+  const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
 
   if (shouldRemoveSsi) {
-    const mainContainer = selectMainContainer(
-      sourceTemplate.containers ?? [],
-      new Set([options.sidecarName, TRACER_CONTAINER_NAME])
-    )
-    sourceTemplate = removeExistingSsiState(sourceTemplate, mainContainer, existingSsiMode)
+    sourceTemplate = removeSsiState(sourceTemplate)
   } else if (ssiConfig.kind === 'no-injection') {
     if (hasTracerContainer) {
       targetContainers = new Set(
@@ -121,7 +114,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       )
     }
   } else {
-    if (existingSsiMode === undefined && (hasTracerContainer || hasTracerVolume)) {
+    if (!hasSsi && (hasTracerContainer || hasTracerVolume)) {
       const resources = [hasTracerContainer ? 'container' : undefined, hasTracerVolume ? 'volume' : undefined].filter(
         (resource): resource is string => resource !== undefined
       )
@@ -138,10 +131,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
       reservedContainerNames(options.sidecarName)
     )
     assertTracerReadinessPortAvailable(mainContainer, options.sidecarName, tracerReadinessPort, healthCheckPort)
-    sourceTemplate =
-      existingSsiMode !== undefined || hasTracerContainer
-        ? removeExistingSsiState(sourceTemplate, mainContainer, existingSsiMode)
-        : sourceTemplate
+    sourceTemplate = hasSsi ? removeSsiState(sourceTemplate) : sourceTemplate
     const updatedMainContainer = selectMainContainer(
       sourceTemplate.containers ?? [],
       reservedContainerNames(options.sidecarName)
@@ -199,7 +189,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     template = applyTracerContainer(
       template,
       {
-        image: isMultiLanguage ? COMPOSITE_TRACER_IMAGE : ssiConfig.spec.image,
+        image: ssiConfig.spec.image,
         completionMarker: isMultiLanguage
           ? COMPOSITE_TRACER_COMPLETION_MARKER
           : getTracerCopyCompletionMarker(ssiConfig.language, TRACER_MOUNT_PATH),
@@ -239,27 +229,15 @@ export const uninstrumentServiceConfig = (
   const template: IServiceTemplate = service.template || {}
   const containers: IContainer[] = template.containers || []
   const volumes: IVolume[] = template.volumes || []
-  const ssiMode = getOwnedSsiMode(service.labels?.[SSI_INJECTION_MODE_LABEL])
+  const templateWithoutSsi = hasSsiState(service) ? removeSsiState(template) : template
   const sidecarRemoved = containers.some((container) => container.name === options.sidecarName)
   const sharedVolumeRemoved = volumes.some((volume) => volume.name === options.sharedVolumeName)
-  const updatedContainers = containers
-    .filter(
-      (container) =>
-        container.name !== options.sidecarName && (ssiMode === undefined || container.name !== TRACER_CONTAINER_NAME)
-    )
+  const updatedContainers = (templateWithoutSsi.containers ?? [])
+    .filter((container) => container.name !== options.sidecarName)
     .map((container) =>
-      removeContainerInstrumentation(
-        container,
-        options.sidecarName,
-        options.sharedVolumeName,
-        options.envVarNames,
-        ssiMode
-      )
+      removeContainerInstrumentation(container, options.sidecarName, options.sharedVolumeName, options.envVarNames)
     )
-  const updatedVolumes = volumes.filter(
-    (volume) =>
-      volume.name !== options.sharedVolumeName && (ssiMode === undefined || volume.name !== TRACER_VOLUME_NAME)
-  )
+  const updatedVolumes = (templateWithoutSsi.volumes ?? []).filter((volume) => volume.name !== options.sharedVolumeName)
   const labels = Object.fromEntries(
     Object.entries(service.labels ?? {}).filter(([name]) => !INSTRUMENTATION_LABELS.has(name))
   )
@@ -368,7 +346,7 @@ const tracerVolumeConfig = (medium: TracerVolumeMedium, memorySize: string) =>
 const atLeastBetaLaunchStage = (launchStage: IService['launchStage']) =>
   launchStage === 'ALPHA' ? launchStage : 'BETA'
 const getTracerMountPath = (config: Extract<SsiConfigResult, {kind: 'single-language' | 'multi-language'}>): string =>
-  config.kind === 'multi-language' ? COMPOSITE_TRACER_MOUNT_PATH : TRACER_MOUNT_PATH
+  config.kind === 'multi-language' ? config.spec.mountPath : TRACER_MOUNT_PATH
 
 const assertTracerMountPathAvailable = (mainContainer: IContainer, mountPath: string): void => {
   const existingMount = mainContainer.volumeMounts?.find((mount) => mount.mountPath === mountPath)
@@ -404,67 +382,59 @@ const assertTracerReadinessPortAvailable = (
   }
 }
 
-const getOwnedSsiMode = (mode: string | undefined): OwnedSsiMode | undefined => {
-  if (mode === SINGLE_LANGUAGE_SSI_MODE || mode === MULTI_LANGUAGE_SSI_MODE) {
-    return mode
-  }
+const hasSsiState = (service: IService): boolean =>
+  service.labels?.[SSI_INJECTION_MODE_LABEL] !== undefined || hasCompleteSsiSignature(service.template)
+
+const hasCompleteSsiSignature = (template: IServiceTemplate | null | undefined): boolean => {
+  const tracerContainers = (template?.containers ?? []).filter(isCompleteManagedTracerContainer)
+  const tracerVolumes = (template?.volumes ?? []).filter(
+    (volume) => volume.name === TRACER_VOLUME_NAME && volume.emptyDir !== undefined
+  )
+  const targets = (template?.containers ?? []).filter(
+    (container) =>
+      (container.volumeMounts ?? []).some(
+        (mount) => mount.name === TRACER_VOLUME_NAME && MANAGED_TRACER_MOUNT_PATHS.has(mount.mountPath ?? '')
+      ) &&
+      container.dependsOn?.some((name) => MANAGED_TRACER_CONTAINER_NAMES.has(name)) &&
+      hasInjectionEnv(container.env)
+  )
+
+  return tracerContainers.length === 1 && tracerVolumes.length === 1 && targets.length === 1
 }
 
-const removeExistingSsiState = (
-  template: IServiceTemplate,
-  mainContainer?: IContainer,
-  mode?: OwnedSsiMode
-): IServiceTemplate => ({
+const hasInjectionEnv = (env: readonly IEnvVar[] | null | undefined): boolean => {
+  const updated = removeInjectionEnv(env)
+
+  return updated.length !== (env?.length ?? 0) || updated.some((variable, index) => variable !== env?.[index])
+}
+
+const removeSsiState = (template: IServiceTemplate): IServiceTemplate => ({
   ...template,
   containers: (template.containers ?? [])
     .filter((container) => !isManagedTracerContainer(container))
-    .map((container) =>
-      removeExistingSsiContainer(
-        container,
-        mainContainer === undefined
-          ? (container.volumeMounts ?? []).some((mount) => mount.name === TRACER_VOLUME_NAME)
-          : container === mainContainer,
-        mode
-      )
-    ),
+    .map((container) => {
+      const env = removeInjectionEnv(container.env)
+      const volumeMounts = (container.volumeMounts ?? []).filter((mount) => mount.name !== TRACER_VOLUME_NAME)
+
+      return {
+        ...removeDependencies({...container, env, volumeMounts}, MANAGED_TRACER_CONTAINER_NAMES),
+      }
+    }),
   volumes: (template.volumes ?? []).filter((volume) => volume.name !== TRACER_VOLUME_NAME),
 })
 
-const removeExistingSsiContainer = (
-  container: IContainer,
-  isMainContainer: boolean,
-  mode?: OwnedSsiMode
-): IContainer => {
-  const existingEnv = container.env ?? []
-  const env = isMainContainer ? removeSsiEnv(existingEnv, mode) : existingEnv
-  const envChanged = env.length !== existingEnv.length || env.some((variable, index) => variable !== existingEnv[index])
-  const existingMounts = container.volumeMounts ?? []
-  const volumeMounts = existingMounts.filter((mount) => mount.name !== TRACER_VOLUME_NAME)
-
-  let cleaned = container
-  if (envChanged) {
-    cleaned = {...cleaned, env}
-  }
-  if (volumeMounts.length !== existingMounts.length) {
-    cleaned = {...cleaned, volumeMounts}
-  }
-
-  return removeDependencies(cleaned, MANAGED_TRACER_CONTAINER_NAMES)
-}
-
-const removeSsiEnv = (env: readonly IEnvVar[], mode: OwnedSsiMode | undefined): IEnvVar[] => {
-  switch (mode) {
-    case SINGLE_LANGUAGE_SSI_MODE:
-      return removeSingleLanguageInjectionEnv(env)
-    case MULTI_LANGUAGE_SSI_MODE:
-      return removeCompositeInjectionEnv(env)
-    default:
-      return removeInjectionEnv(env)
-  }
-}
-
 const isManagedTracerContainer = (container: IContainer): boolean =>
   typeof container.name === 'string' && MANAGED_TRACER_CONTAINER_NAMES.has(container.name)
+
+const isCompleteManagedTracerContainer = (container: IContainer): boolean =>
+  isManagedTracerContainer(container) &&
+  (container.image === COMPOSITE_TRACER_IMAGE ||
+    /^gcr\.io\/datadoghq\/dd-lib-(?:java|js|dotnet|python|rb|php)-init:[\w.-]+$/.test(container.image ?? '')) &&
+  container.command?.length === 1 &&
+  container.command[0] === '/bin/sh' &&
+  container.args?.[0] === '-c' &&
+  container.args[2] === container.name &&
+  MANAGED_TRACER_MOUNT_PATHS.has(container.args[3] ?? '')
 
 const reservedContainerNames = (sidecarName: string): ReadonlySet<string> =>
   new Set([sidecarName, ...MANAGED_TRACER_CONTAINER_NAMES])
@@ -526,11 +496,9 @@ const removeContainerInstrumentation = (
   container: IContainer,
   agentContainerName: string,
   sharedVolumeName: string,
-  envVarNames: ReadonlySet<string>,
-  ssiMode: OwnedSsiMode | undefined
+  envVarNames: ReadonlySet<string>
 ): IContainer => {
-  const withoutSsi = ssiMode === undefined ? container : removeExistingSsiContainer(container, true, ssiMode)
-  const updated = removeDependency(withoutSsi, agentContainerName)
+  const updated = removeDependency(container, agentContainerName)
 
   return {
     ...updated,

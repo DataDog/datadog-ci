@@ -51,7 +51,7 @@ describe('InstrumentCommand', () => {
     mockServicesClient.updateService.mockImplementation(({service}) => [
       {
         metadata: service,
-        promise: jest.fn().mockResolvedValue([]),
+        promise: jest.fn().mockResolvedValue([service]),
       },
     ])
   })
@@ -202,11 +202,13 @@ describe('InstrumentCommand', () => {
       const {code} = await runCLI([...requiredFlags, '--dry-run', '--tracing', 'inject'])
 
       expect(code).toBe(0)
-      expect(instrumentConfig.mock.calls[0][1].ssiConfig).toEqual({
-        kind: 'multi-language',
-        tracerVolumeMedium: 'memory',
-        warnings: [],
-      })
+      expect(instrumentConfig.mock.calls[0][1].ssiConfig).toEqual(
+        expect.objectContaining({
+          kind: 'multi-language',
+          tracerVolumeMedium: 'memory',
+          warnings: [],
+        })
+      )
     })
 
     test('--language sets the log source without automatic instrumentation', async () => {

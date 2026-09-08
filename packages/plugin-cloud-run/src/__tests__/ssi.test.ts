@@ -666,7 +666,7 @@ describe('SSI service preparation', () => {
     expect(instrumentServiceConfig(injected, serviceConfigOptions('python')).template?.containers?.[0].name).toBe('')
   })
 
-  test('replaces owned SSI without removing unrelated container configuration', () => {
+  test('replaces owned SSI and removes stale injection from other containers', () => {
     const node = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions())
     const app = node.template!.containers![0]
     const worker = node.template!.containers![1]
@@ -681,7 +681,7 @@ describe('SSI service preparation', () => {
     expect(updatedApp?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
     expect(updatedApp?.env).toContainEqual({name: 'PYTHONPATH', value: '/datadog-lib'})
     expect(updatedApp?.dependsOn).toEqual(['datadog-tracer', 'datadog-sidecar'])
-    expect(updatedWorker?.env).toEqual(worker.env)
+    expect(updatedWorker?.env).toEqual([{name: 'WORKER', value: 'true'}])
     expect(updatedWorker?.dependsOn).toEqual(['datadog-sidecar'])
     expect(result.template?.containers?.filter((container) => container.name === 'datadog-tracer')).toHaveLength(1)
     expect(result.template?.containers?.find((container) => container.name === 'datadog-tracer')?.image).toBe(
@@ -745,7 +745,7 @@ describe('SSI service preparation', () => {
     expect(result.template!.containers![1].dependsOn).toBeUndefined()
   })
 
-  test('manual tracing removes drifted multi-language state and preserves single-language fragments', () => {
+  test('manual tracing removes all drifted injection state', () => {
     const service = serviceWithWorker()
     service.template!.containers![0].env = [
       {name: 'NODE_OPTIONS', value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js'},
@@ -766,15 +766,12 @@ describe('SSI service preparation', () => {
 
     expect(result.labels).not.toHaveProperty('dd_sls_injection_mode')
     expect(result.template?.containers?.find(({name}) => name === TRACER_CONTAINER_NAME)).toBeUndefined()
-    expect(app?.env).toContainEqual({
-      name: 'NODE_OPTIONS',
-      value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js',
-    })
+    expect(app?.env).toContainEqual({name: 'NODE_OPTIONS', value: '--inspect'})
     expect(app?.env?.find(({name}) => name === 'LD_PRELOAD')).toBeUndefined()
     expect(app?.env?.find(({name}) => name === 'DD_INJECT_SENDER_TYPE')).toBeUndefined()
   })
 
-  test('single-language cleanup preserves multi-language sender configuration', () => {
+  test('single-language cleanup removes multi-language activation', () => {
     const service = serviceWithWorker()
     service.template!.containers![0].env!.push({name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'})
     const injected = instrumentServiceConfig(service, serviceConfigOptions())
@@ -788,7 +785,7 @@ describe('SSI service preparation', () => {
       },
     })
 
-    expect(result.template?.containers?.find(({name}) => name === 'app')?.env).toContainEqual({
+    expect(result.template?.containers?.find(({name}) => name === 'app')?.env).not.toContainEqual({
       name: 'DD_INJECT_SENDER_TYPE',
       value: 'serverless',
     })

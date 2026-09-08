@@ -6,7 +6,11 @@ import type {
   TracingMode,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
-import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import type {
+  CompositeInjectionSpec,
+  LanguageInjectionSpec,
+  Libc,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {
@@ -25,25 +29,20 @@ import {
   removeInjectionModeTag,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
+  COMPOSITE_TRACER_MOUNT_PATH,
   LIBCS,
+  getCompositeInjectionSpec,
   getLanguageCompatibilityErrors,
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-export const COMPOSITE_TRACER_IMAGE = 'gcr.io/datadoghq/dd-lib-composite-init:latest'
-export const COMPOSITE_TRACER_MOUNT_PATH = '/opt/datadog-packages'
-export const COMPOSITE_TRACER_COMPLETION_MARKER = `${COMPOSITE_TRACER_MOUNT_PATH}/.datadog-composite-copy-finished`
+export {COMPOSITE_TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
-const COMPOSITE_ENV_FRAGMENTS: readonly EnvFragment[] = [
-  {
-    name: 'LD_PRELOAD',
-    value: `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so`,
-    separator: ' ',
-    mode: 'prepend',
-  },
-  {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless', mode: 'set-if-absent'},
-]
+const COMPOSITE_INJECTION_SPEC = getCompositeInjectionSpec(CLOUD_RUN_TRACER_REGISTRY)
+export const COMPOSITE_TRACER_IMAGE = COMPOSITE_INJECTION_SPEC.image
+export const COMPOSITE_TRACER_COMPLETION_MARKER = `${COMPOSITE_TRACER_MOUNT_PATH}/.datadog-composite-copy-finished`
+const COMPOSITE_ENV_FRAGMENTS = COMPOSITE_INJECTION_SPEC.env
 
 export interface SsiOptions {
   readonly language: string | undefined
@@ -63,7 +62,7 @@ export type SsiConfigResult = (
       spec: LanguageInjectionSpec
       tracerVolumeMedium: TracerVolumeMedium
     }
-  | {kind: 'multi-language'; tracerVolumeMedium: TracerVolumeMedium}
+  | {kind: 'multi-language'; spec: CompositeInjectionSpec; tracerVolumeMedium: TracerVolumeMedium}
 ) & {warnings: readonly string[]}
 
 /** Resolves SSI inputs to a mode or validation errors. */
@@ -100,6 +99,7 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
         }
       : {
           kind: 'multi-language',
+          spec: COMPOSITE_INJECTION_SPEC,
           tracerVolumeMedium: options.tracerVolumeMedium ?? 'memory',
           warnings: [],
         }
@@ -114,18 +114,6 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
         )}. Use one of ${TRACER_INJECTION_LANGUAGES.map((language) => JSON.stringify(language)).join(
           ', '
         )}, or omit --language to detect it automatically.`,
-      ],
-      warnings: [],
-    }
-  }
-
-  if (!isCloudRunLanguage(options.language)) {
-    return {
-      kind: 'errors',
-      errors: [
-        `Automatic instrumentation does not support language ${JSON.stringify(
-          options.language
-        )}. Use one of ${TRACER_INJECTION_LANGUAGES.map((language) => JSON.stringify(language)).join(', ')}.`,
       ],
       warnings: [],
     }
@@ -274,13 +262,7 @@ export const mergeCompositeInjectionEnv = (existingEnv: readonly IEnvVar[] | nul
   )
 }
 
-export const removeSingleLanguageInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
-  removeEnvFragments(existingEnv, LANGUAGE_ENV_FRAGMENTS, true)
-
-export const removeCompositeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
-  removeEnvFragments(existingEnv, COMPOSITE_ENV_FRAGMENTS, false)
-
-/** Removes exact tracer fragments for every supported injection mode during full uninstrumentation. */
+/** Removes exact tracer fragments for every supported injection mode. */
 export const removeInjectionEnv = (existingEnv: readonly IEnvVar[] | null | undefined): IEnvVar[] =>
   removeEnvFragments(existingEnv, [...LANGUAGE_ENV_FRAGMENTS, ...COMPOSITE_ENV_FRAGMENTS], true)
 
