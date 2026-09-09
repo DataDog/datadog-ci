@@ -1,7 +1,7 @@
 import type {SsiConfigResult} from './ssi'
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume} from './types'
-import type {TracerVolumeMedium} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 
+import {CLOUD_RUN_TRACER_REGISTRY, type TracerVolumeMedium} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {createInstrumentedTemplate} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_TRACE_ENABLED_ENV_VAR,
@@ -15,7 +15,7 @@ import {
   TRACER_VOLUME_NAME,
   TRACER_VOLUME_SIZE_LIMIT,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
-import {getTracerCopyCompletionMarker} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+import {getTracerCopyCompletionMarker, LANGUAGE_METADATA} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {
@@ -428,13 +428,17 @@ const isManagedTracerContainer = (container: IContainer): boolean =>
 
 const isCompleteManagedTracerContainer = (container: IContainer): boolean =>
   isManagedTracerContainer(container) &&
-  (container.image === COMPOSITE_TRACER_IMAGE ||
-    /^gcr\.io\/datadoghq\/dd-lib-(?:java|js|dotnet|python|rb|php)-init:[\w.-]+$/.test(container.image ?? '')) &&
+  (container.image === COMPOSITE_TRACER_IMAGE || isManagedSingleLanguageTracerImage(container.image)) &&
   container.command?.length === 1 &&
   container.command[0] === '/bin/sh' &&
   container.args?.[0] === '-c' &&
   container.args[2] === container.name &&
   MANAGED_TRACER_MOUNT_PATHS.has(container.args[3] ?? '')
+
+const isManagedSingleLanguageTracerImage = (image: string | null | undefined): boolean =>
+  Object.values(LANGUAGE_METADATA).some(({tracerLanguage}) =>
+    image?.startsWith(`${CLOUD_RUN_TRACER_REGISTRY}/dd-lib-${tracerLanguage}-init:`)
+  )
 
 const reservedContainerNames = (sidecarName: string): ReadonlySet<string> =>
   new Set([sidecarName, ...MANAGED_TRACER_CONTAINER_NAMES])
