@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
 
+import {SSI_CASES as ssiCases} from '../helpers/ssi'
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
@@ -10,50 +11,12 @@ import {verifySsiInstrumented} from './cloud-run-verifier'
 const describeOrSkip =
   process.env.SKIP_CLOUD_RUN_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
 
-const SSI_CASES = [
-  {
-    language: 'csharp',
-    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/dotnet-ssi:latest',
-    tracerRepository: 'dotnet',
-    envName: 'CORECLR_PROFILER_PATH',
-    envValue: '/datadog-lib/Datadog.Trace.ClrProfiler.Native.so',
-  },
-  {
-    language: 'java',
-    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/java-ssi:latest',
-    tracerRepository: 'java',
-    envName: 'JAVA_TOOL_OPTIONS',
-    envValue: '-javaagent:/datadog-lib/dd-java-agent.jar',
-  },
-  {
-    language: 'nodejs',
-    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/node-ssi:latest',
-    tracerRepository: 'js',
-    envName: 'NODE_OPTIONS',
-    envValue: '--require /datadog-lib/node_modules/dd-trace/init.js',
-  },
-  {
-    language: 'php',
-    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/php-ssi:latest',
-    tracerRepository: 'php',
-    envName: 'PHP_INI_SCAN_DIR',
-    envValue: '/datadog-lib/linux-gnu/loader',
-  },
-  {
-    language: 'python',
-    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/python-ssi:latest',
-    tracerRepository: 'python',
-    envName: 'PYTHONPATH',
-    envValue: '/datadog-lib',
-  },
-  {
-    language: 'ruby',
-    image: 'us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/ruby-ssi:latest',
-    tracerRepository: 'ruby',
-    envName: 'RUBYOPT',
-    envValue: '-r/datadog-lib/auto_inject',
-  },
-] as const
+const SSI_CASES = ssiCases.map(({fixtureImageName, nativeEnv, ...ssiCase}) => ({
+  ...ssiCase,
+  image: `us-central1-docker.pkg.dev/datadog-serverless-gcp-dev/e2e-workloads/${fixtureImageName}:latest`,
+  envName: nativeEnv.name,
+  envValue: nativeEnv.value,
+}))
 
 describeOrSkip('cloud-run SSI', () => {
   const project = process.env.GCP_PROJECT_ID!
