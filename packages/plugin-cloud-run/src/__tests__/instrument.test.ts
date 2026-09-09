@@ -8,6 +8,7 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
+import * as serviceConfigModule from '../service-config'
 import * as utils from '../utils'
 
 jest.mock('@datadog/datadog-ci-base/helpers/apikey')
@@ -33,6 +34,7 @@ describe('InstrumentCommand', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['cloud-run', 'instrument'])
 
   beforeEach(() => {
+    jest.restoreAllMocks()
     jest.clearAllMocks()
     const mockValidator = {
       validateApiKey: jest.fn().mockResolvedValue(true),
@@ -113,6 +115,156 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
+    })
+  })
+
+  describe('automatic APM instrumentation', () => {
+    const service = {
+      name: 'projects/test-project/locations/us-central1/services/test-service',
+      template: {
+        containers: [{name: 'app', ports: [{containerPort: 8080}]}],
+        volumes: [],
+      },
+    }
+    const requiredFlags = [
+      '--project',
+      'test-project',
+      '--services',
+      'test-service',
+      '--region',
+      'us-central1',
+      '--no-source-code-integration',
+    ]
+
+    test.each([
+      [['--tracing', 'inject'], 'requires --language'],
+      [['--tracer-version', 'latest'], 'require --tracing inject'],
+      [['--tracer-volume-medium', 'disk'], 'require --tracing inject'],
+      [['--tracing', 'inject', '--language', 'go'], 'dd-trace-go'],
+      [['--tracing', 'inject', '--language', 'rust'], 'does not support language "rust"'],
+    ])('rejects incompatible options before network calls: %s', async (flags, expected) => {
+      const {code, context} = await runCLI([...requiredFlags, ...flags])
+
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain(expected)
+      expect(apikey.newApiKeyValidator).not.toHaveBeenCalled()
+      expect(utils.checkAuthentication).not.toHaveBeenCalled()
+      expect(mockServicesClient.getService).not.toHaveBeenCalled()
+    })
+
+    test.each([
+      ['--tracing', 'automatic'],
+      ['--tracer-libc', 'bionic'],
+      ['--tracer-version', 'bad/tag'],
+      ['--tracer-volume-medium', 'ramdisk'],
+    ])('rejects invalid %s values through Clipanion', async (flag, value) => {
+      const {code} = await runCLI([...requiredFlags, flag, value])
+
+      expect(code).toBe(1)
+      expect(apikey.newApiKeyValidator).not.toHaveBeenCalled()
+    })
+
+    test.each([
+      [undefined, undefined, 'no-injection'],
+      ['true', 'true', 'no-injection'],
+      ['1', '1', 'no-injection'],
+      ['manual', 'true', 'no-injection'],
+      ['false', 'false', 'no-injection'],
+      ['0', '0', 'no-injection'],
+      ['disabled', 'false', 'no-injection'],
+      ['inject', 'true', 'single-language'],
+    ])('normalizes --tracing %s', async (tracing, traceEnabled, configKind) => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+      const tracingFlags = tracing === undefined ? [] : ['--tracing', tracing]
+      const languageFlags = tracing === 'inject' ? ['--language', 'python'] : []
+
+      const {code} = await runCLI([...requiredFlags, '--dry-run', ...tracingFlags, ...languageFlags])
+
+      expect(code).toBe(0)
+      const options = instrumentConfig.mock.calls[0][1]
+      expect(options.ssiConfig?.kind).toBe(configKind)
+      expect(options.envVarsByName.DD_TRACE_ENABLED?.value).toBe(traceEnabled)
+    })
+
+    test('--language sets the log source without automatic instrumentation', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+
+      const {code} = await runCLI([...requiredFlags, '--dry-run', '--language', 'python'])
+
+      expect(code).toBe(0)
+      const options = instrumentConfig.mock.calls[0][1]
+      expect(options.ssiConfig?.kind).toBe('no-injection')
+      expect(options.envVarsByName.DD_SOURCE?.value).toBe('python')
+      expect(options.envVarsByName.DD_TRACE_ENABLED).toBeUndefined()
+    })
+
+    test('passes tracer tuning options to the service configuration', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+      const instrumentConfig = jest.spyOn(serviceConfigModule, 'instrumentServiceConfig')
+
+      const {code} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--tracing',
+        'inject',
+        '--language',
+        'python',
+        '--tracer-version',
+        '4.13.1',
+        '--tracer-libc',
+        'musl',
+        '--tracer-readiness-port',
+        '19000',
+        '--tracer-volume-medium',
+        'disk',
+      ])
+
+      expect(code).toBe(0)
+      expect(instrumentConfig).toHaveBeenCalledWith(
+        service,
+        expect.objectContaining({
+          tracerReadinessPort: 19000,
+          ssiConfig: expect.objectContaining({
+            kind: 'single-language',
+            language: 'python',
+            libc: 'musl',
+            tracerVolumeMedium: 'disk',
+            spec: expect.objectContaining({image: 'gcr.io/datadoghq/dd-lib-python-init:4.13.1'}),
+          }),
+        })
+      )
+    })
+
+    test('renders service configuration failures once without a stack trace', async () => {
+      mockServicesClient.getService.mockResolvedValue([
+        {
+          ...service,
+          template: {
+            containers: [
+              {name: 'app', ports: [{containerPort: 8080}]},
+              {name: 'admin', ports: [{containerPort: 9090}]},
+            ],
+          },
+        },
+      ])
+
+      const {code, context} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--tracing',
+        'inject',
+        '--language',
+        'python',
+      ])
+      const errorOutput = context.stderr.toString()
+
+      expect(code).toBe(1)
+      expect(errorOutput.match(/Instrumentation failed:/g)).toHaveLength(1)
+      expect(errorOutput).toContain('multiple containers declare ports')
+      expect(errorOutput).not.toContain('SsiConfigError')
+      expect(errorOutput).not.toContain('at PluginCommand')
     })
   })
 
@@ -214,6 +366,9 @@ describe('InstrumentCommand', () => {
     beforeEach(() => {
       command = new InstrumentCommand()
       ;(command as any).tracing = undefined
+      ;(command as any).tracerVersion = undefined
+      ;(command as any).tracerLibc = undefined
+      ;(command as any).tracerVolumeMedium = undefined
       ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
       ;(command as any).sidecarName = 'datadog-sidecar'
       ;(command as any).sharedVolumeName = 'shared-volume'

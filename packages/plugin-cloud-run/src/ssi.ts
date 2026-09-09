@@ -1,12 +1,20 @@
 import type {IContainer, IEnvVar} from './types'
+import type {
+  CloudRunLanguage,
+  TracerVolumeMedium,
+  TracingInput,
+  TracingMode,
+} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
-import type {Language, SingleLanguageTracerRegistry} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {
+  CLOUD_RUN_LANGUAGES,
+  CLOUD_RUN_TRACER_REGISTRY,
   DEFAULT_TRACER_LIBC,
-  DEFAULT_TRACER_REGISTRY,
   DEFAULT_TRACER_VERSION,
+  TRACING_MODE_BY_INPUT,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
@@ -22,19 +30,13 @@ import {
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-export const CLOUD_RUN_LANGUAGES = [...TRACER_INJECTION_LANGUAGES, 'go'] as const
-
-export type CloudRunLanguage = (typeof CLOUD_RUN_LANGUAGES)[number]
-
-export const NORMALIZED_TRACING_MODES = ['manual', 'disabled', 'inject'] as const
-export type TracingMode = (typeof NORMALIZED_TRACING_MODES)[number]
 
 export interface SsiOptions {
-  language: CloudRunLanguage | undefined
-  tracing: TracingMode | undefined
-  tracerVersion: string
-  tracerRegistry: SingleLanguageTracerRegistry
-  tracerLibc: Libc
+  readonly language: string | undefined
+  readonly tracing: TracingMode | undefined
+  readonly tracerVersion: string | undefined
+  readonly tracerLibc: Libc | undefined
+  readonly tracerVolumeMedium: TracerVolumeMedium | undefined
 }
 
 export type SsiConfigResult = (
@@ -45,13 +47,14 @@ export type SsiConfigResult = (
       language: Language
       libc: Libc
       spec: LanguageInjectionSpec
+      tracerVolumeMedium: TracerVolumeMedium
     }
 ) & {warnings: readonly string[]}
 
 /** Resolves SSI inputs to a mode or validation errors. */
 export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
   if (options.tracing !== 'inject') {
-    const unusedFlags = nonDefaultTracerFlags(options)
+    const unusedFlags = tracerFlags(options)
 
     return unusedFlags.length > 0
       ? {
@@ -67,10 +70,18 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
   if (options.language === undefined) {
     return {
       kind: 'errors',
+      errors: ['--tracing inject requires --language until automatic multi-language injection is supported.'],
+      warnings: [],
+    }
+  }
+
+  if (!isCloudRunLanguage(options.language)) {
+    return {
+      kind: 'errors',
       errors: [
-        `--tracing inject requires --language until automatic multi-language injection is supported. Possible values: ${TRACER_INJECTION_LANGUAGES.join(
-          ', '
-        )}.`,
+        `Automatic instrumentation does not support language ${JSON.stringify(
+          options.language
+        )}. Use one of ${TRACER_INJECTION_LANGUAGES.map((language) => JSON.stringify(language)).join(', ')}.`,
       ],
       warnings: [],
     }
@@ -86,10 +97,13 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     }
   }
 
+  const tracerVersion = options.tracerVersion ?? DEFAULT_TRACER_VERSION
+  const tracerLibc = options.tracerLibc ?? DEFAULT_TRACER_LIBC
+  const tracerVolumeMedium = options.tracerVolumeMedium ?? 'memory'
   const errors = getLanguageCompatibilityErrors({
     language: options.language,
-    libc: options.tracerLibc,
-    version: options.tracerVersion,
+    libc: tracerLibc,
+    version: tracerVersion,
   })
   if (errors.length > 0) {
     return {kind: 'errors', errors, warnings: []}
@@ -97,9 +111,9 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
 
   const spec = getLanguageInjectionSpec({
     language: options.language,
-    registry: options.tracerRegistry,
-    version: options.tracerVersion,
-    libc: options.tracerLibc,
+    registry: CLOUD_RUN_TRACER_REGISTRY,
+    version: tracerVersion,
+    libc: tracerLibc,
     root: TRACER_MOUNT_PATH,
   })
   const warnings =
@@ -113,9 +127,28 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
     kind: 'single-language',
     warnings,
     language: options.language,
-    libc: options.tracerLibc,
+    libc: tracerLibc,
     spec,
+    tracerVolumeMedium,
   }
+}
+
+const isCloudRunLanguage = (language: string): language is CloudRunLanguage =>
+  CLOUD_RUN_LANGUAGES.some((supportedLanguage) => supportedLanguage === language)
+
+export const normalizeTracingMode = (tracing: TracingInput | undefined): TracingMode | undefined =>
+  tracing === undefined ? undefined : TRACING_MODE_BY_INPUT[tracing]
+
+export const getTracingEnvValue = (tracing: TracingInput | undefined): 'true' | 'false' | '1' | '0' | undefined => {
+  if (tracing === undefined) {
+    return undefined
+  }
+
+  if (tracing === '1' || tracing === '0') {
+    return tracing
+  }
+
+  return tracing === 'false' || tracing === 'disabled' ? 'false' : 'true'
 }
 
 /** Selects the main application container or rejects an ambiguous layout. */
@@ -231,19 +264,18 @@ const LANGUAGE_ENV_FRAGMENTS: readonly EnvFragment[] = TRACER_INJECTION_LANGUAGE
       getLanguageInjectionSpec({
         language,
         libc,
-        registry: DEFAULT_TRACER_REGISTRY,
+        registry: CLOUD_RUN_TRACER_REGISTRY,
         version: DEFAULT_TRACER_VERSION,
         root: TRACER_MOUNT_PATH,
       }).env
   )
 )
 
-/** Returns tracer flags whose values differ from their defaults. */
-const nonDefaultTracerFlags = (options: SsiOptions): string[] =>
+const tracerFlags = (options: SsiOptions): string[] =>
   [
-    options.tracerVersion !== DEFAULT_TRACER_VERSION ? '--tracer-version' : undefined,
-    options.tracerRegistry !== DEFAULT_TRACER_REGISTRY ? '--tracer-registry' : undefined,
-    options.tracerLibc !== DEFAULT_TRACER_LIBC ? '--tracer-libc' : undefined,
+    options.tracerVersion !== undefined ? '--tracer-version' : undefined,
+    options.tracerLibc !== undefined ? '--tracer-libc' : undefined,
+    options.tracerVolumeMedium !== undefined ? '--tracer-volume-medium' : undefined,
   ].filter((flag): flag is string => flag !== undefined)
 
 export class SsiConfigError extends Error {

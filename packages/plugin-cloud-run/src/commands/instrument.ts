@@ -1,3 +1,4 @@
+import type {SsiConfigResult} from '../ssi'
 import type {IEnvVar, IService} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
@@ -29,6 +30,7 @@ import chalk from 'chalk'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {instrumentServiceConfig} from '../service-config'
+import {getTracingEnvValue, normalizeTracingMode, resolveSsiConfig} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 export class PluginCommand extends CloudRunInstrumentCommand {
@@ -36,6 +38,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
+  private ssiConfig: SsiConfigResult | undefined
 
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
@@ -44,25 +47,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
     )
 
-    // Verify DD API Key
-    const site = getDatadogSite()
-    try {
-      const isApiKeyValid = await newApiKeyValidator({
-        apiKey: process.env.DD_API_KEY,
-        datadogSite: site,
-      }).validateApiKey()
-      if (!isApiKeyValid) {
-        throw Error()
-      }
-    } catch (e) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
-            process.env.DD_API_KEY ?? ''
-          )} and ${chalk.bold('DD_SITE')}: ${site}\nEnsure you've set both DD_API_KEY and DD_SITE.`
-        )
-      )
-
+    if (!this.validateLocalOptions()) {
       return 1
     }
 
@@ -102,16 +87,32 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
 
-    if (this.extraTags && !this.extraTags.match(EXTRA_TAGS_REG_EXP)) {
-      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
-
-      return 1
-    }
-
     if (!this.project || !this.services || !this.services.length || !this.region) {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
+
+    // Verify DD API Key
+    const site = getDatadogSite()
+    try {
+      const isApiKeyValid = await newApiKeyValidator({
+        apiKey: process.env.DD_API_KEY,
+        datadogSite: site,
+      }).validateApiKey()
+      if (!isApiKeyValid) {
+        throw Error()
+      }
+    } catch (e) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
+            process.env.DD_API_KEY ?? ''
+          )} and ${chalk.bold('DD_SITE')}: ${site}\nEnsure you've set both DD_API_KEY and DD_SITE.`
+        )
+      )
+
+      return 1
+    }
 
     // Verify GCP credentials
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
@@ -142,6 +143,38 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
 
     return 0
+  }
+
+  public validateLocalOptions(): boolean {
+    if (this.extraTags && !this.extraTags.match(EXTRA_TAGS_REG_EXP)) {
+      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
+
+      return false
+    }
+
+    const ssiConfig = this.getSsiConfig()
+    if (ssiConfig.kind === 'errors') {
+      this.context.stderr.write(renderError(`Invalid APM configuration: ${ssiConfig.errors.join('\n')}\n`))
+
+      return false
+    }
+    for (const warning of ssiConfig.warnings) {
+      this.context.stdout.write(renderSoftWarning(`${warning}\n`))
+    }
+
+    return true
+  }
+
+  public getSsiConfig(): SsiConfigResult {
+    this.ssiConfig ??= resolveSsiConfig({
+      language: this.language,
+      tracing: normalizeTracingMode(this.tracing),
+      tracerVersion: this.tracerVersion,
+      tracerLibc: this.tracerLibc,
+      tracerVolumeMedium: this.tracerVolumeMedium,
+    })
+
+    return this.ssiConfig
   }
 
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string | undefined) {
@@ -205,6 +238,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
     return instrumentServiceConfig(service, {
+      ssiConfig: this.getSsiConfig(),
       ddService,
       environment: this.environment,
       version: this.version,
@@ -217,6 +251,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         envVars: this.envVars,
       }),
       healthCheckPort: this.healthCheckPort,
+      tracerReadinessPort: this.tracerReadinessPort,
       sidecarName: this.sidecarName,
       sidecarImage: this.sidecarImage,
       sidecarCpus: this.sidecarCpus,
@@ -230,7 +265,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     const envVars = getBaseEnvVars(config)
 
     for (const [name, value] of [
-      [DD_TRACE_ENABLED_ENV_VAR, this.tracing],
+      [DD_TRACE_ENABLED_ENV_VAR, getTracingEnvValue(this.tracing)],
       [DD_LOG_LEVEL_ENV_VAR, this.logLevel],
       [DD_SOURCE_ENV_VAR, this.language],
       ...(this.llmobs
