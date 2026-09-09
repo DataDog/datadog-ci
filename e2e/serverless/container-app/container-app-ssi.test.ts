@@ -2,49 +2,17 @@ import crypto from 'node:crypto'
 
 import {DATADOG_CI_COMMAND, execPromiseWithRetries} from '../../helpers/exec'
 
+import {SSI_CASES as ssiCases} from '../helpers/ssi'
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
 import {getContainerAppUrl, verifySsiInstrumented, verifyUninstrumented} from './container-app-verifier'
 
-const SSI_CASES = [
-  {
-    language: 'csharp',
-    applicationImage: 'dde2etfcapp.azurecr.io/dotnet-ssi:latest',
-    tracerRepository: 'dotnet',
-    nativeEnv: {name: 'CORECLR_PROFILER_PATH', fragment: '/datadog-lib/Datadog.Trace.ClrProfiler.Native.so'},
-  },
-  {
-    language: 'java',
-    applicationImage: 'dde2etfcapp.azurecr.io/java-ssi:latest',
-    tracerRepository: 'java',
-    nativeEnv: {name: 'JAVA_TOOL_OPTIONS', fragment: '-javaagent:/datadog-lib/dd-java-agent.jar'},
-  },
-  {
-    language: 'nodejs',
-    applicationImage: 'dde2etfcapp.azurecr.io/node-ssi:latest',
-    tracerRepository: 'js',
-    nativeEnv: {name: 'NODE_OPTIONS', fragment: '--require /datadog-lib/node_modules/dd-trace/init.js'},
-  },
-  {
-    language: 'php',
-    applicationImage: 'dde2etfcapp.azurecr.io/php-ssi:latest',
-    tracerRepository: 'php',
-    nativeEnv: {name: 'PHP_INI_SCAN_DIR', fragment: '/datadog-lib/linux-gnu/loader'},
-  },
-  {
-    language: 'python',
-    applicationImage: 'dde2etfcapp.azurecr.io/python-ssi:latest',
-    tracerRepository: 'python',
-    nativeEnv: {name: 'PYTHONPATH', fragment: '/datadog-lib'},
-  },
-  {
-    language: 'ruby',
-    applicationImage: 'dde2etfcapp.azurecr.io/ruby-ssi:latest',
-    tracerRepository: 'ruby',
-    nativeEnv: {name: 'RUBYOPT', fragment: '-r/datadog-lib/auto_inject'},
-  },
-] as const
+const SSI_CASES = ssiCases.map(({fixtureImageName, nativeEnv, ...ssiCase}) => ({
+  ...ssiCase,
+  applicationImage: `dde2etfcapp.azurecr.io/${fixtureImageName}:latest`,
+  nativeEnv: {name: nativeEnv.name, fragment: nativeEnv.value},
+}))
 
 const assertCommandSucceeded = (action: string, result: {exitCode: number; stdout: string; stderr: string}): void => {
   if (result.exitCode !== 0) {
