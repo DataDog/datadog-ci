@@ -548,6 +548,8 @@ const buildTracerInitContainer = (image: string, mountPath: string): InitContain
   image,
   command: ['/datadog-init/copy-lib.sh'],
   args: [mountPath],
-  resources: {cpu: 0.25, memory: '0.5Gi', ephemeralStorage: '1Gi'},
+  // Azure derives temporary storage from total replica CPU. The default 0.5-vCPU sidecar and
+  // minimum 0.25-vCPU app yield 4 GiB; ephemeralStorage is response-only.
+  resources: {cpu: 0.25, memory: '0.5Gi'},
   volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath}],
 })

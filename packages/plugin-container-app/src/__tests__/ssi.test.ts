@@ -247,7 +247,7 @@ describe('Container Apps automatic APM instrumentation', () => {
         image: expect.stringContaining('datadoghq.azurecr.io/dd-lib-'),
         command: ['/datadog-init/copy-lib.sh'],
         args: [TRACER_MOUNT_PATH],
-        resources: {cpu: 0.25, memory: '0.5Gi', ephemeralStorage: '1Gi'},
+        resources: {cpu: 0.25, memory: '0.5Gi'},
         volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
       })
       expect(result.template?.volumes).toContainEqual({name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'})
@@ -279,7 +279,7 @@ describe('Container Apps automatic APM instrumentation', () => {
         image: 'datadoghq.azurecr.io/dd-lib-composite-init:latest',
         command: ['/datadog-init/copy-lib.sh'],
         args: [COMPOSITE_TRACER_MOUNT_PATH],
-        resources: {cpu: 0.25, memory: '0.5Gi', ephemeralStorage: '1Gi'},
+        resources: {cpu: 0.25, memory: '0.5Gi'},
         volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH}],
       })
       expect(app.volumeMounts).toContainEqual({
