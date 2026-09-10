@@ -180,7 +180,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
     }
     const uploadResult = await execPromise(
       `curl --fail --silent --show-error --request PUT --header "Authorization: Bearer ${tokenResult.stdout.trim()}"` +
-        ` --upload-file "${appPath}" "${scmUri}api/vfs/site/wwwroot/app.js"`
+        ` --upload-file "${appPath}" "${scmUri.replace(/\/$/, '')}/api/vfs/site/wwwroot/app.js"`
     )
     if (uploadResult.exitCode !== 0) {
       throw new Error(`Failed to upload SSI app (exit code ${uploadResult.exitCode}): ${uploadResult.stderr}`)
