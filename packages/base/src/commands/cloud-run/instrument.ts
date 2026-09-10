@@ -64,7 +64,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   })
   protected tracing = Option.String('--tracing', {
     description:
-      'Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" with --language for automatic instrumentation, or "disabled" to turn tracing off. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled".',
+      'Configure APM instrumentation. Use "manual" when the tracer is installed, "inject" to detect the language and add a tracer automatically, or "disabled" to turn tracing off. Add --language with "inject" to select one tracer. The legacy values "true"/"1" and "false"/"0" map to "manual" and "disabled".',
     validator: t.isEnum(TRACING_INPUTS),
   })
   protected serviceTag = Option.String('--service-tag,--serviceTag', {
@@ -111,14 +111,14 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   protected language = Option.String('--language', {
     description: `Set the application language for advanced log parsing. With --tracing inject, also select the tracer for automatic instrumentation. Supported injection values: ${TRACER_INJECTION_LANGUAGES.map(
       (language) => `"${language}"`
-    ).join(', ')}.`,
+    ).join(', ')}. Omit this option with --tracing inject to detect the language automatically.`,
   })
   protected tracerVersion = Option.String('--tracer-version', {
-    description: `The tracer image tag to use with --tracing inject. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
+    description: `The tracer image tag to use with --tracing inject --language. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
     validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
   })
   protected tracerLibc = Option.String('--tracer-libc', {
-    description: `The C standard library used by the application image for automatic instrumentation. Possible values: ${LIBCS.map(
+    description: `The C standard library used by the application image with --tracing inject --language. Possible values: ${LIBCS.map(
       (libc) => `"${libc}"`
     ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
     validator: t.isEnum(LIBCS),
