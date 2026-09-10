@@ -85,7 +85,7 @@ describeOrSkip('aas (Linux)', () => {
     })
     expect(result.exitCode).toBe(0)
 
-    verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId, true)
+    verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
   })
 
   it('telemetry flows', async () => {
