@@ -44,7 +44,14 @@ import {
 } from '../common'
 import {getKuduClient} from '../kudu'
 import {parseLinuxFxVersion} from '../ssi'
-import {AAS_SSI_TAG, AAS_SSI_TAG_VALUE, mergeAasSsiEnv} from '../ssi-env'
+import {
+  AAS_SSI_STAGING_ROOT,
+  AAS_SSI_TAG,
+  AAS_SSI_TAG_VALUE,
+  hasStagedAasTracer,
+  mergeAasSsiEnv,
+  removeAasSsiEnv,
+} from '../ssi-env'
 import {stageAasTracer} from '../ssi-stage'
 
 // Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
@@ -242,9 +249,18 @@ export class PluginCommand extends AasInstrumentCommand {
 
       // Linux instrumentation via sidecar
       const isContainer = isLinuxContainer(site)
-      const hasAasSsi = site.tags?.[AAS_SSI_TAG] === AAS_SSI_TAG_VALUE
+      const injectApm = config.apmEnabled && !isContainer
+      const hasStagedTracer = hasStagedAasTracer(existingEnvVars)
+      const withoutSsiEnvVars = removeAasSsiEnv(existingEnvVars)
+      const removesSsi = !injectApm && !isContainer && !sortedEqual(existingEnvVars, withoutSsiEnvVars)
       let ssiEnvVars: Record<string, string> | undefined
-      if (config.apmEnabled) {
+      if (config.apmEnabled && isContainer) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Automatic tracer injection applies only to code-based Linux Web Apps. Continuing with standard Datadog instrumentation for ${renderWebApp(webApp)}.`
+          )
+        )
+      } else if (injectApm) {
         const runtime = parseLinuxFxVersion(site.siteConfig?.linuxFxVersion)
         if (this.dryRun) {
           this.context.stdout.write(
@@ -260,8 +276,13 @@ export class PluginCommand extends AasInstrumentCommand {
             root
           )
         }
+      } else if (removesSsi) {
+        if (hasStagedTracer && !this.dryRun) {
+          await (await getKuduClient(aasClient, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+        }
+        ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, site, webApp)}
       }
-      const webAppConfig = hasAasSsi || config.apmEnabled ? {...config, isDotnet: false} : {...config}
+      const webAppConfig = hasStagedTracer || injectApm || removesSsi ? {...config, isDotnet: false} : {...config}
       if (config.isMusl && !isContainer) {
         this.context.stdout.write(
           renderSoftWarning(
@@ -270,11 +291,20 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           )
         )
       }
-      if (!hasAasSsi && !config.apmEnabled) {
+      if (!hasStagedTracer && !injectApm && !removesSsi) {
         webAppConfig.isDotnet ||= isDotnet(site)
       }
       webAppConfig.isMusl &&= webAppConfig.isDotnet && isContainer
-      await this.instrumentSidecar(aasClient, webAppConfig, resourceGroup, webApp, existingEnvVars, site, ssiEnvVars)
+      await this.instrumentSidecar(
+        aasClient,
+        webAppConfig,
+        resourceGroup,
+        webApp,
+        existingEnvVars,
+        site,
+        ssiEnvVars,
+        removesSsi
+      )
       // tag only after instrumentation succeeds (avoids false telemetry)
       await this.addTags(
         webAppConfig,
@@ -282,7 +312,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         resourceGroup,
         webApp,
         site.tags ?? {},
-        config.apmEnabled
+        injectApm,
+        !isContainer && !injectApm
       )
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
@@ -314,13 +345,17 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     resourceGroup: string,
     webApp: WebApp,
     tags: Record<string, string>,
-    apmEnabled = false
+    apmEnabled = false,
+    removeSsiTag = false
   ): Promise<void> {
     const updatedTags: Record<string, string> = {
       ...tags,
       service: config.service!,
       [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE,
       ...(apmEnabled ? {[AAS_SSI_TAG]: AAS_SSI_TAG_VALUE} : {}),
+    }
+    if (removeSsiTag) {
+      delete updatedTags[AAS_SSI_TAG]
     }
     if (config.environment) {
       updatedTags.env = config.environment
@@ -337,9 +372,6 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
             {properties: {tags: updatedTags}}
           )
         } catch (error) {
-          if (apmEnabled) {
-            throw error
-          }
           this.context.stdout.write(
             renderError(`Failed to update tags for ${renderWebApp(webApp)}: ${formatError(error)}`)
           )
@@ -416,7 +448,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     webApp: WebApp,
     existingEnvVars: Record<string, string>,
     site: Site,
-    additionalEnvVars?: Record<string, string>
+    additionalEnvVars?: Record<string, string>,
+    replaceExistingEnvVars = false
   ) {
     const siteContainers = await collectAsyncIterator(
       webApp.slot
@@ -466,7 +499,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         )} already exists with correct configuration.\n`
       )
     }
-    await this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars)
+    await this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars, replaceExistingEnvVars)
   }
 
   private async updateEnvVars(
@@ -474,9 +507,12 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     resourceGroup: string,
     webApp: WebApp,
     existingEnvVars: Record<string, string>,
-    envVars: Record<string, string>
+    envVars: Record<string, string>,
+    replaceExistingEnvVars = false
   ) {
-    const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars, ...envVars}}
+    const updatedEnvVars: StringDictionary = {
+      properties: replaceExistingEnvVars ? envVars : {...existingEnvVars, ...envVars},
+    }
     if (!sortedEqual(existingEnvVars, updatedEnvVars.properties)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {

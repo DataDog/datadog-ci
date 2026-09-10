@@ -6,14 +6,19 @@ import {
   mergeInjectionModeTag,
   removeInjectionModeTag,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
-import {getLanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import {
+  getLanguageInjectionSpec,
+  LANGUAGE_INJECTION_ENV_NAMES,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
 export const AAS_SSI_STAGING_ROOT = '/home/data/datadog-tracer'
 export const AAS_SSI_TAG = 'dd_sls_injection_mode'
 export const AAS_SSI_TAG_VALUE = 'single_language'
 
 const stagingPrefix = `${AAS_SSI_STAGING_ROOT}/`
-const dotnetScalars = new Set(['CORECLR_ENABLE_PROFILING', 'CORECLR_PROFILER'])
+
+export const hasStagedAasTracer = (settings: Record<string, string>): boolean =>
+  LANGUAGE_INJECTION_ENV_NAMES.some((name) => settings[name]?.includes(stagingPrefix) ?? false)
 
 export const getStagedRoot = (runtime: AasCodeRuntime, version: string, digest: string): string =>
   `${AAS_SSI_STAGING_ROOT}/${runtime.language}/${version}-${digest}`
@@ -62,9 +67,6 @@ export const removeAasSsiEnv = (current: Record<string, string>): Record<string,
 }
 
 const removeManagedValue = (name: string, value: string): string | undefined => {
-  if (dotnetScalars.has(name) && (value === '1' || value === '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}')) {
-    return undefined
-  }
   if (name === 'DD_LOADER_PACKAGE_PATH' && value.startsWith(stagingPrefix)) {
     return undefined
   }
