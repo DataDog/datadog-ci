@@ -18,6 +18,7 @@ const noPluginExceptions = new Set([
   'measure',
   'pe-symbols',
   'plugin',
+  'ppdb-symbols',
   'react-native',
   'sourcemaps',
   'span',
