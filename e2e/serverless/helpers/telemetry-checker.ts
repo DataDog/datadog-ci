@@ -16,9 +16,13 @@ interface TelemetryIdentity {
 
 const waitFor = (seconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
 
-const pollUntilFound = async (label: string, query: () => Promise<unknown[]>): Promise<void> => {
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    console.log(`[${label}] attempt ${attempt}/${MAX_ATTEMPTS}`)
+const pollUntilFound = async (
+  label: string,
+  query: () => Promise<unknown[]>,
+  maxAttempts = MAX_ATTEMPTS
+): Promise<void> => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`[${label}] attempt ${attempt}/${maxAttempts}`)
     try {
       const results = await query()
       if (results.length > 0) {
@@ -30,12 +34,12 @@ const pollUntilFound = async (label: string, query: () => Promise<unknown[]>): P
       console.error(`[${label}] query error:`, error)
     }
 
-    if (attempt < MAX_ATTEMPTS) {
+    if (attempt < maxAttempts) {
       console.log(`[${label}] not found, retrying in ${POLL_INTERVAL_SECONDS}s`)
       await waitFor(POLL_INTERVAL_SECONDS)
     }
   }
-  throw new Error(`[${label}] timed out after ${MAX_ATTEMPTS} attempts (${MAX_ATTEMPTS * POLL_INTERVAL_SECONDS}s)`)
+  throw new Error(`[${label}] timed out after ${maxAttempts} attempts (${maxAttempts * POLL_INTERVAL_SECONDS}s)`)
 }
 
 const buildQuery = (
@@ -101,15 +105,15 @@ export const checkTelemetryFlowing = async (
   identity: TelemetryIdentity,
   // Some platforms (e.g. Windows App Service) don't support log collection, so callers can
   // assert traces only.
-  {checkLogs = true}: {checkLogs?: boolean} = {}
+  {checkLogs = true, maxAttempts = MAX_ATTEMPTS}: {checkLogs?: boolean; maxAttempts?: number} = {}
 ): Promise<void> => {
   const configuration = createE2EConfiguration({
     apiKeyAuth: process.env.DATADOG_API_KEY,
     appKeyAuth: process.env.DATADOG_APP_KEY,
   })
-  const checks = [pollUntilFound('spans', () => querySpans(configuration, identity))]
+  const checks = [pollUntilFound('spans', () => querySpans(configuration, identity), maxAttempts)]
   if (checkLogs) {
-    checks.push(pollUntilFound('logs', () => queryLogs(configuration, identity)))
+    checks.push(pollUntilFound('logs', () => queryLogs(configuration, identity), maxAttempts))
   }
   await Promise.all(checks)
 }
