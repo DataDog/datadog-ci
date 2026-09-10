@@ -23,7 +23,7 @@ To instrument your App Services using the `datadog-ci aas instrument` command, f
 
 ### `instrument`
 
-Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds a sidecar to the App Service and modifies its configuration.
+Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds a sidecar to the App Service and modifies its configuration. Add `--apm-enabled` to inject a tracer into supported code-based Linux Web Apps. It supports .NET 8-11, Node.js 22/24/26, Python 3.10-3.14, PHP 8.2-8.5, and Java 8-23. The command requires SCM access to stage the tracer and fails before changing settings if SCM is unavailable.
 
 ```bash
 export DD_API_KEY=<your-datadog-api-key>
@@ -37,6 +37,9 @@ datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-
 
 # Dry run of instrumentation
 datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dry-run
+
+# Add the tracer to a supported code-based Linux Web App
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --apm-enabled
 
 # Instrument specific web app resource IDs (including slots)
 datadog-ci aas instrument \
@@ -107,6 +110,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2" |  |
 | `--windows-runtime` |  | Manually specify the Windows runtime (`node`, `dotnet`, or `java`) used by the extension to override automatic detection. |  |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Only applies to Linux web apps. | `index.docker.io/datadog/serverless-init:latest` |
+| `--apm-enabled` |  | Add the tracer for supported code-based Linux Web Apps. | `false` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`

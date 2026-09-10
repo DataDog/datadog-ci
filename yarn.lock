@@ -1632,6 +1632,9 @@ __metadata:
     "@azure/identity": "npm:4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
+    fzstd: "npm:0.1.1"
+    jszip: "npm:3.10.1"
+    tar-stream: "npm:3.2.0"
   languageName: unknown
   linkType: soft
 
@@ -7697,6 +7700,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fzstd@npm:0.1.1":
+  version: 0.1.1
+  resolution: "fzstd@npm:0.1.1"
+  checksum: 10/455b968aeb764f06d9c39a5c8b45eefd645f7ee9129896e890eafb8ab367482f8495de12907021a32f6544494305a42a2056c30c63efac06181e6efcdab3fe78
+  languageName: node
+  linkType: hard
+
 "gaxios@npm:^6.0.0, gaxios@npm:^6.1.1":
   version: 6.7.0
   resolution: "gaxios@npm:6.7.0"
@@ -9186,7 +9196,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jszip@npm:^3.10.1":
+"jszip@npm:3.10.1, jszip@npm:^3.10.1":
   version: 3.10.1
   resolution: "jszip@npm:3.10.1"
   dependencies:
@@ -11578,6 +11588,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tar-stream@npm:3.2.0, tar-stream@npm:^3.1.5":
+  version: 3.2.0
+  resolution: "tar-stream@npm:3.2.0"
+  dependencies:
+    b4a: "npm:^1.6.4"
+    bare-fs: "npm:^4.5.5"
+    fast-fifo: "npm:^1.2.0"
+    streamx: "npm:^2.15.0"
+  checksum: 10/ce57a81521de73ae7a3b7d55a08da50d6771427c249bfa89a208518e48faf5254c8fa7201a8f5419ab8bde9601a74e6dd512b31a13ec89774aec96178f99a8d3
+  languageName: node
+  linkType: hard
+
 "tar-stream@npm:^2.1.4":
   version: 2.2.0
   resolution: "tar-stream@npm:2.2.0"
@@ -11588,18 +11610,6 @@ __metadata:
     inherits: "npm:^2.0.3"
     readable-stream: "npm:^3.1.1"
   checksum: 10/1a52a51d240c118cbcd30f7368ea5e5baef1eac3e6b793fb1a41e6cd7319296c79c0264ccc5859f5294aa80f8f00b9239d519e627b9aade80038de6f966fec6a
-  languageName: node
-  linkType: hard
-
-"tar-stream@npm:^3.1.5":
-  version: 3.2.0
-  resolution: "tar-stream@npm:3.2.0"
-  dependencies:
-    b4a: "npm:^1.6.4"
-    bare-fs: "npm:^4.5.5"
-    fast-fifo: "npm:^1.2.0"
-    streamx: "npm:^2.15.0"
-  checksum: 10/ce57a81521de73ae7a3b7d55a08da50d6771427c249bfa89a208518e48faf5254c8fa7201a8f5419ab8bde9601a74e6dd512b31a13ec89774aec96178f99a8d3
   languageName: node
   linkType: hard
 
