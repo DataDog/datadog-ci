@@ -79,11 +79,42 @@ Because a service is matched by family, a run instruments one revision per famil
 
 A task definition and the services running it are instrumented and deployed on their own, so a run over several of them reports every problem it hits and still rolls out the ones that worked: a task definition that could not be instrumented leaves its own services alone, and the rest reach their new revision. Tasks you start yourself with `RunTask`, and services you do not name, keep running the revision they were on.
 
+### `uninstrument`
+
+**Warning:** The `ecs-fargate uninstrument` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
+
+Run `datadog-ci ecs-fargate uninstrument` to take Datadog instrumentation back off an ECS Fargate task definition. The command reads the task definitions you name, removes what `instrument` added, and registers the result as a new revision. As with `instrument`, nothing that is running changes until the new revision is deployed, which you can add to the command with `--ecs-service`.
+
+```bash
+export DD_BETA_COMMANDS_ENABLED=1
+
+# Revert a task definition
+datadog-ci ecs-fargate uninstrument --task-definition my-app -r us-east-1
+
+# Revert several task definitions in one run
+datadog-ci ecs-fargate uninstrument --task-definition my-app --task-definition my-worker -r us-east-1
+
+# Revert a task definition and roll the new revision out to the service running it
+datadog-ci ecs-fargate uninstrument --task-definition my-app -r us-east-1 \
+  --ecs-service my-app-service --cluster my-cluster
+
+# Preview the changes without registering a revision
+datadog-ci ecs-fargate uninstrument --task-definition my-app -r us-east-1 --dry-run
+```
+
+The command removes the `datadog-agent` and `datadog-log-router` sidecars, the `dd-sockets` volume along with its mounts, every `DD_`-prefixed environment variable and secret from your application containers, the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels, and the `service`, `env`, `version`, and `dd_sls_ci` tags from the revision. Add `--env-vars` for each variable you wish to be removed too.
+
+Running the command twice is safe: a task definition with no Datadog instrumentation to remove is reported as such and no revision is registered.
+
+#### Log configurations
+
+`--log-collection` replaces each container's log configuration with one routing through `datadog-log-router`. The container's previous configuration is recorded nowhere, so it cannot be put back. Removing the router leaves each affected container with no log configuration at all, which the command warns about: add one to the task definition to keep collecting those logs.
+
 ### Configuration
 
 #### AWS credentials
 
-You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: the ones the task definition already had, plus `service`, `env`, `version`, and `dd_sls_ci`. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
+You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: for `instrument`, the ones the task definition already had plus `service`, `env`, `version`, and `dd_sls_ci`; for `uninstrument`, the ones that are left once those four are removed. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
 
 `--profile` uses a named profile from your AWS configuration instead. A profile with an `mfa_serial` is supported: the command asks for the code when it loads the profile.
 
@@ -99,24 +130,27 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 
 #### Environment variables
 
-- `DD_BETA_COMMANDS_ENABLED`: set to `1` to enable this command while it is in beta.
-- `DD_API_KEY` (or `DATADOG_API_KEY`): the Datadog API key to write into the task definition, used only when `--api-key-secret-arn` is not passed.
+- `DD_BETA_COMMANDS_ENABLED`: set to `1` to enable these commands while they are in beta.
+- `DD_API_KEY` (or `DATADOG_API_KEY`): the Datadog API key to write into the task definition, used by `instrument` only when `--api-key-secret-arn` is not passed.
 - `DD_SITE` (or `DATADOG_SITE`): the [Datadog site](https://docs.datadoghq.com/getting_started/site/) to send data to. Defaults to `datadoghq.com`.
 - `AWS_REGION` (or `AWS_DEFAULT_REGION`): the region to use when `--region` is not passed.
 
 ### Arguments
 
-You can pass the following arguments to `instrument` to specify its behavior. `--fips` and `--fips-ignore-error` are also accepted, as they are on every command.
+`--fips` and `--fips-ignore-error` are also accepted, as they are on every command.
+
+#### `instrument`
 
 <!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry` or `--dry-run` | `-d` | Preview the changes the command would apply | `false` |
-| `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition to instrument. Can be specified multiple times. |  |
+| `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition. Can be specified multiple times. |  |
 | `--region` | `-r` | The AWS region the task definition lives in |  |
-| `--profile` |  | Specify the AWS named profile credentials to use to instrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
-| `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly instrumented revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
+| `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly registered revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
 | `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
+| `--config` |  | Path to the configuration file. |  |
 | `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
 | `--no-agent-socket` |  | Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. Windows tasks always use the loopback address. |  |
@@ -132,12 +166,26 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--appsec` |  | Enable Application Security Monitoring for the instrumented task. | `false` |
 | `--llmobs` |  | If specified, enables LLM Observability for the instrumented task with the provided ML application name. |  |
-| `--config` |  | Path to the configuration file. |  |
 <!-- END_USAGE:instrument -->
+
+#### `uninstrument`
+
+<!-- BEGIN_USAGE:uninstrument -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `--dry` or `--dry-run` | `-d` | Preview the changes the command would apply | `false` |
+| `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition. Can be specified multiple times. |  |
+| `--region` | `-r` | The AWS region the task definition lives in |  |
+| `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly registered revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
+| `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
+| `--config` |  | Path to the configuration file. |  |
+| `--env-vars` | `-e` | Additional environment variables to remove from every container in the task. The Datadog ones are removed either way. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+<!-- END_USAGE:uninstrument -->
 
 ### Configuration file
 
-Instead of supplying arguments, you can create a configuration file in your project and run `datadog-ci ecs-fargate instrument --config datadog-ci.json`. A `datadog-ci.json` in the working directory is picked up automatically, without `--config`. Arguments you pass on the command line override the values in the configuration file.
+Instead of supplying arguments, you can create a configuration file in your project and run `datadog-ci ecs-fargate instrument --config datadog-ci.json`. A `datadog-ci.json` in the working directory is picked up automatically, without `--config`. Arguments you pass on the command line override the values in the configuration file. Both commands read the same file, and `uninstrument` ignores the keys that only apply to instrumenting.
 
 ```json
 {
