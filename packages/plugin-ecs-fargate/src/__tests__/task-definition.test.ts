@@ -85,9 +85,9 @@ describe('instrumentTaskDefinition', () => {
       ...APP_CONTAINER,
       environment: [
         {name: 'PORT', value: '8080'},
-        {name: 'DD_SERVICE', value: 'my-app'},
         {name: 'DD_TRACE_ENABLED', value: 'true'},
         {name: 'DD_LOGS_INJECTION', value: 'true'},
+        {name: 'DD_SERVICE', value: 'my-app'},
         {name: 'DD_TRACE_AGENT_URL', value: 'unix:///var/run/datadog/apm.socket'},
         {name: 'DD_DOGSTATSD_URL', value: 'unix:///var/run/datadog/dsd.socket'},
       ],
@@ -215,14 +215,19 @@ describe('instrumentTaskDefinition', () => {
       expect(taskDefinition.tags).toContainEqual(SERVICE_TAG)
     })
 
-    test('leaves a service the application container named itself', () => {
+    test('applies the family as the service on every Datadog-owned destination', () => {
       const original = fargateTaskDefinition({
         containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_SERVICE', value: 'checkout'}]}],
       })
 
       const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
-      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_SERVICE', 'checkout')
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_SERVICE', 'my-app')
+      expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_SERVICE', 'my-app')
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toMatchObject({
+        'com.datadoghq.tags.service': 'my-app',
+      })
+      expect(taskDefinition.tags).toContainEqual(SERVICE_TAG)
     })
 
     test('overrides the container with an explicit service', () => {
@@ -284,7 +289,7 @@ describe('instrumentTaskDefinition', () => {
         expect(agentContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toBeUndefined()
       })
 
-      test('keeps a label the application container carried when the service is only inferred', () => {
+      test('overrides a service label with the family when the service is only inferred', () => {
         const original = fargateTaskDefinition({
           containerDefinitions: [{...APP_CONTAINER, dockerLabels: {'com.datadoghq.tags.service': 'checkout'}}],
         })
@@ -292,7 +297,7 @@ describe('instrumentTaskDefinition', () => {
         const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
         expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toStrictEqual({
-          'com.datadoghq.tags.service': 'checkout',
+          'com.datadoghq.tags.service': 'my-app',
         })
       })
 
@@ -376,6 +381,16 @@ describe('instrumentTaskDefinition', () => {
       expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).not.toHaveProperty('DD_APPSEC_ENABLED')
     })
 
+    test('removes Application Security Monitoring when it is turned off', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_APPSEC_ENABLED', value: 'true'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, appsec: false})
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).not.toHaveProperty('DD_APPSEC_ENABLED')
+    })
+
     test('enables LLM Observability against the Agent rather than the intake', () => {
       const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
         ...MOCK_SETTINGS,
@@ -387,6 +402,54 @@ describe('instrumentTaskDefinition', () => {
         DD_LLMOBS_ML_APP: 'my-ml-app',
         DD_LLMOBS_AGENTLESS_ENABLED: 'false',
       })
+    })
+
+    test('removes LLM Observability when it is omitted', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [
+          {
+            ...APP_CONTAINER,
+            environment: [
+              {name: 'DD_LLMOBS_ENABLED', value: 'true'},
+              {name: 'DD_LLMOBS_ML_APP', value: 'my-ml-app'},
+              {name: 'DD_LLMOBS_AGENTLESS_ENABLED', value: 'false'},
+            ],
+          },
+        ],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      const env = envVarsOf(appContainerOf(taskDefinition.containerDefinitions))
+      expect(env).not.toHaveProperty('DD_LLMOBS_ENABLED')
+      expect(env).not.toHaveProperty('DD_LLMOBS_ML_APP')
+      expect(env).not.toHaveProperty('DD_LLMOBS_AGENTLESS_ENABLED')
+    })
+
+    test('keeps the Agent intake on for LLM Observability when tracing is off', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        tracing: false,
+        llmobs: 'my-ml-app',
+      })
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toMatchObject({
+        DD_TRACE_ENABLED: 'false',
+        DD_LLMOBS_ENABLED: 'true',
+        DD_LLMOBS_AGENTLESS_ENABLED: 'false',
+      })
+      expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_APM_ENABLED', 'true')
+    })
+
+    test('removes extra tags when they are omitted', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TAGS', value: 'git.commit.sha:abc'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).not.toHaveProperty('DD_TAGS')
+      expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).not.toHaveProperty('DD_TAGS')
     })
 
     test('sets the extra environment variables on every container, over what was there', () => {
@@ -777,15 +840,31 @@ describe('instrumentTaskDefinition', () => {
         expect(isUpToDate(original, updated)).toBe(false)
       })
 
-      // The command cannot put back the log configuration it replaced, so taking the router away
-      // would leave the containers pointing at a router that is no longer there.
-      test('leaves an instrumented task definition alone when log collection is turned back off', () => {
+      // The original log configuration FireLens replaced is gone, so the containers are left with
+      // none rather than pointing at a router that is no longer there.
+      test('removes the router and its routing when log collection is turned back off', () => {
         const first = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
 
-        const {taskDefinition, warnings} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_SETTINGS)
+        const {taskDefinition} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_SETTINGS)
 
-        expect(taskDefinition).toStrictEqual(first.taskDefinition)
-        expect(warnings).toHaveLength(0)
+        expect(logRouterContainerOf(taskDefinition.containerDefinitions)).toBeUndefined()
+        expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toBeUndefined()
+        expect(agentContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toBeUndefined()
+      })
+
+      test('leaves a log configuration that is not Datadog FireLens when log collection is off', () => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [
+            {...APP_CONTAINER, logConfiguration: {logDriver: 'splunk', options: {splunkToken: 'token'}}},
+          ],
+        })
+
+        const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+        expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual({
+          logDriver: 'splunk',
+          options: {splunkToken: 'token'},
+        })
       })
     })
 
