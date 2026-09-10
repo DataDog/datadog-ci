@@ -259,7 +259,7 @@ describe('ecs-fargate instrument', () => {
         DD_LLMOBS_AGENTLESS_ENABLED: 'false',
         DD_PROFILING_ENABLED: 'true',
       })
-      expect(envVarsOf(registeredContainers(), AGENT_CONTAINER_NAME)).toMatchObject({DD_APM_ENABLED: 'false'})
+      expect(envVarsOf(registeredContainers(), AGENT_CONTAINER_NAME)).toMatchObject({DD_APM_ENABLED: 'true'})
     })
 
     test('runs the Agent image it is given', async () => {

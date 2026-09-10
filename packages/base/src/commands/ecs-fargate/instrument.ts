@@ -167,7 +167,7 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:
-      'Additional environment variables to set on every container in the task. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+      'Additional environment variables to set on the application containers and the Datadog Agent. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
   })
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', {
     description: `Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify \`--no-source-code-integration\` to disable. Defaults to 'true'`,

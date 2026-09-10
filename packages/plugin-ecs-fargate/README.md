@@ -36,9 +36,11 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> --dry-run
 ```
 
-Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE`, `DD_TRACE_ENABLED`, and `DD_LOGS_INJECTION` are only filled in when the container does not set them itself, so a task definition that has already made a choice keeps it. Everything else the command is asked for wins over what the task definition had, including an explicit `--service`.
+Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE` is `--service`, or the task definition family when `--service` is omitted, and is written to the application containers, the Agent, the Docker labels, and the revision tags so they cannot disagree. `DD_TRACE_ENABLED` and `DD_LOGS_INJECTION` are only filled in when the container does not set them itself, so a task definition that has already made a choice keeps it. Everything else the command is asked for wins over what the task definition had.
 
-The same three values are also written to the application containers as the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels. The environment variables tag what a tracer running inside a container sends; these labels are what the Agent reads to tag the metrics it collects about the container from the outside, so the two line up in Datadog. The Agent container is deliberately left unlabelled, so that it reports its own resource usage under its own name rather than your service's. Labels already on a container are kept, and any that are not Datadog's are left alone.
+Product settings the command owns are applied when those flags are on and removed when they are not: `--no-appsec` drops `DD_APPSEC_ENABLED`, omitting `--llmobs` drops the LLM Observability variables, and `--no-source-code-integration` drops the Git tags from `DD_TAGS`.
+
+The same three unified service tag values are also written to the application containers as the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels. The environment variables tag what a tracer running inside a container sends; these labels are what the Agent reads to tag the metrics it collects about the container from the outside, so the two line up in Datadog. The Agent container is deliberately left unlabelled, so that it reports its own resource usage under its own name rather than your service's. Labels that are not Datadog's are left alone.
 
 #### Reaching the Agent
 
@@ -53,7 +55,7 @@ Running the command twice is safe: the sidecars are matched by name, so an alrea
 #### Collecting logs
 
 Pass `--log-collection` to send the task's logs to Datadog. A `datadog-log-router` sidecar running [AWS for Fluent Bit](https://github.com/aws/aws-for-fluent-bit) is added and the other containers, including the Agent, are routed through it.
-Existing log configurations are replaced. Omitting `--log-collection` on a later run does not restore them or remove the router.
+Existing log configurations are replaced. Omitting `--log-collection` on a later run removes the router and the Datadog FireLens configuration it wrote, but does not restore the log configuration it replaced.
 
 #### Deploying the new revision
 
@@ -109,7 +111,7 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--env` or `--environment` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the task in the format "key1:value1,key2:value2". |  |
-| `--env-vars` | `-e` | Additional environment variables to set on every container in the task. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--env-vars` | `-e` | Additional environment variables to set on the application containers and the Datadog Agent. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--tracing` |  | Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`. |  |
