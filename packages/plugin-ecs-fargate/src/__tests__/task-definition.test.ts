@@ -18,6 +18,7 @@ import {
   SERVICE_TAG,
   SOCKET_MOUNT,
   SOCKET_VOLUME,
+  WINDOWS_RUNTIME_PLATFORM,
   asDescribed,
   fargateTaskDefinition,
   firelensLogConfiguration,
@@ -731,17 +732,101 @@ describe('instrumentTaskDefinition', () => {
       expect(app?.dockerLabels).toStrictEqual({'com.datadoghq.tags.service': 'payments'})
     })
 
+    // Windows containers have no Unix socket to share, so the default transport cannot be used and
+    // the tracers reach the Agent on the loopback address every container in the task shares.
+    test('sends the tracers to the loopback address rather than the socket', () => {
+      const {taskDefinition, warnings} = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).toMatchObject({DD_AGENT_HOST: '127.0.0.1'})
+      expect(envVarsOf(app)).not.toHaveProperty('DD_TRACE_AGENT_URL')
+      expect(envVarsOf(app)).not.toHaveProperty('DD_DOGSTATSD_URL')
+      expect(taskDefinition.volumes).toStrictEqual([])
+      expect(app?.mountPoints).toBeUndefined()
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toBeUndefined()
+      expect(warnings).toContainEqual(expect.stringContaining('reach the datadog-agent container on 127.0.0.1'))
+    })
+
+    test('takes away a socket volume the task definition declares', () => {
+      const original = windowsTaskDefinition({
+        volumes: [SOCKET_VOLUME],
+        containerDefinitions: [{...APP_CONTAINER, mountPoints: [SOCKET_MOUNT]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(taskDefinition.volumes).toStrictEqual([])
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([])
+    })
+
+    // Windows resolves environment variable names without case, so a variable the command writes
+    // has to land on the one the container declares rather than contradict it from a second entry.
+    test('merges the environment of a container that named a variable in another case', () => {
+      const original = windowsTaskDefinition({
+        containerDefinitions: [
+          {
+            ...APP_CONTAINER,
+            environment: [
+              {name: 'dd_trace_enabled', value: 'false'},
+              {name: 'dd_appsec_enabled', value: 'true'},
+            ],
+          },
+          {name: AGENT_CONTAINER_NAME, environment: [{name: 'dd_site', value: 'datadoghq.eu'}]},
+        ],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(app)).toHaveProperty('dd_trace_enabled', 'false')
+      expect(envVarsOf(app)).not.toHaveProperty('DD_TRACE_ENABLED')
+      // Application Security Monitoring is off, so the variable enabling it is dropped either case.
+      expect(envVarsOf(app)).not.toHaveProperty('dd_appsec_enabled')
+      // The command owns the site, so it replaces the value in place rather than adding to it.
+      const agent = agentContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(agent)).toHaveProperty('dd_site', 'datadoghq.com')
+      expect(envVarsOf(agent)).not.toHaveProperty('DD_SITE')
+    })
+
+    test('waits for the Agent to start rather than to be healthy, since it has none', () => {
+      const original = windowsTaskDefinition({
+        containerDefinitions: [
+          {...APP_CONTAINER, dependsOn: [{containerName: AGENT_CONTAINER_NAME, condition: 'HEALTHY'}]},
+        ],
+      })
+
+      const {taskDefinition, warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.dependsOn).toStrictEqual([
+        {containerName: AGENT_CONTAINER_NAME, condition: 'START'},
+      ])
+      expect(warnings).toContainEqual(expect.stringContaining('wait for datadog-agent to start'))
+    })
+
     test('rejects log collection, since FireLens does not run on Windows', () => {
       expect(() => instrumentTaskDefinition(windowsTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)).toThrow(
         'the datadog-log-router sidecar does not support'
       )
     })
 
+    test('leaves no log router behind, since FireLens does not run on Windows', () => {
+      const original = windowsTaskDefinition({
+        containerDefinitions: [
+          {...APP_CONTAINER, dependsOn: [{containerName: LOG_ROUTER_CONTAINER_NAME, condition: 'HEALTHY'}]},
+          {...LOG_ROUTER_CONTAINER},
+        ],
+      })
+
+      const {taskDefinition, warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(logRouterContainerOf(taskDefinition.containerDefinitions)).toBeUndefined()
+      expect(appContainerOf(taskDefinition.containerDefinitions)).not.toHaveProperty('dependsOn')
+      expect(warnings).toContainEqual(expect.stringContaining('Dropping the dependency of the my-app container'))
+    })
+
     test('re-instrumenting produces an identical task definition', () => {
       const first = instrumentTaskDefinition(windowsTaskDefinition(), MOCK_SETTINGS)
-      const described = asDescribed(first.taskDefinition, {
-        runtimePlatform: {operatingSystemFamily: 'WINDOWS_SERVER_2022_CORE', cpuArchitecture: 'X86_64'},
-      })
+      const described = asDescribed(first.taskDefinition, {runtimePlatform: WINDOWS_RUNTIME_PLATFORM})
 
       const second = instrumentTaskDefinition(described, MOCK_SETTINGS)
 
@@ -758,6 +843,35 @@ describe('instrumentTaskDefinition', () => {
       expect(agent?.image).toBe(AGENT_IMAGE)
       expect(agent?.healthCheck).toBeDefined()
       expect(agent).not.toHaveProperty('workingDirectory')
+    })
+
+    test('leaves a Linux task waiting for the Agent to be healthy', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [
+          {...APP_CONTAINER, dependsOn: [{containerName: AGENT_CONTAINER_NAME, condition: 'HEALTHY'}]},
+        ],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.dependsOn).toStrictEqual([
+        {containerName: AGENT_CONTAINER_NAME, condition: 'HEALTHY'},
+      ])
+    })
+
+    // Linux tells `DD_TRACE_ENABLED` and `dd_trace_enabled` apart, so a container that declared the
+    // latter still gets the former, as it did before Windows tasks were instrumented at all.
+    test('merges the environment of a Linux container by exact name', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'dd_trace_enabled', value: 'false'}]}],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toMatchObject({
+        dd_trace_enabled: 'false',
+        DD_TRACE_ENABLED: 'true',
+      })
     })
   })
 
@@ -921,6 +1035,23 @@ describe('instrumentTaskDefinition', () => {
         expect(logRouterContainerOf(taskDefinition.containerDefinitions)).toBeUndefined()
         expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toBeUndefined()
         expect(agentContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toBeUndefined()
+      })
+
+      // ECS rejects a revision whose container waits on one the task does not run.
+      test('drops what waited on the router when log collection is turned back off', () => {
+        const first = instrumentTaskDefinition(
+          fargateTaskDefinition({
+            containerDefinitions: [
+              {...APP_CONTAINER, dependsOn: [{containerName: LOG_ROUTER_CONTAINER_NAME, condition: 'HEALTHY'}]},
+            ],
+          }),
+          MOCK_LOG_COLLECTION_SETTINGS
+        )
+
+        const {taskDefinition, warnings} = instrumentTaskDefinition(asDescribed(first.taskDefinition), MOCK_SETTINGS)
+
+        expect(appContainerOf(taskDefinition.containerDefinitions)).not.toHaveProperty('dependsOn')
+        expect(warnings).toContainEqual(expect.stringContaining('which the instrumented task does not run'))
       })
 
       test('leaves a log configuration that is not Datadog FireLens when log collection is off', () => {
