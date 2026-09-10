@@ -47,7 +47,7 @@ export const getKuduClient = async (
     path: string,
     data?: unknown,
     headers: Record<string, string> = {}
-  ): Promise<{data: T | undefined}> => {
+  ): Promise<{data: T | undefined; headers: Record<string, string>}> => {
     const token = await azureCredential.getToken('https://management.azure.com/.default')
     if (!token) {
       throw new Error('Azure credentials could not access the SCM site.')
@@ -68,13 +68,13 @@ export const getKuduClient = async (
           : undefined
         : (response.data as T)
 
-    return {data: parsedData}
+    return {data: parsedData, headers: response.headers}
   }
 
   return {
     publish: async (directory, archive) => {
       const previousDeployment = await request<{id?: string}>('GET', '/api/deployments/latest')
-      await request(
+      const publishResponse = await request(
         'POST',
         `/api/publish?type=zip&path=${encodeURIComponent(directory)}&clean=false&restart=false&async=true`,
         archive,
@@ -82,12 +82,16 @@ export const getKuduClient = async (
           'Content-Type': 'application/zip',
         }
       )
-      for (let attempt = 0; attempt < 60; attempt++) {
-        const deployment = await request<{id?: string; status?: number; complete?: boolean}>(
-          'GET',
-          '/api/deployments/latest'
-        )
-        if (deployment.data?.id === previousDeployment.data?.id) {
+      const deploymentPath = publishResponse.headers.location
+        ? (() => {
+            const location = new URL(publishResponse.headers.location)
+
+            return `${location.pathname}${location.search}`
+          })()
+        : '/api/deployments/latest'
+      for (let attempt = 0; attempt < 300; attempt++) {
+        const deployment = await request<{id?: string; status?: number; complete?: boolean}>('GET', deploymentPath)
+        if (!publishResponse.headers.location && deployment.data?.id === previousDeployment.data?.id) {
           await new Promise((resolve) => setTimeout(resolve, 1_000))
           continue
         }
@@ -105,14 +109,22 @@ export const getKuduClient = async (
       const checks = artifacts
         .map((alternatives) => alternatives.map((artifact) => `test -f ${shellQuote(artifact)}`).join(' || '))
         .join(' && ')
-      const result = await request<{ExitCode?: number}>('POST', '/api/command', {command: checks, dir: '/home'})
+      const result = await request<{ExitCode?: number}>('POST', '/api/command', {
+        command: `/bin/bash -c "${escapeBashArgument(checks)}"`,
+        dir: '/home',
+      })
 
       return result.data?.ExitCode === 0
     },
     deleteDirectory: async (directory) => {
-      await request('POST', '/api/command', {command: `rm -rf -- ${shellQuote(directory)}`, dir: '/home'})
+      await request('POST', '/api/command', {
+        command: `/bin/bash -c "${escapeBashArgument(`rm -rf -- ${directory}`)}"`,
+        dir: '/home',
+      })
     },
   }
 }
 
 const shellQuote = (value: string): string => `'${value.replace(/'/g, "'\\''")}'`
+
+const escapeBashArgument = (value: string): string => value.replace(/[\\"$`]/g, '\\$&')

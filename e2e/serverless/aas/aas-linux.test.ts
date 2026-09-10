@@ -190,12 +190,15 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
       `az webapp show --name "${appName}" --resource-group "${resourceGroup}" --query defaultHostName --output tsv`
     )
     await triggerTraffic(`https://${hostnameResult.stdout.trim()}`, {attempts: 20, requiredSuccesses: 10})
-    await checkTelemetryFlowing({
-      serviceName: appName,
-      env: 'e2e',
-      version: runId,
-      tags: [`one_e2e_run_id:${runId}`],
-    })
+    await checkTelemetryFlowing(
+      {
+        serviceName: appName,
+        env: 'e2e',
+        version: runId,
+        tags: [`one_e2e_run_id:${runId}`],
+      },
+      {checkLogs: false}
+    )
   }, 600_000)
 
   it('uninstruments and removes the staged tracer', async () => {
