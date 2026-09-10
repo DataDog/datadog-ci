@@ -6,7 +6,7 @@ Upload .NET MAUI Portable PDB files to Datadog to symbolicate your .NET MAUI man
 
 You need to set the `DATADOG_API_KEY` environment variable, or add it to your `datadog-ci.json` file with the `apiKey` field.
 
-Additional environment variable available:
+Additional environment variables available:
 
 | Environment Variable | Description                                                                                                                     |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------|

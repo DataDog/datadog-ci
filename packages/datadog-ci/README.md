@@ -165,7 +165,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `ppdb-symbols`
 
-<sub>**README:** [📚](/packages/base/src/commands/ppdb-symbols)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/ppdb-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/application_monitoring/maui/error_tracking/)</sub>
 
 - `upload`: Upload .NET MAUI Portable PDB files for Error Tracking.
 
