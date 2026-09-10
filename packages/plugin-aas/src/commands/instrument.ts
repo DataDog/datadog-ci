@@ -42,6 +42,10 @@ import {
   AZURE_FUNCTIONS_DOCS_URL,
   AZURE_WINDOWS_FUNCTIONS_DOCS_URL,
 } from '../common'
+import {getKuduClient} from '../kudu'
+import {parseLinuxFxVersion} from '../ssi'
+import {AAS_SSI_TAG, AAS_SSI_TAG_VALUE, mergeAasSsiEnv} from '../ssi-env'
+import {stageAasTracer} from '../ssi-stage'
 
 // Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
 const stickyNames = (config: AasConfigOptions, additional: string[] = []): string[] => [
@@ -238,6 +242,26 @@ export class PluginCommand extends AasInstrumentCommand {
 
       // Linux instrumentation via sidecar
       const isContainer = isLinuxContainer(site)
+      const hasAasSsi = site.tags?.[AAS_SSI_TAG] === AAS_SSI_TAG_VALUE
+      let ssiEnvVars: Record<string, string> | undefined
+      if (config.apmEnabled) {
+        const runtime = parseLinuxFxVersion(site.siteConfig?.linuxFxVersion)
+        if (this.dryRun) {
+          this.context.stdout.write(
+            `${this.dryRunPrefix}Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
+          )
+        } else {
+          const root = await stageAasTracer(await getKuduClient(aasClient, resourceGroup, webApp), runtime)
+          const baseEnvVars = getEnvVars({...config, isDotnet: false}, site, webApp)
+          const ddTags = [existingEnvVars.DD_TAGS, baseEnvVars.DD_TAGS].filter(Boolean).join(',') || undefined
+          ssiEnvVars = mergeAasSsiEnv(
+            {...existingEnvVars, ...baseEnvVars, ...(ddTags ? {DD_TAGS: ddTags} : {})},
+            runtime,
+            root
+          )
+        }
+      }
+      const webAppConfig = hasAasSsi || config.apmEnabled ? {...config, isDotnet: false} : {...config}
       if (config.isMusl && !isContainer) {
         this.context.stdout.write(
           renderSoftWarning(
@@ -246,11 +270,20 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           )
         )
       }
-      config.isDotnet ||= isDotnet(site)
-      config.isMusl &&= config.isDotnet && isContainer
-      await this.instrumentSidecar(aasClient, config, resourceGroup, webApp, existingEnvVars, site)
+      if (!hasAasSsi && !config.apmEnabled) {
+        webAppConfig.isDotnet ||= isDotnet(site)
+      }
+      webAppConfig.isMusl &&= webAppConfig.isDotnet && isContainer
+      await this.instrumentSidecar(aasClient, webAppConfig, resourceGroup, webApp, existingEnvVars, site, ssiEnvVars)
       // tag only after instrumentation succeeds (avoids false telemetry)
-      await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
+      await this.addTags(
+        webAppConfig,
+        aasClient.subscriptionId!,
+        resourceGroup,
+        webApp,
+        site.tags ?? {},
+        config.apmEnabled
+      )
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
 
@@ -280,12 +313,14 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     subscriptionId: string,
     resourceGroup: string,
     webApp: WebApp,
-    tags: Record<string, string>
+    tags: Record<string, string>,
+    apmEnabled = false
   ): Promise<void> {
     const updatedTags: Record<string, string> = {
       ...tags,
       service: config.service!,
       [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE,
+      ...(apmEnabled ? {[AAS_SSI_TAG]: AAS_SSI_TAG_VALUE} : {}),
     }
     if (config.environment) {
       updatedTags.env = config.environment
@@ -302,6 +337,9 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
             {properties: {tags: updatedTags}}
           )
         } catch (error) {
+          if (apmEnabled) {
+            throw error
+          }
           this.context.stdout.write(
             renderError(`Failed to update tags for ${renderWebApp(webApp)}: ${formatError(error)}`)
           )
@@ -377,7 +415,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     resourceGroup: string,
     webApp: WebApp,
     existingEnvVars: Record<string, string>,
-    site: Site
+    site: Site,
+    additionalEnvVars?: Record<string, string>
   ) {
     const siteContainers = await collectAsyncIterator(
       webApp.slot
@@ -385,7 +424,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         : client.webApps.listSiteContainers(resourceGroup, webApp.name)
     )
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = getEnvVars(config, site, webApp)
+    const envVars = {...getEnvVars(config, site, webApp), ...additionalEnvVars}
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)

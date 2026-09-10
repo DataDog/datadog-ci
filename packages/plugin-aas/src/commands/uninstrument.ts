@@ -10,6 +10,7 @@ import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {hasInjectionModeTag} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
@@ -24,6 +25,11 @@ import {
   WEBSITE_PRIVATE_EXTENSIONS,
   type ProcessResult,
 } from '../common'
+import {getKuduClient} from '../kudu'
+import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, AAS_SSI_TAG_VALUE, removeAasSsiEnv} from '../ssi-env'
+
+const isAasSsiState = (settings: Record<string, string>): boolean =>
+  Object.values(settings).some((value) => value.includes(AAS_SSI_STAGING_ROOT)) || hasInjectionModeTag(settings.DD_TAGS)
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -131,10 +137,17 @@ export class PluginCommand extends AasUninstrumentCommand {
           client,
           {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? webApp.name},
           resourceGroup,
-          webApp
+          webApp,
+          site.tags?.[AAS_SSI_TAG] === AAS_SSI_TAG_VALUE
         )
       }
-      await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
+      await this.removeTags(
+        client.subscriptionId!,
+        resourceGroup,
+        webApp,
+        site.tags ?? {},
+        site.tags?.[AAS_SSI_TAG] === AAS_SSI_TAG_VALUE
+      )
 
       return {
         success: true,
@@ -196,14 +209,15 @@ export class PluginCommand extends AasUninstrumentCommand {
     }
 
     // Updaing the environment variables will trigger a restart
-    await this.removeEnvVars(config, webApp, client, resourceGroup, additionalSettings)
+    await this.removeEnvVars(config, webApp, client, resourceGroup, undefined, additionalSettings)
   }
 
   public async uninstrumentSidecar(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    webApp: WebApp
+    webApp: WebApp,
+    hasAasSsi: boolean
   ) {
     this.context.stdout.write(
       `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${renderWebApp(webApp)} (if it exists)\n`
@@ -213,7 +227,45 @@ export class PluginCommand extends AasUninstrumentCommand {
         ? client.webApps.deleteSiteContainerSlot(resourceGroup, webApp.name, webApp.slot, SIDECAR_CONTAINER_NAME)
         : client.webApps.deleteSiteContainer(resourceGroup, webApp.name, SIDECAR_CONTAINER_NAME))
     }
-    await this.removeEnvVars(config, webApp, client, resourceGroup)
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
+    const settings =
+      (
+        await (webApp.slot
+          ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
+          : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
+      ).properties ?? {}
+    hasAasSsi ||= isAasSsiState(settings)
+    if (hasAasSsi) {
+      await this.removeAasSsiEnvVars(webApp, client, resourceGroup, settings)
+      if (!this.dryRun) {
+        await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+      }
+
+      return
+    }
+    await this.removeEnvVars(config, webApp, client, resourceGroup, settings)
+  }
+
+  public async removeAasSsiEnvVars(
+    webApp: WebApp,
+    client: WebSiteManagementClient,
+    resourceGroup: string,
+    currentEnvVars: Record<string, string>
+  ): Promise<void> {
+    const ssiCleaned = removeAasSsiEnv(currentEnvVars)
+    const agentSettings = new Set<string>(AAS_DD_SETTING_NAMES)
+    const settings = Object.fromEntries(
+      Object.entries(ssiCleaned).filter(([key]) => !agentSettings.has(key) && !key.startsWith('DD_'))
+    )
+    if (!sortedEqual(currentEnvVars, settings)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
+      if (!this.dryRun) {
+        const update: StringDictionary = {properties: settings}
+        await (webApp.slot
+          ? client.webApps.updateApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot, update)
+          : client.webApps.updateApplicationSettings(resourceGroup, webApp.name, update))
+      }
+    }
   }
 
   public async removeEnvVars(
@@ -221,6 +273,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     webApp: WebApp,
     client: WebSiteManagementClient,
     resourceGroup: string,
+    currentEnvVars?: Record<string, string>,
     additionalSettings: string[] = []
   ) {
     const configuredSettings = new Set([
@@ -228,18 +281,23 @@ export class PluginCommand extends AasUninstrumentCommand {
       ...Object.keys(parseEnvVars(config.envVars)),
       ...additionalSettings,
     ])
-    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
-    const currentEnvVars = (
-      await (webApp.slot
-        ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
-        : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
-    ).properties
-    if (currentEnvVars !== undefined && Object.keys(currentEnvVars).some((key) => configuredSettings.has(key))) {
+    if (currentEnvVars === undefined) {
+      this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
+      currentEnvVars = (
+        await (webApp.slot
+          ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
+          : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
+      ).properties
+    }
+    if (
+      currentEnvVars !== undefined &&
+      Object.keys(currentEnvVars).some((key) => configuredSettings.has(key) || key.startsWith('DD_'))
+    ) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
         const settings: StringDictionary = {
           properties: Object.fromEntries(
-            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key))
+            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key) && !key.startsWith('DD_'))
           ),
         }
         await (webApp.slot
@@ -253,12 +311,21 @@ export class PluginCommand extends AasUninstrumentCommand {
     }
   }
 
-  public async removeTags(subscriptionId: string, resourceGroup: string, webApp: WebApp, tags: Record<string, string>) {
+  public async removeTags(
+    subscriptionId: string,
+    resourceGroup: string,
+    webApp: WebApp,
+    tags: Record<string, string>,
+    hasAasSsi = false
+  ) {
     const updatedTags = {...tags}
     delete updatedTags.service
     delete updatedTags.env
     delete updatedTags.version
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
+    if (hasAasSsi) {
+      delete updatedTags[AAS_SSI_TAG]
+    }
     if (!sortedEqual(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
@@ -268,6 +335,9 @@ export class PluginCommand extends AasUninstrumentCommand {
             {properties: {tags: updatedTags}}
           )
         } catch (error) {
+          if (hasAasSsi) {
+            throw error
+          }
           this.context.stdout.write(
             renderError(`Failed to update tags for ${renderWebApp(webApp)}: ${formatError(error)}`)
           )
