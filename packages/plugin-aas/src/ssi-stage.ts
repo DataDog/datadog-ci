@@ -1,6 +1,6 @@
 import type {KuduClient} from './kudu'
 
-import {httpRequest} from '@datadog/datadog-ci-base/helpers/request'
+import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 import {getLanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
@@ -38,6 +38,7 @@ export const stageAasTracer = async (kudu: KuduClient, runtime: AasCodeRuntime):
     url: thirdParty(`${FLEET_REGISTRY}/${repository}/blobs/${fleetPackage.layer.digest}`),
     headers: {Accept: fleetPackage.layer.mediaType},
     responseType: 'arraybuffer',
+    dispatcher: getProxyDispatcher(),
     timeout: 120_000,
   })
   const zip = await buildFleetPackageZip(layer.data, fleetPackage.layer.digest, runtime)
@@ -49,15 +50,17 @@ export const stageAasTracer = async (kudu: KuduClient, runtime: AasCodeRuntime):
   return root
 }
 
-const fetchOciJson = async (url: string, accept: string): Promise<unknown> =>
-  (
-    await httpRequest<unknown>({
-      method: 'GET',
-      url: thirdParty(url),
-      headers: {Accept: accept},
-      timeout: 120_000,
-    })
-  ).data
+const fetchOciJson = async (url: string, accept: string): Promise<unknown> => {
+  const {data} = await httpRequest<unknown>({
+    method: 'GET',
+    url: thirdParty(url),
+    headers: {Accept: accept},
+    dispatcher: getProxyDispatcher(),
+    timeout: 120_000,
+  })
+
+  return typeof data === 'string' ? JSON.parse(data) : data
+}
 
 const getAmd64Digest = (index: unknown): string => {
   const manifests = (index as {manifests?: unknown[]}).manifests

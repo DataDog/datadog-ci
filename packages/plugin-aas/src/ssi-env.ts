@@ -16,6 +16,11 @@ export const AAS_SSI_TAG = 'dd_sls_injection_mode'
 export const AAS_SSI_TAG_VALUE = 'single_language'
 
 const stagingPrefix = `${AAS_SSI_STAGING_ROOT}/`
+const LEGACY_AAS_DOTNET_TRACER_HOME = '/home/site/wwwroot/datadog'
+const LEGACY_AAS_DOTNET_PROFILER_PATHS = new Set([
+  `${LEGACY_AAS_DOTNET_TRACER_HOME}/linux-x64/Datadog.Trace.ClrProfiler.Native.so`,
+  `${LEGACY_AAS_DOTNET_TRACER_HOME}/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so`,
+])
 
 export const hasStagedAasTracer = (settings: Record<string, string>): boolean =>
   LANGUAGE_INJECTION_ENV_NAMES.some((name) => settings[name]?.includes(stagingPrefix) ?? false)
@@ -35,7 +40,7 @@ export const mergeAasSsiEnv = (
     libc: runtime.libc,
     root,
   })
-  const env = removeAasSsiEnv(current)
+  const env = removeLegacyAasDotnetEnv(removeAasSsiEnv(current))
 
   for (const fragment of spec.env) {
     env[fragment.name] = mergeEnvFragment(env[fragment.name], fragment)
@@ -61,6 +66,18 @@ export const removeAasSsiEnv = (current: Record<string, string>): Record<string,
     delete env.DD_TAGS
   } else {
     env.DD_TAGS = tags
+  }
+
+  return env
+}
+
+const removeLegacyAasDotnetEnv = (current: Record<string, string>): Record<string, string> => {
+  const env = {...current}
+  if (env.DD_DOTNET_TRACER_HOME === LEGACY_AAS_DOTNET_TRACER_HOME) {
+    delete env.DD_DOTNET_TRACER_HOME
+  }
+  if (env.CORECLR_PROFILER_PATH && LEGACY_AAS_DOTNET_PROFILER_PATHS.has(env.CORECLR_PROFILER_PATH)) {
+    delete env.CORECLR_PROFILER_PATH
   }
 
   return env
