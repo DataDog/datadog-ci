@@ -44,14 +44,7 @@ import {
 } from '../common'
 import {getKuduClient} from '../kudu'
 import {parseLinuxFxVersion} from '../ssi'
-import {
-  AAS_SSI_STAGING_ROOT,
-  AAS_SSI_TAG,
-  AAS_SSI_TAG_VALUE,
-  hasStagedAasTracer,
-  mergeAasSsiEnv,
-  removeAasSsiEnv,
-} from '../ssi-env'
+import {AAS_SSI_TAG, AAS_SSI_TAG_VALUE, hasStagedAasTracer, mergeAasSsiEnv, removeAasSsiEnv} from '../ssi-env'
 import {stageAasTracer} from '../ssi-stage'
 
 // Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
@@ -248,7 +241,13 @@ export class PluginCommand extends AasInstrumentCommand {
       }
 
       // Linux instrumentation via sidecar
-      const isContainer = isLinuxContainer(site)
+      const linuxSite = {
+        ...site,
+        siteConfig: await (webApp.slot
+          ? aasClient.webApps.getConfigurationSlot(resourceGroup, webApp.name, webApp.slot)
+          : aasClient.webApps.getConfiguration(resourceGroup, webApp.name)),
+      }
+      const isContainer = isLinuxContainer(linuxSite)
       const injectApm = config.apmEnabled && !isContainer
       const hasStagedTracer = hasStagedAasTracer(existingEnvVars)
       const withoutSsiEnvVars = removeAasSsiEnv(existingEnvVars)
@@ -261,14 +260,14 @@ export class PluginCommand extends AasInstrumentCommand {
           )
         )
       } else if (injectApm) {
-        const runtime = parseLinuxFxVersion(site.siteConfig?.linuxFxVersion)
+        const runtime = parseLinuxFxVersion(linuxSite.siteConfig?.linuxFxVersion)
         if (this.dryRun) {
           this.context.stdout.write(
             `${this.dryRunPrefix}Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
           )
         } else {
           const root = await stageAasTracer(await getKuduClient(aasClient, resourceGroup, webApp), runtime)
-          const baseEnvVars = getEnvVars({...config, isDotnet: false}, site, webApp)
+          const baseEnvVars = getEnvVars({...config, isDotnet: false}, linuxSite, webApp)
           const ddTags = [existingEnvVars.DD_TAGS, baseEnvVars.DD_TAGS].filter(Boolean).join(',') || undefined
           ssiEnvVars = mergeAasSsiEnv(
             {...existingEnvVars, ...baseEnvVars, ...(ddTags ? {DD_TAGS: ddTags} : {})},
@@ -277,10 +276,7 @@ export class PluginCommand extends AasInstrumentCommand {
           )
         }
       } else if (removesSsi) {
-        if (hasStagedTracer && !this.dryRun) {
-          await (await getKuduClient(aasClient, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
-        }
-        ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, site, webApp)}
+        ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, linuxSite, webApp)}
       }
       const webAppConfig = hasStagedTracer || injectApm || removesSsi ? {...config, isDotnet: false} : {...config}
       if (config.isMusl && !isContainer) {
@@ -292,7 +288,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         )
       }
       if (!hasStagedTracer && !injectApm && !removesSsi) {
-        webAppConfig.isDotnet ||= isDotnet(site)
+        webAppConfig.isDotnet ||= isDotnet(linuxSite)
       }
       webAppConfig.isMusl &&= webAppConfig.isDotnet && isContainer
       await this.instrumentSidecar(
@@ -301,7 +297,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         resourceGroup,
         webApp,
         existingEnvVars,
-        site,
+        linuxSite,
         ssiEnvVars,
         removesSsi
       )
@@ -311,7 +307,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         aasClient.subscriptionId!,
         resourceGroup,
         webApp,
-        site.tags ?? {},
+        linuxSite.tags ?? {},
         injectApm,
         !isContainer && !injectApm
       )

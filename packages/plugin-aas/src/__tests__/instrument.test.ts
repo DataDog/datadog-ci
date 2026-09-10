@@ -28,6 +28,7 @@ jest.mock('@azure/identity', () => ({
 const webAppsOperations = {
   get: jest.fn(),
   getConfiguration: jest.fn(),
+  getConfigurationSlot: jest.fn(),
   listSiteContainers: jest.fn(),
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
@@ -111,6 +112,7 @@ describe('aas instrument', () => {
       getToken.mockClear().mockResolvedValue({token: 'token'})
       webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
       webAppsOperations.getConfiguration.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
+      webAppsOperations.getConfigurationSlot.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
@@ -178,11 +180,13 @@ describe('aas instrument', () => {
     })
 
     test('Does not treat the SSI telemetry tag as existing SSI', async () => {
+      const siteConfig = {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'DOTNET|8.0'}
       webAppsOperations.get.mockResolvedValue({
         ...LINUX_CODE_WEB_APP,
         tags: {dd_sls_injection_mode: 'single_language'},
-        siteConfig: {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'DOTNET|8.0'},
+        siteConfig,
       })
+      webAppsOperations.getConfiguration.mockResolvedValue(siteConfig)
 
       const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
 
@@ -960,15 +964,13 @@ describe('aas instrument', () => {
     })
 
     test('Ignores --musl flag and warns on non-containerized dotnet apps', async () => {
-      webAppsOperations.get.mockClear().mockResolvedValue({
-        ...CONTAINER_WEB_APP,
-        siteConfig: {
-          linuxFxVersion: 'DOTNETCORE|9.0',
-        },
-      })
+      const siteConfig = {linuxFxVersion: 'DOTNETCORE|9.0'}
+      webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, siteConfig})
+      webAppsOperations.getConfiguration.mockResolvedValue(siteConfig)
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--musl', '--dotnet'])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toMatchSnapshot()
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
     })
 
     test('Instruments a sidecar on a slot', async () => {

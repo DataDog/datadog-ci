@@ -16,6 +16,7 @@ import {
   verifySha256,
   type AasCodeRuntime,
 } from '../ssi'
+import {mergeAasSsiEnv} from '../ssi-env'
 
 const DIGEST = `sha256:${'a'.repeat(64)}`
 const LAYER_DIGEST = `sha256:${'b'.repeat(64)}`
@@ -107,6 +108,25 @@ describe('AAS SSI runtime', () => {
     'SITECONTAINERS',
   ])('rejects unsupported or malformed runtime %p', (value) => {
     expect(() => parseLinuxFxVersion(value)).toThrow()
+  })
+
+  test('replaces legacy AAS .NET paths with the staged tracer paths', () => {
+    const root = '/home/data/datadog-tracer/csharp/1.2.3-sha256'
+    const env = mergeAasSsiEnv(
+      {
+        CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
+        DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+        CUSTOMER_SETTING: 'preserved',
+      },
+      parseLinuxFxVersion('DOTNETCORE|8.0'),
+      root
+    )
+
+    expect(env).toMatchObject({
+      CORECLR_PROFILER_PATH: `${root}/Datadog.Trace.ClrProfiler.Native.so`,
+      DD_DOTNET_TRACER_HOME: root,
+      CUSTOMER_SETTING: 'preserved',
+    })
   })
 
   test.each([
