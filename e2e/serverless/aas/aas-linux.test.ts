@@ -1,4 +1,6 @@
 import crypto from 'node:crypto'
+import {promises as fs} from 'node:fs'
+import os from 'node:os'
 
 import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../helpers/exec'
 
@@ -12,6 +14,14 @@ const describeOrSkip =
 
 // Pre-built Node.js app with dd-trace + winston, node_modules included
 const NODE_SIDECAR_APP_URL = 'https://selfmonitoringprod.blob.core.windows.net/code/node-sidecar.zip'
+
+const APP_JS = `const http = require('http')
+
+http.createServer((_req, res) => {
+  res.writeHead(200, {'Content-Type': 'text/plain'})
+  res.end('Hello from the zero-dependency AAS SSI e2e app\\n')
+}).listen(process.env.PORT || 3000)
+`
 
 describeOrSkip('aas (Linux)', () => {
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
@@ -75,7 +85,7 @@ describeOrSkip('aas (Linux)', () => {
     })
     expect(result.exitCode).toBe(0)
 
-    verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId)
+    verifyLinuxInstrumented(linuxAppName, resourceGroup, subscriptionId, true)
   })
 
   it('telemetry flows', async () => {
@@ -117,4 +127,83 @@ describeOrSkip('aas (Linux)', () => {
 
     verifyLinuxUninstrumented(linuxAppName, resourceGroup, subscriptionId)
   })
+})
+
+// Code-based SSI coverage: the app contains no Datadog package or configuration.
+describeOrSkip('aas (Linux code-based SSI)', () => {
+  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID!
+  const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
+  const runId = crypto.randomBytes(4).toString('hex')
+  const appName = `one-e2e-ci-aas-linux-ssi-${runId}`
+  const plan = process.env.AZURE_AAS_LINUX_PLAN!
+  const instrumentCommand =
+    `${DATADOG_CI_COMMAND} aas instrument` +
+    ` -s "${subscriptionId}" -g "${resourceGroup}" -n "${appName}"` +
+    ` --service "${appName}" --env e2e --version "${runId}"` +
+    ` --extra-tags "one_e2e_run_id:${runId}" --instance-logging` +
+    ` --apm-enabled --no-source-code-integration`
+
+  beforeAll(async () => {
+    const createResult = await execPromiseWithRetries(
+      `az webapp create --name "${appName}" --resource-group "${resourceGroup}" --plan "${plan}"` +
+        ` --runtime "NODE:22-lts" --https-only true --tags one_e2e_created=${Math.floor(Date.now() / 1000)} --output none`
+    )
+    if (createResult.exitCode !== 0) {
+      throw new Error(`Failed to create Linux SSI web app (exit code ${createResult.exitCode}): ${createResult.stderr}`)
+    }
+
+    const appPath = `${os.tmpdir()}/${appName}-app.js`
+    await fs.writeFile(appPath, APP_JS)
+    const startupResult = await execPromise(
+      `az webapp config set --name "${appName}" --resource-group "${resourceGroup}" --startup-file "node app.js" --output none`
+    )
+    if (startupResult.exitCode !== 0) {
+      throw new Error(
+        `Failed to configure SSI startup command (exit code ${startupResult.exitCode}): ${startupResult.stderr}`
+      )
+    }
+    const deployResult = await execPromiseWithRetries(
+      `az webapp deploy --name "${appName}" --resource-group "${resourceGroup}" --src-path "${appPath}"` +
+        ` --type static --target-path /home/site/wwwroot/app.js --output none`,
+      undefined,
+      {maxAttempts: 5, delaySeconds: 20}
+    )
+    if (deployResult.exitCode !== 0) {
+      throw new Error(`Failed to deploy SSI app (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+    }
+  }, 900_000)
+
+  afterAll(async () => {
+    await execPromise(
+      `az webapp delete --name "${appName}" --resource-group "${resourceGroup}" --keep-empty-plan --output none`
+    )
+  })
+
+  it('instruments code-based app and verifies staged tracer', async () => {
+    const result = await execPromiseWithRetries(instrumentCommand, {DD_API_KEY: process.env.DATADOG_API_KEY})
+    expect(result.exitCode).toBe(0)
+    verifyLinuxInstrumented(appName, resourceGroup, subscriptionId, true)
+  }, 900_000)
+
+  it('emits request telemetry without app tracer dependencies', async () => {
+    const hostnameResult = await execPromise(
+      `az webapp show --name "${appName}" --resource-group "${resourceGroup}" --query defaultHostName --output tsv`
+    )
+    await triggerTraffic(`https://${hostnameResult.stdout.trim()}`, {attempts: 20, requiredSuccesses: 10})
+    await checkTelemetryFlowing({
+      serviceName: appName,
+      env: 'e2e',
+      version: runId,
+      tags: [`one_e2e_run_id:${runId}`],
+    })
+  }, 600_000)
+
+  it('uninstruments and removes the staged tracer', async () => {
+    const result = await execPromiseWithRetries(
+      `${DATADOG_CI_COMMAND} aas uninstrument -s "${subscriptionId}" -g "${resourceGroup}" -n "${appName}"`,
+      {DD_API_KEY: process.env.DATADOG_API_KEY}
+    )
+    expect(result.exitCode).toBe(0)
+    verifyLinuxUninstrumented(appName, resourceGroup, subscriptionId, true)
+  }, 900_000)
 })
