@@ -5,12 +5,9 @@ import type {
   TracingInput,
   TracingMode,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
+import type {CompositeInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
-import type {
-  CompositeInjectionSpec,
-  LanguageInjectionSpec,
-  Libc,
-} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
 import {
@@ -21,6 +18,10 @@ import {
   TRACING_MODE_BY_INPUT,
 } from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  COMPOSITE_TRACER_MOUNT_PATH,
+  getCompositeInjectionSpec,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {
   mergeEnvFragment,
@@ -29,15 +30,13 @@ import {
   removeInjectionModeTag,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
-  COMPOSITE_TRACER_MOUNT_PATH,
   LIBCS,
-  getCompositeInjectionSpec,
   getLanguageCompatibilityErrors,
   getLanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {TRACER_INJECTION_LANGUAGES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
-export {COMPOSITE_TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+export {COMPOSITE_TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 
 const COMPOSITE_INJECTION_SPEC = getCompositeInjectionSpec(CLOUD_RUN_TRACER_REGISTRY)
 export const COMPOSITE_TRACER_IMAGE = COMPOSITE_INJECTION_SPEC.image

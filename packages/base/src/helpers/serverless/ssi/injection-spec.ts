@@ -21,29 +21,6 @@ export interface LanguageInjectionSpec {
   readonly env: readonly EnvFragment[]
 }
 
-export interface CompositeInjectionSpec {
-  readonly image: string
-  readonly mountPath: string
-  readonly env: readonly EnvFragment[]
-}
-
-export const COMPOSITE_TRACER_MOUNT_PATH = '/opt/datadog-packages'
-
-/** Builds the composite tracer image and activation contract for a cloud registry. */
-export const getCompositeInjectionSpec = (registry: SingleLanguageTracerRegistry): CompositeInjectionSpec => ({
-  image: `${registry}/dd-lib-composite-init:latest`,
-  mountPath: COMPOSITE_TRACER_MOUNT_PATH,
-  env: [
-    {
-      name: 'LD_PRELOAD',
-      value: `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so`,
-      separator: ' ',
-      mode: 'prepend',
-    },
-    {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless', mode: 'set-if-absent'},
-  ],
-})
-
 export interface LanguageInjectionOptions {
   readonly language: Language
   readonly registry: TracerRegistry
