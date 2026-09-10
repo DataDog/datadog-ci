@@ -4,6 +4,7 @@ import type {
   LogConfiguration,
   MountPoint,
   RegisterTaskDefinitionCommandInput,
+  RuntimePlatform,
   Service,
   Tag,
   TaskDefinition,
@@ -130,12 +131,18 @@ export const fargateTaskDefinition = ({
   ...overrides,
 })
 
+/** What a task definition running Windows containers declares as its platform. */
+export const WINDOWS_RUNTIME_PLATFORM: RuntimePlatform = {
+  operatingSystemFamily: 'WINDOWS_SERVER_2022_CORE',
+  cpuArchitecture: 'X86_64',
+}
+
 /**
  * A task definition that runs Windows containers, which the Agent sidecar is built differently for.
  */
 export const windowsTaskDefinition = (overrides: Partial<TaskDefinition> = {}): TaskDefinition =>
   fargateTaskDefinition({
-    runtimePlatform: {operatingSystemFamily: 'WINDOWS_SERVER_2022_CORE', cpuArchitecture: 'X86_64'},
+    runtimePlatform: WINDOWS_RUNTIME_PLATFORM,
     ...overrides,
   })
 
