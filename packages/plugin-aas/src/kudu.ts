@@ -1,6 +1,7 @@
 import type {WebSiteManagementClient} from '@azure/arm-appservice'
 import type {WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
+import {DefaultAzureCredential} from '@azure/identity'
 import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
@@ -31,21 +32,30 @@ export const getKuduClient = async (
   const credentials = (await (webApp.slot
     ? client.webApps.beginListPublishingCredentialsSlotAndWait(resourceGroup, webApp.name, webApp.slot)
     : client.webApps.beginListPublishingCredentialsAndWait(resourceGroup, webApp.name))) as PublishingCredentials
-  const {publishingPassword, publishingUserName, scmUri} = credentials.properties ?? credentials
-  if (!publishingPassword || !publishingUserName || !scmUri) {
-    throw new Error('SCM publishing credentials are unavailable. Enable SCM access and retry.')
+  const {scmUri} = credentials.properties ?? credentials
+  if (!scmUri) {
+    throw new Error('SCM URL is unavailable. Enable SCM access and retry.')
   }
 
   const scmUrl = new URL(scmUri)
   scmUrl.username = ''
   scmUrl.password = ''
   const baseUrl = scmUrl.toString().replace(/\/$/, '')
-  const authorization = `Basic ${Buffer.from(`${publishingUserName}:${publishingPassword}`).toString('base64')}`
-  const request = async <T>(method: string, path: string, data?: unknown): Promise<{data: T | undefined}> => {
+  const azureCredential = new DefaultAzureCredential()
+  const request = async <T>(
+    method: string,
+    path: string,
+    data?: unknown,
+    headers: Record<string, string> = {}
+  ): Promise<{data: T | undefined}> => {
+    const token = await azureCredential.getToken('https://management.azure.com/.default')
+    if (!token) {
+      throw new Error('Azure credentials could not access the SCM site.')
+    }
     const response = await httpRequest<string>({
       method,
       url: thirdParty(`${baseUrl}${path}`),
-      headers: {Authorization: authorization},
+      headers: {Authorization: `Bearer ${token.token}`, ...headers},
       data,
       dispatcher: getProxyDispatcher(),
       timeout: 120_000,
@@ -63,9 +73,24 @@ export const getKuduClient = async (
 
   return {
     publish: async (directory, archive) => {
-      await request('POST', `/api/publish?type=zip&path=${encodeURIComponent(directory)}`, archive)
+      const previousDeployment = await request<{id?: string}>('GET', '/api/deployments/latest')
+      await request(
+        'POST',
+        `/api/publish?type=zip&path=${encodeURIComponent(directory)}&clean=false&restart=false&async=true`,
+        archive,
+        {
+          'Content-Type': 'application/zip',
+        }
+      )
       for (let attempt = 0; attempt < 60; attempt++) {
-        const deployment = await request<{status?: number; complete?: boolean}>('GET', '/api/deployments/latest')
+        const deployment = await request<{id?: string; status?: number; complete?: boolean}>(
+          'GET',
+          '/api/deployments/latest'
+        )
+        if (deployment.data?.id === previousDeployment.data?.id) {
+          await new Promise((resolve) => setTimeout(resolve, 1_000))
+          continue
+        }
         if (deployment.data?.status === KUDU_DEPLOYMENT_STATUS.FAILED) {
           throw new Error('The SCM deployment failed.')
         }
@@ -78,14 +103,14 @@ export const getKuduClient = async (
     },
     hasArtifacts: async (artifacts) => {
       const checks = artifacts
-        .map((alternatives) => `(${alternatives.map((artifact) => `[ -f ${shellQuote(artifact)} ]`).join(' || ')})`)
+        .map((alternatives) => alternatives.map((artifact) => `test -f ${shellQuote(artifact)}`).join(' || '))
         .join(' && ')
-      const result = await request<{ExitCode?: number}>('POST', '/api/command', {command: checks, dir: '/'})
+      const result = await request<{ExitCode?: number}>('POST', '/api/command', {command: checks, dir: '/home'})
 
       return result.data?.ExitCode === 0
     },
     deleteDirectory: async (directory) => {
-      await request('POST', '/api/command', {command: `rm -rf -- ${shellQuote(directory)}`, dir: '/'})
+      await request('POST', '/api/command', {command: `rm -rf -- ${shellQuote(directory)}`, dir: '/home'})
     },
   }
 }
