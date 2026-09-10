@@ -47,8 +47,9 @@ const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode
   )
   const properties = credentials.properties ?? credentials
   const scmUrl = new URL(properties.scmUri)
-  scmUrl.username = ''
-  scmUrl.password = ''
+  const accessToken = execSync(
+    'az account get-access-token --resource https://management.azure.com/ --query accessToken --output tsv'
+  ).trim()
 
   return JSON.parse(
     execFileSync(
@@ -57,8 +58,8 @@ const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode
         '--fail',
         '--silent',
         '--show-error',
-        '--user',
-        `${properties.publishingUserName}:${properties.publishingPassword}`,
+        '--header',
+        `Authorization: Bearer ${accessToken}`,
         '--header',
         'Content-Type: application/json',
         '--data',

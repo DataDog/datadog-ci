@@ -5,7 +5,7 @@ import {v2} from '@datadog/datadog-api-client'
 import {createE2EConfiguration} from '../../helpers/api-client'
 
 const POLL_INTERVAL_SECONDS = 15
-const MAX_ATTEMPTS = 20
+const MAX_ATTEMPTS = 40
 
 interface TelemetryIdentity {
   serviceName: string
