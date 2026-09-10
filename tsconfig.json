@@ -8,6 +8,7 @@
     {"path": "./packages/base"},
     {"path": "./packages/datadog-ci"},
     {"path": "./packages/plugin-aas"},
+    {"path": "./packages/plugin-auth"},
     {"path": "./packages/plugin-cloud-run"},
     {"path": "./packages/plugin-container-app"},
     {"path": "./packages/plugin-coverage"},

@@ -4,6 +4,7 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
 
 import {commands as aasCommands} from './commands/aas/cli'
+import {commands as authCommands} from './commands/auth/cli'
 import {commands as ciEnvCommands} from './commands/ci-env/cli'
 import {commands as cloudRunCommands} from './commands/cloud-run/cli'
 import {commands as containerAppCommands} from './commands/container-app/cli'
@@ -39,6 +40,7 @@ import {commands as wasmSymbolsCommands} from './commands/wasm-symbols/cli'
 // prettier-ignore
 export const commands = {
   'aas': aasCommands,
+  'auth': authCommands,
   'ci-env': ciEnvCommands,
   'cloud-run': cloudRunCommands,
   'container-app': containerAppCommands,

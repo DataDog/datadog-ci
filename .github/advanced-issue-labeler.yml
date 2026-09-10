@@ -4,6 +4,9 @@ policy:
   - section:
       - id: [command]
         label:
+          - name: datadog-ci
+            keys:
+              - auth
           - name: software-delivery
             keys:
               - coverage
