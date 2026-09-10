@@ -6,13 +6,27 @@ import {SSI_CASES as ssiCases} from '../helpers/ssi'
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
-import {getContainerAppUrl, verifySsiInstrumented, verifyUninstrumented} from './container-app-verifier'
+import {
+  getContainerAppUrl,
+  verifyMultiLanguageSsiInstrumented,
+  verifySsiInstrumented,
+  verifyUninstrumented,
+} from './container-app-verifier'
 
-const SSI_CASES = ssiCases.map(({fixtureImageName, nativeEnv, ...ssiCase}) => ({
-  ...ssiCase,
-  applicationImage: `dde2etfcapp.azurecr.io/${fixtureImageName}:latest`,
-  nativeEnv: {name: nativeEnv.name, fragment: nativeEnv.value},
-}))
+const SSI_CASES = [
+  ...ssiCases.map(({fixtureImageName, nativeEnv, ...ssiCase}) => ({
+    ...ssiCase,
+    kind: 'single-language' as const,
+    testName: ssiCase.language,
+    applicationImage: `dde2etfcapp.azurecr.io/${fixtureImageName}:latest`,
+    nativeEnv: {name: nativeEnv.name, fragment: nativeEnv.value},
+  })),
+  {
+    kind: 'multi-language',
+    testName: 'auto-detected Node.js at the 2-GiB ephemeral-storage boundary',
+    applicationImage: 'dde2etfcapp.azurecr.io/node-ssi:latest',
+  },
+] as const
 
 const assertCommandSucceeded = (action: string, result: {exitCode: number; stdout: string; stderr: string}): void => {
   if (result.exitCode !== 0) {
@@ -31,11 +45,11 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
 
   it.concurrent.each(SSI_CASES)(
-    'injects, retries, traces, and removes the $language tracer',
+    'injects, retries, traces, and removes the $testName tracer',
     async (ssiCase) => {
-      const {language, applicationImage, tracerRepository, nativeEnv} = ssiCase
+      const {applicationImage} = ssiCase
       const runId = crypto.randomBytes(4).toString('hex')
-      const appName = `one-e2e-capp-ssi-${language}-${runId}`
+      const appName = `one-e2e-capp-ssi-${ssiCase.kind === 'single-language' ? ssiCase.language : 'auto'}-${runId}`
       const instrumentCommand =
         `${DATADOG_CI_COMMAND} container-app instrument` +
         ` -s "${subscriptionId}"` +
@@ -46,9 +60,9 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
         ` --version "${runId}"` +
         ` --extra-tags "one_e2e_run_id:${runId}"` +
         ` --tracing inject` +
-        ` --language "${language}"` +
+        (ssiCase.kind === 'single-language' ? ` --language "${ssiCase.language}"` : '') +
+        (ssiCase.kind === 'multi-language' ? ' --sidecar-cpu 0.25 --sidecar-memory 0.5' : '') +
         ` --no-source-code-integration`
-      const expectation = {applicationImage, tracerRepository, nativeEnv, runId}
 
       let lifecycleError: Error | undefined
       let cleanupError: Error | undefined
@@ -71,7 +85,11 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           DD_API_KEY: process.env.DATADOG_API_KEY,
         })
         assertCommandSucceeded('instrument', instrument)
-        verifySsiInstrumented(appName, resourceGroup, subscriptionId, expectation)
+        if (ssiCase.kind === 'single-language') {
+          verifySsiInstrumented(appName, resourceGroup, subscriptionId, {...ssiCase, runId})
+        } else {
+          verifyMultiLanguageSsiInstrumented(appName, resourceGroup, subscriptionId, runId, applicationImage)
+        }
 
         const appUrl = getContainerAppUrl(appName, resourceGroup, subscriptionId)
         const [traffic, telemetry] = await Promise.allSettled([
@@ -97,7 +115,11 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           DD_API_KEY: process.env.DATADOG_API_KEY,
         })
         assertCommandSucceeded('re-instrument', retry)
-        verifySsiInstrumented(appName, resourceGroup, subscriptionId, expectation)
+        if (ssiCase.kind === 'single-language') {
+          verifySsiInstrumented(appName, resourceGroup, subscriptionId, {...ssiCase, runId})
+        } else {
+          verifyMultiLanguageSsiInstrumented(appName, resourceGroup, subscriptionId, runId, applicationImage)
+        }
 
         const uninstrument = await execPromiseWithRetries(
           `${DATADOG_CI_COMMAND} container-app uninstrument` +
@@ -107,7 +129,12 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           {DD_API_KEY: process.env.DATADOG_API_KEY}
         )
         assertCommandSucceeded('uninstrument', uninstrument)
-        verifyUninstrumented(appName, resourceGroup, subscriptionId, nativeEnv)
+        verifyUninstrumented(
+          appName,
+          resourceGroup,
+          subscriptionId,
+          ssiCase.kind === 'single-language' ? ssiCase.nativeEnv : undefined
+        )
       } catch (error) {
         lifecycleError = error instanceof Error ? error : new Error(String(error))
       } finally {

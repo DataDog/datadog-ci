@@ -4,7 +4,7 @@ import type {EnvFragment} from './env'
 
 import {gt, valid} from 'semver'
 
-import {buildSingleLanguageTracerImage, type Language, type SingleLanguageTracerRegistry} from './tracer'
+import {buildSingleLanguageTracerImage, type Language, type TracerRegistry} from './tracer'
 
 export const DEFAULT_TRACER_ROOT = '/datadog-lib'
 export const DEFAULT_TRACER_LIBC = 'glibc' as const
@@ -23,7 +23,7 @@ export interface LanguageInjectionSpec {
 
 export interface LanguageInjectionOptions {
   readonly language: Language
-  readonly registry: SingleLanguageTracerRegistry
+  readonly registry: TracerRegistry
   readonly version: string
   readonly libc: Libc
   readonly root?: string

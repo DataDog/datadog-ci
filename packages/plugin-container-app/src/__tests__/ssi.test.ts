@@ -5,6 +5,10 @@ import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tra
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {DD_TRACE_ENABLED_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
+  COMPOSITE_TRACER_MOUNT_PATH,
+  getCompositeInjectionSpec,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
+import {
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
@@ -13,11 +17,16 @@ import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpe
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import {
+  CONTAINER_APP_TRACER_REGISTRY,
+  MULTI_LANGUAGE_SSI_MODE,
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
+  assertSsiEphemeralStorage,
+  getReplicaEphemeralStorageGiB,
   hasSsi,
+  mergeCompositeInjectionEnv,
   mergeLanguageInjectionEnv,
-  removeLanguageInjectionEnv,
+  removeInjectionEnv,
   resolveSsiConfig,
   selectApplicationContainer,
 } from '../ssi'
@@ -31,6 +40,9 @@ const injectConfig = (language: ContainerAppConfigOptions['language'] = 'nodejs'
   tracing: 'inject',
   language,
 })
+
+const multiLanguageConfig = (): ContainerAppConfigOptions => ({...injectConfig(), language: undefined})
+const compositeSpec = getCompositeInjectionSpec(CONTAINER_APP_TRACER_REGISTRY)
 
 const getEnv = (env: EnvironmentVar[] | undefined, name: string) => env?.find((variable) => variable.name === name)
 
@@ -54,6 +66,14 @@ describe('Container Apps automatic APM instrumentation', () => {
       })
     })
 
+    test('uses the Azure composite when the language is omitted', () => {
+      expect(resolveSsiConfig(multiLanguageConfig())).toEqual({
+        kind: 'multi-language',
+        spec: compositeSpec,
+        warnings: [],
+      })
+    })
+
     test.each<[Language, string]>([
       ['java', 'java'],
       ['nodejs', 'js'],
@@ -72,7 +92,8 @@ describe('Container Apps automatic APM instrumentation', () => {
     })
 
     test.each([
-      [{tracing: 'inject'}, '--language'],
+      [{tracing: 'inject', tracerVersion: '1.2.3'}, '--tracer-version'],
+      [{tracing: 'inject', tracerLibc: 'musl'}, '--tracer-libc'],
       [{tracing: 'inject', language: 'go'}, 'Install dd-trace-go'],
       [{tracing: 'inject', language: 'dotnet'}, 'supports only these languages'],
       [{tracing: 'inject', language: 'rust'}, 'supports only these languages'],
@@ -99,6 +120,59 @@ describe('Container Apps automatic APM instrumentation', () => {
 
     test('warns for Java 24+', () => {
       expect(resolveSsiConfig(injectConfig('java')).warnings.join('\n')).toContain('Java 24+')
+    })
+  })
+
+  describe('replica ephemeral storage', () => {
+    test.each([
+      [0.25, 0, 1],
+      [0.25, 0.25, 2],
+      [0.5, 0.5, 4],
+      [1, 0.25, 8],
+    ])('derives the %s + %s vCPU configuration as %s GiB', (applicationCpu, sidecarCpu, storageGiB) => {
+      expect(
+        getReplicaEphemeralStorageGiB([
+          {name: 'app', resources: {cpu: applicationCpu}},
+          {name: 'datadog-sidecar', resources: {cpu: sidecarCpu}},
+        ])
+      ).toBe(storageGiB)
+    })
+
+    test('allows single-language injection at the 1-GiB tier', () => {
+      const config = resolveSsiConfig(injectConfig())
+      if (config.kind !== 'single-language') {
+        throw new Error('Expected single-language injection')
+      }
+
+      expect(() => assertSsiEphemeralStorage([{name: 'app', resources: {cpu: 0.25}}], config)).not.toThrow()
+    })
+
+    test('accepts composite injection at the 2-GiB tier', () => {
+      const config = resolveSsiConfig(multiLanguageConfig())
+      if (config.kind !== 'multi-language') {
+        throw new Error('Expected multi-language injection')
+      }
+
+      expect(() =>
+        assertSsiEphemeralStorage(
+          [
+            {name: 'app', resources: {cpu: 0.25}},
+            {name: 'datadog-sidecar', resources: {cpu: 0.25}},
+          ],
+          config
+        )
+      ).not.toThrow()
+    })
+
+    test('rejects composite injection below the 2-GiB tier', () => {
+      const config = resolveSsiConfig(multiLanguageConfig())
+      if (config.kind !== 'multi-language') {
+        throw new Error('Expected multi-language injection')
+      }
+
+      expect(() => assertSsiEphemeralStorage([{name: 'app', resources: {cpu: 0.25}}], config)).toThrow(
+        'requires at least 2 GiB of replica ephemeral storage, but the final configuration provides the 1-GiB tier'
+      )
     })
   })
 
@@ -141,7 +215,41 @@ describe('Container Apps automatic APM instrumentation', () => {
         '--inspect --require /datadog-lib/node_modules/dd-trace/init.js'
       )
       expect(getEnv(merged, 'DD_TAGS')?.value).toBe(`${SINGLE_LANGUAGE_INJECTION_MODE_TAG},team:serverless`)
-      expect(removeLanguageInjectionEnv(merged)).toEqual(original)
+      expect(removeInjectionEnv(merged)).toEqual(original)
+    })
+
+    test('merges and removes composite activation without replacing another preload', () => {
+      const original = [{name: 'LD_PRELOAD', value: '/customer/preload.so'}]
+      const merged = mergeCompositeInjectionEnv(original, compositeSpec)
+
+      expect(merged).toEqual([
+        {
+          name: 'LD_PRELOAD',
+          value: `${COMPOSITE_TRACER_MOUNT_PATH}/datadog-apm-inject/stable/inject/launcher.preload.so /customer/preload.so`,
+        },
+        {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
+      ])
+      expect(mergeCompositeInjectionEnv(merged, compositeSpec)).toEqual(merged)
+      expect(removeInjectionEnv(merged)).toEqual(original)
+    })
+
+    test.each(['LD_PRELOAD', 'DD_INJECT_SENDER_TYPE'])('rejects unsafe composite environment %s', (name) => {
+      expect(() =>
+        mergeCompositeInjectionEnv(
+          [
+            {name, value: 'first'},
+            {name, value: 'second'},
+          ],
+          compositeSpec
+        )
+      ).toThrow(new RegExp(name))
+      expect(() => mergeCompositeInjectionEnv([{name, secretRef: 'secret'}], compositeSpec)).toThrow(new RegExp(name))
+    })
+
+    test('rejects a conflicting injection sender', () => {
+      expect(() =>
+        mergeCompositeInjectionEnv([{name: 'DD_INJECT_SENDER_TYPE', value: 'customer'}], compositeSpec)
+      ).toThrow(/expected "serverless"/)
     })
 
     test.each([
@@ -194,7 +302,7 @@ describe('Container Apps automatic APM instrumentation', () => {
         image: expect.stringContaining('datadoghq.azurecr.io/dd-lib-'),
         command: ['/datadog-init/copy-lib.sh'],
         args: [TRACER_MOUNT_PATH],
-        resources: {cpu: 0.25, memory: '0.5Gi', ephemeralStorage: '1Gi'},
+        resources: {cpu: 0.25, memory: '0.5Gi'},
         volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
       })
       expect(result.template?.volumes).toContainEqual({name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'})
@@ -202,6 +310,43 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(
         result.template?.containers?.find(({name}) => name === 'datadog-sidecar')?.volumeMounts
       ).not.toContainEqual(expect.objectContaining({volumeName: TRACER_VOLUME_NAME}))
+    })
+
+    test('adds composite activation only to the selected application container', () => {
+      const sidecar = {name: 'datadog-sidecar', image: 'datadog/serverless-init', env: [{name: 'KEEP', value: 'value'}]}
+      const result = createInstrumentedApp(multiLanguageConfig(), {
+        ...DEFAULT_CONTAINER_APP,
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [...DEFAULT_CONTAINER_APP.template!.containers!, sidecar],
+        },
+      })
+      const app = result.template!.containers![0]
+      const resultSidecar = result.template!.containers![1]
+
+      expect(getEnv(app.env, 'LD_PRELOAD')?.value).toBe(compositeSpec.env[0].value)
+      expect(getEnv(app.env, 'DD_INJECT_SENDER_TYPE')?.value).toBe('serverless')
+      expect(getEnv(app.env, 'DD_SOURCE')).toBeUndefined()
+      expect(getEnv(app.env, 'DD_TAGS')).toBeUndefined()
+      expect(getEnv(app.env, DD_TRACE_ENABLED_ENV_VAR)?.value).toBe('true')
+      expect(result.template?.initContainers).toContainEqual({
+        name: TRACER_CONTAINER_NAME,
+        image: 'datadoghq.azurecr.io/dd-lib-composite-init:latest',
+        command: ['/datadog-init/copy-lib.sh'],
+        args: [COMPOSITE_TRACER_MOUNT_PATH],
+        resources: {cpu: 0.25, memory: '0.5Gi'},
+        volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH}],
+      })
+      expect(app.volumeMounts).toContainEqual({
+        volumeName: TRACER_VOLUME_NAME,
+        mountPath: COMPOSITE_TRACER_MOUNT_PATH,
+      })
+      expect(getEnv(resultSidecar.env, 'LD_PRELOAD')).toBeUndefined()
+      expect(getEnv(resultSidecar.env, 'DD_INJECT_SENDER_TYPE')).toBeUndefined()
+      expect(resultSidecar.volumeMounts).not.toContainEqual(expect.objectContaining({volumeName: TRACER_VOLUME_NAME}))
+      expect(resultSidecar.volumeMounts).not.toContainEqual(
+        expect.objectContaining({mountPath: COMPOSITE_TRACER_MOUNT_PATH})
+      )
     })
 
     test('instruments only the explicitly selected application container', () => {
@@ -227,10 +372,11 @@ describe('Container Apps automatic APM instrumentation', () => {
     })
 
     test.each([
-      ['sharedVolumeName', TRACER_VOLUME_NAME, '--shared-volume-name'],
-      ['sharedVolumePath', TRACER_MOUNT_PATH, '--shared-volume-path'],
-    ] as const)('rejects the tracer collision on %s', (field, value, message) => {
-      expect(() => createInstrumentedApp({...injectConfig(), [field]: value})).toThrow(message)
+      ['sharedVolumeName', TRACER_VOLUME_NAME, '--shared-volume-name', injectConfig()],
+      ['sharedVolumePath', TRACER_MOUNT_PATH, '--shared-volume-path', injectConfig()],
+      ['sharedVolumePath', COMPOSITE_TRACER_MOUNT_PATH, '--shared-volume-path', multiLanguageConfig()],
+    ] as const)('rejects the tracer collision on %s', (field, value, message, config) => {
+      expect(() => createInstrumentedApp({...config, [field]: value})).toThrow(message)
     })
 
     test('retries configuration without injection markers', () => {
@@ -247,6 +393,13 @@ describe('Container Apps automatic APM instrumentation', () => {
         },
       }
       const second = createInstrumentedApp(injectConfig(), markerless)
+
+      expect(second.template).toEqual(first.template)
+    })
+
+    test('retries composite configuration without an injection-mode resource tag', () => {
+      const first = createInstrumentedApp(multiLanguageConfig())
+      const second = createInstrumentedApp(multiLanguageConfig(), first)
 
       expect(second.template).toEqual(first.template)
     })
@@ -370,14 +523,30 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(python.template?.volumes?.filter(({name}) => name === TRACER_VOLUME_NAME)).toHaveLength(1)
     })
 
+    test('switches between single- and multi-language injection idempotently', () => {
+      const node = createInstrumentedApp(injectConfig())
+      const multi = createInstrumentedApp(multiLanguageConfig(), node)
+      const python = createInstrumentedApp(injectConfig('python'), multi)
+      const multiApp = multi.template!.containers![0]
+      const pythonApp = python.template!.containers![0]
+
+      expect(getEnv(multiApp.env, 'NODE_OPTIONS')).toBeUndefined()
+      expect(getEnv(multiApp.env, 'DD_TAGS')).toBeUndefined()
+      expect(getEnv(multiApp.env, 'LD_PRELOAD')?.value).toBe(compositeSpec.env[0].value)
+      expect(createInstrumentedApp(multiLanguageConfig(), multi)).toEqual(multi)
+      expect(getEnv(pythonApp.env, 'LD_PRELOAD')).toBeUndefined()
+      expect(getEnv(pythonApp.env, 'DD_INJECT_SENDER_TYPE')).toBeUndefined()
+      expect(getEnv(pythonApp.env, 'PYTHONPATH')?.value).toBe(TRACER_MOUNT_PATH)
+    })
+
     test.each([
       ['manual', 'true'],
       ['disabled', 'false'],
     ] as const)('removes owned injection for %s tracing', (tracing, traceEnabled) => {
-      const injected = createInstrumentedApp(injectConfig())
+      const injected = createInstrumentedApp(multiLanguageConfig())
       const owned = {
         ...injected,
-        tags: {...injected.tags, [SSI_INJECTION_MODE_TAG]: SINGLE_LANGUAGE_SSI_MODE},
+        tags: {...injected.tags, [SSI_INJECTION_MODE_TAG]: MULTI_LANGUAGE_SSI_MODE},
       }
       const result = createInstrumentedApp({...DEFAULT_CONFIG, service: 'my-container-app', tracing}, owned)
       const app = result.template!.containers![0]
@@ -385,7 +554,8 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(result.template?.initContainers).toEqual([])
       expect(result.template?.volumes).not.toContainEqual(expect.objectContaining({name: TRACER_VOLUME_NAME}))
       expect(app.volumeMounts).not.toContainEqual(expect.objectContaining({volumeName: TRACER_VOLUME_NAME}))
-      expect(getEnv(app.env, 'NODE_OPTIONS')).toBeUndefined()
+      expect(getEnv(app.env, 'LD_PRELOAD')).toBeUndefined()
+      expect(getEnv(app.env, 'DD_INJECT_SENDER_TYPE')).toBeUndefined()
       expect(getEnv(app.env, DD_TRACE_ENABLED_ENV_VAR)?.value).toBe(traceEnabled)
     })
 

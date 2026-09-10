@@ -1,9 +1,9 @@
 import {
-  SINGLE_LANGUAGE_TRACER_REGISTRIES,
+  TRACER_REGISTRIES,
   buildSingleLanguageTracerImage,
   getTracerCopyCompletionMarker,
   type Language,
-  type SingleLanguageTracerRegistry,
+  type TracerRegistry,
   type TracerLanguage,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 
@@ -22,7 +22,7 @@ const languageCases: {
 
 describe('language and image metadata', () => {
   test.each(
-    SINGLE_LANGUAGE_TRACER_REGISTRIES.flatMap((registry) =>
+    TRACER_REGISTRIES.flatMap((registry) =>
       languageCases.map(({language, tracerLanguage}) => ({registry, language, tracerLanguage}))
     )
   )('builds the $registry $tracerLanguage image for $language', ({registry, language, tracerLanguage}) => {
@@ -47,7 +47,7 @@ describe('language and image metadata', () => {
   test.each(['docker.io/datadog', 'gcr.io/datadoghq/', '', ' public.ecr.aws/datadog'])(
     'rejects registry %p',
     (registry) => {
-      expect(() => buildSingleLanguageTracerImage(registry as SingleLanguageTracerRegistry, 'java', 'latest')).toThrow(
+      expect(() => buildSingleLanguageTracerImage(registry as TracerRegistry, 'java', 'latest')).toThrow(
         'Unsupported tracer registry'
       )
     }

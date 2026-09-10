@@ -41,7 +41,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
-import {SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
+import {MULTI_LANGUAGE_SSI_MODE, SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {
   CONTAINER_APP_ID,
@@ -236,7 +236,7 @@ Ensure you copied the value and not the Key ID.
     })
 
     test.each<[string[], string]>([
-      [['--tracing', 'inject'], '--tracing inject requires --language'],
+      [['--tracing', 'inject', '--tracer-version', '1.2.3'], '--tracer-version'],
       [
         ['--tracing', 'inject', '--language', 'nodejs', '--shared-volume-name', 'datadog-tracer'],
         '--shared-volume-name',
@@ -260,6 +260,38 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.get).not.toHaveBeenCalled()
     })
 
+    test('Rejects composite injection before updating an insufficient final configuration', async () => {
+      containerAppsOperations.get.mockResolvedValue({
+        ...DEFAULT_CONTAINER_APP,
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              resources: {cpu: 0.125, memory: '0.5Gi'},
+            },
+          ],
+        },
+      })
+
+      const {code, context} = await runCLI([
+        ...DEFAULT_INSTRUMENT_ARGS,
+        '--tracing',
+        'inject',
+        '--sidecar-cpu',
+        '0.125',
+        '--sidecar-memory',
+        '0.5',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(
+        'requires at least 2 GiB of replica ephemeral storage, but the final configuration provides the 1-GiB tier'
+      )
+      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
+    })
+
     test('Warns when omitted tracing removes automatic injection', async () => {
       containerAppsOperations.get.mockResolvedValue({
         ...DEFAULT_CONTAINER_APP,
@@ -270,7 +302,7 @@ Ensure you copied the value and not the Key ID.
 
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain(
-        'Tracing defaults to manual for my-container-app. Use --tracing inject --language <language> to retain automatic tracer injection.'
+        'Tracing defaults to manual for my-container-app. Use --tracing inject to retain automatic tracer injection.'
       )
     })
 
@@ -1474,7 +1506,7 @@ Ensure you copied the value and not the Key ID.
     test('Continues after a tracer tag update failure without duplicating configuration', async () => {
       updateTags.mockClear().mockRejectedValueOnce(new Error('tag update error'))
 
-      const first = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
+      const first = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject'])
       expect(first.code).toEqual(0)
       expect(first.context.stdout.toString()).toContain(
         '[Error] Failed to update tags for my-container-app: Error: tag update error'
@@ -1486,7 +1518,7 @@ Ensure you copied the value and not the Key ID.
       containerAppsOperations.beginUpdateAndWait.mockClear()
       updateTags.mockResolvedValue({})
 
-      const retry = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'nodejs'])
+      const retry = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject'])
       expect(retry.code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
       expect(updateTags).toHaveBeenLastCalledWith(CONTAINER_APP_ID, {
@@ -1494,7 +1526,7 @@ Ensure you copied the value and not the Key ID.
           tags: {
             service: 'my-container-app',
             dd_sls_ci: 'vXXXX',
-            dd_sls_injection_mode: 'single_language',
+            dd_sls_injection_mode: MULTI_LANGUAGE_SSI_MODE,
           },
         },
       })

@@ -26,6 +26,7 @@ import type {ContainerApp, Container} from '@azure/arm-appcontainers'
 
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {COMPOSITE_TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
@@ -446,10 +447,19 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
             {
               name: 'worker',
               image: 'worker',
-              env: [{name: 'PYTHONPATH', value: 'customer:/datadog-lib'}],
+              env: [
+                {name: 'PYTHONPATH', value: 'customer:/datadog-lib'},
+                {
+                  name: 'LD_PRELOAD',
+                  value:
+                    '/customer/preload.so /opt/datadog-packages/datadog-apm-inject/stable/inject/launcher.preload.so',
+                },
+                {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
+              ],
               volumeMounts: [
                 {volumeName: 'customer-volume', mountPath: '/customer'},
                 {volumeName: 'legacy-volume', mountPath: TRACER_MOUNT_PATH},
+                {volumeName: 'composite-volume', mountPath: COMPOSITE_TRACER_MOUNT_PATH},
               ],
             },
           ],
@@ -474,7 +484,10 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
         {name: 'KEEP', value: 'value'},
       ])
       expect(worker).toMatchObject({
-        env: [{name: 'PYTHONPATH', value: 'customer'}],
+        env: [
+          {name: 'PYTHONPATH', value: 'customer'},
+          {name: 'LD_PRELOAD', value: '/customer/preload.so'},
+        ],
         volumeMounts: [{volumeName: 'customer-volume', mountPath: '/customer'}],
       })
     })
