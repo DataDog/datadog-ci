@@ -3,7 +3,13 @@ import type {ContainerDefinition, RuntimePlatform} from '@aws-sdk/client-ecs'
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
-import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
+import {
+  instrumentTaskDefinition,
+  isUpToDate,
+  stripReadOnlyFields,
+  uninstrumentTaskDefinition,
+  withMaskedApiKey,
+} from '../task-definition'
 
 import {
   APP_CONTAINER,
@@ -22,6 +28,7 @@ import {
   asDescribed,
   fargateTaskDefinition,
   firelensLogConfiguration,
+  instrumentedTaskDefinition,
   windowsTaskDefinition,
 } from './fixtures'
 
@@ -1329,5 +1336,164 @@ describe('isUpToDate', () => {
     })
 
     expect(isUpToDate(original, updated)).toBe(false)
+  })
+})
+
+describe('uninstrumentTaskDefinition', () => {
+  /** What registering the given task definition unchanged would send. */
+  const registerable = (original = fargateTaskDefinition()) => ({...stripReadOnlyFields(original), tags: []})
+
+  describe('gives back the task definition the revision was registered from', () => {
+    test.each([
+      ['reaching the Agent over the socket', MOCK_SETTINGS, fargateTaskDefinition()],
+      ['reaching the Agent over the loopback address', {...MOCK_SETTINGS, agentSocket: false}, fargateTaskDefinition()],
+      ['a plaintext API key', {site: 'datadoghq.com', apiKey: MOCK_API_KEY}, fargateTaskDefinition()],
+      [
+        'the unified service tags',
+        {...MOCK_SETTINGS, service: 'payments', environment: 'prod', version: '1.0.0'},
+        fargateTaskDefinition(),
+      ],
+      [
+        'every product turned on',
+        {...MOCK_SETTINGS, tracing: true, appsec: true, llmobs: 'my-ml-app', logLevel: 'debug'},
+        fargateTaskDefinition(),
+      ],
+      ['a Windows task', MOCK_SETTINGS, windowsTaskDefinition()],
+    ])('instrumented with %s', (_case, settings, original) => {
+      const {taskDefinition} = uninstrumentTaskDefinition(
+        instrumentedTaskDefinition(settings, original),
+        {},
+        INSTRUMENTATION_TAGS
+      )
+
+      expect(taskDefinition).toStrictEqual(registerable(original))
+    })
+  })
+
+  test('leaves an uninstrumented task definition alone, and says the sidecar is missing', () => {
+    const {taskDefinition, warnings} = uninstrumentTaskDefinition(fargateTaskDefinition())
+
+    expect(taskDefinition).toStrictEqual(registerable())
+    expect(warnings).toStrictEqual([expect.stringContaining(`runs no ${AGENT_CONTAINER_NAME} container`)])
+  })
+
+  test('removes both sidecars', () => {
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition(MOCK_LOG_COLLECTION_SETTINGS))
+
+    expect(taskDefinition.containerDefinitions?.map((container) => container.name)).toStrictEqual([APP_CONTAINER.name])
+  })
+
+  test('removes the socket volume and the mounts of it', () => {
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition())
+
+    expect(taskDefinition.volumes).toStrictEqual([])
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toBeUndefined()
+  })
+
+  test('keeps the volumes and mounts the task definition declares itself', () => {
+    const original = fargateTaskDefinition({
+      volumes: [{name: 'app-scratch'}],
+      containerDefinitions: [
+        {...APP_CONTAINER, mountPoints: [{sourceVolume: 'app-scratch', containerPath: '/scratch', readOnly: false}]},
+      ],
+    })
+
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition(MOCK_SETTINGS, original))
+
+    expect(taskDefinition.volumes).toStrictEqual([{name: 'app-scratch'}])
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.mountPoints).toStrictEqual([
+      {sourceVolume: 'app-scratch', containerPath: '/scratch', readOnly: false},
+    ])
+  })
+
+  test('removes the Datadog environment variables and leaves the others in place', () => {
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition())
+
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.environment).toStrictEqual(APP_CONTAINER.environment)
+  })
+
+  test('removes a Datadog environment variable the task definition set itself', () => {
+    const original = fargateTaskDefinition({
+      containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_PROFILING_ENABLED', value: 'true'}]}],
+    })
+
+    const {taskDefinition} = uninstrumentTaskDefinition(original)
+
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.environment).toStrictEqual([])
+  })
+
+  test('removes the environment variables it is told to', () => {
+    const original = fargateTaskDefinition({
+      containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'CUSTOM_VAR', value: 'value'}]}],
+    })
+
+    const {taskDefinition} = uninstrumentTaskDefinition(original, {envVars: {CUSTOM_VAR: 'value'}})
+
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.environment).toStrictEqual([])
+  })
+
+  test('removes the secrets holding Datadog credentials', () => {
+    const original = fargateTaskDefinition({
+      containerDefinitions: [
+        {
+          ...APP_CONTAINER,
+          secrets: [
+            {name: 'DD_API_KEY', valueFrom: MOCK_API_KEY_SECRET_ARN},
+            {name: 'APP_SECRET', valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:app'},
+          ],
+        },
+      ],
+    })
+
+    const {taskDefinition} = uninstrumentTaskDefinition(original)
+
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.secrets).toStrictEqual([
+      {name: 'APP_SECRET', valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:app'},
+    ])
+  })
+
+  test('removes the unified service tag Docker labels and leaves the others alone', () => {
+    const original = fargateTaskDefinition({
+      containerDefinitions: [{...APP_CONTAINER, dockerLabels: {'com.datadoghq.ad.logs': '[{"source":"nodejs"}]'}}],
+    })
+
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition(MOCK_SETTINGS, original))
+
+    expect(appContainerOf(taskDefinition.containerDefinitions)?.dockerLabels).toStrictEqual({
+      'com.datadoghq.ad.logs': '[{"source":"nodejs"}]',
+    })
+  })
+
+  test('removes the instrumentation tags and leaves the others alone', () => {
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition(), {}, [
+      {key: 'team', value: 'intake'},
+      {key: 'service', value: 'my-app'},
+      {key: 'env', value: 'prod'},
+      {key: 'version', value: '1.0.0'},
+      CLI_VERSION_TAG,
+    ])
+
+    expect(taskDefinition.tags).toStrictEqual([{key: 'team', value: 'intake'}])
+  })
+
+  describe('log collection', () => {
+    test('removes the log configuration routing through the log router, and says so', () => {
+      const {taskDefinition, warnings} = uninstrumentTaskDefinition(
+        instrumentedTaskDefinition(MOCK_LOG_COLLECTION_SETTINGS)
+      )
+
+      const app = appContainerOf(taskDefinition.containerDefinitions)
+      expect(app?.logConfiguration).toBeUndefined()
+      expect(warnings).toStrictEqual([expect.stringContaining('cannot be restored')])
+    })
+
+    test('leaves a log configuration the task definition declares itself alone', () => {
+      const {taskDefinition, warnings} = uninstrumentTaskDefinition(instrumentedTaskDefinition())
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        APP_CONTAINER.logConfiguration
+      )
+      expect(warnings).toStrictEqual([])
+    })
   })
 })

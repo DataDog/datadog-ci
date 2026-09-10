@@ -246,6 +246,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 <sub>**README:** [📚](/packages/plugin-ecs-fargate) | **Documentation:** [🔗](https://docs.datadoghq.com/integrations/aws-fargate/) | **Plugin:** `@datadog/datadog-ci-plugin-ecs-fargate`</sub>
 
 - `instrument`: Apply Datadog instrumentation to an AWS ECS Fargate Task Definition.
+- `uninstrument`: Revert Datadog instrumentation in an AWS ECS Fargate Task Definition.
 
 #### `elf-symbols`
 
