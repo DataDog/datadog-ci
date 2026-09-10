@@ -21,6 +21,8 @@ import {
   MULTI_LANGUAGE_SSI_MODE,
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
+  assertSsiEphemeralStorage,
+  getReplicaEphemeralStorageGiB,
   hasSsi,
   mergeCompositeInjectionEnv,
   mergeLanguageInjectionEnv,
@@ -118,6 +120,59 @@ describe('Container Apps automatic APM instrumentation', () => {
 
     test('warns for Java 24+', () => {
       expect(resolveSsiConfig(injectConfig('java')).warnings.join('\n')).toContain('Java 24+')
+    })
+  })
+
+  describe('replica ephemeral storage', () => {
+    test.each([
+      [0.25, 0, 1],
+      [0.25, 0.25, 2],
+      [0.5, 0.5, 4],
+      [1, 0.25, 8],
+    ])('derives the %s + %s vCPU configuration as %s GiB', (applicationCpu, sidecarCpu, storageGiB) => {
+      expect(
+        getReplicaEphemeralStorageGiB([
+          {name: 'app', resources: {cpu: applicationCpu}},
+          {name: 'datadog-sidecar', resources: {cpu: sidecarCpu}},
+        ])
+      ).toBe(storageGiB)
+    })
+
+    test('allows single-language injection at the 1-GiB tier', () => {
+      const config = resolveSsiConfig(injectConfig())
+      if (config.kind !== 'single-language') {
+        throw new Error('Expected single-language injection')
+      }
+
+      expect(() => assertSsiEphemeralStorage([{name: 'app', resources: {cpu: 0.25}}], config)).not.toThrow()
+    })
+
+    test('accepts composite injection at the 2-GiB tier', () => {
+      const config = resolveSsiConfig(multiLanguageConfig())
+      if (config.kind !== 'multi-language') {
+        throw new Error('Expected multi-language injection')
+      }
+
+      expect(() =>
+        assertSsiEphemeralStorage(
+          [
+            {name: 'app', resources: {cpu: 0.25}},
+            {name: 'datadog-sidecar', resources: {cpu: 0.25}},
+          ],
+          config
+        )
+      ).not.toThrow()
+    })
+
+    test('rejects composite injection below the 2-GiB tier', () => {
+      const config = resolveSsiConfig(multiLanguageConfig())
+      if (config.kind !== 'multi-language') {
+        throw new Error('Expected multi-language injection')
+      }
+
+      expect(() => assertSsiEphemeralStorage([{name: 'app', resources: {cpu: 0.25}}], config)).toThrow(
+        'requires at least 2 GiB of replica ephemeral storage, but the final configuration provides the 1-GiB tier'
+      )
     })
   })
 

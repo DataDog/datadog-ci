@@ -50,6 +50,12 @@ export type SsiConfigResult = (
 
 type InjectionConfig = Extract<SsiConfigResult, {kind: 'single-language' | 'multi-language'}>
 
+const EPHEMERAL_STORAGE_TIERS = [
+  {maximumCpu: 0.25, storageGiB: 1},
+  {maximumCpu: 0.5, storageGiB: 2},
+  {maximumCpu: 1, storageGiB: 4},
+] as const
+
 /** Resolves Container Apps tracer inputs before any remote work. */
 export const resolveSsiConfig = (config: ContainerAppConfigOptions): SsiConfigResult => {
   const errors = validateSsiInputs(config)
@@ -195,6 +201,23 @@ export const assertInjectionEnvCanBeMerged = (
     config.spec.env,
     config.kind === 'single-language' ? [DD_TAGS_ENV_VAR] : []
   )
+
+export const getReplicaEphemeralStorageGiB = (containers: readonly Container[]): number => {
+  const totalCpu = containers.reduce((total, container) => total + (container.resources?.cpu ?? 0), 0)
+
+  return EPHEMERAL_STORAGE_TIERS.find(({maximumCpu}) => totalCpu <= maximumCpu)?.storageGiB ?? 8
+}
+
+export const assertSsiEphemeralStorage = (containers: readonly Container[], config: InjectionConfig): void => {
+  const storageGiB = getReplicaEphemeralStorageGiB(containers)
+  const requiredStorageGiB = config.kind === 'single-language' ? 1 : 2
+
+  if (storageGiB < requiredStorageGiB) {
+    throw new SsiConfigError(
+      `Automatic tracer injection requires at least ${requiredStorageGiB} GiB of replica ephemeral storage, but the final configuration provides the ${storageGiB}-GiB tier. Increase application or Datadog sidecar CPU so their combined CPU exceeds 0.25 vCPU.`
+    )
+  }
+}
 
 export const assertSsiResourcesCanBeAdded = (
   containerApp: ContainerApp,
@@ -548,8 +571,6 @@ const buildTracerInitContainer = (image: string, mountPath: string): InitContain
   image,
   command: ['/datadog-init/copy-lib.sh'],
   args: [mountPath],
-  // Azure derives temporary storage from total replica CPU. The default 0.5-vCPU sidecar and
-  // minimum 0.25-vCPU app yield 4 GiB; ephemeralStorage is response-only.
   resources: {cpu: 0.25, memory: '0.5Gi'},
   volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath}],
 })

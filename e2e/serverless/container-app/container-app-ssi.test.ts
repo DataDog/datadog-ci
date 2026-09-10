@@ -23,7 +23,7 @@ const SSI_CASES = [
   })),
   {
     kind: 'multi-language',
-    testName: 'auto-detected Node.js',
+    testName: 'auto-detected Node.js at the 2-GiB ephemeral-storage boundary',
     applicationImage: 'dde2etfcapp.azurecr.io/node-ssi:latest',
   },
 ] as const
@@ -61,6 +61,7 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
         ` --extra-tags "one_e2e_run_id:${runId}"` +
         ` --tracing inject` +
         (ssiCase.kind === 'single-language' ? ` --language "${ssiCase.language}"` : '') +
+        (ssiCase.kind === 'multi-language' ? ' --sidecar-cpu 0.25 --sidecar-memory 0.5' : '') +
         ` --no-source-code-integration`
 
       let lifecycleError: Error | undefined

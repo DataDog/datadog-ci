@@ -15,6 +15,7 @@ interface ContainerApp {
         name: string
         image: string
         env?: {name: string; value?: string; secretRef?: string}[]
+        resources?: {cpu?: number; memory?: string}
         volumeMounts?: {volumeName: string; mountPath?: string}[]
       }[]
       volumes?: {name: string; storageType: string}[]
@@ -256,10 +257,12 @@ export const verifyMultiLanguageSsiInstrumented = (
 
   const sidecar = containers.find(({name}) => name === SIDECAR_NAME)
   expect(sidecar).toBeDefined()
+  expect(sidecar?.resources).toEqual(expect.objectContaining({cpu: 0.25, memory: '0.5Gi'}))
   const applicationContainers = containers.filter(({name}) => name !== SIDECAR_NAME)
   expect(applicationContainers).toHaveLength(1)
   const application = applicationContainers[0]
   expect(application.image).toBe(applicationImage)
+  expect(application.resources).toEqual(expect.objectContaining({cpu: 0.25, memory: '0.5Gi'}))
 
   expect(initContainers.filter(({name}) => name === TRACER_NAME)).toEqual([
     expect.objectContaining({

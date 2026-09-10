@@ -260,6 +260,38 @@ Ensure you copied the value and not the Key ID.
       expect(containerAppsOperations.get).not.toHaveBeenCalled()
     })
 
+    test('Rejects composite injection before updating an insufficient final configuration', async () => {
+      containerAppsOperations.get.mockResolvedValue({
+        ...DEFAULT_CONTAINER_APP,
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              resources: {cpu: 0.125, memory: '0.5Gi'},
+            },
+          ],
+        },
+      })
+
+      const {code, context} = await runCLI([
+        ...DEFAULT_INSTRUMENT_ARGS,
+        '--tracing',
+        'inject',
+        '--sidecar-cpu',
+        '0.125',
+        '--sidecar-memory',
+        '0.5',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain(
+        'requires at least 2 GiB of replica ephemeral storage, but the final configuration provides the 1-GiB tier'
+      )
+      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
+    })
+
     test('Warns when omitted tracing removes automatic injection', async () => {
       containerAppsOperations.get.mockResolvedValue({
         ...DEFAULT_CONTAINER_APP,

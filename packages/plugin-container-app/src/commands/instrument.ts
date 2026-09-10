@@ -36,6 +36,7 @@ import {
   SSI_INJECTION_MODE_TAG,
   applySsi,
   assertInjectionEnvCanBeMerged,
+  assertSsiEphemeralStorage,
   assertSsiResourcesCanBeAdded,
   hasSsi,
   removeSsiState,
@@ -346,8 +347,13 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       template: updatedTemplate,
     }
 
-    return ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language'
-      ? applySsi(instrumentedApp, targetIndex!, ssiConfig)
-      : instrumentedApp
+    if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {
+      const updatedApp = applySsi(instrumentedApp, targetIndex!, ssiConfig)
+      assertSsiEphemeralStorage(updatedApp.template?.containers ?? [], ssiConfig)
+
+      return updatedApp
+    }
+
+    return instrumentedApp
   }
 }
