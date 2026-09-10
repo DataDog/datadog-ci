@@ -420,7 +420,7 @@ describe('ecs-fargate instrument', () => {
 
       expect(code).toBe(1)
       const output = context.stdout.toString()
-      expect(output).toContain('No task definitions specified to instrument')
+      expect(output).toContain('No task definitions specified. Use --task-definition.')
       expect(output).toContain('All env vars must be in the format `KEY=VALUE`')
       expect(output).toContain('Extra tags do not comply with the <key>:<value> array.')
       expect(output).toContain('--tracing must be either `true` or `false`.')

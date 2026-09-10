@@ -11,6 +11,8 @@ import type {
   Volume,
 } from '@aws-sdk/client-ecs'
 
+import {instrumentTaskDefinition} from '../task-definition'
+
 export const MOCK_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_API_KEY_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key-AbCdEf'
 export const MOCK_REGION = 'us-east-1'
@@ -159,6 +161,19 @@ export const asDescribed = (
     volumes: registered.volumes,
     ...overrides,
   })
+
+/**
+ * A revision this command instrumented, as `DescribeTaskDefinition` hands it back to a later run.
+ * Its tags are returned separately by ECS, so pair it with `INSTRUMENTATION_TAGS`.
+ */
+export const instrumentedTaskDefinition = (
+  settings: InstrumentSettings = MOCK_SETTINGS,
+  original: TaskDefinition = fargateTaskDefinition()
+): TaskDefinition => {
+  const {containerDefinitions, volumes} = instrumentTaskDefinition(original, settings).taskDefinition
+
+  return {...original, containerDefinitions, volumes}
+}
 
 /**
  * An ECS service as `DescribeServices` returns it, running the first revision of its family.

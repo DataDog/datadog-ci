@@ -126,6 +126,7 @@ describe('cli', () => {
       'dora deployment': ['--started-at', '0'],
       'dsyms upload': [NONEXISTENT_FILE],
       'ecs-fargate instrument': ['--task-definition', 'my-task-definition'],
+      'ecs-fargate uninstrument': ['--task-definition', 'my-task-definition'],
       'elf-symbols upload': [NONEXISTENT_FILE],
       'pe-symbols upload': [NONEXISTENT_FILE],
       'gate evaluate': ['--no-wait'],
