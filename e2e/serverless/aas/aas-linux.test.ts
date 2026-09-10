@@ -162,14 +162,34 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
         `Failed to configure SSI startup command (exit code ${startupResult.exitCode}): ${startupResult.stderr}`
       )
     }
-    const deployResult = await execPromiseWithRetries(
-      `az webapp deploy --name "${appName}" --resource-group "${resourceGroup}" --src-path "${appPath}"` +
-        ` --type static --target-path /home/site/wwwroot/app.js --output none`,
-      undefined,
-      {maxAttempts: 5, delaySeconds: 20}
+    const deployResult = await execPromise(
+      `az webapp deployment list-publishing-credentials --name "${appName}" --resource-group "${resourceGroup}" --output json`
     )
     if (deployResult.exitCode !== 0) {
-      throw new Error(`Failed to deploy SSI app (exit code ${deployResult.exitCode}): ${deployResult.stderr}`)
+      throw new Error(
+        `Failed to get SSI app SCM credentials (exit code ${deployResult.exitCode}): ${deployResult.stderr}`
+      )
+    }
+    const credentials = JSON.parse(deployResult.stdout)
+    const scmUri = (credentials.properties ?? credentials).scmUri
+    const tokenResult = await execPromise(
+      'az account get-access-token --resource https://management.azure.com/ --query accessToken --output tsv'
+    )
+    if (tokenResult.exitCode !== 0) {
+      throw new Error(`Failed to get Azure access token (exit code ${tokenResult.exitCode}): ${tokenResult.stderr}`)
+    }
+    const uploadResult = await execPromise(
+      `curl --fail --silent --show-error --request PUT --header "Authorization: Bearer ${tokenResult.stdout.trim()}"` +
+        ` --upload-file "${appPath}" "${scmUri}api/vfs/site/wwwroot/app.js"`
+    )
+    if (uploadResult.exitCode !== 0) {
+      throw new Error(`Failed to upload SSI app (exit code ${uploadResult.exitCode}): ${uploadResult.stderr}`)
+    }
+    const restartResult = await execPromise(
+      `az webapp restart --name "${appName}" --resource-group "${resourceGroup}" --output none`
+    )
+    if (restartResult.exitCode !== 0) {
+      throw new Error(`Failed to restart SSI app (exit code ${restartResult.exitCode}): ${restartResult.stderr}`)
     }
   }, 900_000)
 
