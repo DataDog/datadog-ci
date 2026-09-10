@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {EcsFargateInstrumentCommand} from './instrument'
 
 // prettier-ignore
