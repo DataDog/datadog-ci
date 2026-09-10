@@ -1,3 +1,5 @@
+import {execFileSync} from 'node:child_process'
+
 import {execSync} from '../../helpers/exec'
 
 // Hard-coded because e2e tests run against built artifacts, can't import from source
@@ -37,6 +39,46 @@ const getWebApp = (appName: string, rg: string): WebApp => {
   return JSON.parse(output)
 }
 
+const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode?: number} => {
+  const credentials = JSON.parse(
+    execSync(
+      `az webapp deployment list-publishing-credentials --name "${appName}" --resource-group "${rg}" --output json`
+    )
+  )
+  const properties = credentials.properties ?? credentials
+  const scmUrl = new URL(properties.scmUri)
+  scmUrl.username = ''
+  scmUrl.password = ''
+
+  return JSON.parse(
+    execFileSync(
+      'curl',
+      [
+        '--fail',
+        '--silent',
+        '--show-error',
+        '--user',
+        `${properties.publishingUserName}:${properties.publishingPassword}`,
+        '--header',
+        'Content-Type: application/json',
+        '--data',
+        JSON.stringify({command, dir: '/'}),
+        `${scmUrl.origin}/api/command`,
+      ],
+      {encoding: 'utf8'}
+    )
+  )
+}
+
+const verifyStagedTracer = (appName: string, rg: string, expected: boolean): void => {
+  const result = runKuduCommand(appName, rg, 'test -d /home/data/datadog-tracer')
+  if (expected) {
+    expect(result.ExitCode).toBe(0)
+  } else {
+    expect(result.ExitCode).not.toBe(0)
+  }
+}
+
 interface SiteContainer {
   name: string
   properties: {
@@ -73,7 +115,12 @@ const getSiteExtensions = (appName: string, rg: string, subscriptionId: string):
   }
 }
 
-export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptionId: string): void => {
+export const verifyLinuxInstrumented = (
+  appName: string,
+  rg: string,
+  subscriptionId: string,
+  expectSsi = false
+): void => {
   console.log(`Verifying Linux app "${appName}" is instrumented...\n`)
 
   const settings = getAppSettings(appName, rg)
@@ -89,6 +136,11 @@ export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptio
   }
   // Logs only flow when instance logging is enabled (--instance-logging).
   expect(settings['DD_AAS_INSTANCE_LOGGING_ENABLED']).toBe('true')
+  if (expectSsi) {
+    expect(settings.NODE_OPTIONS).toContain('/home/data/datadog-tracer/nodejs/')
+    expect(settings.NODE_OPTIONS).toContain('/init.js')
+    expect(settings.DD_TAGS).toContain('dd_sls_injection_mode:single_language')
+  }
 
   const containers = getSiteContainers(appName, rg, subscriptionId)
   const sidecar = containers.find((c) => c.name === 'datadog-sidecar')
@@ -100,11 +152,20 @@ export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptio
   const tags = app.tags || {}
   expect(Object.keys(tags)).toContain('service')
   expect(Object.keys(tags)).toContain('dd_sls_ci')
+  if (expectSsi) {
+    expect(tags.dd_sls_injection_mode).toBe('single_language')
+    verifyStagedTracer(appName, rg, true)
+  }
 
   console.log('All Linux instrumented checks passed.\n')
 }
 
-export const verifyLinuxUninstrumented = (appName: string, rg: string, subscriptionId: string): void => {
+export const verifyLinuxUninstrumented = (
+  appName: string,
+  rg: string,
+  subscriptionId: string,
+  expectSsi = false
+): void => {
   console.log(`Verifying Linux app "${appName}" is uninstrumented...\n`)
 
   const settings = getAppSettings(appName, rg)
@@ -120,6 +181,10 @@ export const verifyLinuxUninstrumented = (appName: string, rg: string, subscript
   const tags = app.tags || {}
   expect(Object.keys(tags)).not.toContain('service')
   expect(Object.keys(tags)).not.toContain('dd_sls_ci')
+  if (expectSsi) {
+    expect(tags.dd_sls_injection_mode).toBeUndefined()
+    verifyStagedTracer(appName, rg, false)
+  }
 
   console.log('All Linux uninstrumented checks passed.\n')
 }
