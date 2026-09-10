@@ -788,6 +788,57 @@ describe('instrumentTaskDefinition', () => {
       expect(envVarsOf(agent)).not.toHaveProperty('DD_SITE')
     })
 
+    // ECS turns a secret into an environment variable, so a plaintext key left behind under another
+    // case would be a second definition of the variable the secret sets.
+    test('takes away a plaintext API key the Agent container named in another case', () => {
+      const original = windowsTaskDefinition({
+        containerDefinitions: [
+          {...APP_CONTAINER},
+          {name: AGENT_CONTAINER_NAME, environment: [{name: 'dd_api_key', value: MOCK_API_KEY}]},
+        ],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      const agent = agentContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(agent)).not.toHaveProperty('dd_api_key')
+      expect(envVarsOf(agent)).not.toHaveProperty('DD_API_KEY')
+      expect(agent?.secrets).toStrictEqual([{name: 'DD_API_KEY', valueFrom: MOCK_API_KEY_SECRET_ARN}])
+    })
+
+    test('replaces a secret the Agent container named in another case', () => {
+      const original = windowsTaskDefinition({
+        containerDefinitions: [
+          {...APP_CONTAINER},
+          {
+            name: AGENT_CONTAINER_NAME,
+            secrets: [{name: 'dd_api_key', valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:old'}],
+          },
+        ],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(agentContainerOf(taskDefinition.containerDefinitions)?.secrets).toStrictEqual([
+        {name: 'DD_API_KEY', valueFrom: MOCK_API_KEY_SECRET_ARN},
+      ])
+    })
+
+    test('overwrites a plaintext API key in place when it writes one', () => {
+      const original = windowsTaskDefinition({
+        containerDefinitions: [
+          {...APP_CONTAINER},
+          {name: AGENT_CONTAINER_NAME, environment: [{name: 'dd_api_key', value: 'stale-key'}]},
+        ],
+      })
+
+      const {taskDefinition} = instrumentTaskDefinition(original, {site: 'datadoghq.com', apiKey: MOCK_API_KEY})
+
+      const agent = agentContainerOf(taskDefinition.containerDefinitions)
+      expect(envVarsOf(agent)).toStrictEqual(expect.objectContaining({dd_api_key: MOCK_API_KEY}))
+      expect(envVarsOf(agent)).not.toHaveProperty('DD_API_KEY')
+    })
+
     test('waits for the Agent to start rather than to be healthy, since it has none', () => {
       const original = windowsTaskDefinition({
         containerDefinitions: [
@@ -1200,6 +1251,31 @@ describe('withMaskedApiKey', () => {
 
   test('leaves a task definition without a plaintext API key alone', () => {
     const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_SETTINGS)
+
+    expect(withMaskedApiKey(taskDefinition)).toStrictEqual(taskDefinition)
+  })
+
+  // The key the command is taking away is printed as part of the diff, so it has to be masked on
+  // the way out as well as on the way in.
+  test('masks the plaintext API key a Windows task named in another case', () => {
+    const taskDefinition = stripReadOnlyFields(
+      windowsTaskDefinition({
+        containerDefinitions: [{name: AGENT_CONTAINER_NAME, environment: [{name: 'dd_api_key', value: MOCK_API_KEY}]}],
+      })
+    )
+
+    const masked = withMaskedApiKey(taskDefinition)
+
+    expect(envVarsOf(agentContainerOf(masked.containerDefinitions)).dd_api_key).not.toBe(MOCK_API_KEY)
+    expect(JSON.stringify(masked)).not.toContain(MOCK_API_KEY)
+  })
+
+  test('leaves a variable a Linux task named in another case alone, as it is not the key the Agent reads', () => {
+    const taskDefinition = stripReadOnlyFields(
+      fargateTaskDefinition({
+        containerDefinitions: [{name: AGENT_CONTAINER_NAME, environment: [{name: 'dd_api_key', value: MOCK_API_KEY}]}],
+      })
+    )
 
     expect(withMaskedApiKey(taskDefinition)).toStrictEqual(taskDefinition)
   })
