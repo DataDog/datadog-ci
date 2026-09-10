@@ -166,6 +166,25 @@ describe('aas instrument', () => {
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {ava: 'true'}}})
     })
 
+    test('Treats the SSI telemetry tag as a tag, not SSI state', async () => {
+      webAppsOperations.get.mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        tags: {service: 'my-service', dd_sls_injection_mode: 'single_language'},
+      })
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {DD_API_KEY: process.env.DD_API_KEY, DD_SITE: 'datadoghq.com', hello: 'world'},
+      })
+      updateTags.mockRejectedValue(new Error('tag update failed'))
+
+      const {code} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world'},
+      })
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
+    })
+
     test('Uninstrument sidecar and updates app settings with .NET settings', async () => {
       updateTags.mockResolvedValue({service: 'my-web-app'})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({

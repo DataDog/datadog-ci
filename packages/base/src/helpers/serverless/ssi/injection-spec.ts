@@ -200,3 +200,12 @@ const getDotnetEnv = (root: string): EnvFragment[] => [
     maxLength: 1024,
   },
 ]
+
+/** Names of all application settings that automatic tracer injection can modify. */
+export const LANGUAGE_INJECTION_ENV_NAMES = [
+  ...new Set(
+    (Object.keys(LANGUAGE_CONFIG) as Language[]).flatMap((language) =>
+      LANGUAGE_CONFIG[language].getSpec(DEFAULT_TRACER_ROOT, DEFAULT_TRACER_LIBC).env.map(({name}) => name)
+    )
+  ),
+]

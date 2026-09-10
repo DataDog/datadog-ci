@@ -23,7 +23,7 @@ To instrument your App Services using the `datadog-ci aas instrument` command, f
 
 ### `instrument`
 
-Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds a sidecar to the App Service and modifies its configuration. Add `--apm-enabled` to inject a tracer into supported code-based Linux Web Apps. It supports .NET 8-11, Node.js 22/24/26, Python 3.10-3.14, PHP 8.2-8.5, and Java 8-23. The command requires SCM access to stage the tracer and fails before changing settings if SCM is unavailable.
+Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds a sidecar to the App Service and modifies its configuration. Add `--apm-enabled` to inject a tracer into supported code-based Linux Web Apps. It supports .NET 8-11, Node.js 22/24/26, Python 3.10-3.14, PHP 8.2-8.5, and Java 8-23. The command requires SCM access to stage the tracer and fails before changing settings if SCM is unavailable. For Windows and containerized Web Apps, it continues with standard instrumentation.
 
 ```bash
 export DD_API_KEY=<your-datadog-api-key>

@@ -10,14 +10,12 @@ import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {hasInjectionModeTag} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
 import {
   AAS_DD_SETTING_NAMES,
   aggregateStickyBySite,
-  isDotnet,
   isWindows,
   isWindowsFunctionApp,
   mutateStickySlotSettings,
@@ -26,10 +24,7 @@ import {
   type ProcessResult,
 } from '../common'
 import {getKuduClient} from '../kudu'
-import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, AAS_SSI_TAG_VALUE, removeAasSsiEnv} from '../ssi-env'
-
-const isAasSsiState = (settings: Record<string, string>): boolean =>
-  Object.values(settings).some((value) => value.includes(AAS_SSI_STAGING_ROOT)) || hasInjectionModeTag(settings.DD_TAGS)
+import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, hasStagedAasTracer, removeAasSsiEnv} from '../ssi-env'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -133,21 +128,9 @@ export class PluginCommand extends AasUninstrumentCommand {
         )
       } else {
         // Linux uninstrumentation via sidecar
-        await this.uninstrumentSidecar(
-          client,
-          {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? webApp.name},
-          resourceGroup,
-          webApp,
-          site.tags?.[AAS_SSI_TAG] === AAS_SSI_TAG_VALUE
-        )
+        await this.uninstrumentSidecar(client, resourceGroup, webApp)
       }
-      await this.removeTags(
-        client.subscriptionId!,
-        resourceGroup,
-        webApp,
-        site.tags ?? {},
-        site.tags?.[AAS_SSI_TAG] === AAS_SSI_TAG_VALUE
-      )
+      await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
       return {
         success: true,
@@ -212,13 +195,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     await this.removeEnvVars(config, webApp, client, resourceGroup, undefined, additionalSettings)
   }
 
-  public async uninstrumentSidecar(
-    client: WebSiteManagementClient,
-    config: AasConfigOptions,
-    resourceGroup: string,
-    webApp: WebApp,
-    hasAasSsi: boolean
-  ) {
+  public async uninstrumentSidecar(client: WebSiteManagementClient, resourceGroup: string, webApp: WebApp) {
     this.context.stdout.write(
       `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${renderWebApp(webApp)} (if it exists)\n`
     )
@@ -234,16 +211,10 @@ export class PluginCommand extends AasUninstrumentCommand {
           ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
           : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
       ).properties ?? {}
-    hasAasSsi ||= isAasSsiState(settings)
-    if (hasAasSsi) {
-      await this.removeAasSsiEnvVars(webApp, client, resourceGroup, settings)
-      if (!this.dryRun) {
-        await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
-      }
-
-      return
+    await this.removeAasSsiEnvVars(webApp, client, resourceGroup, settings)
+    if (hasStagedAasTracer(settings) && !this.dryRun) {
+      await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
     }
-    await this.removeEnvVars(config, webApp, client, resourceGroup, settings)
   }
 
   public async removeAasSsiEnvVars(
@@ -265,6 +236,10 @@ export class PluginCommand extends AasUninstrumentCommand {
           ? client.webApps.updateApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot, update)
           : client.webApps.updateApplicationSettings(resourceGroup, webApp.name, update))
       }
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${renderWebApp(webApp)}.\n`
+      )
     }
   }
 
@@ -311,21 +286,13 @@ export class PluginCommand extends AasUninstrumentCommand {
     }
   }
 
-  public async removeTags(
-    subscriptionId: string,
-    resourceGroup: string,
-    webApp: WebApp,
-    tags: Record<string, string>,
-    hasAasSsi = false
-  ) {
+  public async removeTags(subscriptionId: string, resourceGroup: string, webApp: WebApp, tags: Record<string, string>) {
     const updatedTags = {...tags}
     delete updatedTags.service
     delete updatedTags.env
     delete updatedTags.version
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
-    if (hasAasSsi) {
-      delete updatedTags[AAS_SSI_TAG]
-    }
+    delete updatedTags[AAS_SSI_TAG]
     if (!sortedEqual(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
@@ -335,9 +302,6 @@ export class PluginCommand extends AasUninstrumentCommand {
             {properties: {tags: updatedTags}}
           )
         } catch (error) {
-          if (hasAasSsi) {
-            throw error
-          }
           this.context.stdout.write(
             renderError(`Failed to update tags for ${renderWebApp(webApp)}: ${formatError(error)}`)
           )

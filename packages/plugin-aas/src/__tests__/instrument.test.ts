@@ -177,6 +177,28 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
+    test('Does not treat the SSI telemetry tag as existing SSI', async () => {
+      webAppsOperations.get.mockResolvedValue({
+        ...LINUX_CODE_WEB_APP,
+        tags: {dd_sls_injection_mode: 'single_language'},
+        siteConfig: {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'DOTNET|8.0'},
+      })
+
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            CORECLR_ENABLE_PROFILING: '1',
+            CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          }),
+        })
+      )
+    })
+
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
       expect(code).toEqual(0)
@@ -1102,6 +1124,22 @@ describe('aas instrument', () => {
         'staging'
       )
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_SLOT_ID, expect.any(Object))
+    })
+  })
+
+  describe('addTags', () => {
+    test('keeps SSI tag updates best effort', async () => {
+      const command = new InstrumentCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command.dryRun = false
+      Reflect.set(command, 'resourceClient', {
+        tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
+      })
+      updateTags.mockRejectedValue(new Error('tag update failed'))
+
+      await expect(
+        command.addTags(DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, NULL_SUBSCRIPTION_ID, 'rg', {name: 'app'}, {}, true)
+      ).resolves.toBeUndefined()
     })
   })
 
