@@ -1,4 +1,4 @@
-import type {FirelensConfigurationType, LogDriver} from '@aws-sdk/client-ecs'
+import type {ContainerCondition, FirelensConfigurationType, LogDriver} from '@aws-sdk/client-ecs'
 
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
@@ -70,6 +70,13 @@ export const AGENT_HEALTH_CHECK_RETRIES = 3
 export const AGENT_HEALTH_CHECK_START_PERIOD = 60
 
 /**
+ * The `dependsOn` conditions that matter to the sidecars: ECS only accepts `HEALTHY` on a container
+ * that declares a health check, so a dependency on a sidecar that has none waits for its `START`.
+ */
+export const HEALTHY_DEPENDENCY_CONDITION: ContainerCondition = 'HEALTHY'
+export const START_DEPENDENCY_CONDITION: ContainerCondition = 'START'
+
+/**
  * The only log driver whose configuration can be borrowed for a sidecar as-is. Other drivers route
  * through a container this command did not write, which may not be configured to accept the logs of
  * a container it was never told about.
@@ -137,6 +144,9 @@ export const DD_AGENT_HOST_ENV_VAR = 'DD_AGENT_HOST'
 /**
  * The volume carrying the Agent's APM and DogStatsD sockets. The tracers write to it and the Agent
  * reads from it, which is why both sides mount it at the path the Agent's image already listens on.
+ *
+ * Linux only: Windows containers have no Unix sockets, so a Windows task reaches the Agent over the
+ * loopback address instead.
  */
 export const AGENT_SOCKET_VOLUME_NAME = 'dd-sockets'
 export const AGENT_SOCKET_MOUNT_PATH = '/var/run/datadog'
