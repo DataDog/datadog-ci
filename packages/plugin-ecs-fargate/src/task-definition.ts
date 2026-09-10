@@ -479,8 +479,15 @@ type Platform = {
  * Whether the task runs Windows containers, which the Agent sidecar has to be built differently
  * for. A task definition that declares no `runtimePlatform`, or declares `LINUX`, runs Linux.
  */
-const isWindowsTask = (taskDefinition: TaskDefinition): boolean =>
+const isWindowsTask = (taskDefinition: Pick<TaskDefinition, 'runtimePlatform'>): boolean =>
   taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
+
+/**
+ * Whether a declared name is the environment variable `name`.
+ * Names are compared using platform aware matching.
+ */
+const isNamed = (declared: string | undefined, name: string, windows: boolean): boolean =>
+  windows ? declared?.toLowerCase() === name.toLowerCase() : declared === name
 
 /**
  * What the task's platform allows, out of what the settings ask for. Windows containers have no
@@ -533,10 +540,9 @@ const buildAgentContainer = ({
   const {windows} = platform
   const warnings: string[] = []
 
-  // The API key lives either in `secrets` or in `environment`, never both, so switching between the
-  // two does not leave the old one behind. The field is only written when there is something to put
-  // in it, so a task definition that never had secrets does not gain an empty list.
-  const inheritedSecrets = (existing?.secrets ?? []).filter((secret) => secret.name !== API_KEY_ENV_VAR)
+  // Keeps the API key in either `secrets` or `environment`, never both, matching names the way the
+  // platform resolves them. The field is omitted if there is nothing added.
+  const inheritedSecrets = (existing?.secrets ?? []).filter((secret) => !isNamed(secret.name, API_KEY_ENV_VAR, windows))
   let secrets: Secret[] | undefined
   if (settings.apiKeySecretArn) {
     secrets = [...inheritedSecrets, {name: API_KEY_ENV_VAR, valueFrom: settings.apiKeySecretArn}]
@@ -545,7 +551,7 @@ const buildAgentContainer = ({
   }
 
   const inheritedEnvironment = settings.apiKeySecretArn
-    ? (existing?.environment ?? []).filter((envVar) => envVar.name !== API_KEY_ENV_VAR)
+    ? (existing?.environment ?? []).filter((envVar) => !isNamed(envVar.name, API_KEY_ENV_VAR, windows))
     : existing?.environment
 
   if (existing !== undefined && existing.essential !== false) {
@@ -925,23 +931,28 @@ const withMaskedLogConfiguration = (logConfiguration: LogConfiguration): LogConf
 }
 
 /**
- * The task definition with any plaintext API key masked, for printing. Covers the Agent's
- * environment and FireLens log driver options.
+ * The task definition with any plaintext API key masked, for printing.
+ * Covers the Agent's environment and FireLens log driver options, comparing names using
+ * platform-aware matching
  */
-export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => ({
-  ...input,
-  containerDefinitions: input.containerDefinitions?.map((container) =>
-    removeUndefinedValues({
-      ...container,
-      environment: container.environment?.map((envVar) =>
-        envVar.name === API_KEY_ENV_VAR && envVar.value !== undefined
-          ? {...envVar, value: maskApiKey(envVar.value)}
-          : envVar
-      ),
-      logConfiguration: container.logConfiguration && withMaskedLogConfiguration(container.logConfiguration),
-    })
-  ),
-})
+export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => {
+  const windows = isWindowsTask(input)
+
+  return {
+    ...input,
+    containerDefinitions: input.containerDefinitions?.map((container) =>
+      removeUndefinedValues({
+        ...container,
+        environment: container.environment?.map((envVar) =>
+          isNamed(envVar.name, API_KEY_ENV_VAR, windows) && envVar.value !== undefined
+            ? {...envVar, value: maskApiKey(envVar.value)}
+            : envVar
+        ),
+        logConfiguration: container.logConfiguration && withMaskedLogConfiguration(container.logConfiguration),
+      })
+    ),
+  }
+}
 
 /**
  * The task definition without the tag recording the CLI version that produced it, which is the only
