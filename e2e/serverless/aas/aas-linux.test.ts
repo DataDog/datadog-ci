@@ -209,7 +209,8 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
       throw new Error(`SSI instrumentation failed:\n${result.stdout}\n${result.stderr}`)
     }
     verifyLinuxInstrumented(appName, resourceGroup, subscriptionId, true)
-  }, 900_000)
+    // Staging the tracer via OneDeploy can take tens of minutes on a busy App Service plan
+  }, 1_800_000)
 
   it('emits request telemetry without app tracer dependencies', async () => {
     const hostnameResult = await execPromise(

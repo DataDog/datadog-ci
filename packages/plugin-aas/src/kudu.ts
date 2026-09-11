@@ -77,7 +77,7 @@ export const getKuduClient = async (
       // uploaded via VFS), so treat 404 as "no deployment visible" instead of failing the publish.
       const getDeployment = async (path: string) => {
         try {
-          return await request<{id?: string; status?: number}>('GET', path)
+          return await request<{id?: string; status?: number; status_text?: string}>('GET', path)
         } catch (error) {
           if (isRequestError(error) && error.response?.status === 404) {
             return {data: undefined, headers: {}}
@@ -101,21 +101,25 @@ export const getKuduClient = async (
             return `${location.pathname}${location.search}`
           })()
         : '/api/deployments/latest'
-      for (let attempt = 0; attempt < 300; attempt++) {
+      // OneDeploy extracts the tracer onto the Azure Files-backed /home mount, which can take
+      // well over ten minutes when the App Service plan is busy, so poll generously.
+      let lastStatus: string | undefined
+      for (let attempt = 0; attempt < 600; attempt++) {
         const deployment = await getDeployment(deploymentPath)
         if (!publishResponse.headers.location && deployment.data?.id === previousDeployment.data?.id) {
-          await new Promise((resolve) => setTimeout(resolve, 1_000))
+          await new Promise((resolve) => setTimeout(resolve, 2_000))
           continue
         }
+        lastStatus = deployment.data?.status_text ?? lastStatus
         if (deployment.data?.status === KUDU_DEPLOYMENT_STATUS.FAILED) {
           throw new Error('The SCM deployment failed.')
         }
         if (deployment.data?.status === KUDU_DEPLOYMENT_STATUS.SUCCESS) {
           return
         }
-        await new Promise((resolve) => setTimeout(resolve, 1_000))
+        await new Promise((resolve) => setTimeout(resolve, 2_000))
       }
-      throw new Error('Timed out waiting for the SCM deployment.')
+      throw new Error(`Timed out waiting for the SCM deployment.${lastStatus ? ` Last status: ${lastStatus}` : ''}`)
     },
     hasArtifacts: async (artifacts) => {
       const checks = artifacts
