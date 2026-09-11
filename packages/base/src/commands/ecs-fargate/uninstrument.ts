@@ -11,7 +11,7 @@ export class EcsFargateUninstrumentCommand extends EcsFargateCommand {
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Revert Datadog instrumentation in an AWS ECS Fargate Task Definition.',
+    description: 'Revert Datadog instrumentation from an Amazon ECS Fargate task definition.',
   })
 
   private envVars = Option.Array('-e,--env-vars', {
