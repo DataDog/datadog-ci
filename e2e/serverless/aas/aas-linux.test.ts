@@ -202,7 +202,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
   it('instruments code-based app and verifies staged tracer', async () => {
     const result = await execPromiseWithRetries(instrumentCommand, {DD_API_KEY: process.env.DATADOG_API_KEY})
     if (result.exitCode !== 0) {
-      throw new Error(`SSI instrumentation failed: ${result.stderr || result.stdout}`)
+      throw new Error(`SSI instrumentation failed:\n${result.stdout}\n${result.stderr}`)
     }
     verifyLinuxInstrumented(appName, resourceGroup, subscriptionId, true)
   }, 900_000)
