@@ -104,12 +104,21 @@ export const getKuduClient = async (
       return result.data?.ExitCode === 0
     },
     deleteDirectory: async (directory) => {
-      const result = await request<{ExitCode?: number}>('POST', '/api/command', {
-        command: `/bin/bash -c "${escapeBashArgument(`rm -rf -- ${directory}`)}"`,
-        dir: '/home',
-      })
-      if (result.data?.ExitCode !== 0) {
-        throw new Error(`Failed to delete ${directory} from the Web App.`)
+      // Deleting onto the Azure Files-backed /home mount races directory enumeration on CIFS and
+      // intermittently fails with "Directory not empty" right after the app releases the files,
+      // so retry a few times before giving up.
+      for (let attempt = 0; ; attempt++) {
+        const result = await request<{ExitCode?: number}>('POST', '/api/command', {
+          command: `/bin/bash -c "${escapeBashArgument(`rm -rf -- ${directory}`)}"`,
+          dir: '/home',
+        })
+        if (result.data?.ExitCode === 0) {
+          return
+        }
+        if (attempt >= 5) {
+          throw new Error(`Failed to delete ${directory} from the Web App.`)
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5_000))
       }
     },
   }
