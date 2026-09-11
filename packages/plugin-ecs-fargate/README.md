@@ -1,4 +1,4 @@
-You can use the CLI to instrument your AWS ECS Fargate task definitions with Datadog. The command adds the Datadog Agent as a sidecar container, gives the application containers the environment their tracers read, and registers a new task definition revision. Your container images are left untouched.
+You can use the CLI to instrument your AWS ECS Fargate task definitions with Datadog. The command adds the Datadog Agent as a sidecar container, sets the environment variables your tracers read, and registers a new task definition revision. Your container images are left untouched.
 
 ## Commands
 
@@ -6,7 +6,7 @@ You can use the CLI to instrument your AWS ECS Fargate task definitions with Dat
 
 **Warning:** The `ecs-fargate instrument` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
 
-Run `datadog-ci ecs-fargate instrument` to add the Datadog Agent sidecar to an ECS Fargate task definition. The command reads the task definitions you name, adds the `datadog-agent` container to each of them, and registers the result as a new revision. Nothing that is running changes until the new revision is deployed, which you can leave to the command with `--ecs-service`.
+Run `datadog-ci ecs-fargate instrument` to add the Datadog Agent sidecar to an ECS Fargate task definition. The command reads the task definitions you name, adds the `datadog-agent` container to each of them, and registers the result as a new revision. Running tasks do not change until the new revision is deployed. Pass `--ecs-service` to have the command update the service for you.
 
 ```bash
 export DD_BETA_COMMANDS_ENABLED=1
@@ -36,17 +36,17 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> --dry-run
 ```
 
-Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE` is `--service`, or the task definition family when `--service` is omitted, and is written to the application containers, the Agent, the Docker labels, and the revision tags so they cannot disagree. `DD_TRACE_ENABLED` and `DD_LOGS_INJECTION` are only filled in when the container does not set them itself, so a task definition that has already made a choice keeps it. Everything else the command is asked for wins over what the task definition had.
+Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE` is `--service`, or the task definition family when `--service` is omitted, and is written to the application containers, the Agent, the Docker labels, and the revision tags so they cannot disagree. `DD_TRACE_ENABLED` and `DD_LOGS_INJECTION` are set only when the container does not already set them. Other values you pass overwrite the task definition.
 
 Product settings the command owns are applied when those flags are on and removed when they are not: `--no-appsec` drops `DD_APPSEC_ENABLED`, omitting `--llmobs` drops the LLM Observability variables, and `--no-source-code-integration` drops the Git tags from `DD_TAGS`.
 
-The same three unified service tag values are also written to the application containers as the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels. The environment variables tag what a tracer running inside a container sends; these labels are what the Agent reads to tag the metrics it collects about the container from the outside, so the two line up in Datadog. The Agent container is deliberately left unlabelled, so that it reports its own resource usage under its own name rather than your service's. Labels that are not Datadog's are left alone.
+The same three unified service tag values are also written to the application containers as the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels. The environment variables tag what a tracer running inside a container sends; these labels are what the Agent reads to tag the metrics it collects about the container from the outside, so the two line up in Datadog. The Agent container is deliberately left unlabeled, so that it reports its own resource usage under its own name rather than your service's. Labels that are not Datadog's are left alone.
 
 #### Reaching the Agent
 
 The tracers reach the Agent over a Unix socket by default. The command adds a `dd-sockets` volume to the task, mounts it at `/var/run/datadog` on both the Agent and your application containers, and points the tracers at it with `DD_TRACE_AGENT_URL` and `DD_DOGSTATSD_URL`. Pass `--no-agent-socket` to use the task's loopback address instead, which sets `DD_AGENT_HOST` to `127.0.0.1` and leaves the volume off. [Windows tasks](#windows-tasks) always use the loopback address.
 
-Unlike the switches above, the command owns these: the two ways of reaching the Agent are mutually exclusive, so moving between them removes the one that no longer applies rather than leaving a socket path behind that nothing is listening on.
+These Agent connection settings are mutually exclusive. Switching from the Unix socket to loopback removes the socket path and volume so nothing is left pointing at a socket that is not listening.
 
 The Agent sidecar accepts custom metrics over DogStatsD: `DD_DOGSTATSD_ORIGIN_DETECTION` and `DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT` are turned on and `DD_DOGSTATSD_TAG_CARDINALITY` is set to `orchestrator`, so your metrics are tagged with the task that submitted them. These are filled in the same way, so a task definition that already sets them keeps its own values.
 
@@ -59,21 +59,28 @@ Existing log configurations are replaced. Omitting `--log-collection` on a later
 
 #### Windows tasks
 
-Windows task definitions are instrumented with the following differences:
+Windows task definitions are instrumented the same way, with these differences the command applies after reading the task's `runtimePlatform`:
 
-- The Agent runs the `-servercore` build of the image, published as a manifest list so that ECS pulls the variant matching your Windows Server version.
+- The Agent runs the `-servercore` build of the image, published as a manifest list so ECS pulls the variant matching your Windows Server version.
 - The Agent container is given `C:\` as its working directory, which it needs and its image does not set.
 - The tracers reach the Agent on the task's loopback address, `127.0.0.1`, because Windows containers cannot share the Unix socket used on Linux. The `dd-sockets` volume is left off, and `--no-agent-socket` makes no difference on a Windows task.
-- The Agent gets no health check, as its probe is a shell script that only the Linux image ships. A probe would report the Agent as permanently unhealthy
-- `--log-collection` is refused, because FireLens does not run on Windows Fargate. Any `datadog-log-router` sidecar on the task is removed.
+- The Agent gets no health check, because the probe is a Linux-only shell script. A probe would report the Agent as permanently unhealthy.
+
+`--log-collection` is refused because FireLens does not run on Windows. Any `datadog-log-router` sidecar on the task is removed.
 
 A run warns when it drops the socket, when it leaves the Agent without a health check, and when it changes what one of your containers waits for, so you can see what it decided.
 
-If you pass `--agent-image` for a Windows task, it is used exactly as given, so point it at a `-servercore` tag: mirroring `public.ecr.aws/datadog/agent:latest` into your own registry gives you the Linux image, which will not start on Windows.
+If you pass `--agent-image` for a Windows task, it is used exactly as given, so point it at a `-servercore` tag. Mirroring `public.ecr.aws/datadog/agent:latest` into your own registry gives you the Linux image, which does not start on Windows.
 
 #### Deploying the new revision
 
-Pass `--ecs-service` for each service that should run the revision the command just registered, and `--cluster` if those services are not in the `default` cluster. A service named by its full ARN already says which cluster it runs in, so `--cluster` can be left off; passing a `--cluster` that contradicts the ARN's cluster is an error, not a silent override. A run updates services in a single cluster, so ARNs naming more than one are reported too. Each service is matched to the task definition family it currently runs, so a run over several task definitions points each service at its own new revision, and a service already running the instrumented revision is left alone rather than redeployed. The matching happens before anything is registered, so a service running a family that no `--task-definition` covers is reported without a revision having been registered for it. Updating a service starts an ECS deployment: the command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
+Pass `--ecs-service` for each service that should run the revision the command just registered. Pass `--cluster` if those services are not in the `default` cluster.
+
+A service named by its full ARN already names its cluster, so `--cluster` can be left off. Passing a `--cluster` that contradicts the ARN's cluster is an error, not a silent override. A run updates services in a single cluster, so ARNs that name more than one cluster are reported as an error.
+
+Each service is matched to the task definition family it currently runs. A run over several task definitions points each service at its own new revision. A service already running the instrumented revision is left alone rather than redeployed. Matching happens before anything is registered, so a service running a family that no `--task-definition` covers is reported without a revision having been registered for it.
+
+Updating a service starts an ECS deployment. The command returns as soon as ECS accepts it, and the rollout follows your service's deployment configuration.
 
 Because a service is matched by family, a run instruments one revision per family: naming two revisions of the same family, as `--task-definition my-app:3 --task-definition my-app:4` does, is reported rather than leaving the choice of which one to deploy to the order they were passed in.
 
@@ -83,7 +90,7 @@ A task definition and the services running it are instrumented and deployed on t
 
 **Warning:** The `ecs-fargate uninstrument` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
 
-Run `datadog-ci ecs-fargate uninstrument` to take Datadog instrumentation back off an ECS Fargate task definition. The command reads the task definitions you name, removes what `instrument` added, and registers the result as a new revision. As with `instrument`, nothing that is running changes until the new revision is deployed, which you can add to the command with `--ecs-service`.
+Run `datadog-ci ecs-fargate uninstrument` to remove Datadog instrumentation from an ECS Fargate task definition. The command reads the task definitions you name, removes what `instrument` added, and registers the result as a new revision. As with `instrument`, running tasks do not change until the new revision is deployed. Pass `--ecs-service` to have the command update the service for you.
 
 ```bash
 export DD_BETA_COMMANDS_ENABLED=1
@@ -147,11 +154,11 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 | `--dry` or `--dry-run` | `-d` | Preview the changes the command would apply | `false` |
 | `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition. Can be specified multiple times. |  |
 | `--region` | `-r` | The AWS region the task definition lives in |  |
-| `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--profile` |  | Specify the AWS named profile credentials to use. See the AWS CLI documentation on named profiles: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html |  |
 | `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly registered revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
 | `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
 | `--config` |  | Path to the configuration file. |  |
-| `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
+| `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over `DD_API_KEY`, which is written to the task definition in plain text. |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
 | `--no-agent-socket` |  | Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. Windows tasks always use the loopback address. |  |
 | `--log-collection` or `--logCollection` |  | Send the task's logs to Datadog. Replaces each container's existing log configuration. Not supported on Windows. |  |
@@ -160,7 +167,7 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the task in the format "key1:value1,key2:value2". |  |
 | `--env-vars` | `-e` | Additional environment variables to set on the application containers and the Datadog Agent. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
-| `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your services with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--tracing` |  | Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`. |  |
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
@@ -176,7 +183,7 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 | `--dry` or `--dry-run` | `-d` | Preview the changes the command would apply | `false` |
 | `--task-definition` or `--taskDefinition` |  | The family, family:revision, or ARN of the task definition. Can be specified multiple times. |  |
 | `--region` | `-r` | The AWS region the task definition lives in |  |
-| `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--profile` |  | Specify the AWS named profile credentials to use. See the AWS CLI documentation on named profiles: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html |  |
 | `--ecs-service` or `--ecsService` |  | The name of an ECS service to update to the newly registered revision, so that the change rolls out without a manual deployment. Can be specified multiple times. |  |
 | `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
 | `--config` |  | Path to the configuration file. |  |
