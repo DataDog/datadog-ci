@@ -27,7 +27,6 @@ export type AasSsiLanguage = Exclude<Language, 'ruby'>
 export interface AasCodeRuntime {
   readonly language: AasSsiLanguage
   readonly runtimeVersion: string
-  readonly architecture: 'x64'
   readonly libc: Libc
 }
 
@@ -81,13 +80,13 @@ export const parseLinuxFxVersion = (linuxFxVersion: string | undefined): AasCode
     throw unsupportedRuntime(value)
   }
 
-  return {architecture: 'x64', ...runtime}
+  return runtime
 }
 
 export const getFleetRepository = (language: AasSsiLanguage): string =>
   `apm-library-${LANGUAGE_METADATA[language].tracerLanguage}-package`
 
-export const resolveFleetPackage = (index: unknown, manifest: unknown): FleetPackage => {
+export const selectFleetManifest = (index: unknown): OciDescriptor => {
   const indexRecord = asRecord(index, 'OCI index')
   if (indexRecord.schemaVersion !== 2 || indexRecord.mediaType !== OCI_INDEX_MEDIA_TYPE) {
     throw new Error('The Fleet package index is not a supported OCI index.')
@@ -97,8 +96,7 @@ export const resolveFleetPackage = (index: unknown, manifest: unknown): FleetPac
     throw new Error('The Fleet package index does not contain manifests.')
   }
 
-  const manifests: unknown[] = indexRecord.manifests
-  const linuxAmd64Manifests = manifests.filter(
+  const linuxAmd64Manifests = indexRecord.manifests.filter(
     (value): value is Record<string, unknown> =>
       isRecord(value) &&
       isRecord(value.platform) &&
@@ -108,14 +106,16 @@ export const resolveFleetPackage = (index: unknown, manifest: unknown): FleetPac
   if (linuxAmd64Manifests.length !== 1) {
     throw new Error('The Fleet package index must contain exactly one Linux amd64 manifest.')
   }
-
-  const manifestDescriptor = parseDescriptor(linuxAmd64Manifests[0], OCI_MANIFEST_MEDIA_TYPE, 'manifest')
   if (linuxAmd64Manifests[0].artifactType !== FLEET_PACKAGE_MEDIA_TYPE) {
     throw new Error(
       `The Fleet package manifest has unsupported artifact type ${describe(linuxAmd64Manifests[0].artifactType)}.`
     )
   }
 
+  return parseDescriptor(linuxAmd64Manifests[0], OCI_MANIFEST_MEDIA_TYPE, 'manifest')
+}
+
+export const resolveFleetPackage = (manifestDescriptor: OciDescriptor, manifest: unknown): FleetPackage => {
   const manifestRecord = asRecord(manifest, 'OCI manifest')
   if (manifestRecord.schemaVersion !== 2 || manifestRecord.mediaType !== OCI_MANIFEST_MEDIA_TYPE) {
     throw new Error('The Fleet package manifest is not a supported OCI manifest.')

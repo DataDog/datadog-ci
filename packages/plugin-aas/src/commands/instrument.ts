@@ -45,7 +45,7 @@ import {
 import {getKuduClient} from '../kudu'
 import {parseLinuxFxVersion} from '../ssi'
 import {AAS_SSI_TAG, AAS_SSI_TAG_VALUE, hasStagedAasTracer, mergeAasSsiEnv, removeAasSsiEnv} from '../ssi-env'
-import {stageAasTracer} from '../ssi-stage'
+import {resolveAasTracerStaging} from '../ssi-stage'
 
 // Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
 const stickyNames = (config: AasConfigOptions, additional: string[] = []): string[] => [
@@ -192,6 +192,13 @@ export class PluginCommand extends AasInstrumentCommand {
 
       if (isWindows(site)) {
         // Windows instrumentation via extension
+        if (config.apmEnabled) {
+          this.context.stdout.write(
+            renderSoftWarning(
+              'Automatic tracer injection applies only to code-based Linux Web Apps. Continuing with standard Datadog instrumentation.'
+            )
+          )
+        }
         const runtime = config.windowsRuntime ?? getWindowsRuntime(site, existingEnvVars)
 
         if (isFunctionApp(site)) {
@@ -266,9 +273,11 @@ export class PluginCommand extends AasInstrumentCommand {
             `${this.dryRunPrefix}Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
           )
         } else {
-          const root = await stageAasTracer(await getKuduClient(aasClient, resourceGroup, webApp), runtime)
+          const staging = await resolveAasTracerStaging(runtime)
           const baseEnvVars = getEnvVars({...config, isDotnet: false}, linuxSite, webApp)
-          ssiEnvVars = mergeAasSsiEnv({...existingEnvVars, ...baseEnvVars}, runtime, root)
+          // Merge before publishing so environment conflicts abort before any app mutation.
+          ssiEnvVars = mergeAasSsiEnv({...existingEnvVars, ...baseEnvVars}, runtime, staging.root)
+          await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp))
         }
       } else if (removesSsi) {
         ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, linuxSite, webApp)}

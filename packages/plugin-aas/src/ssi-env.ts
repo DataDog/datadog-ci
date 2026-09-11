@@ -9,6 +9,7 @@ import {
 import {
   getLanguageInjectionSpec,
   LANGUAGE_INJECTION_ENV_NAMES,
+  type LanguageInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
 export const AAS_SSI_STAGING_ROOT = '/home/data/datadog-tracer'
@@ -30,18 +31,21 @@ export const hasStagedAasTracer = (settings: Record<string, string>): boolean =>
 export const getStagedRoot = (runtime: AasCodeRuntime, version: string, digest: string): string =>
   `${AAS_SSI_STAGING_ROOT}/${runtime.language}/${version}-${digest.replace(/^sha256:/, '')}`
 
-export const mergeAasSsiEnv = (
-  current: Record<string, string>,
-  runtime: AasCodeRuntime,
-  root: string
-): Record<string, string> => {
-  const spec = getLanguageInjectionSpec({
+export const getAasInjectionSpec = (runtime: AasCodeRuntime, root: string): LanguageInjectionSpec =>
+  getLanguageInjectionSpec({
     language: runtime.language,
     registry: 'gcr.io/datadoghq',
     version: 'latest',
     libc: runtime.libc,
     root,
   })
+
+export const mergeAasSsiEnv = (
+  current: Record<string, string>,
+  runtime: AasCodeRuntime,
+  root: string
+): Record<string, string> => {
+  const spec = getAasInjectionSpec(runtime, root)
   const env = removeLegacyAasDotnetEnv(removeAasSsiEnv(current))
 
   for (const fragment of spec.env) {
@@ -144,10 +148,4 @@ const removeSpaceFragments = (value: string, remove: (part: string) => boolean):
 }
 
 export const getAasSsiSpecEnv = (runtime: AasCodeRuntime, root: string): readonly EnvFragment[] =>
-  getLanguageInjectionSpec({
-    language: runtime.language,
-    registry: 'gcr.io/datadoghq',
-    version: 'latest',
-    libc: runtime.libc,
-    root,
-  }).env
+  getAasInjectionSpec(runtime, root).env
