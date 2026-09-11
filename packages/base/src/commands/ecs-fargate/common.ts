@@ -126,7 +126,8 @@ export abstract class EcsFargateCommand extends BaseCommand {
     description: 'The AWS region the task definition lives in',
   })
   private profile = Option.String('--profile', {
-    description: `Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles`,
+    description:
+      'Specify the AWS named profile credentials to use. See the AWS CLI documentation on named profiles: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html',
   })
   private ecsServices = Option.Array('--ecs-service,--ecsService', {
     description:
