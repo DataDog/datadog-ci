@@ -2,7 +2,7 @@ import type {WebSiteManagementClient} from '@azure/arm-appservice'
 import type {WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {DefaultAzureCredential} from '@azure/identity'
-import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
+import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
 export interface KuduClient {
@@ -73,7 +73,19 @@ export const getKuduClient = async (
 
   return {
     publish: async (directory, archive) => {
-      const previousDeployment = await request<{id?: string}>('GET', '/api/deployments/latest')
+      // Kudu answers 404 for deployment queries when the app has no deployments yet (e.g. code
+      // uploaded via VFS), so treat 404 as "no deployment visible" instead of failing the publish.
+      const getDeployment = async (path: string) => {
+        try {
+          return await request<{id?: string; status?: number}>('GET', path)
+        } catch (error) {
+          if (isRequestError(error) && error.response?.status === 404) {
+            return {data: undefined, headers: {}}
+          }
+          throw error
+        }
+      }
+      const previousDeployment = await getDeployment('/api/deployments/latest')
       const publishResponse = await request(
         'POST',
         `/api/publish?type=zip&path=${encodeURIComponent(directory)}&clean=false&restart=false&async=true`,
@@ -90,7 +102,7 @@ export const getKuduClient = async (
           })()
         : '/api/deployments/latest'
       for (let attempt = 0; attempt < 300; attempt++) {
-        const deployment = await request<{id?: string; status?: number; complete?: boolean}>('GET', deploymentPath)
+        const deployment = await getDeployment(deploymentPath)
         if (!publishResponse.headers.location && deployment.data?.id === previousDeployment.data?.id) {
           await new Promise((resolve) => setTimeout(resolve, 1_000))
           continue
