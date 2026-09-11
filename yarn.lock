@@ -5413,11 +5413,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.11.20":
-  version: 2.11.22
-  resolution: "baseline-browser-mapping@npm:2.11.22"
+  version: 2.11.21
+  resolution: "baseline-browser-mapping@npm:2.11.21"
   bin:
     baseline-browser-mapping: dist/cli.cjs
-  checksum: 10/edcd3b5a653b3bfb55327e5637420a843d05a3918270d0ce21ba5c80ecfdd74b1bbb929a77f31c488d7145e009a37e8b5870a178813e6610098cfea9dab8a5e4
+  checksum: 10/b4d223df8dbb8deeaa3dae3b9b60ad48b24c57a5473827b5a6ee1c21917e7c37af2185224c5366f2932654ec5fb1a9fee4f95fe7213cc29f4347550f25e4234b
   languageName: node
   linkType: hard
 
@@ -6333,9 +6333,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.420":
-  version: 1.5.427
-  resolution: "electron-to-chromium@npm:1.5.427"
-  checksum: 10/a24162110bd8540a186036667e4315b6e1dffd47d086311e6fb8bc703e984db81bd1d74561fcaf1f9ced2c27a215958cb23776b76eb157b4abe5a2dcf4aa726d
+  version: 1.5.425
+  resolution: "electron-to-chromium@npm:1.5.425"
+  checksum: 10/c8bf467e0b639c5ffac58a046afb5d8088b5aae2513dd017096ee89f26fc7585c37f56ec6c6e71fdbc75fc31120c5736961c78a79c71f2edb5e14392319533b4
   languageName: node
   linkType: hard
 
@@ -11944,8 +11944,8 @@ __metadata:
   linkType: hard
 
 "update-browserslist-db@npm:^1.3.2":
-  version: 1.3.3
-  resolution: "update-browserslist-db@npm:1.3.3"
+  version: 1.3.2
+  resolution: "update-browserslist-db@npm:1.3.2"
   dependencies:
     escalade: "npm:^3.2.0"
     picocolors: "npm:^1.1.1"
@@ -11953,7 +11953,7 @@ __metadata:
     browserslist: ">= 4.21.0"
   bin:
     update-browserslist-db: cli.js
-  checksum: 10/c60c18c53ba53915b377830db55049cd3ee31129633b4e386d2e48f9a1a15ade7503a80a57dd11d66cbac583a8ad3f2d61e938895b1c2155323fd4367530f5b2
+  checksum: 10/ca883e9d0fca1b5bfb9d5e7d9468c5ddd1d66ea827566f474875171381ad33b84aa555c138094fb2c6297c680e06482ad8b4c1ad931e8bfab9a4cf36ea9cf006
   languageName: node
   linkType: hard
 
