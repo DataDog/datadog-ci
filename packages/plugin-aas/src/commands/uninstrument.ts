@@ -16,7 +16,6 @@ import chalk from 'chalk'
 import {
   AAS_DD_SETTING_NAMES,
   aggregateStickyBySite,
-  isDotnet,
   isWindows,
   isWindowsFunctionApp,
   mutateStickySlotSettings,
@@ -24,6 +23,8 @@ import {
   WEBSITE_PRIVATE_EXTENSIONS,
   type ProcessResult,
 } from '../common'
+import {getKuduClient} from '../kudu'
+import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, hasStagedAasTracer, removeAasSsiEnv} from '../ssi-env'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -127,12 +128,7 @@ export class PluginCommand extends AasUninstrumentCommand {
         )
       } else {
         // Linux uninstrumentation via sidecar
-        await this.uninstrumentSidecar(
-          client,
-          {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? webApp.name},
-          resourceGroup,
-          webApp
-        )
+        await this.uninstrumentSidecar(config, client, resourceGroup, webApp)
       }
       await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
@@ -200,8 +196,8 @@ export class PluginCommand extends AasUninstrumentCommand {
   }
 
   public async uninstrumentSidecar(
-    client: WebSiteManagementClient,
     config: AasConfigOptions,
+    client: WebSiteManagementClient,
     resourceGroup: string,
     webApp: WebApp
   ) {
@@ -213,7 +209,42 @@ export class PluginCommand extends AasUninstrumentCommand {
         ? client.webApps.deleteSiteContainerSlot(resourceGroup, webApp.name, webApp.slot, SIDECAR_CONTAINER_NAME)
         : client.webApps.deleteSiteContainer(resourceGroup, webApp.name, SIDECAR_CONTAINER_NAME))
     }
-    await this.removeEnvVars(config, webApp, client, resourceGroup)
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
+    const settings =
+      (
+        await (webApp.slot
+          ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
+          : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
+      ).properties ?? {}
+    await this.removeAasSsiEnvVars(config, webApp, client, resourceGroup, settings)
+    if (hasStagedAasTracer(settings) && !this.dryRun) {
+      await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+    }
+  }
+
+  public async removeAasSsiEnvVars(
+    config: AasConfigOptions,
+    webApp: WebApp,
+    client: WebSiteManagementClient,
+    resourceGroup: string,
+    currentEnvVars: Record<string, string>
+  ): Promise<void> {
+    const ssiCleaned = removeAasSsiEnv(currentEnvVars)
+    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
+    const settings = Object.fromEntries(Object.entries(ssiCleaned).filter(([key]) => !configuredSettings.has(key)))
+    if (!sortedEqual(currentEnvVars, settings)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
+      if (!this.dryRun) {
+        const update: StringDictionary = {properties: settings}
+        await (webApp.slot
+          ? client.webApps.updateApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot, update)
+          : client.webApps.updateApplicationSettings(resourceGroup, webApp.name, update))
+      }
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${renderWebApp(webApp)}.\n`
+      )
+    }
   }
 
   public async removeEnvVars(
@@ -259,6 +290,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     delete updatedTags.env
     delete updatedTags.version
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
+    delete updatedTags[AAS_SSI_TAG]
     if (!sortedEqual(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {

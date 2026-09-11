@@ -28,6 +28,7 @@ jest.mock('@azure/identity', () => ({
 const webAppsOperations = {
   get: jest.fn(),
   getConfiguration: jest.fn(),
+  getConfigurationSlot: jest.fn(),
   listSiteContainers: jest.fn(),
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
@@ -111,6 +112,7 @@ describe('aas instrument', () => {
       getToken.mockClear().mockResolvedValue({token: 'token'})
       webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
       webAppsOperations.getConfiguration.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
+      webAppsOperations.getConfigurationSlot.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
@@ -175,6 +177,30 @@ describe('aas instrument', () => {
         properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
       })
       expect(webAppsOperations.restart).toHaveBeenCalled()
+    })
+
+    test('Does not treat the SSI telemetry tag as existing SSI', async () => {
+      const siteConfig = {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'DOTNET|8.0'}
+      webAppsOperations.get.mockResolvedValue({
+        ...LINUX_CODE_WEB_APP,
+        tags: {dd_sls_injection_mode: 'single_language'},
+        siteConfig,
+      })
+      webAppsOperations.getConfiguration.mockResolvedValue(siteConfig)
+
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            CORECLR_ENABLE_PROFILING: '1',
+            CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          }),
+        })
+      )
     })
 
     test('Performs no actions in dry run mode', async () => {
@@ -938,15 +964,13 @@ describe('aas instrument', () => {
     })
 
     test('Ignores --musl flag and warns on non-containerized dotnet apps', async () => {
-      webAppsOperations.get.mockClear().mockResolvedValue({
-        ...CONTAINER_WEB_APP,
-        siteConfig: {
-          linuxFxVersion: 'DOTNETCORE|9.0',
-        },
-      })
+      const siteConfig = {linuxFxVersion: 'DOTNETCORE|9.0'}
+      webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, siteConfig})
+      webAppsOperations.getConfiguration.mockResolvedValue(siteConfig)
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--musl', '--dotnet'])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toMatchSnapshot()
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
     })
 
     test('Instruments a sidecar on a slot', async () => {
@@ -1102,6 +1126,22 @@ describe('aas instrument', () => {
         'staging'
       )
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_SLOT_ID, expect.any(Object))
+    })
+  })
+
+  describe('addTags', () => {
+    test('keeps SSI tag updates best effort', async () => {
+      const command = new InstrumentCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command.dryRun = false
+      Reflect.set(command, 'resourceClient', {
+        tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
+      })
+      updateTags.mockRejectedValue(new Error('tag update failed'))
+
+      await expect(
+        command.addTags(DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, NULL_SUBSCRIPTION_ID, 'rg', {name: 'app'}, {}, true)
+      ).resolves.toBeUndefined()
     })
   })
 
@@ -1292,6 +1332,7 @@ describe('aas instrument', () => {
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
+            {name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'},
           ],
         })
       )

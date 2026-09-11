@@ -21,7 +21,7 @@ export const triggerTraffic = async (
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      const response = await fetch(url, {signal: AbortSignal.timeout(30_000)})
+      const response = await fetch(url, {signal: AbortSignal.timeout(15_000)})
       const body = await response.text()
       console.log(`[traffic] attempt ${attempt}/${attempts} returned ${response.status}`)
       if (response.ok) {
@@ -37,7 +37,9 @@ export const triggerTraffic = async (
       console.log(`[traffic] attempt ${attempt}/${attempts} failed: ${lastError}`)
     }
 
-    await waitFor(intervalSeconds)
+    if (attempt < attempts) {
+      await waitFor(intervalSeconds)
+    }
   }
 
   throw new Error(`Failed to trigger traffic at ${url}: ${lastError}`)
