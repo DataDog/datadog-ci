@@ -13,11 +13,11 @@ export class EcsFargateInstrumentCommand extends EcsFargateCommand {
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Apply Datadog instrumentation to an AWS ECS Fargate Task Definition.',
+    description: 'Apply Datadog instrumentation to an Amazon ECS Fargate task definition.',
   })
 
   private apiKeySecretArn = Option.String('--api-key-secret-arn,--apiKeySecretArn', {
-    description: `The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text`,
+    description: `The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over \`DD_API_KEY\`, which is written to the task definition in plain text.`,
   })
   private agentImage = Option.String('--agent-image,--sidecar-image', {
     description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. Defaults to '${AGENT_IMAGE}'`,
@@ -50,7 +50,7 @@ export class EcsFargateInstrumentCommand extends EcsFargateCommand {
       'Additional environment variables to set on the application containers and the Datadog Agent. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
   })
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', {
-    description: `Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify \`--no-source-code-integration\` to disable. Defaults to 'true'`,
+    description: `Whether to enable the Datadog Source Code integration. This tags your services with the Git repository and the latest commit hash of the local directory. Specify \`--no-source-code-integration\` to disable. Defaults to 'true'`,
   })
   private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', {
     description: `Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify \`--no-upload-git-metadata\` to disable. Defaults to 'true'`,
