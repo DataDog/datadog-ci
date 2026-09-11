@@ -200,7 +200,11 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
   })
 
   it('instruments code-based app and verifies staged tracer', async () => {
-    const result = await execPromiseWithRetries(instrumentCommand, {DD_API_KEY: process.env.DATADOG_API_KEY})
+    const result = await execPromiseWithRetries(
+      instrumentCommand,
+      {DD_API_KEY: process.env.DATADOG_API_KEY},
+      {maxAttempts: 12, delaySeconds: 15}
+    )
     if (result.exitCode !== 0) {
       throw new Error(`SSI instrumentation failed:\n${result.stdout}\n${result.stderr}`)
     }
