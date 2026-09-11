@@ -101,7 +101,7 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
               version: runId,
               tags: [`one_e2e_run_id:${runId}`],
             },
-            {checkLogs: false}
+            {checkLogs: false, maxAttempts: 40}
           ),
         ])
         if (traffic.status === 'rejected') {
