@@ -94,7 +94,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
     const result = await execPromiseWithRetries(
       instrumentCommand,
       {DD_API_KEY: process.env.DATADOG_API_KEY},
-      {maxAttempts: 12, delaySeconds: 15}
+      {maxAttempts: 3, delaySeconds: 15}
     )
     if (result.exitCode !== 0) {
       throw new Error(`SSI instrumentation failed:\n${result.stdout}\n${result.stderr}`)
