@@ -85,6 +85,22 @@ export const getKuduClient = async (
           throw error
         }
       }
+      const getDeploymentLog = async (id: string | undefined): Promise<string> => {
+        if (!id) {
+          return ''
+        }
+        try {
+          const {data} = await request<{message?: string}[]>('GET', `/api/deployments/${id}/log`)
+          const messages = (data ?? [])
+            .map((entry) => entry.message)
+            .filter(Boolean)
+            .slice(-5)
+
+          return messages.length > 0 ? ` Log: ${messages.join(' | ')}` : ''
+        } catch {
+          return ''
+        }
+      }
       const previousDeployment = await getDeployment('/api/deployments/latest')
       const publishResponse = await request(
         'POST',
@@ -112,7 +128,7 @@ export const getKuduClient = async (
         }
         lastStatus = deployment.data?.status_text ?? lastStatus
         if (deployment.data?.status === KUDU_DEPLOYMENT_STATUS.FAILED) {
-          throw new Error('The SCM deployment failed.')
+          throw new Error(`The SCM deployment failed.${await getDeploymentLog(deployment.data?.id)}`)
         }
         if (deployment.data?.status === KUDU_DEPLOYMENT_STATUS.SUCCESS) {
           return
