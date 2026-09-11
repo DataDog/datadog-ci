@@ -217,7 +217,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-lambda@npm:^3.1128.0":
+"@aws-sdk/client-lambda@npm:3.1128.0":
   version: 3.1128.0
   resolution: "@aws-sdk/client-lambda@npm:3.1128.0"
   dependencies:
@@ -1724,7 +1724,7 @@ __metadata:
   dependencies:
     "@aws-sdk/client-cloudwatch-logs": "npm:3.1045.0"
     "@aws-sdk/client-iam": "npm:3.1045.0"
-    "@aws-sdk/client-lambda": "npm:^3.1128.0"
+    "@aws-sdk/client-lambda": "npm:3.1128.0"
     "@aws-sdk/credential-provider-ini": "npm:3.972.38"
     "@aws-sdk/credential-providers": "npm:3.1045.0"
     "@aws-sdk/types": "npm:3.973.8"
@@ -1741,7 +1741,7 @@ __metadata:
   peerDependencies:
     "@aws-sdk/client-cloudwatch-logs": ^3.1045.0
     "@aws-sdk/client-iam": ^3.1045.0
-    "@aws-sdk/client-lambda": ^3.1045.0
+    "@aws-sdk/client-lambda": ^3.1128.0
     "@aws-sdk/credential-providers": ^3.1045.0
     "@smithy/property-provider": 2.2.0
     "@smithy/util-retry": 2.2.0
