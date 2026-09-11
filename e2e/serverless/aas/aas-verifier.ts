@@ -17,6 +17,7 @@ const AAS_DD_SETTING_NAMES = [
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
   'DD_TAGS',
+  'DD_TRACE_ENABLED',
   'WEBSITES_ENABLE_APP_SERVICE_STORAGE',
 ]
 
@@ -57,6 +58,8 @@ const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode
       [
         '--fail',
         '--silent',
+        '--max-time',
+        '120',
         '--show-error',
         '--header',
         `Authorization: Bearer ${accessToken}`,
