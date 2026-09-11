@@ -1,4 +1,4 @@
-import type {AasConfigOptions, WebAppBySubscriptionAndGroup, WindowsRuntime} from './common'
+import type {AasConfigOptions, WindowsRuntime} from './common'
 
 import {Command, Option} from 'clipanion'
 
@@ -84,12 +84,6 @@ export class AasInstrumentCommand extends AasCommand {
       sidecarImage: this.sidecarImage,
       ...(this.apmEnabled ? {apmEnabled: true} : {}),
     }
-  }
-
-  public async ensureConfig(): Promise<[WebAppBySubscriptionAndGroup, AasConfigOptions, string[]]> {
-    const [webApps, config, errors] = await super.ensureConfig()
-
-    return [webApps, {...config, ...(this.apmEnabled ? {apmEnabled: true} : {})}, errors]
   }
 
   public async execute(): Promise<number | void> {

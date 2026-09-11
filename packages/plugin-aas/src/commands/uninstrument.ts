@@ -128,7 +128,7 @@ export class PluginCommand extends AasUninstrumentCommand {
         )
       } else {
         // Linux uninstrumentation via sidecar
-        await this.uninstrumentSidecar(client, resourceGroup, webApp)
+        await this.uninstrumentSidecar(config, client, resourceGroup, webApp)
       }
       await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
@@ -192,10 +192,15 @@ export class PluginCommand extends AasUninstrumentCommand {
     }
 
     // Updaing the environment variables will trigger a restart
-    await this.removeEnvVars(config, webApp, client, resourceGroup, undefined, additionalSettings)
+    await this.removeEnvVars(config, webApp, client, resourceGroup, additionalSettings)
   }
 
-  public async uninstrumentSidecar(client: WebSiteManagementClient, resourceGroup: string, webApp: WebApp) {
+  public async uninstrumentSidecar(
+    config: AasConfigOptions,
+    client: WebSiteManagementClient,
+    resourceGroup: string,
+    webApp: WebApp
+  ) {
     this.context.stdout.write(
       `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${renderWebApp(webApp)} (if it exists)\n`
     )
@@ -211,23 +216,22 @@ export class PluginCommand extends AasUninstrumentCommand {
           ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
           : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
       ).properties ?? {}
-    await this.removeAasSsiEnvVars(webApp, client, resourceGroup, settings)
+    await this.removeAasSsiEnvVars(config, webApp, client, resourceGroup, settings)
     if (hasStagedAasTracer(settings) && !this.dryRun) {
       await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
     }
   }
 
   public async removeAasSsiEnvVars(
+    config: AasConfigOptions,
     webApp: WebApp,
     client: WebSiteManagementClient,
     resourceGroup: string,
     currentEnvVars: Record<string, string>
   ): Promise<void> {
     const ssiCleaned = removeAasSsiEnv(currentEnvVars)
-    const agentSettings = new Set<string>(AAS_DD_SETTING_NAMES)
-    const settings = Object.fromEntries(
-      Object.entries(ssiCleaned).filter(([key]) => !agentSettings.has(key) && !key.startsWith('DD_'))
-    )
+    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
+    const settings = Object.fromEntries(Object.entries(ssiCleaned).filter(([key]) => !configuredSettings.has(key)))
     if (!sortedEqual(currentEnvVars, settings)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
@@ -248,7 +252,6 @@ export class PluginCommand extends AasUninstrumentCommand {
     webApp: WebApp,
     client: WebSiteManagementClient,
     resourceGroup: string,
-    currentEnvVars?: Record<string, string>,
     additionalSettings: string[] = []
   ) {
     const configuredSettings = new Set([
@@ -256,23 +259,18 @@ export class PluginCommand extends AasUninstrumentCommand {
       ...Object.keys(parseEnvVars(config.envVars)),
       ...additionalSettings,
     ])
-    if (currentEnvVars === undefined) {
-      this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
-      currentEnvVars = (
-        await (webApp.slot
-          ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
-          : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
-      ).properties
-    }
-    if (
-      currentEnvVars !== undefined &&
-      Object.keys(currentEnvVars).some((key) => configuredSettings.has(key) || key.startsWith('DD_'))
-    ) {
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
+    const currentEnvVars = (
+      await (webApp.slot
+        ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
+        : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
+    ).properties
+    if (currentEnvVars !== undefined && Object.keys(currentEnvVars).some((key) => configuredSettings.has(key))) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
         const settings: StringDictionary = {
           properties: Object.fromEntries(
-            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key) && !key.startsWith('DD_'))
+            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key))
           ),
         }
         await (webApp.slot
