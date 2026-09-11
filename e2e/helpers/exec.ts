@@ -47,7 +47,6 @@ const RETRYABLE_PATTERNS = [
   'RESOURCE_EXHAUSTED',
   'UNAVAILABLE',
   'temporarily unavailable',
-  'status code 404',
   // The Kudu/SCM site returns a 502 gateway error on the first deploy while it is still cold
   'acting as a gateway or proxy',
   // A retry re-checks the staged artifacts and skips the publish if the deployment landed late
