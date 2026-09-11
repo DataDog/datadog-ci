@@ -2,7 +2,7 @@ import type {WebSiteManagementClient} from '@azure/arm-appservice'
 import type {WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {DefaultAzureCredential} from '@azure/identity'
-import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
+import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
 export interface KuduClient {
@@ -17,6 +17,8 @@ type PublishingCredentials = {
   publishingUserName?: string
   scmUri?: string
 }
+
+const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503])
 
 export const getKuduClient = async (
   client: WebSiteManagementClient,
@@ -47,14 +49,29 @@ export const getKuduClient = async (
     if (!token) {
       throw new Error('Azure credentials could not access the SCM site.')
     }
-    const response = await httpRequest<string>({
-      method,
-      url: thirdParty(`${baseUrl}${path}`),
-      headers: {Authorization: `Bearer ${token.token}`, ...headers},
-      data,
-      dispatcher: getProxyDispatcher(),
-      timeout,
-    })
+    // The SCM site answers 502/503/429 while it is still cold (for example right after an app
+    // restart), so retry those with backoff instead of failing the run.
+    let response
+    for (let attempt = 0; ; attempt++) {
+      try {
+        response = await httpRequest<string>({
+          method,
+          url: thirdParty(`${baseUrl}${path}`),
+          headers: {Authorization: `Bearer ${token.token}`, ...headers},
+          data,
+          dispatcher: getProxyDispatcher(),
+          timeout,
+        })
+        break
+      } catch (error) {
+        const status = isRequestError(error) ? error.response?.status : undefined
+        if (attempt < 5 && status !== undefined && RETRYABLE_SCM_STATUSES.has(status)) {
+          await new Promise((resolve) => setTimeout(resolve, 10_000))
+          continue
+        }
+        throw error
+      }
+    }
 
     const parsedData =
       typeof response.data === 'string'

@@ -143,7 +143,7 @@ export const verifyLinuxInstrumented = (
   if (expectSsi) {
     expect(settings.NODE_OPTIONS).toContain('/home/data/datadog-tracer/nodejs/')
     expect(settings.NODE_OPTIONS).toContain('/init.js')
-    expect(settings.DD_TAGS).toContain('dd_sls_injection_mode:single_language')
+    expect(settings.DD_TAGS).toContain('_dd.injection.mode:serverless-single-lang')
   }
 
   const containers = getSiteContainers(appName, rg, subscriptionId)

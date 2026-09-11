@@ -1332,6 +1332,7 @@ describe('aas instrument', () => {
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
+            {name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'},
           ],
         })
       )

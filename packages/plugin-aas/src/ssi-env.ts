@@ -25,8 +25,10 @@ const LEGACY_AAS_DOTNET_PROFILER_PATHS = new Set([
 export const hasStagedAasTracer = (settings: Record<string, string>): boolean =>
   LANGUAGE_INJECTION_ENV_NAMES.some((name) => settings[name]?.includes(stagingPrefix) ?? false)
 
+// The digest's 'sha256:' prefix is stripped: colon-delimited settings (PYTHONPATH, PHP_INI_SCAN_DIR)
+// would otherwise split the staged path into two garbage entries.
 export const getStagedRoot = (runtime: AasCodeRuntime, version: string, digest: string): string =>
-  `${AAS_SSI_STAGING_ROOT}/${runtime.language}/${version}-${digest}`
+  `${AAS_SSI_STAGING_ROOT}/${runtime.language}/${version}-${digest.replace(/^sha256:/, '')}`
 
 export const mergeAasSsiEnv = (
   current: Record<string, string>,
@@ -59,6 +61,16 @@ export const removeAasSsiEnv = (current: Record<string, string>): Record<string,
       delete env[name]
     } else {
       env[name] = cleaned
+    }
+  }
+  // Once the staged profiler path is gone, leaving the CLR profiling flags set crashes the app on
+  // startup, so remove them when they still hold the spec-injected values.
+  if (hasStagedAasTracer(current)) {
+    if (env.CORECLR_ENABLE_PROFILING === '1') {
+      delete env.CORECLR_ENABLE_PROFILING
+    }
+    if (env.CORECLR_PROFILER === '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}') {
+      delete env.CORECLR_PROFILER
     }
   }
   const tags = removeInjectionModeTag(env.DD_TAGS)

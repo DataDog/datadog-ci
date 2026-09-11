@@ -268,12 +268,7 @@ export class PluginCommand extends AasInstrumentCommand {
         } else {
           const root = await stageAasTracer(await getKuduClient(aasClient, resourceGroup, webApp), runtime)
           const baseEnvVars = getEnvVars({...config, isDotnet: false}, linuxSite, webApp)
-          const ddTags = [existingEnvVars.DD_TAGS, baseEnvVars.DD_TAGS].filter(Boolean).join(',') || undefined
-          ssiEnvVars = mergeAasSsiEnv(
-            {...existingEnvVars, ...baseEnvVars, ...(ddTags ? {DD_TAGS: ddTags} : {})},
-            runtime,
-            root
-          )
+          ssiEnvVars = mergeAasSsiEnv({...existingEnvVars, ...baseEnvVars}, runtime, root)
         }
       } else if (removesSsi) {
         ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, linuxSite, webApp)}
@@ -453,7 +448,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         : client.webApps.listSiteContainers(resourceGroup, webApp.name)
     )
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = {...getEnvVars(config, site, webApp), ...additionalEnvVars}
+    const agentEnvVars = getEnvVars(config, site, webApp)
+    const envVars = {...agentEnvVars, ...additionalEnvVars}
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)
@@ -462,7 +458,10 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       sidecarContainer.image !== (config.sidecarImage ?? SIDECAR_IMAGE) ||
       sidecarContainer.targetPort !== String(SIDECAR_PORT) ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
-      !sortedEqual(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
+      !sortedEqual(
+        [...new Set(sidecarContainer.environmentVariables.map(({name}) => name))],
+        [...new Set(Object.keys(agentEnvVars))]
+      )
     ) {
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
@@ -474,9 +473,9 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           image: config.sidecarImage ?? SIDECAR_IMAGE,
           targetPort: String(SIDECAR_PORT),
           isMain: false,
-          // We're allowing access to all env vars since it is simpler
-          // and doesn't cause problems, but not all env vars are needed for the sidecar.
-          environmentVariables: Object.keys(envVars).map((name) => ({name, value: name})),
+          // Forward only the Datadog-owned settings: the sidecar must not receive customer app
+          // settings or tracer injection values (LD_PRELOAD, NODE_OPTIONS, ...).
+          environmentVariables: Object.keys(agentEnvVars).map((name) => ({name, value: name})),
         }
         await (webApp.slot
           ? client.webApps.createOrUpdateSiteContainerSlot(
