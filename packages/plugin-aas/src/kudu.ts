@@ -104,10 +104,13 @@ export const getKuduClient = async (
       return result.data?.ExitCode === 0
     },
     deleteDirectory: async (directory) => {
-      await request('POST', '/api/command', {
+      const result = await request<{ExitCode?: number}>('POST', '/api/command', {
         command: `/bin/bash -c "${escapeBashArgument(`rm -rf -- ${directory}`)}"`,
         dir: '/home',
       })
+      if (result.data?.ExitCode !== 0) {
+        throw new Error(`Failed to delete ${directory} from the Web App.`)
+      }
     },
   }
 }

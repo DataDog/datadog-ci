@@ -13,6 +13,7 @@ import {
   getFleetRepository,
   parseLinuxFxVersion,
   resolveFleetPackage,
+  selectFleetManifest,
   verifySha256,
   type AasCodeRuntime,
 } from '../ssi'
@@ -89,7 +90,7 @@ describe('AAS SSI runtime', () => {
     ['tomcat|10.1-java17', 'java', '17', 'glibc'],
     ['JBOSSEAP|8-java17', 'java', '17', 'glibc'],
   ])('parses %s', (value, language, runtimeVersion, libc) => {
-    expect(parseLinuxFxVersion(value)).toEqual({language, runtimeVersion, architecture: 'x64', libc})
+    expect(parseLinuxFxVersion(value)).toEqual({language, runtimeVersion, libc})
   })
 
   test.each([
@@ -142,7 +143,7 @@ describe('AAS SSI runtime', () => {
 
 describe('Fleet OCI package', () => {
   test('selects and validates the Linux amd64 package', () => {
-    expect(resolveFleetPackage(INDEX, MANIFEST)).toEqual({
+    expect(resolveFleetPackage(selectFleetManifest(INDEX), MANIFEST)).toEqual({
       packageVersion: '1.2.3',
       manifestDigest: DIGEST,
       layer: MANIFEST.layers[0],
@@ -184,7 +185,7 @@ describe('Fleet OCI package', () => {
     ],
     ['package version annotation', INDEX, {...MANIFEST, annotations: {}}, 'valid package version annotation'],
   ])('rejects an invalid %s', (_name, index, manifest, error) => {
-    expect(() => resolveFleetPackage(index, manifest)).toThrow(error)
+    expect(() => resolveFleetPackage(selectFleetManifest(index), manifest)).toThrow(error)
   })
 
   test('accepts content matching its SHA-256 digest', () => {
