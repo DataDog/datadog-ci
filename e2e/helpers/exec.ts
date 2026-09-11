@@ -49,10 +49,6 @@ const RETRYABLE_PATTERNS = [
   'temporarily unavailable',
   // The Kudu/SCM site returns a 502 gateway error on the first deploy while it is still cold
   'acting as a gateway or proxy',
-  // A retry re-checks the staged artifacts and skips the publish if the deployment landed late
-  'Timed out waiting for the SCM deployment',
-  // OneDeploy extraction can fail transiently on the Kudu side; a retry republishes the tracer
-  'The SCM deployment failed',
 ]
 
 const isRetryable = (result: ExecResult): boolean => {
