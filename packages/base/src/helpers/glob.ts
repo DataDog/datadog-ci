@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import * as globModule from 'glob'
+import * as globModule from 'glob/raw'
 import upath from 'upath'
 
 const {hasMagic} = globModule
