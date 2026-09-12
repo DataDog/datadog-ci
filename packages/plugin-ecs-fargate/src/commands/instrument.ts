@@ -1,7 +1,7 @@
-import type {DescribedService} from '../aws'
+import type {App} from '../apps'
 import type {InstrumentSettings} from '../task-definition'
 import type {ECSClient} from '@aws-sdk/client-ecs'
-import type {EcsFargateConfigOptions} from '@datadog/datadog-ci-base/commands/ecs-fargate/instrument'
+import type {EcsFargateConfigOptions} from '@datadog/datadog-ci-base/commands/ecs-fargate/common'
 
 import {EcsFargateInstrumentCommand} from '@datadog/datadog-ci-base/commands/ecs-fargate/instrument'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
@@ -14,34 +14,16 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serv
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
+import {deployService, resolveApps} from '../apps'
 import {
   createECSClient,
-  describeService,
   describeTaskDefinition,
   getAWSCredentials,
   getAWSProfileCredentials,
   registerTaskDefinition,
-  taskDefinitionFamily,
-  taskDefinitionRevision,
-  updateServiceTaskDefinition,
 } from '../aws'
 import {AWS_REGION_ENV_VARS} from '../constants'
 import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
-
-/**
- * One application this run acts on: the task definition to instrument, and the ECS services running
- * it that should be pointed at the revision it registers.
- *
- * An app is instrumented and rolled out on its own, so one that cannot be handled reports why and
- * leaves the others to finish.
- */
-type App = {
-  /** What `--task-definition` named: a family, `family:revision`, or a task definition ARN. */
-  target: string
-  family: string
-  /** Empty when no `--ecs-service` names a service running this family. */
-  services: DescribedService[]
-}
 
 export class PluginCommand extends EcsFargateInstrumentCommand {
   public async execute(): Promise<0 | 1> {
@@ -94,7 +76,7 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       return 1
     }
 
-    const [apps, resolutionErrors] = await this.resolveApps(client, config)
+    const [apps, resolutionErrors] = await resolveApps(client, config, 'instrument')
     for (const error of resolutionErrors) {
       this.context.stdout.write(renderError(error))
     }
@@ -102,55 +84,6 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     const results = await Promise.all(apps.map((app) => this.processApp(client, config.cluster, app, settings)))
 
     return resolutionErrors.length > 0 || results.some((result) => !result) ? 1 : 0
-  }
-
-  /**
-   * The apps this run acts on, along with everything that stopped a service from being paired with
-   * one.
-   *
-   * The pairing happens before anything is registered, so a service running a family the run does
-   * not instrument is reported rather than being discovered once a revision already exists.
-   *
-   * @returns the apps to process, and the problems to report. A service that could not be paired is
-   * reported without blocking succesful pairs.
-   */
-  private async resolveApps(client: ECSClient, config: EcsFargateConfigOptions): Promise<[App[], string[]]> {
-    // `ensureConfig` rejects a run naming a family twice, so keying by family gives one app per
-    // family and a service running that family has a single revision to be pointed at.
-    const apps = new Map<string, App>(
-      (config.taskDefinitions ?? []).map((target) => {
-        const family = taskDefinitionFamily(target)
-
-        return [family, {target, family, services: []}]
-      })
-    )
-
-    const errors: string[] = []
-    const described = await Promise.allSettled(
-      (config.ecsServices ?? []).map((name) => describeService(client, config.cluster, name))
-    )
-
-    for (const result of described) {
-      if (result.status === 'rejected') {
-        const reason: unknown = result.reason
-        errors.push(reason instanceof Error ? reason.message : String(reason))
-        continue
-      }
-
-      const service = result.value
-      const family = taskDefinitionFamily(service.taskDefinition)
-      const app = apps.get(family)
-      if (!app) {
-        errors.push(
-          `${service.name} runs ${family}, which this run does not instrument. Pass --task-definition ${family} to instrument it.`
-        )
-        continue
-      }
-
-      app.services.push(service)
-    }
-
-    return [[...apps.values()], errors]
   }
 
   /**
@@ -168,7 +101,18 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     try {
       const taskDefinitionArn = await this.instrument(client, app, settings, output)
       const deployed = await Promise.all(
-        app.services.map((service) => this.deployService(client, cluster, service, app, taskDefinitionArn, output))
+        app.services.map((service) =>
+          deployService({
+            client,
+            cluster,
+            service,
+            app,
+            taskDefinitionArn,
+            dryRun: this.dryRun,
+            dryRunPrefix: this.dryRunPrefix,
+            output,
+          })
+        )
       )
 
       return deployed.every((result) => result)
@@ -225,55 +169,6 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     output.push(`Registered ${chalk.bold(`${family}:${registered.revision}`)}.${rollout}\n`)
 
     return registered.taskDefinitionArn
-  }
-
-  /**
-   * Points one service at the instrumented revision of the family it runs, so that the change
-   * reaches the running tasks without a manual deployment.
-   *
-   * A service that cannot be updated does not block others.
-   *
-   * @returns whether the service runs an instrumented revision.
-   */
-  private async deployService(
-    client: ECSClient,
-    cluster: string | undefined,
-    service: DescribedService,
-    app: App,
-    taskDefinitionArn: string | undefined,
-    output: string[]
-  ): Promise<boolean> {
-    try {
-      if (!taskDefinitionArn) {
-        // Only a dry run gets here, since it registers no revision to point the service at.
-        output.push(
-          `${this.dryRunPrefix}Updating ${chalk.bold(service.name)} to the new ${chalk.bold(app.family)} revision.\n`
-        )
-
-        return true
-      }
-
-      const revision = taskDefinitionRevision(taskDefinitionArn)
-      if (service.taskDefinition === taskDefinitionArn) {
-        output.push(`${chalk.bold(service.name)} already runs ${chalk.bold(revision)}, no deployment needed.\n`)
-
-        return true
-      }
-
-      output.push(
-        `${this.dryRunPrefix}Updating ${chalk.bold(service.name)} to ${chalk.bold(revision)}. ECS rolls the revision out to the tasks the service is running.\n`
-      )
-
-      if (!this.dryRun) {
-        await updateServiceTaskDefinition(client, cluster, service.name, taskDefinitionArn)
-      }
-
-      return true
-    } catch (error) {
-      output.push(renderError(error instanceof Error ? error.message : error))
-
-      return false
-    }
   }
 
   /**

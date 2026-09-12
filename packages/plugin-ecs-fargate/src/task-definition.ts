@@ -52,6 +52,7 @@ import {
   DD_DOGSTATSD_TAG_CARDINALITY_ENV_VAR,
   DD_DOGSTATSD_URL_ENV_VAR,
   DD_ECS_TASK_COLLECTION_ENABLED_ENV_VAR,
+  DD_ENV_VAR_PREFIX,
   DD_TRACE_AGENT_URL_ENV_VAR,
   DD_USE_DOGSTATSD_ENV_VAR,
   DOCKER_LABEL_ENV,
@@ -903,6 +904,126 @@ export const instrumentTaskDefinition = (
       containerDefinitions: resolved,
       volumes: withSocketVolume(taskDefinition.volumes, platform.socket),
       tags: instrumentationTags(tags, ust),
+    }),
+    warnings,
+  }
+}
+
+/**
+ * What the user asked to have removed on top of everything instrumentation wrote.
+ */
+export type UninstrumentSettings = {
+  /** Additional environment variables to remove from every container in the task. */
+  envVars?: Record<string, string>
+}
+
+export type UninstrumentResult = {
+  taskDefinition: RegisterTaskDefinitionCommandInput
+  warnings: string[]
+}
+
+/**
+ * The sidecars instrumentation adds, which are keyed by name.
+ */
+const isSidecar = (container: ContainerDefinition): boolean =>
+  container.name === AGENT_CONTAINER_NAME || container.name === LOG_ROUTER_CONTAINER_NAME
+
+/**
+ * The Docker labels instrumentation writes. Only these three are removed, rather than everything in
+ * the `com.datadoghq` namespace, so that the Autodiscovery labels a task definition may carry are
+ * left alone: those are configuration the user wrote, not something this command put there.
+ */
+const UST_DOCKER_LABELS: ReadonlySet<string> = new Set([DOCKER_LABEL_SERVICE, DOCKER_LABEL_ENV, DOCKER_LABEL_VERSION])
+
+/**
+ * The task definition tags instrumentation sets.
+ */
+const INSTRUMENTATION_TAG_KEYS: ReadonlySet<string> = new Set([
+  SERVICE_TAG_KEY,
+  ENVIRONMENT_TAG_KEY,
+  VERSION_TAG_KEY,
+  SERVERLESS_CLI_VERSION_TAG_NAME,
+])
+
+/**
+ * Whether a variable is one instrumentation is responsible for: anything in the Datadog namespace,
+ * the switch telling the Agent it runs on Fargate, or one the user named on the command line.
+ */
+const isDatadogEnvVar = (name: string | undefined, settings: UninstrumentSettings): boolean =>
+  name !== undefined &&
+  (name.startsWith(DD_ENV_VAR_PREFIX) || name === ECS_FARGATE_ENV_VAR || name in (settings.envVars ?? {}))
+
+/**
+ * Strips instrumentation from an application container: the environment its tracers read, the Docker
+ * labels the Agent reads about it, the secrets holding Datadog credentials, and the mount giving it
+ * the Agent's sockets.
+ *
+ * Fields the container declared itself keep their position and their value, so uninstrumenting a
+ * revision this command registered gives back the task definition it was registered from.
+ */
+const uninstrumentContainer = (
+  container: ContainerDefinition,
+  settings: UninstrumentSettings,
+  warnings: string[]
+): ContainerDefinition => {
+  const dockerLabels = Object.fromEntries(
+    Object.entries(container.dockerLabels ?? {}).filter(([label]) => !UST_DOCKER_LABELS.has(label))
+  )
+  const secrets = container.secrets?.filter((secret) => !isDatadogEnvVar(secret.name, settings))
+  const mountPoints = container.mountPoints?.filter((mount) => mount.sourceVolume !== AGENT_SOCKET_VOLUME_NAME)
+
+  // The driver routes to the log router, which is being removed, so a container left with it would
+  // start no tasks. What it was configured with before log collection was turned on is recorded
+  // nowhere, so the container is left with none rather than with a guess.
+  const firelens = container.logConfiguration?.logDriver === AWSFIRELENS_LOG_DRIVER
+  if (firelens) {
+    warnings.push(
+      `Removing the ${AWSFIRELENS_LOG_DRIVER} log configuration from the ${container.name} container, which routed its logs through ${LOG_ROUTER_CONTAINER_NAME}. The configuration it had before log collection was turned on cannot be restored, so add one to the task definition to keep collecting its logs.`
+    )
+  }
+
+  return removeUndefinedValues({
+    ...container,
+    environment: container.environment?.filter((envVar) => !isDatadogEnvVar(envVar.name, settings)),
+    secrets: secrets?.length ? secrets : undefined,
+    dockerLabels: Object.keys(dockerLabels).length > 0 ? dockerLabels : undefined,
+    // Instrumentation only ever adds the socket mount, so a container left with none declared none.
+    mountPoints: mountPoints?.length ? mountPoints : undefined,
+    logConfiguration: firelens ? undefined : container.logConfiguration,
+  })
+}
+
+/**
+ * Rewrites an instrumented Fargate task definition back to what it was registered from: the
+ * sidecars are dropped, the application containers lose the environment, labels, and socket mount
+ * instrumentation gave them, and the revision loses the tags it reported under.
+ *
+ * The checks `instrumentTaskDefinition` makes are deliberately not repeated. A task definition that
+ * was instrumented already passed them, and one that no longer does is exactly the case this command
+ * has to be able to undo.
+ */
+export const uninstrumentTaskDefinition = (
+  taskDefinition: TaskDefinition,
+  settings: UninstrumentSettings = {},
+  tags: Tag[] = []
+): UninstrumentResult => {
+  const warnings: string[] = []
+  const containers = taskDefinition.containerDefinitions ?? []
+
+  if (!containers.some(isSidecar)) {
+    warnings.push(
+      `Task definition ${taskDefinition.family} runs no ${AGENT_CONTAINER_NAME} container, so there is no Datadog sidecar to remove. Anything else instrumentation left on it is still removed.`
+    )
+  }
+
+  return {
+    taskDefinition: removeUndefinedValues({
+      ...stripReadOnlyFields(taskDefinition),
+      containerDefinitions: containers
+        .filter((container) => !isSidecar(container))
+        .map((container) => uninstrumentContainer(container, settings, warnings)),
+      volumes: taskDefinition.volumes?.filter((volume) => volume.name !== AGENT_SOCKET_VOLUME_NAME),
+      tags: tags.filter((tag) => tag.key === undefined || !INSTRUMENTATION_TAG_KEYS.has(tag.key)),
     }),
     warnings,
   }

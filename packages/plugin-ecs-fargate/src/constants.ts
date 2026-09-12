@@ -129,6 +129,13 @@ export const LOG_ROUTER_HEALTH_CHECK_START_PERIOD = 15
  */
 export const LOG_ROUTER_USER = '0'
 
+/**
+ * The namespace every environment variable the tracers and the Agent read lives in. Uninstrumenting
+ * matches on the prefix rather than on a list of names, so a variable an older version of this
+ * command wrote is removed too.
+ */
+export const DD_ENV_VAR_PREFIX = 'DD_'
+
 // Datadog environment variables not already declared in helpers/serverless/constants.ts
 export const ECS_FARGATE_ENV_VAR = 'ECS_FARGATE'
 export const DD_APM_ENABLED_ENV_VAR = 'DD_APM_ENABLED'
