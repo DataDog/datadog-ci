@@ -145,10 +145,10 @@ export class EcsFargateInstrumentCommand extends BaseCommand {
   // No default, so that leaving the flag off does not override the configuration file.
   private noAgentSocket = Option.Boolean('--no-agent-socket', {
     description:
-      'Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default.',
+      'Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. Windows tasks always use the loopback address.',
   })
   private logCollection = Option.Boolean('--log-collection,--logCollection', {
-    description: `Send the task's logs to Datadog. Replaces each container's existing log configuration.`,
+    description: `Send the task's logs to Datadog. Replaces each container's existing log configuration. Not supported on Windows.`,
   })
   private service = Option.String('--service', {
     description:

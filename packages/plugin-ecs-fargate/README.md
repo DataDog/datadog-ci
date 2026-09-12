@@ -44,7 +44,7 @@ The same three unified service tag values are also written to the application co
 
 #### Reaching the Agent
 
-The tracers reach the Agent over a Unix socket by default. The command adds a `dd-sockets` volume to the task, mounts it at `/var/run/datadog` on both the Agent and your application containers, and points the tracers at it with `DD_TRACE_AGENT_URL` and `DD_DOGSTATSD_URL`. Pass `--no-agent-socket` to use the task's loopback address instead, which sets `DD_AGENT_HOST` to `127.0.0.1` and leaves the volume off.
+The tracers reach the Agent over a Unix socket by default. The command adds a `dd-sockets` volume to the task, mounts it at `/var/run/datadog` on both the Agent and your application containers, and points the tracers at it with `DD_TRACE_AGENT_URL` and `DD_DOGSTATSD_URL`. Pass `--no-agent-socket` to use the task's loopback address instead, which sets `DD_AGENT_HOST` to `127.0.0.1` and leaves the volume off. [Windows tasks](#windows-tasks) always use the loopback address.
 
 Unlike the switches above, the command owns these: the two ways of reaching the Agent are mutually exclusive, so moving between them removes the one that no longer applies rather than leaving a socket path behind that nothing is listening on.
 
@@ -55,7 +55,21 @@ Running the command twice is safe: the sidecars are matched by name, so an alrea
 #### Collecting logs
 
 Pass `--log-collection` to send the task's logs to Datadog. A `datadog-log-router` sidecar running [AWS for Fluent Bit](https://github.com/aws/aws-for-fluent-bit) is added and the other containers, including the Agent, are routed through it.
-Existing log configurations are replaced. Omitting `--log-collection` on a later run removes the router and the Datadog FireLens configuration it wrote, but does not restore the log configuration it replaced.
+Existing log configurations are replaced. Omitting `--log-collection` on a later run removes the router and the Datadog FireLens configuration it wrote, but does not restore the log configuration it replaced. Windows tasks cannot use this as FireLens is Linux-only.
+
+#### Windows tasks
+
+Windows task definitions are instrumented with the following differences:
+
+- The Agent runs the `-servercore` build of the image, published as a manifest list so that ECS pulls the variant matching your Windows Server version.
+- The Agent container is given `C:\` as its working directory, which it needs and its image does not set.
+- The tracers reach the Agent on the task's loopback address, `127.0.0.1`, because Windows containers cannot share the Unix socket used on Linux. The `dd-sockets` volume is left off, and `--no-agent-socket` makes no difference on a Windows task.
+- The Agent gets no health check, as its probe is a shell script that only the Linux image ships. A probe would report the Agent as permanently unhealthy
+- `--log-collection` is refused, because FireLens does not run on Windows Fargate. Any `datadog-log-router` sidecar on the task is removed.
+
+A run warns when it drops the socket, when it leaves the Agent without a health check, and when it changes what one of your containers waits for, so you can see what it decided.
+
+If you pass `--agent-image` for a Windows task, it is used exactly as given, so point it at a `-servercore` tag: mirroring `public.ecr.aws/datadog/agent:latest` into your own registry gives you the Linux image, which will not start on Windows.
 
 #### Deploying the new revision
 
@@ -105,8 +119,8 @@ You can pass the following arguments to `instrument` to specify its behavior. `-
 | `--cluster` |  | The ECS cluster the services named by `--ecs-service` run in. Not needed when those are full ARNs, which name their own cluster. Omit it for the `default` cluster of the region. |  |
 | `--api-key-secret-arn` or `--apiKeySecretArn` |  | The ARN of the AWS Secrets Manager secret holding your Datadog API key. Preferred over DD_API_KEY, which is written to the task definition in plain text |  |
 | `--agent-image` or `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (for example, ECR) to avoid pull rate limits. | `public.ecr.aws/datadog/agent:latest` |
-| `--no-agent-socket` |  | Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. |  |
-| `--log-collection` or `--logCollection` |  | Send the task's logs to Datadog. Replaces each container's existing log configuration. |  |
+| `--no-agent-socket` |  | Have the tracers reach the Agent over the task loopback address instead of the Unix socket they use by default. Windows tasks always use the loopback address. |  |
+| `--log-collection` or `--logCollection` |  | Send the task's logs to Datadog. Replaces each container's existing log configuration. Not supported on Windows. |  |
 | `--service` |  | The value for the service tag. Use this to group related tasks belonging to similar workloads. For example, `my-service`. If not provided, the task definition family is used. |  |
 | `--env` or `--environment` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |

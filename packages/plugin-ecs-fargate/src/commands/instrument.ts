@@ -278,6 +278,9 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
 
   /**
    * What the task definitions are instrumented with, leaving aside how the Agent gets its API key.
+   *
+   * The Agent image is left as the user gave it, absent included: the default depends on whether the
+   * task runs Linux or Windows, which only the transform reading the task definition can tell.
    */
   private buildSettings(config: EcsFargateConfigOptions): InstrumentSettings {
     return {
