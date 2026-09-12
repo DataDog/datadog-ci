@@ -1,0 +1,82 @@
+{
+  "name": "@datadog/datadog-ci-plugin-ecs-fargate",
+  "version": "5.23.0",
+  "description": "Datadog CI plugin for `ecs-fargate` commands",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-ecs-fargate",
+  "bugs": {
+    "url": "https://github.com/DataDog/datadog-ci/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-ecs-fargate"
+  },
+  "main": "dist/bundle.js",
+  "types": "dist/bundle.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/bundle.d.ts",
+      "default": "./dist/bundle.js"
+    },
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/bundle.js",
+    "dist/bundle.js.map",
+    "dist/bundle.js.LEGAL.txt",
+    "dist/bundle.d.ts",
+    "dist/commands/*.js",
+    "README",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist; yarn package:bundle:npm"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-ecs": "^3.1045.0",
+    "@aws-sdk/credential-providers": "^3.1045.0",
+    "@smithy/property-provider": "2.2.0",
+    "@smithy/util-retry": "2.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-ecs": {
+      "optional": true
+    },
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    },
+    "@smithy/property-provider": {
+      "optional": true
+    },
+    "@smithy/util-retry": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@aws-sdk/client-ecs": "3.1045.0",
+    "@aws-sdk/credential-provider-ini": "3.972.38",
+    "@aws-sdk/credential-providers": "3.1045.0",
+    "@aws-sdk/types": "3.973.8",
+    "@datadog/datadog-ci-base": "workspace:*",
+    "@inquirer/prompts": "7.10.1",
+    "@smithy/property-provider": "2.2.0",
+    "@smithy/util-retry": "2.2.0",
+    "aws-sdk-client-mock": "4.1.0",
+    "chalk": "3.0.0"
+  }
+}
