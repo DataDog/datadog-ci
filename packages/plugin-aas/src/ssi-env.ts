@@ -87,6 +87,11 @@ export const removeAasSsiEnv = (current: Record<string, string>): Record<string,
     if (env.CORECLR_PROFILER === '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}') {
       delete env.CORECLR_PROFILER
     }
+    // 'true' is the tracer default, so removing it restores the pre-injection settings without
+    // changing behavior. A customer-authored 'false' is never touched.
+    if (env.DD_TRACE_ENABLED === 'true') {
+      delete env.DD_TRACE_ENABLED
+    }
   }
   const tags = removeInjectionModeTag(env.DD_TAGS)
   if (tags === undefined) {

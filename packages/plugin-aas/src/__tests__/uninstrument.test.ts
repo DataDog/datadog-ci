@@ -198,7 +198,8 @@ describe('aas instrument', () => {
       const {code, context} = await runCLI(DEFAULT_ARGS)
 
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toContain('Could not access the SCM site to remove staged tracer files')
+      expect(context.stdout.toString()).toContain('Could not remove staged tracer files')
+      expect(context.stdout.toString()).toContain('There may be inactive tracer files left behind')
       expect(context.stdout.toString()).toContain('Uninstrumentation completed successfully')
     })
 

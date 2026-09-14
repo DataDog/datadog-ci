@@ -35,6 +35,15 @@ describe('mergeAasSsiEnv and removeAasSsiEnv round-trips', () => {
     expect(removed.CORECLR_PROFILER_PATH).toBeUndefined()
     expect(removed.DD_DOTNET_TRACER_HOME).toBeUndefined()
     expect(removed.LD_PRELOAD).toBeUndefined()
+    expect(removed.DD_TRACE_ENABLED).toBeUndefined()
+  })
+
+  it('preserves a customer-authored DD_TRACE_ENABLED=false when removing injected state', () => {
+    const root = getStagedRoot(parseLinuxFxVersion('NODE|22-lts'), '6.0.0', DIGEST)
+    const merged = mergeAasSsiEnv({}, parseLinuxFxVersion('NODE|22-lts'), root)
+    const withCustomerValue = {...merged, DD_TRACE_ENABLED: 'false'}
+
+    expect(removeAasSsiEnv(withCustomerValue).DD_TRACE_ENABLED).toBe('false')
   })
 
   it('preserves customer-owned CLR profiling flags when no staged tracer is present', () => {

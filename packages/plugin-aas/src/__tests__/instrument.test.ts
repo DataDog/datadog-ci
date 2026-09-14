@@ -257,7 +257,7 @@ describe('aas instrument', () => {
       expect(deleteDirectory).not.toHaveBeenCalled()
     })
 
-    test('Removing injection without --apm-enabled warns and deletes the staged tracer', async () => {
+    test('Removing injection without --apm-enabled warns and keeps the staged tracer', async () => {
       webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
       webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
       webAppsOperations.listApplicationSettings.mockResolvedValue({
@@ -276,12 +276,15 @@ describe('aas instrument', () => {
       expect(code).toEqual(0)
       expect(resolveAasTracerStaging).not.toHaveBeenCalled()
       expect(context.stdout.toString()).toContain('Removing automatic tracer injection')
-      expect(deleteDirectory).toHaveBeenCalledWith('/home/data/datadog-tracer')
+      expect(deleteDirectory).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
         'my-resource-group',
         'my-web-app',
         expect.objectContaining({
-          properties: expect.not.objectContaining({NODE_OPTIONS: expect.anything()}),
+          properties: expect.not.objectContaining({
+            NODE_OPTIONS: expect.anything(),
+            DD_TRACE_ENABLED: expect.anything(),
+          }),
         })
       )
     })

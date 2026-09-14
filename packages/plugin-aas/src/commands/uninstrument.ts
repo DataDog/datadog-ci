@@ -6,7 +6,7 @@ import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {getExtensionId, renderWebApp, resourceIdSegment} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
-import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
@@ -231,8 +231,10 @@ export class PluginCommand extends AasUninstrumentCommand {
         await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
       } catch (error) {
         this.context.stdout.write(
-          `Could not access the SCM site to remove staged tracer files from ${renderWebApp(webApp)}: ${formatError(error)}\n` +
-            `Any leftover files under ${AAS_SSI_STAGING_ROOT} are inactive.\n`
+          renderSoftWarning(
+            `Could not remove staged tracer files from ${renderWebApp(webApp)}: ${formatError(error)}\n` +
+              'There may be inactive tracer files left behind if you previously instrumented with `--apm-enabled`; re-run `aas uninstrument` to retry.'
+          )
         )
       }
     }
