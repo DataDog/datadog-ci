@@ -73,19 +73,12 @@ export const getKuduClient = async (
       }
     }
 
-    // The SCM front end can answer non-JSON bodies (for example an HTML status page), which are
-    // not an error for endpoints whose responses callers ignore; treat them as absent data instead
-    // of failing with a JSON parse error.
-    let parsedData: T | undefined
-    if (typeof response.data === 'string') {
-      try {
-        parsedData = response.data ? (JSON.parse(response.data) as T) : undefined
-      } catch {
-        parsedData = undefined
-      }
-    } else {
-      parsedData = response.data as T
-    }
+    const parsedData =
+      typeof response.data === 'string'
+        ? response.data
+          ? (JSON.parse(response.data) as T)
+          : undefined
+        : (response.data as T)
 
     return {data: parsedData, headers: response.headers}
   }
