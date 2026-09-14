@@ -284,7 +284,13 @@ export class PluginCommand extends AasInstrumentCommand {
             }
           }
         } else {
-          await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp))
+          this.context.stdout.write(`Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`)
+          const staged = await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp))
+          this.context.stdout.write(
+            staged
+              ? `Staged the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
+              : `The ${runtime.language} tracer is already staged for ${renderWebApp(webApp)}\n`
+          )
         }
       } else if (removesSsi) {
         this.context.stdout.write(

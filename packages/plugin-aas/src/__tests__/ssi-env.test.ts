@@ -23,6 +23,14 @@ describe('mergeAasSsiEnv and removeAasSsiEnv round-trips', () => {
     expect(removeAasSsiEnv(merged).PYTHONPATH).toBe(original.PYTHONPATH)
   })
 
+  it('removes PHP_INI_SCAN_DIR entirely when it held only the injected loader path', () => {
+    const root = getStagedRoot(parseLinuxFxVersion('PHP|8.3'), '1.25.1', DIGEST)
+    const merged = mergeAasSsiEnv({}, parseLinuxFxVersion('PHP|8.3'), root)
+    expect(merged.PHP_INI_SCAN_DIR).toBe(`:${root}/linux-gnu/loader`)
+
+    expect(removeAasSsiEnv(merged).PHP_INI_SCAN_DIR).toBeUndefined()
+  })
+
   it('removes the staged .NET profiler settings so the app cannot crash on startup', () => {
     const root = getStagedRoot(parseLinuxFxVersion('DOTNETCORE|8.0'), '1.2.3', DIGEST)
     const merged = mergeAasSsiEnv({}, parseLinuxFxVersion('DOTNETCORE|8.0'), root)

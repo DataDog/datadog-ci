@@ -239,11 +239,14 @@ describe('aas instrument', () => {
     test('Publishes the staged tracer with --apm-enabled', async () => {
       webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
       webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      publishTracer.mockResolvedValue(true)
 
-      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled'])
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled'])
 
       expect(code).toEqual(0)
       expect(publishTracer).toHaveBeenCalled()
+      expect(context.stdout.toString()).toContain('Staging the nodejs tracer for my-web-app')
+      expect(context.stdout.toString()).toContain('Staged the nodejs tracer for my-web-app')
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
         'my-resource-group',
         'my-web-app',
@@ -256,6 +259,17 @@ describe('aas instrument', () => {
       )
       expect(deleteDirectory).not.toHaveBeenCalled()
       expect(webAppsOperations.updateSlotConfigurationNames).not.toHaveBeenCalled()
+    })
+
+    test('Reports when the tracer is already staged with --apm-enabled', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      publishTracer.mockResolvedValue(false)
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled'])
+
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toContain('The nodejs tracer is already staged for my-web-app')
     })
 
     test('Pins injection settings sticky when instrumenting a slot with --apm-enabled', async () => {

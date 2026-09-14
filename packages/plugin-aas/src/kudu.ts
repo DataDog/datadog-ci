@@ -18,7 +18,7 @@ type PublishingCredentials = {
   scmUri?: string
 }
 
-const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503])
+const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503, 504])
 
 export const getKuduClient = async (
   client: WebSiteManagementClient,
@@ -105,8 +105,8 @@ export const getKuduClient = async (
     },
     deleteDirectory: async (directory) => {
       // Deleting onto the Azure Files-backed /home mount races directory enumeration on CIFS and
-      // intermittently fails with "Directory not empty" right after the app releases the files,
-      // so retry a few times before giving up.
+      // fails while the app or sidecar still holds the files after the restart triggered by the
+      // settings update, so retry with backoff long enough for the restart to settle.
       for (let attempt = 0; ; attempt++) {
         const result = await request<{ExitCode?: number}>('POST', '/api/command', {
           command: `/bin/bash -c "${escapeBashArgument(`rm -rf -- ${directory}`)}"`,
@@ -115,10 +115,10 @@ export const getKuduClient = async (
         if (result.data?.ExitCode === 0) {
           return
         }
-        if (attempt >= 5) {
+        if (attempt >= 9) {
           throw new Error(`Failed to delete ${directory} from the Web App.`)
         }
-        await new Promise((resolve) => setTimeout(resolve, 5_000))
+        await new Promise((resolve) => setTimeout(resolve, Math.min(5_000 * 2 ** attempt, 30_000)))
       }
     },
   }

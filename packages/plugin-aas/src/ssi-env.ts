@@ -138,11 +138,7 @@ const removeManagedValue = (name: string, value: string): string | undefined => 
     const parts = value.split(':').filter((part) => !part.startsWith(stagingPrefix))
     const result = parts.join(':')
 
-    return result
-      ? `${preserveLeading && !result.startsWith(':') ? ':' : ''}${result}`
-      : preserveLeading
-        ? ':'
-        : undefined
+    return result ? `${preserveLeading && !result.startsWith(':') ? ':' : ''}${result}` : undefined
   }
   if (name === 'CORECLR_PROFILER_PATH' || name === 'DD_DOTNET_TRACER_HOME' || name === 'LD_PRELOAD') {
     return removeSpaceFragments(value, (part) => part.startsWith(stagingPrefix))

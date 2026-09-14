@@ -21,7 +21,8 @@ const FLEET_REGISTRY = 'https://install.datadoghq.com/v2'
 export interface AasTracerStaging {
   readonly root: string
   readonly spec: LanguageInjectionSpec
-  publish(kudu: KuduClient): Promise<void>
+  /** Publishes the tracer unless already staged. Returns whether anything was uploaded. */
+  publish(kudu: KuduClient): Promise<boolean>
 }
 
 // Resolution performs no app mutation, so callers can validate environment conflicts against
@@ -44,7 +45,7 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
     spec,
     publish: async (kudu) => {
       if (await kudu.hasArtifacts(spec.artifacts)) {
-        return
+        return false
       }
       const layer = await httpRequest<Uint8Array>({
         method: 'GET',
@@ -60,7 +61,7 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
       // extraction (CIFS), so retry the startup-file check before declaring the deploy incomplete.
       for (let attempt = 0; ; attempt++) {
         if (await kudu.hasArtifacts(spec.artifacts)) {
-          return
+          return true
         }
         if (attempt >= 3) {
           throw new Error('The tracer staging deployment completed without all required startup files.')
