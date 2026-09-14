@@ -844,6 +844,7 @@ describe('elf', () => {
 
   describe('copyElfDebugInfo', () => {
     let tmpDirectory: string
+    let objcopyChecked = false
 
     beforeAll(async () => {
       tmpDirectory = await createUniqueTmpDirectory()
@@ -851,6 +852,11 @@ describe('elf', () => {
     })
 
     const checkCopyDebugInfo = async (elfFile: string) => {
+      if (!objcopyChecked) {
+        requireObjcopy()
+        objcopyChecked = true
+      }
+
       const filename = upath.basename(elfFile)
       const outputFilename = `${tmpDirectory}/${filename}.debug`
       const elfFileMetadata = await getElfFileMetadata(elfFile)
@@ -871,21 +877,17 @@ describe('elf', () => {
     }
 
     test('copy debug info from elf files', async () => {
-      requireObjcopy()
-      const testFiles = [
-        'dyn_aarch64',
-        'exec_aarch64',
-        '.debug/dyn_aarch64.debug',
-        'go_x86_64_only_go_build_id',
-        'go_x86_64_only_go_build_id.debug',
-        'exec_arm_big',
-        'exec_arm_little',
-      ]
-
-      for (const testFile of testFiles) {
-        await checkCopyDebugInfo(`${fixtureDir}/${testFile}`)
-      }
+      await checkCopyDebugInfo(`${fixtureDir}/dyn_aarch64`)
     })
+
+    test.each([
+      'exec_aarch64',
+      '.debug/dyn_aarch64.debug',
+      'go_x86_64_only_go_build_id',
+      'go_x86_64_only_go_build_id.debug',
+      'exec_arm_big',
+      'exec_arm_little',
+    ])('copy debug info from elf file %s', async (testFile) => checkCopyDebugInfo(`${fixtureDir}/${testFile}`))
 
     test('no zstd support', async () => {
       const executeSpy = jest.spyOn(utils, 'execute').mockImplementation(async (cmd) => {
