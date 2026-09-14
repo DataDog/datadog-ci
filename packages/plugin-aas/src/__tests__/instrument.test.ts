@@ -322,6 +322,35 @@ describe('aas instrument', () => {
       )
     })
 
+    test('Honors an explicit --dotnet request when removing injection without --apm-enabled', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
+          NODE_OPTIONS: `--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`,
+          DD_TRACE_ENABLED: 'true',
+          DD_TAGS: '_dd.injection.mode:serverless-single-lang',
+        },
+      })
+
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dotnet'])
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+            CORECLR_ENABLE_PROFILING: '1',
+          }),
+        })
+      )
+    })
+
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
       expect(code).toEqual(0)

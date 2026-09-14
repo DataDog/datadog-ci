@@ -93,8 +93,10 @@ export const getKuduClient = async (
       await request('PUT', `/api/zip/${relativePath}/`, archive, {'Content-Type': 'application/zip'}, 600_000)
     },
     hasArtifacts: async (artifacts) => {
+      // Parenthesize each alternative group: bash && and || are left-associative, so without
+      // grouping a passing later artifact would mask a failed earlier one.
       const checks = artifacts
-        .map((alternatives) => alternatives.map((artifact) => `test -f ${shellQuote(artifact)}`).join(' || '))
+        .map((alternatives) => `( ${alternatives.map((artifact) => `test -f ${shellQuote(artifact)}`).join(' || ')} )`)
         .join(' && ')
       const result = await request<{ExitCode?: number}>('POST', '/api/command', {
         command: `/bin/bash -c "${escapeBashArgument(checks)}"`,
@@ -115,7 +117,7 @@ export const getKuduClient = async (
         if (result.data?.ExitCode === 0) {
           return
         }
-        if (attempt >= 9) {
+        if (attempt >= 6) {
           throw new Error(`Failed to delete ${directory} from the Web App.`)
         }
         await new Promise((resolve) => setTimeout(resolve, Math.min(5_000 * 2 ** attempt, 30_000)))

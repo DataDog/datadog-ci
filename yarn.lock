@@ -1631,6 +1631,7 @@ __metadata:
     "@azure/arm-resources": "npm:6.1.0"
     "@azure/identity": "npm:4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@types/tar-stream": "npm:3.1.4"
     chalk: "npm:3.0.0"
     fzstd: "npm:0.1.1"
     jszip: "npm:3.10.1"
@@ -4759,6 +4760,15 @@ __metadata:
   version: 2.0.3
   resolution: "@types/stack-utils@npm:2.0.3"
   checksum: 10/72576cc1522090fe497337c2b99d9838e320659ac57fa5560fcbdcbafcf5d0216c6b3a0a8a4ee4fdb3b1f5e3420aa4f6223ab57b82fef3578bec3206425c6cf5
+  languageName: node
+  linkType: hard
+
+"@types/tar-stream@npm:3.1.4":
+  version: 3.1.4
+  resolution: "@types/tar-stream@npm:3.1.4"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10/9d1e182315c2189e18293b5a884edb9803c70772d37914870fbdb0bd659970e0d8effe002b19415ee251c422e3f169013668f3acf41feb9371040d0f0867d7b7
   languageName: node
   linkType: hard
 

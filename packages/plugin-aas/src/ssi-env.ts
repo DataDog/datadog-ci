@@ -130,9 +130,6 @@ const removeManagedValue = (name: string, value: string): string | undefined => 
       value.replace(new RegExp(`(?:^| )--require ${escapeRegExp(stagingPrefix)}[^ ]+`, 'g'), '').trim() || undefined
     )
   }
-  if (name === 'RUBYOPT') {
-    return removeSpaceFragments(value, (part) => part.startsWith(`-r${stagingPrefix}`))
-  }
   if (name === 'PYTHONPATH' || name === 'PHP_INI_SCAN_DIR') {
     const preserveLeading = name === 'PHP_INI_SCAN_DIR' && value.startsWith(':')
     const parts = value.split(':').filter((part) => !part.startsWith(stagingPrefix))

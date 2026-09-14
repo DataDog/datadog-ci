@@ -260,6 +260,11 @@ export class PluginCommand extends AasInstrumentCommand {
       const hasStagedTracer = hasStagedAasTracer(existingEnvVars)
       const withoutSsiEnvVars = removeAasSsiEnv(existingEnvVars)
       const removesSsi = !injectApm && !isContainer && !sortedEqual(existingEnvVars, withoutSsiEnvVars)
+      const usesSsiEnv = hasStagedTracer || injectApm || removesSsi
+      // Tracer injection replaces the legacy sidecar .NET settings, so force them off while SSI
+      // owns the environment. An explicit --dotnet request is still honored when not injecting:
+      // the desired state comes from the requested config, not from previously staged state.
+      const webAppConfig = usesSsiEnv && (injectApm || !config.isDotnet) ? {...config, isDotnet: false} : {...config}
       let ssiEnvVars: Record<string, string> | undefined
       if (config.apmEnabled && isContainer) {
         this.context.stdout.write(
@@ -298,9 +303,8 @@ export class PluginCommand extends AasInstrumentCommand {
             `Removing automatic tracer injection from ${renderWebApp(webApp)}. Use --apm-enabled to keep it.`
           )
         )
-        ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, linuxSite, webApp)}
+        ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars(webAppConfig, linuxSite, webApp)}
       }
-      const webAppConfig = hasStagedTracer || injectApm || removesSsi ? {...config, isDotnet: false} : {...config}
       if (config.isMusl && !isContainer) {
         this.context.stdout.write(
           renderSoftWarning(
@@ -309,7 +313,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           )
         )
       }
-      if (!hasStagedTracer && !injectApm && !removesSsi) {
+      if (!usesSsiEnv) {
         webAppConfig.isDotnet ||= isDotnet(linuxSite)
       }
       webAppConfig.isMusl &&= webAppConfig.isDotnet && isContainer
