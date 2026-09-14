@@ -183,6 +183,7 @@ describe('elf-symbols upload', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
         gnuBuildId: 'fake-gnu-build-id',
         goBuildId: 'fake-go-build-id',
         fileHash: 'fake-file-hash',
