@@ -15,10 +15,6 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
             "value": "8080"
 +         },
 +         {
-+           "name": "DD_TRACE_ENABLED",
-+           "value": "true"
-+         },
-+         {
 +           "name": "DD_LOGS_INJECTION",
 +           "value": "true"
 +         },
@@ -33,6 +29,10 @@ exports[`ecs-fargate instrument prints the diff and registers nothing on a dry r
 +         {
 +           "name": "DD_DOGSTATSD_URL",
 +           "value": "unix:///var/run/datadog/dsd.socket"
++         },
++         {
++           "name": "DD_TRACE_ENABLED",
++           "value": "true"
           }
         ],
         "essential": true,
