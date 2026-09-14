@@ -4,6 +4,7 @@ import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants
 
 import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
 import {
+  type InstrumentSettings,
   instrumentTaskDefinition,
   isUpToDate,
   stripReadOnlyFields,
@@ -94,11 +95,11 @@ describe('instrumentTaskDefinition', () => {
       ...APP_CONTAINER,
       environment: [
         {name: 'PORT', value: '8080'},
-        {name: 'DD_TRACE_ENABLED', value: 'true'},
         {name: 'DD_LOGS_INJECTION', value: 'true'},
         {name: 'DD_SERVICE', value: 'my-app'},
         {name: 'DD_TRACE_AGENT_URL', value: 'unix:///var/run/datadog/apm.socket'},
         {name: 'DD_DOGSTATSD_URL', value: 'unix:///var/run/datadog/dsd.socket'},
+        {name: 'DD_TRACE_ENABLED', value: 'true'},
       ],
       dockerLabels: {'com.datadoghq.tags.service': 'my-app'},
       mountPoints: [SOCKET_MOUNT],
@@ -349,20 +350,23 @@ describe('instrumentTaskDefinition', () => {
 
   describe('product toggles', () => {
     test('turns tracing off on both the tracers and the Agent', () => {
-      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {...MOCK_SETTINGS, tracing: false})
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        tracing: 'disabled',
+      })
 
       expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'false')
       expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_APM_ENABLED', 'false')
     })
 
-    test('leaves tracing as the application container set it', () => {
+    test('enables tracing when the application container had turned it off', () => {
       const original = fargateTaskDefinition({
         containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TRACE_ENABLED', value: 'false'}]}],
       })
 
       const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
-      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'false')
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'true')
     })
 
     test('enables tracing over the application container when asked to', () => {
@@ -370,7 +374,7 @@ describe('instrumentTaskDefinition', () => {
         containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TRACE_ENABLED', value: 'false'}]}],
       })
 
-      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing: true})
+      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing: 'manual'})
 
       expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'true')
     })
@@ -438,7 +442,7 @@ describe('instrumentTaskDefinition', () => {
     test('keeps the Agent intake on for LLM Observability when tracing is off', () => {
       const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
         ...MOCK_SETTINGS,
-        tracing: false,
+        tracing: 'disabled',
         llmobs: 'my-ml-app',
       })
 
@@ -785,7 +789,7 @@ describe('instrumentTaskDefinition', () => {
       const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
       const app = appContainerOf(taskDefinition.containerDefinitions)
-      expect(envVarsOf(app)).toHaveProperty('dd_trace_enabled', 'false')
+      expect(envVarsOf(app)).toHaveProperty('dd_trace_enabled', 'true')
       expect(envVarsOf(app)).not.toHaveProperty('DD_TRACE_ENABLED')
       // Application Security Monitoring is off, so the variable enabling it is dropped either case.
       expect(envVarsOf(app)).not.toHaveProperty('dd_appsec_enabled')
@@ -1355,11 +1359,11 @@ describe('uninstrumentTaskDefinition', () => {
       ],
       [
         'every product turned on',
-        {...MOCK_SETTINGS, tracing: true, appsec: true, llmobs: 'my-ml-app', logLevel: 'debug'},
+        {...MOCK_SETTINGS, tracing: 'manual' as const, appsec: true, llmobs: 'my-ml-app', logLevel: 'debug'},
         fargateTaskDefinition(),
       ],
       ['a Windows task', MOCK_SETTINGS, windowsTaskDefinition()],
-    ])('instrumented with %s', (_case, settings, original) => {
+    ])('instrumented with %s', (_case, settings: InstrumentSettings, original) => {
       const {taskDefinition} = uninstrumentTaskDefinition(
         instrumentedTaskDefinition(settings, original),
         {},

@@ -1,10 +1,17 @@
 import type {EcsFargateConfigOptions} from './common'
 
 import {Command, Option} from 'clipanion'
+import * as t from 'typanion'
 
-import {toBoolean} from '../../helpers/env'
 import {executePluginCommand} from '../../helpers/plugin'
 import {AGENT_IMAGE, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
+import {DEFAULT_TRACER_LIBC, LIBCS} from '../../helpers/serverless/ssi/injection-spec'
+import {
+  DEFAULT_TRACER_VERSION,
+  TRACER_IMAGE_TAG_REG_EXP,
+  TRACER_INJECTION_LANGUAGES,
+} from '../../helpers/serverless/ssi/tracer'
+import {TRACING_MODES} from '../../helpers/serverless/ssi/tracing'
 
 import {EcsFargateCommand} from './common'
 
@@ -55,9 +62,30 @@ export class EcsFargateInstrumentCommand extends EcsFargateCommand {
   private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', {
     description: `Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify \`--no-upload-git-metadata\` to disable. Defaults to 'true'`,
   })
-  private tracing = Option.String('--tracing', {
+  private tracing: EcsFargateConfigOptions['tracing'] = Option.String('--tracing', {
     description:
-      'Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`.',
+      'Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` to detect the language and add a tracer automatically, or `disabled` to turn tracing off. Add `--language` with `inject` to select one tracer. Defaults to `manual`.',
+    validator: t.isEnum(TRACING_MODES),
+  })
+  private language: EcsFargateConfigOptions['language'] = Option.String('--language', {
+    description: `Set the application language for log parsing. With \`--tracing inject\`, this selects one tracer instead of detecting the language automatically. Supported injection values: ${TRACER_INJECTION_LANGUAGES.map(
+      (language) => `\`${language}\``
+    ).join(', ')}. \`dotnet\` is accepted as an alias for \`csharp\`.`,
+    validator: t.cascade(t.isString(), t.matchesRegExp(/.+/)),
+  })
+  private tracerVersion = Option.String('--tracer-version', {
+    description: `Set the tracer image tag for automatic instrumentation with \`--language\`. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
+    validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
+  })
+  private tracerLibc: EcsFargateConfigOptions['tracerLibc'] = Option.String('--tracer-libc', {
+    description: `Set the C standard library used by the application image with \`--language\`. Possible values: ${LIBCS.map(
+      (libc) => `"${libc}"`
+    ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
+    validator: t.isEnum(LIBCS),
+  })
+  private containerName = Option.String('--container-name', {
+    description:
+      'Select the application container to instrument when the task definition has multiple application containers.',
   })
   private logLevel = Option.String('--log-level,--logLevel', {
     description: 'Specify your Datadog log level.',
@@ -84,6 +112,10 @@ export class EcsFargateInstrumentCommand extends EcsFargateCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       tracing: this.tracing,
+      language: this.language,
+      tracerVersion: this.tracerVersion,
+      tracerLibc: this.tracerLibc,
+      containerName: this.containerName,
       logLevel: this.logLevel,
       appsec: this.appsec,
       llmobs: this.llmobs,
@@ -99,9 +131,6 @@ export class EcsFargateInstrumentCommand extends EcsFargateCommand {
 
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
-    }
-    if (config.tracing !== undefined && toBoolean(config.tracing) === undefined) {
-      errors.push('--tracing must be either `true` or `false`.')
     }
 
     return errors
