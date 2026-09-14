@@ -203,6 +203,22 @@ describe('aas instrument', () => {
       expect(context.stdout.toString()).toContain('Uninstrumentation completed successfully')
     })
 
+    test('Unregisters sticky injection settings on code-based Linux slots', async () => {
+      webAppsOperations.getSlot.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
+      webAppsOperations.getConfigurationSlot.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
+      webAppsOperations.listSlotConfigurationNames.mockResolvedValue({appSettingNames: ['NODE_OPTIONS', 'DD_ENV']})
+
+      const {code} = await runCLI(SLOT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(deleteDirectory).toHaveBeenCalledWith('/home/data/datadog-tracer')
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({appSettingNames: ['DD_ENV']})
+      )
+    })
+
     test('Treats the SSI telemetry tag as a tag, not SSI state', async () => {
       webAppsOperations.get.mockResolvedValue({
         ...CONTAINER_WEB_APP,

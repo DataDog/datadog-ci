@@ -22,6 +22,7 @@ import {
   SIDECAR_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {LANGUAGE_INJECTION_ENV_NAMES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
@@ -166,7 +167,7 @@ export class PluginCommand extends AasInstrumentCommand {
   ): Promise<ProcessResult> {
     // make config a copy with the default service added
     config = {...config, service: config.service ?? webApp.name}
-    const sticky = stickySlotSettings(resourceGroup, webApp, stickyNames(config))
+    let sticky = stickySlotSettings(resourceGroup, webApp, stickyNames(config))
     try {
       const [site, envVarDictionary] = await Promise.all(
         webApp.slot
@@ -326,6 +327,11 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         injectApm,
         !isContainer && !injectApm
       )
+      if (injectApm) {
+        // Pin the injection settings sticky so a slot swap cannot move them to production without
+        // the staged tracer files they point at (settings swap, filesystems do not).
+        sticky = stickySlotSettings(resourceGroup, webApp, [...stickyNames(config), ...LANGUAGE_INJECTION_ENV_NAMES])
+      }
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
 

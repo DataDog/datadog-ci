@@ -255,6 +255,25 @@ describe('aas instrument', () => {
         })
       )
       expect(deleteDirectory).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateSlotConfigurationNames).not.toHaveBeenCalled()
+    })
+
+    test('Pins injection settings sticky when instrumenting a slot with --apm-enabled', async () => {
+      webAppsOperations.getSlot.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfigurationSlot.mockResolvedValue(NODE_22_SITE_CONFIG)
+
+      const {code} = await runCLI([...SLOT_INSTRUMENT_ARGS, '--apm-enabled'])
+
+      expect(code).toEqual(0)
+      expect(publishTracer).toHaveBeenCalled()
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          appSettingNames: expect.arrayContaining(['NODE_OPTIONS', 'LD_PRELOAD', 'JAVA_TOOL_OPTIONS']),
+        })
+      )
     })
 
     test('Removing injection without --apm-enabled warns and keeps the staged tracer', async () => {

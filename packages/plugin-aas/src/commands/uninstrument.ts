@@ -10,6 +10,7 @@ import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/r
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {LANGUAGE_INJECTION_ENV_NAMES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
@@ -133,11 +134,15 @@ export class PluginCommand extends AasUninstrumentCommand {
       }
       await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
+      // Unregister the sticky injection settings instrument pinned on code-based Linux slots.
+      const stickyNamesToRemove = [
+        ...(removePrivateExtensions ? [WEBSITE_PRIVATE_EXTENSIONS] : []),
+        ...(!isWindows(site) && !isLinuxContainer(site) ? LANGUAGE_INJECTION_ENV_NAMES : []),
+      ]
+
       return {
         success: true,
-        sticky: removePrivateExtensions
-          ? stickySlotSettings(resourceGroup, webApp, [WEBSITE_PRIVATE_EXTENSIONS])
-          : undefined,
+        sticky: stickySlotSettings(resourceGroup, webApp, stickyNamesToRemove),
       }
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(webApp)}: ${formatError(error)}`))
