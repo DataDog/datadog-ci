@@ -3,7 +3,7 @@
 export const LAMBDA_LAYER_VERSIONS = {
   extension: 99,
   dotnet: 25,
-  java: 27,
+  java: 28,
   node: 143,
   python: 127,
   ruby: 30,
