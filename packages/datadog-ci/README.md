@@ -249,7 +249,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 #### `wasm-symbols`
 
-<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-webassembly-symbols/)</sub>
 
 - `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
 
