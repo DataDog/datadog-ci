@@ -82,6 +82,12 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
     if (restartResult.exitCode !== 0) {
       throw new Error(`Failed to restart SSI app (exit code ${restartResult.exitCode}): ${restartResult.stderr}`)
     }
+    // Wait for the first boot before instrumenting: staging onto a fresh app whose runtime has not
+    // finished initializing /home can write the tracer into storage a later restart replaces.
+    const hostResult = await execPromise(
+      `az webapp show --name "${appName}" --resource-group "${resourceGroup}" --query defaultHostName --output tsv`
+    )
+    await triggerTraffic(`https://${hostResult.stdout.trim()}`, {attempts: 30, requiredSuccesses: 1})
   }, 900_000)
 
   afterAll(async () => {

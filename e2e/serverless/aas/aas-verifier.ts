@@ -75,7 +75,16 @@ const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode
 }
 
 const verifyStagedTracer = (appName: string, rg: string, expected: boolean): void => {
-  const result = runKuduCommand(appName, rg, 'test -d /home/data/datadog-tracer')
+  // The Azure Files-backed /home mount lags on directory enumeration (CIFS), especially right
+  // after a delete, so poll before asserting.
+  let result: {ExitCode?: number} = {}
+  for (let attempt = 0; attempt < 6; attempt++) {
+    result = runKuduCommand(appName, rg, 'test -d /home/data/datadog-tracer')
+    if ((result.ExitCode === 0) === expected) {
+      break
+    }
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10_000)
+  }
   if (expected) {
     expect(result.ExitCode).toBe(0)
   } else {
