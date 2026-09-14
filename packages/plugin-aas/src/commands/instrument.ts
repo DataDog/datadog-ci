@@ -44,7 +44,14 @@ import {
 } from '../common'
 import {getKuduClient} from '../kudu'
 import {parseLinuxFxVersion} from '../ssi'
-import {AAS_SSI_TAG, AAS_SSI_TAG_VALUE, hasStagedAasTracer, mergeAasSsiEnv, removeAasSsiEnv} from '../ssi-env'
+import {
+  AAS_SSI_STAGING_ROOT,
+  AAS_SSI_TAG,
+  AAS_SSI_TAG_VALUE,
+  hasStagedAasTracer,
+  mergeAasSsiEnv,
+  removeAasSsiEnv,
+} from '../ssi-env'
 import {resolveAasTracerStaging} from '../ssi-stage'
 
 // Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
@@ -268,18 +275,29 @@ export class PluginCommand extends AasInstrumentCommand {
         )
       } else if (injectApm) {
         const runtime = parseLinuxFxVersion(linuxSite.siteConfig?.linuxFxVersion)
+        const staging = await resolveAasTracerStaging(runtime)
+        const baseEnvVars = getEnvVars({...config, isDotnet: false}, linuxSite, webApp)
+        const preMergeEnvVars = {...existingEnvVars, ...baseEnvVars}
+        // Merge before publishing so environment conflicts abort before any app mutation.
+        ssiEnvVars = mergeAasSsiEnv(preMergeEnvVars, runtime, staging.root)
         if (this.dryRun) {
           this.context.stdout.write(
             `${this.dryRunPrefix}Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
           )
+          for (const [name, value] of Object.entries(ssiEnvVars)) {
+            if (preMergeEnvVars[name] !== value) {
+              this.context.stdout.write(`${this.dryRunPrefix}  ${name}=${value}\n`)
+            }
+          }
         } else {
-          const staging = await resolveAasTracerStaging(runtime)
-          const baseEnvVars = getEnvVars({...config, isDotnet: false}, linuxSite, webApp)
-          // Merge before publishing so environment conflicts abort before any app mutation.
-          ssiEnvVars = mergeAasSsiEnv({...existingEnvVars, ...baseEnvVars}, runtime, staging.root)
           await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp))
         }
       } else if (removesSsi) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Removing automatic tracer injection from ${renderWebApp(webApp)}. Use --apm-enabled to keep it.`
+          )
+        )
         ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars({...config, isDotnet: false}, linuxSite, webApp)}
       }
       const webAppConfig = hasStagedTracer || injectApm || removesSsi ? {...config, isDotnet: false} : {...config}
@@ -305,6 +323,21 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         ssiEnvVars,
         removesSsi
       )
+      if (removesSsi) {
+        // Delete after the app settings update so a restart never sees injection settings pointing
+        // at a removed tracer.
+        this.context.stdout.write(`${this.dryRunPrefix}Removing the staged tracer files from ${renderWebApp(webApp)}\n`)
+        if (!this.dryRun) {
+          try {
+            await (await getKuduClient(aasClient, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+          } catch (error) {
+            this.context.stdout.write(
+              `Could not remove the staged tracer files from ${renderWebApp(webApp)}: ${formatError(error)}\n` +
+                `Tracer injection is already disabled; the leftover files under ${AAS_SSI_STAGING_ROOT} are inactive.\n`
+            )
+          }
+        }
+      }
       // tag only after instrumentation succeeds (avoids false telemetry)
       await this.addTags(
         webAppConfig,

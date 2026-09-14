@@ -188,6 +188,18 @@ export const verifyLinuxUninstrumented = (
   if (expectSsi) {
     expect(tags.dd_sls_injection_mode).toBeUndefined()
     verifyStagedTracer(appName, rg, false)
+    // Injection settings outside AAS_DD_SETTING_NAMES must also be gone.
+    for (const name of [
+      'NODE_OPTIONS',
+      'JAVA_TOOL_OPTIONS',
+      'PYTHONPATH',
+      'RUBYOPT',
+      'LD_PRELOAD',
+      'PHP_INI_SCAN_DIR',
+      'DD_LOADER_PACKAGE_PATH',
+    ]) {
+      expect(settings[name]).toBeUndefined()
+    }
   }
 
   console.log('All Linux uninstrumented checks passed.\n')

@@ -33,6 +33,11 @@ const webAppsOperations = {
 const updateTags = jest.fn().mockResolvedValue({})
 const deleteAzureResource = jest.fn().mockResolvedValue({})
 
+const deleteDirectory = jest.fn()
+jest.mock('../kudu', () => ({
+  getKuduClient: jest.fn().mockImplementation(async () => ({deleteDirectory})),
+}))
+
 jest.mock('@azure/arm-resources', () => ({
   ResourceManagementClient: jest.fn().mockImplementation(() => ({
     tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
@@ -46,6 +51,7 @@ import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
 import {
   CONTAINER_WEB_APP,
+  LINUX_CODE_WEB_APP,
   WINDOWS_DOTNET_WEB_APP,
   WINDOWS_DOTNET_FUNCTION_APP,
   WINDOWS_NODE_WEB_APP,
@@ -99,6 +105,7 @@ describe('aas instrument', () => {
       webAppsOperations.updateSlotConfigurationNames.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
+      deleteDirectory.mockReset().mockResolvedValue(undefined)
     })
 
     test('Fails if not authenticated with Azure', async () => {
@@ -164,6 +171,35 @@ describe('aas instrument', () => {
         properties: {hello: 'world'}, // ensure existing settings are preserved
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {ava: 'true'}}})
+    })
+
+    test('Removes staged tracer files from code-based Linux apps without requiring env markers', async () => {
+      webAppsOperations.get.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
+      webAppsOperations.getConfiguration.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
+
+      const {code} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(deleteDirectory).toHaveBeenCalledWith('/home/data/datadog-tracer')
+    })
+
+    test('Does not require SCM access for containerized Linux apps', async () => {
+      const {code} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(deleteDirectory).not.toHaveBeenCalled()
+    })
+
+    test('Logs and continues when the SCM site is inaccessible', async () => {
+      webAppsOperations.get.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
+      webAppsOperations.getConfiguration.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
+      deleteDirectory.mockRejectedValue(new Error('scm down'))
+
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toContain('Could not access the SCM site to remove staged tracer files')
+      expect(context.stdout.toString()).toContain('Uninstrumentation completed successfully')
     })
 
     test('Treats the SSI telemetry tag as a tag, not SSI state', async () => {

@@ -1,4 +1,4 @@
-import type {StringDictionary} from '@azure/arm-appservice'
+import type {Site, StringDictionary} from '@azure/arm-appservice'
 import type {AasConfigOptions, WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {WebSiteManagementClient} from '@azure/arm-appservice'
@@ -16,6 +16,7 @@ import chalk from 'chalk'
 import {
   AAS_DD_SETTING_NAMES,
   aggregateStickyBySite,
+  isLinuxContainer,
   isWindows,
   isWindowsFunctionApp,
   mutateStickySlotSettings,
@@ -24,7 +25,7 @@ import {
   type ProcessResult,
 } from '../common'
 import {getKuduClient} from '../kudu'
-import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, hasStagedAasTracer, removeAasSsiEnv} from '../ssi-env'
+import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, removeAasSsiEnv} from '../ssi-env'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -128,7 +129,7 @@ export class PluginCommand extends AasUninstrumentCommand {
         )
       } else {
         // Linux uninstrumentation via sidecar
-        await this.uninstrumentSidecar(config, client, resourceGroup, webApp)
+        await this.uninstrumentSidecar(config, client, resourceGroup, webApp, site)
       }
       await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
@@ -199,7 +200,8 @@ export class PluginCommand extends AasUninstrumentCommand {
     config: AasConfigOptions,
     client: WebSiteManagementClient,
     resourceGroup: string,
-    webApp: WebApp
+    webApp: WebApp,
+    site: Site
   ) {
     this.context.stdout.write(
       `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${renderWebApp(webApp)} (if it exists)\n`
@@ -217,8 +219,22 @@ export class PluginCommand extends AasUninstrumentCommand {
           : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
       ).properties ?? {}
     await this.removeAasSsiEnvVars(config, webApp, client, resourceGroup, settings)
-    if (hasStagedAasTracer(settings) && !this.dryRun) {
-      await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+    // Containerized apps never use tracer staging, so do not require SCM access for them.
+    if (isLinuxContainer(site)) {
+      return
+    }
+    // Delete unconditionally rather than gating on env markers: `rm -rf` is idempotent, and stale
+    // markers would otherwise orphan the staged tree.
+    this.context.stdout.write(`${this.dryRunPrefix}Removing any staged tracer files from ${renderWebApp(webApp)}\n`)
+    if (!this.dryRun) {
+      try {
+        await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+      } catch (error) {
+        this.context.stdout.write(
+          `Could not access the SCM site to remove staged tracer files from ${renderWebApp(webApp)}: ${formatError(error)}\n` +
+            `Any leftover files under ${AAS_SSI_STAGING_ROOT} are inactive.\n`
+        )
+      }
     }
   }
 

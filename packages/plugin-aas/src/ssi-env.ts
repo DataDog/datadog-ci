@@ -1,5 +1,4 @@
 import type {AasCodeRuntime} from './ssi'
-import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 
 import {
   mergeEnvFragment,
@@ -40,6 +39,10 @@ export const getAasInjectionSpec = (runtime: AasCodeRuntime, root: string): Lang
     root,
   })
 
+// Azure resolves Key Vault references at runtime, so fragment-merging into one would corrupt the
+// reference and the app would receive the raw text.
+const KEY_VAULT_REFERENCE_PREFIX = '@Microsoft.KeyVault('
+
 export const mergeAasSsiEnv = (
   current: Record<string, string>,
   runtime: AasCodeRuntime,
@@ -48,6 +51,14 @@ export const mergeAasSsiEnv = (
   const spec = getAasInjectionSpec(runtime, root)
   const env = removeLegacyAasDotnetEnv(removeAasSsiEnv(current))
 
+  for (const name of [...spec.env.map((fragment) => fragment.name), 'DD_TAGS']) {
+    if (env[name]?.startsWith(KEY_VAULT_REFERENCE_PREFIX)) {
+      throw new Error(
+        `${name} is a Key Vault reference, which cannot be merged with the tracer injection settings. ` +
+          'Replace the reference with a literal value and retry.'
+      )
+    }
+  }
   for (const fragment of spec.env) {
     env[fragment.name] = mergeEnvFragment(env[fragment.name], fragment)
   }
@@ -146,6 +157,3 @@ const removeSpaceFragments = (value: string, remove: (part: string) => boolean):
 
   return result || undefined
 }
-
-export const getAasSsiSpecEnv = (runtime: AasCodeRuntime, root: string): readonly EnvFragment[] =>
-  getAasInjectionSpec(runtime, root).env

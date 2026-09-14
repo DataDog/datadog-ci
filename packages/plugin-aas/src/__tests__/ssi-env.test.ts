@@ -47,6 +47,26 @@ describe('mergeAasSsiEnv and removeAasSsiEnv round-trips', () => {
     expect(removeAasSsiEnv(legacy)).toMatchObject(legacy)
   })
 
+  it('rejects Key Vault references on injection settings instead of merging into them', () => {
+    const root = getStagedRoot(parseLinuxFxVersion('NODE|22-lts'), '6.0.0', DIGEST)
+
+    expect(() =>
+      mergeAasSsiEnv(
+        {NODE_OPTIONS: '@Microsoft.KeyVault(SecretUri=https://myvault.vault.azure.net/secrets/node-options/)'},
+        parseLinuxFxVersion('NODE|22-lts'),
+        root
+      )
+    ).toThrow('NODE_OPTIONS is a Key Vault reference')
+
+    expect(() =>
+      mergeAasSsiEnv(
+        {DD_TAGS: '@Microsoft.KeyVault(VaultName=myvault;SecretName=dd-tags)'},
+        parseLinuxFxVersion('NODE|22-lts'),
+        root
+      )
+    ).toThrow('DD_TAGS is a Key Vault reference')
+  })
+
   it('applies the injection mode tag idempotently and removes only that tag', () => {
     const root = getStagedRoot(parseLinuxFxVersion('NODE|22-lts'), '6.0.0', DIGEST)
     const once = mergeAasSsiEnv({DD_TAGS: 'team:checkout'}, parseLinuxFxVersion('NODE|22-lts'), root)

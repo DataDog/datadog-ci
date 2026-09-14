@@ -56,8 +56,16 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
       })
       const zip = await buildFleetPackageZip(layer.data, fleetPackage.layer.digest, runtime)
       await kudu.publish(root, zip)
-      if (!(await kudu.hasArtifacts(spec.artifacts))) {
-        throw new Error('The tracer staging deployment completed without all required startup files.')
+      // The Azure Files-backed /home mount intermittently lags on file enumeration right after
+      // extraction (CIFS), so retry the startup-file check before declaring the deploy incomplete.
+      for (let attempt = 0; ; attempt++) {
+        if (await kudu.hasArtifacts(spec.artifacts)) {
+          return
+        }
+        if (attempt >= 3) {
+          throw new Error('The tracer staging deployment completed without all required startup files.')
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5_000))
       }
     },
   }

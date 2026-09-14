@@ -53,6 +53,18 @@ const webAppsOperations = {
 const updateTags = jest.fn().mockResolvedValue({})
 const createAzureResource = jest.fn().mockResolvedValue({})
 
+const STAGED_ROOT = `/home/data/datadog-tracer/nodejs/6.0.0-${'a'.repeat(64)}`
+const publishTracer = jest.fn()
+const resolveAasTracerStaging = jest.fn()
+jest.mock('../ssi-stage', () => ({
+  resolveAasTracerStaging: (...args: unknown[]) => resolveAasTracerStaging(...args),
+}))
+
+const deleteDirectory = jest.fn()
+jest.mock('../kudu', () => ({
+  getKuduClient: jest.fn().mockImplementation(async () => ({deleteDirectory})),
+}))
+
 jest.mock('@azure/arm-resources', () => ({
   ResourceManagementClient: jest.fn().mockImplementation(() => ({
     tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
@@ -103,6 +115,8 @@ const DEFAULT_CONFIG_WITH_DEFAULT_SERVICE = {
   service: DEFAULT_CONFIG.aasName,
 }
 
+const NODE_22_SITE_CONFIG = {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'NODE|22-lts'}
+
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['aas', 'instrument'])
 
@@ -138,6 +152,9 @@ describe('aas instrument', () => {
       handleSourceCodeIntegration
         .mockClear()
         .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
+      resolveAasTracerStaging.mockReset().mockResolvedValue({root: STAGED_ROOT, publish: publishTracer})
+      publishTracer.mockReset().mockResolvedValue(undefined)
+      deleteDirectory.mockReset().mockResolvedValue(undefined)
     })
 
     test('Adds a sidecar and updates the application settings and tags', async () => {
@@ -199,6 +216,72 @@ describe('aas instrument', () => {
             CORECLR_ENABLE_PROFILING: '1',
             CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
           }),
+        })
+      )
+    })
+
+    test('Previews tracer injection in dry run mode without publishing', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled', '--dry-run'])
+
+      expect(code).toEqual(0)
+      expect(resolveAasTracerStaging).toHaveBeenCalled()
+      expect(publishTracer).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
+      expect(context.stdout.toString()).toContain('Staging the nodejs tracer')
+      expect(context.stdout.toString()).toContain(`NODE_OPTIONS=--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`)
+      expect(context.stdout.toString()).toContain('DD_TRACE_ENABLED=true')
+    })
+
+    test('Publishes the staged tracer with --apm-enabled', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled'])
+
+      expect(code).toEqual(0)
+      expect(publishTracer).toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            NODE_OPTIONS: `--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`,
+            DD_TRACE_ENABLED: 'true',
+          }),
+        })
+      )
+      expect(deleteDirectory).not.toHaveBeenCalled()
+    })
+
+    test('Removing injection without --apm-enabled warns and deletes the staged tracer', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
+          NODE_OPTIONS: `--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`,
+          DD_TRACE_ENABLED: 'true',
+          DD_TAGS: '_dd.injection.mode:serverless-single-lang',
+        },
+      })
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(resolveAasTracerStaging).not.toHaveBeenCalled()
+      expect(context.stdout.toString()).toContain('Removing automatic tracer injection')
+      expect(deleteDirectory).toHaveBeenCalledWith('/home/data/datadog-tracer')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.not.objectContaining({NODE_OPTIONS: expect.anything()}),
         })
       )
     })
