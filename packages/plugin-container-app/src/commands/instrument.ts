@@ -25,15 +25,17 @@ import {
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {
+  MULTI_LANGUAGE_SSI_MODE,
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
 import {DD_API_KEY_SECRET_NAME, getEnvVarsByName, redactSecrets} from '../common'
 import {
-  MULTI_LANGUAGE_SSI_MODE,
-  SINGLE_LANGUAGE_SSI_MODE,
-  SSI_INJECTION_MODE_TAG,
   applySsi,
   assertInjectionEnvCanBeMerged,
   assertSsiEphemeralStorage,
