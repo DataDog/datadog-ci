@@ -64,6 +64,7 @@ import {
   ENVIRONMENT_TAG_KEY,
   FIRELENS_API_KEY_OPTION,
   FLUENTBIT_FIRELENS_TYPE,
+  HEALTHY_DEPENDENCY_CONDITION,
   LAUNCH_TYPE_FARGATE,
   LOGS_INTAKE_HOST_PREFIX,
   LOG_ROUTER_CONTAINER_NAME,
@@ -77,7 +78,11 @@ import {
   LOG_ROUTER_USER,
   READ_ONLY_TASK_DEFINITION_FIELDS,
   SERVICE_TAG_KEY,
+  START_DEPENDENCY_CONDITION,
   VERSION_TAG_KEY,
+  WINDOWS_AGENT_IMAGE_SUFFIX,
+  WINDOWS_OS_FAMILY_PREFIX,
+  WINDOWS_WORKING_DIRECTORY,
 } from './constants'
 
 /**
@@ -85,8 +90,8 @@ import {
  */
 export type InstrumentSettings = {
   /**
-   * The Agent image to run. Absent leaves the choice to the transform, which picks the default
-   * build.
+   * The Agent image to run. Absent leaves the choice to the transform, which picks the default build
+   * for the task's platform.
    */
   agentImage?: string
   site: string
@@ -144,25 +149,40 @@ type ManagedValues = {
  * Merges the values the command writes into the ones already on the container, by name: defaults
  * fill in what is missing, managed values replace what is there, and removed names are dropped.
  *
- * Existing entries keep their position, so that re-running produces an identical result rather than
- * a reordered one that would show up as a diff. Shared by the environment variables and the Docker
- * labels, so the two can never disagree on what overrides what.
+ * Existing entries keep their name and position, so that re-running produces an identical result
+ * rather than a reordered one that would show up as a diff. Shared by the environment variables and
+ * the Docker labels, so the two can never disagree on what overrides what.
+ *
+ * With `caseInsensitive`, names that differ only in case are the same name, as they are for the
+ * environment of a Windows container: a value the command writes lands on the entry the container
+ * declares rather than beside it, where the two would contradict each other.
  */
 const mergeManaged = <T>(
   {managed, defaults, removed}: ManagedValues,
-  existing: Iterable<readonly [string, T]>
+  existing: Iterable<readonly [string, T]>,
+  caseInsensitive = false
 ): Map<string, string | T> => {
   const merged = new Map<string, string | T>(existing)
+  const declared = new Map([...merged.keys()].map((name) => [name.toLowerCase(), name]))
+  const nameOf = (name: string): string => (caseInsensitive ? (declared.get(name.toLowerCase()) ?? name) : name)
+  const set = (name: string, value: string): void => {
+    const declaredName = nameOf(name)
+    merged.set(declaredName, value)
+    declared.set(declaredName.toLowerCase(), declaredName)
+  }
+
   for (const name of removed ?? []) {
-    merged.delete(name)
+    const declaredName = nameOf(name)
+    merged.delete(declaredName)
+    declared.delete(declaredName.toLowerCase())
   }
   for (const [name, value] of Object.entries(defaults)) {
-    if (!merged.has(name)) {
-      merged.set(name, value)
+    if (!merged.has(nameOf(name))) {
+      set(name, value)
     }
   }
   for (const [name, value] of Object.entries(managed)) {
-    merged.set(name, value)
+    set(name, value)
   }
 
   return merged
@@ -277,9 +297,12 @@ const getAgentEnvVars = (settings: InstrumentSettings, family?: string): Managed
  * ways of reaching the Agent are mutually exclusive, so the unused one is removed rather than left
  * behind to point at a socket that is no longer mounted.
  */
-const getAppContainerEnvVars = (settings: InstrumentSettings, family?: string): ManagedValues => {
+const getAppContainerEnvVars = (
+  settings: InstrumentSettings,
+  {socket: socketEnabled}: Platform,
+  family?: string
+): ManagedValues => {
   const serviceTags = getServiceTagEnvVars(settings, family)
-  const socketEnabled = settings.agentSocket !== false
   const managed: Record<string, string> = {...serviceTags.managed}
   const removed = [
     ...(serviceTags.removed ?? []),
@@ -365,9 +388,9 @@ const withSocketVolume = (existing: Volume[] | undefined, socketEnabled: boolean
 
 /**
  * The environment to give a container: what the command writes, merged into what the container
- * already declares.
+ * already declares. Windows resolves variable names without case, so the merge does too.
  */
-const toEnvironment = (values: ManagedValues, existing?: KeyValuePair[]): KeyValuePair[] => {
+const toEnvironment = (values: ManagedValues, {windows}: Platform, existing?: KeyValuePair[]): KeyValuePair[] => {
   const declared: [string, string | undefined][] = []
   for (const {name, value} of existing ?? []) {
     if (name !== undefined) {
@@ -375,7 +398,7 @@ const toEnvironment = (values: ManagedValues, existing?: KeyValuePair[]): KeyVal
     }
   }
 
-  return [...mergeManaged(values, declared)].map(([name, value]) => ({name, value}))
+  return [...mergeManaged(values, declared, windows)].map(([name, value]) => ({name, value}))
 }
 
 /**
@@ -442,10 +465,55 @@ export type SidecarContainerResult = {
 }
 
 /**
+ * What the task's operating system decides, resolved once so that the Agent, the application
+ * containers, and the task's volumes cannot disagree about it.
+ */
+type Platform = {
+  /** Whether the task runs Windows containers. */
+  windows: boolean
+  /** Whether the tracers reach the Agent over the shared Unix socket rather than the task loopback address. */
+  socket: boolean
+}
+
+/**
+ * Whether the task runs Windows containers, which the Agent sidecar has to be built differently
+ * for. A task definition that declares no `runtimePlatform`, or declares `LINUX`, runs Linux.
+ */
+const isWindowsTask = (taskDefinition: Pick<TaskDefinition, 'runtimePlatform'>): boolean =>
+  taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
+
+/**
+ * Whether a declared name is the environment variable `name`.
+ * Names are compared using platform aware matching.
+ */
+const isNamed = (declared: string | undefined, name: string, windows: boolean): boolean =>
+  windows ? declared?.toLowerCase() === name.toLowerCase() : declared === name
+
+/**
+ * What the task's platform allows, out of what the settings ask for. Windows containers have no
+ * Unix sockets to share, so the tracers there reach the Agent over the task loopback address
+ * whichever transport was asked for; every container in a Fargate task shares one network
+ * namespace, so that address is the Agent's.
+ */
+const resolvePlatform = (taskDefinition: TaskDefinition, settings: InstrumentSettings): Platform => {
+  const windows = isWindowsTask(taskDefinition)
+
+  return {windows, socket: !windows && settings.agentSocket !== false}
+}
+
+/**
+ * The Agent image to run; either the one specified by the user, or the default build for the task's platform.
+ */
+const agentImage = (settings: InstrumentSettings, windows: boolean): string =>
+  settings.agentImage ?? (windows ? `${AGENT_IMAGE}${WINDOWS_AGENT_IMAGE_SUFFIX}` : AGENT_IMAGE)
+
+/**
  * What the Agent sidecar is built from.
  */
 type AgentContainerContext = {
   settings: InstrumentSettings
+  /** What the task's operating system decides. */
+  platform: Platform
   /** The task definition family, used to name the service when the user did not. */
   family?: string
   /** The Agent container already on the task definition, if any. */
@@ -463,17 +531,18 @@ type AgentContainerContext = {
  */
 const buildAgentContainer = ({
   settings,
+  platform,
   family,
   existing,
   firelens,
   borrowed,
 }: AgentContainerContext): SidecarContainerResult => {
+  const {windows} = platform
   const warnings: string[] = []
 
-  // The API key lives either in `secrets` or in `environment`, never both, so switching between the
-  // two does not leave the old one behind. The field is only written when there is something to put
-  // in it, so a task definition that never had secrets does not gain an empty list.
-  const inheritedSecrets = (existing?.secrets ?? []).filter((secret) => secret.name !== API_KEY_ENV_VAR)
+  // Keeps the API key in either `secrets` or `environment`, never both, matching names the way the
+  // platform resolves them. The field is omitted if there is nothing added.
+  const inheritedSecrets = (existing?.secrets ?? []).filter((secret) => !isNamed(secret.name, API_KEY_ENV_VAR, windows))
   let secrets: Secret[] | undefined
   if (settings.apiKeySecretArn) {
     secrets = [...inheritedSecrets, {name: API_KEY_ENV_VAR, valueFrom: settings.apiKeySecretArn}]
@@ -482,7 +551,7 @@ const buildAgentContainer = ({
   }
 
   const inheritedEnvironment = settings.apiKeySecretArn
-    ? (existing?.environment ?? []).filter((envVar) => envVar.name !== API_KEY_ENV_VAR)
+    ? (existing?.environment ?? []).filter((envVar) => !isNamed(envVar.name, API_KEY_ENV_VAR, windows))
     : existing?.environment
 
   if (existing !== undefined && existing.essential !== false) {
@@ -491,14 +560,22 @@ const buildAgentContainer = ({
     )
   }
 
-  const healthCheck = {
-    command: [...AGENT_HEALTH_CHECK_COMMAND],
-    interval: AGENT_HEALTH_CHECK_INTERVAL,
-    timeout: AGENT_HEALTH_CHECK_TIMEOUT,
-    retries: AGENT_HEALTH_CHECK_RETRIES,
-    startPeriod: AGENT_HEALTH_CHECK_START_PERIOD,
-  }
-  if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
+  // The Agent's probe is a shell script that only exists in the Linux image, so a Windows task gets
+  // no health check rather than one that can never pass.
+  const healthCheck = windows
+    ? undefined
+    : {
+        command: [...AGENT_HEALTH_CHECK_COMMAND],
+        interval: AGENT_HEALTH_CHECK_INTERVAL,
+        timeout: AGENT_HEALTH_CHECK_TIMEOUT,
+        retries: AGENT_HEALTH_CHECK_RETRIES,
+        startPeriod: AGENT_HEALTH_CHECK_START_PERIOD,
+      }
+  if (windows) {
+    warnings.push(
+      `Leaving the ${AGENT_CONTAINER_NAME} container without a health check: the Agent's probe is a shell script that only its Linux image ships. Nothing will report whether the Agent is ready on this task.`
+    )
+  } else if (existing?.healthCheck && !sortedEqual(existing.healthCheck, healthCheck)) {
     warnings.push(`Replacing the health check on the ${AGENT_CONTAINER_NAME} container with the Agent's own probe.`)
   }
 
@@ -512,16 +589,18 @@ const buildAgentContainer = ({
   const container = removeUndefinedValues({
     ...existing,
     name: AGENT_CONTAINER_NAME,
-    image: settings.agentImage ?? AGENT_IMAGE,
+    image: agentImage(settings, windows),
     // The Agent must not be able to take the task down: a crashed Agent should cost telemetry, not
     // availability.
     essential: false,
-    environment: toEnvironment(getAgentEnvVars(settings, family), inheritedEnvironment),
+    environment: toEnvironment(getAgentEnvVars(settings, family), platform, inheritedEnvironment),
     secrets,
     healthCheck,
+    // The Windows Agent image leaves the working directory unset, and the Agent needs one.
+    workingDirectory: windows ? WINDOWS_WORKING_DIRECTORY : existing?.workingDirectory,
     // The other end of the socket the tracers write to. The Agent image already listens on this
     // path, so mounting the volume is all it takes.
-    mountPoints: withSocketMount(existing?.mountPoints, settings.agentSocket !== false),
+    mountPoints: withSocketMount(existing?.mountPoints, platform.socket),
     logConfiguration: firelens ?? withoutDatadogFirelens(existing?.logConfiguration) ?? borrowed,
   })
 
@@ -592,6 +671,61 @@ const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfigu
   )?.logConfiguration
 
 /**
+ * The containers whose presence and health checks this command decides, and whose dependents it
+ * therefore has to keep pointing at something the task can satisfy.
+ */
+const SIDECAR_CONTAINER_NAMES: string[] = [AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME]
+
+/**
+ * A container with its dependencies on the Datadog sidecars resolved to what the instrumented task
+ * can satisfy, leaving the dependencies between the customer's own containers alone.
+ *
+ * ECS rejects a revision whose container waits on a container the task does not run, or on the
+ * health of one that declares no health check. The log router is only there when log collection is
+ * on, and the Agent has no health check on Windows, so a task that waits on either has to be
+ * brought along rather than registered as it stands and refused.
+ */
+const withResolvedSidecarDependencies = (
+  container: ContainerDefinition,
+  sidecars: ContainerDefinition[]
+): SidecarContainerResult => {
+  if (!container.dependsOn?.length) {
+    return {container, warnings: []}
+  }
+
+  const warnings: string[] = []
+  const dependsOn = container.dependsOn.flatMap((dependency) => {
+    const name = dependency.containerName
+    if (name === undefined || !SIDECAR_CONTAINER_NAMES.includes(name)) {
+      return [dependency]
+    }
+
+    const sidecar = sidecars.find((candidate) => candidate.name === name)
+    if (!sidecar) {
+      warnings.push(
+        `Dropping the dependency of the ${container.name} container on ${name}, which the instrumented task does not run.`
+      )
+
+      return []
+    }
+    if (dependency.condition === HEALTHY_DEPENDENCY_CONDITION && !sidecar.healthCheck) {
+      warnings.push(
+        `Having the ${container.name} container wait for ${name} to start rather than to be healthy: ${name} has no health check on this task, and ECS rejects a ${HEALTHY_DEPENDENCY_CONDITION} dependency on a container that declares none.`
+      )
+
+      return [{...dependency, condition: START_DEPENDENCY_CONDITION}]
+    }
+
+    return [dependency]
+  })
+
+  return {
+    container: removeUndefinedValues({...container, dependsOn: dependsOn.length > 0 ? dependsOn : undefined}),
+    warnings,
+  }
+}
+
+/**
  * The tags the revision carries: the unified service tags the task now reports under, and the
  * version of the CLI that produced the revision. Both replace whatever the task definition had.
  */
@@ -657,6 +791,14 @@ export const instrumentTaskDefinition = (
     )
   }
 
+  const platform = resolvePlatform(taskDefinition, settings)
+  // FireLens does not support Windows Fargate
+  if (settings.logCollection && platform.windows) {
+    throw Error(
+      `Task definition ${family} runs Windows, which the ${LOG_ROUTER_CONTAINER_NAME} sidecar does not support. FireLens is Linux-only, so log collection cannot be enabled on this task.`
+    )
+  }
+
   const containers = taskDefinition.containerDefinitions ?? []
   const borrowed = borrowedLogConfiguration(containers)
   const firelens = settings.logCollection ? firelensLogConfiguration(settings) : undefined
@@ -664,11 +806,18 @@ export const instrumentTaskDefinition = (
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings} = buildAgentContainer({
     settings,
+    platform,
     family,
     existing: existingAgent,
     firelens,
     borrowed,
   })
+
+  if (platform.windows && settings.agentSocket !== false) {
+    warnings.push(
+      `Having the tracers reach the ${AGENT_CONTAINER_NAME} container on ${AGENT_LOOPBACK_HOST} rather than over the Unix socket they use by default: Windows containers have no Unix socket to share.`
+    )
+  }
 
   const existingLogRouter = containers.find((container) => container.name === LOG_ROUTER_CONTAINER_NAME)
   let logRouterContainer: ContainerDefinition | undefined
@@ -697,9 +846,8 @@ export const instrumentTaskDefinition = (
   // The Agent is left out of the Docker labels on purpose: they tag the metrics collected about the
   // container carrying them, so an Agent labelled with the application's service would report its
   // own resource usage under that service.
-  const socketEnabled = settings.agentSocket !== false
   const ust = unifiedServiceTags(settings, family)
-  const appEnvironment = getAppContainerEnvVars(settings, family)
+  const appEnvironment = getAppContainerEnvVars(settings, platform, family)
   const appLabels = getUstDockerLabels(settings, family)
   const containerDefinitions = containers.flatMap((container) => {
     if (container.name === AGENT_CONTAINER_NAME) {
@@ -720,9 +868,9 @@ export const instrumentTaskDefinition = (
     return [
       removeUndefinedValues({
         ...container,
-        environment: toEnvironment(appEnvironment, container.environment),
+        environment: toEnvironment(appEnvironment, platform, container.environment),
         dockerLabels: toDockerLabels(appLabels, container.dockerLabels),
-        mountPoints: withSocketMount(container.mountPoints, socketEnabled),
+        mountPoints: withSocketMount(container.mountPoints, platform.socket),
         logConfiguration: firelens ?? withoutDatadogFirelens(container.logConfiguration),
       }),
     ]
@@ -734,11 +882,26 @@ export const instrumentTaskDefinition = (
     containerDefinitions.push(logRouterContainer)
   }
 
+  // Last, because what a dependency on a sidecar can wait for is only settled once the sidecars the
+  // task runs, and the health checks they declare, are known.
+  const sidecars = [agentContainer, logRouterContainer].filter(
+    (sidecar): sidecar is ContainerDefinition => sidecar !== undefined
+  )
+  const resolved = containerDefinitions.map((container) => {
+    const {container: withDependencies, warnings: dependencyWarnings} = withResolvedSidecarDependencies(
+      container,
+      sidecars
+    )
+    warnings.push(...dependencyWarnings)
+
+    return withDependencies
+  })
+
   return {
     taskDefinition: removeUndefinedValues({
       ...stripReadOnlyFields(taskDefinition),
-      containerDefinitions,
-      volumes: withSocketVolume(taskDefinition.volumes, socketEnabled),
+      containerDefinitions: resolved,
+      volumes: withSocketVolume(taskDefinition.volumes, platform.socket),
       tags: instrumentationTags(tags, ust),
     }),
     warnings,
@@ -768,23 +931,28 @@ const withMaskedLogConfiguration = (logConfiguration: LogConfiguration): LogConf
 }
 
 /**
- * The task definition with any plaintext API key masked, for printing. Covers the Agent's
- * environment and FireLens log driver options.
+ * The task definition with any plaintext API key masked, for printing.
+ * Covers the Agent's environment and FireLens log driver options, comparing names using
+ * platform-aware matching
  */
-export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => ({
-  ...input,
-  containerDefinitions: input.containerDefinitions?.map((container) =>
-    removeUndefinedValues({
-      ...container,
-      environment: container.environment?.map((envVar) =>
-        envVar.name === API_KEY_ENV_VAR && envVar.value !== undefined
-          ? {...envVar, value: maskApiKey(envVar.value)}
-          : envVar
-      ),
-      logConfiguration: container.logConfiguration && withMaskedLogConfiguration(container.logConfiguration),
-    })
-  ),
-})
+export const withMaskedApiKey = (input: RegisterTaskDefinitionCommandInput): RegisterTaskDefinitionCommandInput => {
+  const windows = isWindowsTask(input)
+
+  return {
+    ...input,
+    containerDefinitions: input.containerDefinitions?.map((container) =>
+      removeUndefinedValues({
+        ...container,
+        environment: container.environment?.map((envVar) =>
+          isNamed(envVar.name, API_KEY_ENV_VAR, windows) && envVar.value !== undefined
+            ? {...envVar, value: maskApiKey(envVar.value)}
+            : envVar
+        ),
+        logConfiguration: container.logConfiguration && withMaskedLogConfiguration(container.logConfiguration),
+      })
+    ),
+  }
+}
 
 /**
  * The task definition without the tag recording the CLI version that produced it, which is the only
