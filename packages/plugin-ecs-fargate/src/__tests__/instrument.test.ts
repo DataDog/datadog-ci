@@ -1040,6 +1040,21 @@ describe('ecs-fargate instrument', () => {
       expect(registeredContainers().map((container) => container.name)).not.toContain('datadog-tracer')
     })
 
+    test('rejects a sidecar as the injection target before registering a revision', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--tracing',
+        'inject',
+        '--container-name',
+        'datadog-agent',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('Cannot inject a tracer into the datadog-agent container')
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    })
+
     test('rejects injection on a Windows task before registering a revision', async () => {
       ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: windowsTaskDefinition(), tags: []})
 

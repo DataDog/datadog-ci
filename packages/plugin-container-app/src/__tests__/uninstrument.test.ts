@@ -28,13 +28,13 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {COMPOSITE_TRACER_MOUNT_PATH} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {
+  SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
-import {SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {CONTAINER_APP_ID, DEFAULT_ARGS, DEFAULT_CONFIG, DEFAULT_CONTAINER_APP, NULL_SUBSCRIPTION_ID} from './common'
 

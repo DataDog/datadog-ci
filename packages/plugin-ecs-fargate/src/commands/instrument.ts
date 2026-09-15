@@ -30,6 +30,8 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     this.enableFips()
 
     const [config, configErrors] = await this.ensureConfig()
+    // Checked before any AWS call, so a bad tracer option cannot register a revision for an earlier
+    // task definition before a later one fails on it.
     const ssiConfig = resolveSsiConfig(config)
     const errors = [...(ssiConfig.kind === 'errors' ? ssiConfig.errors : []), ...configErrors]
     if (errors.length > 0) {
@@ -38,9 +40,6 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       }
 
       return 1
-    }
-    for (const warning of ssiConfig.warnings) {
-      this.context.stdout.write(renderSoftWarning(warning))
     }
 
     const region = config.region ?? AWS_REGION_ENV_VARS.map((envVar) => process.env[envVar]).find((value) => !!value)

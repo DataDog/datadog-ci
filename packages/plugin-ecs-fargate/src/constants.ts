@@ -46,9 +46,6 @@ export const WINDOWS_WORKING_DIRECTORY = 'C:\\'
 export const SERVICE_TAG_KEY = 'service'
 export const ENVIRONMENT_TAG_KEY = 'env'
 export const VERSION_TAG_KEY = 'version'
-export const SSI_INJECTION_MODE_TAG = 'dd_sls_injection_mode'
-export const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
-export const MULTI_LANGUAGE_SSI_MODE = 'multi_language'
 
 /**
  * Docker labels the Agent reads to attach the unified service tags to the metrics it collects about
