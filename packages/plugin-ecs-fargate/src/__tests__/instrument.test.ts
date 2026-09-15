@@ -240,7 +240,7 @@ describe('ecs-fargate instrument', () => {
         '--api-key-secret-arn',
         MOCK_API_KEY_SECRET_ARN,
         '--tracing',
-        'false',
+        'disabled',
         '--log-level',
         'debug',
         '--appsec',
@@ -414,8 +414,8 @@ describe('ecs-fargate instrument', () => {
         'NOT_AN_ASSIGNMENT',
         '--extra-tags',
         'not-a-tag',
-        '--tracing',
-        'yes',
+        '--tracer-version',
+        '1.2.3',
       ])
 
       expect(code).toBe(1)
@@ -423,7 +423,7 @@ describe('ecs-fargate instrument', () => {
       expect(output).toContain('No task definitions specified. Use --task-definition.')
       expect(output).toContain('All env vars must be in the format `KEY=VALUE`')
       expect(output).toContain('Extra tags do not comply with the <key>:<value> array.')
-      expect(output).toContain('--tracing must be either `true` or `false`.')
+      expect(output).toContain('--tracing inject')
       expect(ecsMock.commandCalls(DescribeTaskDefinitionCommand)).toHaveLength(0)
     })
 
@@ -972,6 +972,104 @@ describe('ecs-fargate instrument', () => {
 
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain('AccessDeniedException')
+    })
+  })
+
+  describe('automatic tracer injection', () => {
+    test('injects a Node.js tracer into the application container', async () => {
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--tracing',
+        'inject',
+        '--language',
+        'nodejs',
+      ])
+
+      expect(code).toBe(0)
+      const containers = registeredContainers()
+      expect(containers.map((container) => container.name)).toContain('datadog-tracer')
+      expect(envVarsOf(containers, MOCK_FAMILY)).toMatchObject({
+        NODE_OPTIONS: '--require /datadog-lib/node_modules/dd-trace/init.js',
+        DD_SOURCE: 'nodejs',
+        DD_TRACE_ENABLED: 'true',
+      })
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toContainEqual({
+        key: 'dd_sls_injection_mode',
+        value: 'single_language',
+      })
+    })
+
+    test('injects the composite tracer when no language is given', async () => {
+      const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--tracing', 'inject'])
+
+      expect(code).toBe(0)
+      expect(envVarsOf(registeredContainers(), MOCK_FAMILY)).toMatchObject({
+        DD_INJECT_SENDER_TYPE: 'serverless',
+        DD_TRACE_ENABLED: 'true',
+      })
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toContainEqual({
+        key: 'dd_sls_injection_mode',
+        value: 'multi_language',
+      })
+    })
+
+    test('sets DD_SOURCE without injecting when only --language is provided', async () => {
+      const {code} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN, '--language', 'python'])
+
+      expect(code).toBe(0)
+      expect(envVarsOf(registeredContainers(), MOCK_FAMILY)).toMatchObject({DD_SOURCE: 'python'})
+      expect(registeredContainers().map((container) => container.name)).not.toContain('datadog-tracer')
+    })
+
+    test('warns when omitted tracing would remove an injected tracer', async () => {
+      const {taskDefinition: injected} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        tracing: 'inject',
+        language: 'nodejs',
+      })
+      ecsMock.on(DescribeTaskDefinitionCommand).resolves({
+        taskDefinition: asDescribed(injected),
+        tags: [...INSTRUMENTATION_TAGS, {key: 'dd_sls_injection_mode', value: 'single_language'}],
+      })
+
+      const {code, context} = await runCLI(['--api-key-secret-arn', MOCK_API_KEY_SECRET_ARN])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain('Tracing defaults to manual')
+      expect(registeredContainers().map((container) => container.name)).not.toContain('datadog-tracer')
+    })
+
+    test('rejects a sidecar as the injection target before registering a revision', async () => {
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--tracing',
+        'inject',
+        '--container-name',
+        'datadog-agent',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('Cannot inject a tracer into the datadog-agent container')
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    })
+
+    test('rejects injection on a Windows task before registering a revision', async () => {
+      ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: windowsTaskDefinition(), tags: []})
+
+      const {code, context} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        '--tracing',
+        'inject',
+        '--language',
+        'nodejs',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('automatic tracer injection does not support')
+      expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
     })
   })
 })

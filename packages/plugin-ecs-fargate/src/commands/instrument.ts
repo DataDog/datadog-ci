@@ -6,7 +6,6 @@ import type {EcsFargateConfigOptions} from '@datadog/datadog-ci-base/commands/ec
 import {EcsFargateInstrumentCommand} from '@datadog/datadog-ci-base/commands/ecs-fargate/instrument'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
@@ -23,6 +22,7 @@ import {
   registerTaskDefinition,
 } from '../aws'
 import {AWS_REGION_ENV_VARS} from '../constants'
+import {hasSsi, resolveSsiConfig} from '../ssi'
 import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
 
 export class PluginCommand extends EcsFargateInstrumentCommand {
@@ -30,8 +30,12 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     this.enableFips()
 
     const [config, configErrors] = await this.ensureConfig()
-    if (configErrors.length > 0) {
-      for (const error of configErrors) {
+    // Checked before any AWS call, so a bad tracer option cannot register a revision for an earlier
+    // task definition before a later one fails on it.
+    const ssiConfig = resolveSsiConfig(config)
+    const errors = [...(ssiConfig.kind === 'errors' ? ssiConfig.errors : []), ...configErrors]
+    if (errors.length > 0) {
+      for (const error of errors) {
         this.context.stdout.write(renderError(error))
       }
 
@@ -140,6 +144,14 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     const {taskDefinition, tags} = await describeTaskDefinition(client, app.target)
     const family = taskDefinition.family ?? app.target
 
+    if (settings.tracing === undefined && hasSsi(taskDefinition, tags)) {
+      output.push(
+        renderSoftWarning(
+          `Tracing defaults to manual for ${family}. Use --tracing inject to retain automatic tracer injection.`
+        )
+      )
+    }
+
     const {taskDefinition: updated, warnings} = instrumentTaskDefinition(taskDefinition, settings, tags)
     for (const warning of warnings) {
       output.push(renderSoftWarning(warning))
@@ -188,7 +200,11 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       version: config.version,
       extraTags: config.extraTags,
       envVars: parseEnvVars(config.envVars),
-      tracing: toBoolean(config.tracing),
+      tracing: config.tracing,
+      language: config.language,
+      tracerVersion: config.tracerVersion,
+      tracerLibc: config.tracerLibc,
+      containerName: config.containerName,
       logLevel: config.logLevel,
       appsec: config.appsec,
       llmobs: config.llmobs,

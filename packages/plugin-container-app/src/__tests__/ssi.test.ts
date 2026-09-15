@@ -9,6 +9,9 @@ import {
   getCompositeInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {
+  MULTI_LANGUAGE_SSI_MODE,
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
@@ -18,9 +21,6 @@ import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpe
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import {
   CONTAINER_APP_TRACER_REGISTRY,
-  MULTI_LANGUAGE_SSI_MODE,
-  SINGLE_LANGUAGE_SSI_MODE,
-  SSI_INJECTION_MODE_TAG,
   assertSsiEphemeralStorage,
   getReplicaEphemeralStorageGiB,
   hasSsi,

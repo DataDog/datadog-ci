@@ -75,6 +75,7 @@ export const AGENT_HEALTH_CHECK_START_PERIOD = 60
  */
 export const HEALTHY_DEPENDENCY_CONDITION: ContainerCondition = 'HEALTHY'
 export const START_DEPENDENCY_CONDITION: ContainerCondition = 'START'
+export const SUCCESS_DEPENDENCY_CONDITION: ContainerCondition = 'SUCCESS'
 
 /**
  * The only log driver whose configuration can be borrowed for a sidecar as-is. Other drivers route

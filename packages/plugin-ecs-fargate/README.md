@@ -32,11 +32,19 @@ datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-ke
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
   --log-collection
 
+# Detect the application language and add its tracer automatically
+datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
+  --tracing inject
+
+# Copy one language tracer
+datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> \
+  --tracing inject --language nodejs
+
 # Preview the changes without registering a revision
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn> --dry-run
 ```
 
-Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE` is `--service`, or the task definition family when `--service` is omitted, and is written to the application containers, the Agent, the Docker labels, and the revision tags so they cannot disagree. `DD_TRACE_ENABLED` and `DD_LOGS_INJECTION` are set only when the container does not already set them. Other values you pass overwrite the task definition.
+Application containers are given `DD_SERVICE`, `DD_ENV`, `DD_VERSION`, and `DD_TAGS` from the arguments above, so the traces, logs, and metrics your tracers send are tagged consistently. `DD_SERVICE` is `--service`, or the task definition family when `--service` is omitted, and is written to the application containers, the Agent, the Docker labels, and the revision tags so they cannot disagree. `DD_TRACE_ENABLED` follows `--tracing`: omitted and `manual` set it to `true`, and `disabled` sets it to `false`. `DD_LOGS_INJECTION` is set only when the container does not already set it. Other values you pass overwrite the task definition.
 
 Product settings the command owns are applied when those flags are on and removed when they are not: `--no-appsec` drops `DD_APPSEC_ENABLED`, omitting `--llmobs` drops the LLM Observability variables, and `--no-source-code-integration` drops the Git tags from `DD_TAGS`.
 
@@ -47,6 +55,16 @@ The same three unified service tag values are also written to the application co
 The tracers reach the Agent over a Unix socket by default. The command adds a `dd-sockets` volume to the task, mounts it at `/var/run/datadog` on both the Agent and your application containers, and points the tracers at it with `DD_TRACE_AGENT_URL` and `DD_DOGSTATSD_URL`. Pass `--no-agent-socket` to use the task's loopback address instead, which sets `DD_AGENT_HOST` to `127.0.0.1` and leaves the volume off. [Windows tasks](#windows-tasks) always use the loopback address.
 
 These Agent connection settings are mutually exclusive. Switching from the Unix socket to loopback removes the socket path and volume so nothing is left pointing at a socket that is not listening.
+
+#### Automatic tracer injection
+
+Use `--tracing inject` to detect the application language and add its tracer without rebuilding the application image. Add `--language <language>` to copy only one tracer. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. `dotnet` is accepted as an alias for `csharp`. The command copies the tracer through a non-essential `datadog-tracer` container and waits for that copy to succeed before starting the selected application container. The Datadog Agent sidecar remains responsible for trace transport.
+
+`--tracer-version` and `--tracer-libc` require `--language`. Single-language injection uses the `latest` tracer version and `glibc` by default. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Automatic tracer injection is Linux-only. Go is not supported; install `dd-trace-go` in the application image and use `--tracing manual`.
+
+When the task definition has more than one application container, specify the container to instrument with `--container-name`. The Agent, log router, and tracer sidecars are never selected. Omitting `--tracing` defaults to `manual`, which removes an injected tracer if one is present.
+
+You can use any nonempty `--language` value without `--tracing inject` to set `DD_SOURCE` for log parsing.
 
 The Agent sidecar accepts custom metrics over DogStatsD: `DD_DOGSTATSD_ORIGIN_DETECTION` and `DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT` are turned on and `DD_DOGSTATSD_TAG_CARDINALITY` is set to `orchestrator`, so your metrics are tagged with the task that submitted them. These are filled in the same way, so a task definition that already sets them keeps its own values.
 
@@ -109,7 +127,7 @@ datadog-ci ecs-fargate uninstrument --task-definition my-app -r us-east-1 \
 datadog-ci ecs-fargate uninstrument --task-definition my-app -r us-east-1 --dry-run
 ```
 
-The command removes the `datadog-agent` and `datadog-log-router` sidecars, the `dd-sockets` volume along with its mounts, every `DD_`-prefixed environment variable and secret from your application containers, the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels, and the `service`, `env`, `version`, and `dd_sls_ci` tags from the revision. Add `--env-vars` for each variable you wish to be removed too.
+The command removes the `datadog-agent`, `datadog-log-router`, and `datadog-tracer` sidecars, the `dd-sockets` and `datadog-tracer` volumes along with their mounts, every `DD_`-prefixed environment variable and secret from your application containers, tracer startup fragments such as `NODE_OPTIONS`, the `com.datadoghq.tags.service`, `com.datadoghq.tags.env`, and `com.datadoghq.tags.version` Docker labels, and the `service`, `env`, `version`, `dd_sls_ci`, and `dd_sls_injection_mode` tags from the revision. Add `--env-vars` for each variable you wish to be removed too.
 
 Running the command twice is safe: a task definition with no Datadog instrumentation to remove is reported as such and no revision is registered.
 
@@ -121,7 +139,7 @@ Running the command twice is safe: a task definition with no Datadog instrumenta
 
 #### AWS credentials
 
-You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: for `instrument`, the ones the task definition already had plus `service`, `env`, `version`, and `dd_sls_ci`; for `uninstrument`, the ones that are left once those four are removed. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
+You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: for `instrument`, the ones the task definition already had plus `service`, `env`, `version`, `dd_sls_ci`, and, when a tracer is injected, `dd_sls_injection_mode`; for `uninstrument`, the ones that are left once those five are removed. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
 
 `--profile` uses a named profile from your AWS configuration instead. A profile with an `mfa_serial` is supported: the command asks for the code when it loads the profile.
 
@@ -169,7 +187,11 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 | `--env-vars` | `-e` | Additional environment variables to set on the application containers and the Datadog Agent. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your services with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
-| `--tracing` |  | Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`. |  |
+| `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` to detect the language and add a tracer automatically, or `disabled` to turn tracing off. Add `--language` with `inject` to select one tracer. Defaults to `manual`. |  |
+| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects one tracer instead of detecting the language automatically. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. `dotnet` is accepted as an alias for `csharp`. |  |
+| `--tracer-version` |  | Set the tracer image tag for automatic instrumentation with `--language`. | `latest` |
+| `--tracer-libc` |  | Set the C standard library used by the application image with `--language`. Possible values: "glibc", "musl". | `glibc` |
+| `--container-name` |  | Select the application container to instrument when the task definition has multiple application containers. |  |
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--appsec` |  | Enable Application Security Monitoring for the instrumented task. | `false` |
 | `--llmobs` |  | If specified, enables LLM Observability for the instrumented task with the provided ML application name. |  |
@@ -207,7 +229,9 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "version": "1.0.0",
     "extraTags": "team:backend,project:api",
     "envVars": ["CUSTOM_VAR1=value1", "CUSTOM_VAR2=value2"],
-    "logCollection": true
+    "logCollection": true,
+    "tracing": "inject",
+    "language": "nodejs"
   }
 }
 ```
