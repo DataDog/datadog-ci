@@ -16,7 +16,7 @@ export const allPluginCommands = {
   'coverage': ['upload'],
   'deployment': ['correlate-image', 'correlate', 'gate', 'mark'],
   'dora': ['deployment'],
-  'ecs-fargate': ['instrument'],
+  'ecs-fargate': ['instrument', 'uninstrument'],
   'gate': ['evaluate'],
   'junit': ['upload'],
   'lambda': ['cloudwatch', 'flare', 'instrument', 'uninstrument'],
