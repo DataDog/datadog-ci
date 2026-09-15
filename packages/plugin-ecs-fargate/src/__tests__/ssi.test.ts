@@ -1,3 +1,4 @@
+import type {SsiOptions} from '../ssi'
 import type {InstrumentSettings} from '../task-definition'
 import type {ContainerDefinition, KeyValuePair} from '@aws-sdk/client-ecs'
 import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
@@ -8,6 +9,9 @@ import {
   getCompositeInjectionSpec,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {
+  MULTI_LANGUAGE_SSI_MODE,
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
@@ -17,9 +21,6 @@ import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpe
 import {AGENT_CONTAINER_NAME, SUCCESS_DEPENDENCY_CONDITION} from '../constants'
 import {
   ECS_FARGATE_TRACER_REGISTRY,
-  MULTI_LANGUAGE_SSI_MODE,
-  SINGLE_LANGUAGE_SSI_MODE,
-  SSI_INJECTION_MODE_TAG,
   hasSsi,
   mergeCompositeInjectionEnv,
   mergeLanguageInjectionEnv,
@@ -27,7 +28,7 @@ import {
   resolveSsiConfig,
   selectApplicationContainer,
 } from '../ssi'
-import {instrumentTaskDefinition, uninstrumentTaskDefinition} from '../task-definition'
+import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, uninstrumentTaskDefinition} from '../task-definition'
 
 import {APP_CONTAINER, MOCK_SETTINGS, fargateTaskDefinition, windowsTaskDefinition} from './fixtures'
 
@@ -112,9 +113,21 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       [{tracerLibc: 'musl'}, '--tracing inject'],
       [{tracing: 'inject', language: 'ruby', tracerLibc: 'musl'}, 'does not support musl'],
       [{tracing: 'inject', language: 'csharp', tracerVersion: '2.51.0'}, 'version 3.0 or later'],
-      [{tracing: 'yes'}, 'Invalid tracing mode'],
-    ])('rejects incompatible options %#', (options, message) => {
+    ] satisfies [SsiOptions, string][])('rejects incompatible options %#', (options, message) => {
       const result = resolveSsiConfig(options)
+
+      expect(result.kind).toBe('errors')
+      expect(result.kind === 'errors' && result.errors.join('\n')).toContain(message)
+    })
+
+    // Values a configuration file can hold, which the CLI validators never see.
+    test.each([
+      [{tracing: 'yes'}, 'Invalid tracing mode'],
+      [{tracerLibc: 'uclibc'}, 'Invalid tracer libc'],
+      [{tracing: 'inject', language: 'nodejs', tracerVersion: 'not a tag'}, 'Invalid tracer version'],
+      [{tracing: 'inject', language: 'nodejs', containerName: 7}, 'Invalid application container name'],
+    ])('rejects malformed configuration %#', (options, message) => {
+      const result = resolveSsiConfig(options as SsiOptions)
 
       expect(result.kind).toBe('errors')
       expect(result.kind === 'errors' && result.errors.join('\n')).toContain(message)
@@ -335,7 +348,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       )
     })
 
-    test('switches between single- and multi-language injection idempotently', () => {
+    test('switches between single- and multi-language injection', () => {
       const first = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('nodejs'))
       const second = instrumentTaskDefinition(
         {...fargateTaskDefinition(), ...first.taskDefinition},
@@ -352,7 +365,59 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(envVarsOf(appOf(second.taskDefinition.containerDefinitions)).NODE_OPTIONS).toBeUndefined()
       expect(envVarsOf(appOf(third.taskDefinition.containerDefinitions)).NODE_OPTIONS).toBeDefined()
       expect(envVarsOf(appOf(third.taskDefinition.containerDefinitions)).LD_PRELOAD).toBeUndefined()
-      expect(hasSsi({...fargateTaskDefinition(), ...first.taskDefinition}, first.taskDefinition.tags)).toBe(true)
+    })
+
+    const INJECTION_MODES: [string, Language | undefined][] = [
+      ['single-language', 'nodejs'],
+      ['multi-language', undefined],
+    ]
+
+    test.each(INJECTION_MODES)('re-injecting %s registers no new revision', (_, language) => {
+      const first = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings(language))
+      const described = {...fargateTaskDefinition(), ...first.taskDefinition}
+      const second = instrumentTaskDefinition(described, injectSettings(language), first.taskDefinition.tags)
+
+      expect(
+        isUpToDate({...stripReadOnlyFields(described), tags: first.taskDefinition.tags}, second.taskDefinition)
+      ).toBe(true)
+    })
+
+    // The tracer container mounts the volume it copies into, which must not make the task definition
+    // unrecognizable once its tags are gone: a revision registered from described JSON carries none.
+    test.each(INJECTION_MODES)('recognizes %s injection without the revision tags', (_, language) => {
+      const first = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings(language))
+      const untagged = {...fargateTaskDefinition(), ...first.taskDefinition}
+      const second = instrumentTaskDefinition(untagged, injectSettings(language), [])
+
+      expect(hasSsi(untagged, [])).toBe(true)
+      expect(
+        second.taskDefinition.containerDefinitions?.filter(({name}) => name === TRACER_CONTAINER_NAME)
+      ).toHaveLength(1)
+      expect(second.taskDefinition.volumes?.filter(({name}) => name === TRACER_VOLUME_NAME)).toHaveLength(1)
+    })
+
+    test.each([['manual'], ['disabled']] as const)('--tracing %s removes an injected tracer', (tracing) => {
+      const injected = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('nodejs'))
+      const {taskDefinition} = instrumentTaskDefinition(
+        {...fargateTaskDefinition(), ...injected.taskDefinition},
+        {...MOCK_SETTINGS, tracing},
+        injected.taskDefinition.tags
+      )
+      const app = appOf(taskDefinition.containerDefinitions)
+
+      expect(tracerOf(taskDefinition.containerDefinitions)).toBeUndefined()
+      expect(taskDefinition.volumes).not.toContainEqual({name: TRACER_VOLUME_NAME})
+      expect(envVarsOf(app).NODE_OPTIONS).toBeUndefined()
+      expect(envVarsOf(app).DD_TAGS).toBeUndefined()
+      expect(app?.dependsOn).toBeUndefined()
+      expect(app?.mountPoints).not.toContainEqual(expect.objectContaining({sourceVolume: TRACER_VOLUME_NAME}))
+      expect(taskDefinition.tags).not.toContainEqual(expect.objectContaining({key: SSI_INJECTION_MODE_TAG}))
+    })
+
+    test('names the injected tracer in DD_SOURCE when --language is an alias', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('dotnet'))
+
+      expect(envVarsOf(appOf(taskDefinition.containerDefinitions)).DD_SOURCE).toBe('csharp')
     })
 
     test('uninstrument removes tracer fragments, the tracer sidecar, and the injection tag', () => {

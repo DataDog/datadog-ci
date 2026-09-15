@@ -16,6 +16,9 @@ import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tra
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {getCompositeInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {
+  MULTI_LANGUAGE_SSI_MODE,
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
@@ -47,14 +50,9 @@ import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
 import {
   AGENT_CONTAINER_NAME,
   LOG_ROUTER_CONTAINER_NAME,
-  MULTI_LANGUAGE_SSI_MODE,
-  SINGLE_LANGUAGE_SSI_MODE,
-  SSI_INJECTION_MODE_TAG,
   SUCCESS_DEPENDENCY_CONDITION,
   WINDOWS_OS_FAMILY_PREFIX,
 } from './constants'
-
-export {SSI_INJECTION_MODE_TAG, SINGLE_LANGUAGE_SSI_MODE, MULTI_LANGUAGE_SSI_MODE}
 
 export const ECS_FARGATE_TRACER_REGISTRY = 'public.ecr.aws/datadog' as const
 const ECS_FARGATE_COMPOSITE_SPEC = getCompositeInjectionSpec(ECS_FARGATE_TRACER_REGISTRY)
@@ -71,10 +69,11 @@ export type SsiConfigResult = (
 export type InjectionConfig = Extract<SsiConfigResult, {kind: 'single-language' | 'multi-language'}>
 
 export type SsiOptions = {
-  tracing?: string
+  tracing?: TracingMode
   language?: string
   tracerVersion?: string
-  tracerLibc?: string
+  tracerLibc?: Libc
+  containerName?: string
 }
 
 const RESERVED_CONTAINER_NAMES = new Set([AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME, TRACER_CONTAINER_NAME])
@@ -86,7 +85,7 @@ export const resolveSsiConfig = (config: SsiOptions): SsiConfigResult => {
     return {kind: 'errors', errors, warnings: []}
   }
 
-  const tracing = config.tracing === 'disabled' ? 'disabled' : config.tracing === 'inject' ? 'inject' : 'manual'
+  const tracing = config.tracing ?? 'manual'
   if (tracing !== 'inject') {
     const unusedFlags = [
       config.tracerVersion !== undefined ? '--tracer-version' : undefined,
@@ -145,7 +144,7 @@ export const resolveSsiConfig = (config: SsiOptions): SsiConfigResult => {
   }
 
   const version = config.tracerVersion ?? DEFAULT_TRACER_VERSION
-  const libc = config.tracerLibc === 'musl' ? 'musl' : DEFAULT_TRACER_LIBC
+  const libc = config.tracerLibc ?? DEFAULT_TRACER_LIBC
   const compatibilityErrors = getLanguageCompatibilityErrors({language, libc, version}, {probeServer: false})
   if (compatibilityErrors.length > 0) {
     return {kind: 'errors', errors: compatibilityErrors, warnings: []}
@@ -222,18 +221,6 @@ export const selectApplicationContainer = (
 export const getInjectionMountPath = (config: InjectionConfig): string =>
   config.kind === 'single-language' ? TRACER_MOUNT_PATH : config.spec.mountPath
 
-export const assertInjectionEnvCanBeMerged = (
-  container: ContainerDefinition | undefined,
-  config: InjectionConfig,
-  windows: boolean
-): void =>
-  assertEnvironmentFragmentsCanBeMerged(
-    container,
-    config.spec.env,
-    config.kind === 'single-language' ? [DD_TAGS_ENV_VAR] : [],
-    windows
-  )
-
 export const assertSsiResourcesCanBeAdded = (
   containers: readonly ContainerDefinition[],
   volumes: readonly Volume[] | undefined,
@@ -251,7 +238,6 @@ export const assertSsiResourcesCanBeAdded = (
     )
   }
 
-  const target = containers[targetIndex]
   const hasConflictingMount = containers.some(
     (container, index) =>
       !RESERVED_CONTAINER_NAMES.has(container.name ?? '') &&
@@ -263,7 +249,7 @@ export const assertSsiResourcesCanBeAdded = (
   if (hasConflictingMount) {
     throw new SsiConfigError(
       `An application container volume mount conflicts with the managed '${TRACER_VOLUME_NAME}' volume at '${mountPath}' on '${
-        target?.name ?? '<unnamed>'
+        containers[targetIndex].name ?? '<unnamed>'
       }'. Rename or remove the conflicting mount before retrying.`
     )
   }
@@ -305,7 +291,7 @@ export const removeInjectionEnv = (container: ContainerDefinition, windows: bool
   return container.environment === undefined && updated.length === 0 ? undefined : updated
 }
 
-export const hasSsiMarker = (
+const hasSsiMarker = (
   taskDefinition: Pick<TaskDefinition, 'containerDefinitions' | 'runtimePlatform'>,
   tags: Tag[]
 ): boolean => {
@@ -325,29 +311,35 @@ export const hasSsi = (taskDefinition: TaskDefinition, tags: Tag[] = []): boolea
   hasSsiMarker(taskDefinition, tags) ||
   (taskDefinition.containerDefinitions ?? []).some((_, index) => hasCompleteSsiSignature(taskDefinition, index))
 
-export const hasCompleteSsiSignature = (taskDefinition: TaskDefinition, targetIndex: number): boolean => {
+const hasCompleteSsiSignature = (taskDefinition: TaskDefinition, targetIndex: number): boolean => {
   const containers = taskDefinition.containerDefinitions ?? []
   const target = containers[targetIndex]
   if (!target) {
     return false
   }
 
-  const tracerContainers = containers.flatMap((container) => {
+  const tracerContainers = containers.flatMap((container, index) => {
     const config = getManagedTracerConfig(container)
 
-    return config === undefined ? [] : [{container, config}]
+    return config === undefined ? [] : [{index, config}]
   })
-  const volumes = (taskDefinition.volumes ?? []).filter(({name}) => name === TRACER_VOLUME_NAME)
-  const tracerMounts = containers.flatMap((container, index) =>
-    (container.mountPoints ?? [])
-      .filter(({sourceVolume}) => sourceVolume === TRACER_VOLUME_NAME)
-      .map((mount) => ({index, mount}))
-  )
+  if (tracerContainers.length !== 1) {
+    return false
+  }
+
   const managedTracer = tracerContainers[0]
-  const windows = isWindowsTask(taskDefinition)
+  const volumes = (taskDefinition.volumes ?? []).filter(({name}) => name === TRACER_VOLUME_NAME)
+  // The tracer container mounts the volume it copies into, so only the mounts the other containers
+  // declare say which application container the tracer was injected for.
+  const tracerMounts = containers.flatMap((container, index) =>
+    index === managedTracer.index
+      ? []
+      : (container.mountPoints ?? [])
+          .filter(({sourceVolume}) => sourceVolume === TRACER_VOLUME_NAME)
+          .map((mount) => ({index, mount}))
+  )
 
   return (
-    tracerContainers.length === 1 &&
     volumes.length === 1 &&
     tracerMounts.length === 1 &&
     tracerMounts[0].index === targetIndex &&
@@ -356,7 +348,7 @@ export const hasCompleteSsiSignature = (taskDefinition: TaskDefinition, targetIn
       (dependency) =>
         dependency.containerName === TRACER_CONTAINER_NAME && dependency.condition === SUCCESS_DEPENDENCY_CONDITION
     ) === true &&
-    hasManagedTracerEnvironment(target, managedTracer.config, windows)
+    hasManagedTracerEnvironment(target, managedTracer.config, isWindowsTask(taskDefinition))
   )
 }
 
@@ -461,6 +453,9 @@ const validateSsiInputs = (config: SsiOptions): string[] => {
   if (config.tracerLibc !== undefined && !(LIBCS as readonly string[]).includes(config.tracerLibc)) {
     errors.push(`Invalid tracer libc ${JSON.stringify(config.tracerLibc)}. Possible values: ${LIBCS.join(', ')}.`)
   }
+  if (config.containerName !== undefined && typeof config.containerName !== 'string') {
+    errors.push(`Invalid application container name ${JSON.stringify(config.containerName)}.`)
+  }
 
   return errors
 }
@@ -481,12 +476,12 @@ const findSecret = (secrets: readonly Secret[] | undefined, name: string, window
   secrets?.find((secret) => isNamed(secret.name, name, windows))
 
 const assertEnvironmentFragmentsCanBeMerged = (
-  container: ContainerDefinition | undefined,
+  container: ContainerDefinition,
   fragments: readonly EnvFragment[],
   extraNames: readonly string[],
   windows: boolean
 ): void => {
-  const env = container?.environment ?? []
+  const env = container.environment ?? []
   const targetNames = new Set([...fragments.map(({name}) => name), ...extraNames])
   for (const name of targetNames) {
     const matching = env.filter((variable) => isNamed(variable.name, name, windows))
@@ -495,7 +490,7 @@ const assertEnvironmentFragmentsCanBeMerged = (
         `${name} appears more than once on the selected application container. Remove the duplicate before retrying.`
       )
     }
-    if (findSecret(container?.secrets, name, windows)) {
+    if (findSecret(container.secrets, name, windows)) {
       throw new SsiConfigError(
         `${name} on the selected application container comes from a secret. Set it to a literal value or remove it before retrying.`
       )

@@ -139,7 +139,7 @@ Running the command twice is safe: a task definition with no Datadog instrumenta
 
 #### AWS credentials
 
-You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: for `instrument`, the ones the task definition already had plus `service`, `env`, `version`, and `dd_sls_ci`; for `uninstrument`, the ones that are left once those four are removed. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
+You must have valid [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html#envvars-list) configured with access to the ECS actions `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, and `ecs:TagResource`. The last one is required because the new revision is registered with tags: for `instrument`, the ones the task definition already had plus `service`, `env`, `version`, `dd_sls_ci`, and, when a tracer is injected, `dd_sls_injection_mode`; for `uninstrument`, the ones that are left once those five are removed. Deploying with `--ecs-service` also needs `ecs:DescribeServices` and `ecs:UpdateService`.
 
 `--profile` uses a named profile from your AWS configuration instead. A profile with an `mfa_serial` is supported: the command asks for the code when it loads the profile.
 

@@ -8,6 +8,7 @@ import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tra
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {getCompositeInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
 import {
+  SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
@@ -35,9 +36,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import {TRACING_MODES, type TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
-export const SSI_INJECTION_MODE_TAG = 'dd_sls_injection_mode'
-export const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
-export const MULTI_LANGUAGE_SSI_MODE = 'multi_language'
 export const CONTAINER_APP_TRACER_REGISTRY = 'datadoghq.azurecr.io' as const
 const CONTAINER_APP_COMPOSITE_SPEC = getCompositeInjectionSpec(CONTAINER_APP_TRACER_REGISTRY)
 
