@@ -1,0 +1,142 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ecs-fargate instrument prints the diff and registers nothing on a dry run 1`] = `
+"[Dry Run] Instrumenting my-app:
+@@ -3,10 +3,26 @@
+      {
+        "environment": [
+          {
+            "name": "PORT",
+            "value": "8080"
++         },
++         {
++           "name": "DD_TRACE_ENABLED",
++           "value": "true"
++         },
++         {
++           "name": "DD_LOGS_INJECTION",
++           "value": "true"
++         },
++         {
++           "name": "DD_TRACE_AGENT_URL",
++           "value": "unix:///var/run/datadog/apm.socket"
++         },
++         {
++           "name": "DD_DOGSTATSD_URL",
++           "value": "unix:///var/run/datadog/dsd.socket"
+          }
+        ],
+        "essential": true,
+        "image": "my-app:latest",
+        "logConfiguration": {
+@@ -15,20 +31,106 @@
+            "awslogs-group": "/ecs/my-app",
+            "awslogs-region": "us-east-1",
+            "awslogs-stream-prefix": "ecs"
+          }
+        },
++       "mountPoints": [
++         {
++           "containerPath": "/var/run/datadog",
++           "readOnly": false,
++           "sourceVolume": "dd-sockets"
++         }
++       ],
+        "name": "my-app"
++     },
++     {
++       "environment": [
++         {
++           "name": "DD_DOGSTATSD_ORIGIN_DETECTION",
++           "value": "true"
++         },
++         {
++           "name": "DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT",
++           "value": "true"
++         },
++         {
++           "name": "DD_DOGSTATSD_TAG_CARDINALITY",
++           "value": "orchestrator"
++         },
++         {
++           "name": "ECS_FARGATE",
++           "value": "true"
++         },
++         {
++           "name": "DD_SITE",
++           "value": "datadoghq.com"
++         },
++         {
++           "name": "DD_APM_ENABLED",
++           "value": "true"
++         },
++         {
++           "name": "DD_USE_DOGSTATSD",
++           "value": "true"
++         },
++         {
++           "name": "DD_ECS_TASK_COLLECTION_ENABLED",
++           "value": "true"
++         }
++       ],
++       "essential": false,
++       "healthCheck": {
++         "command": [
++           "CMD-SHELL",
++           "/probe.sh"
++         ],
++         "interval": 15,
++         "retries": 3,
++         "startPeriod": 60,
++         "timeout": 5
++       },
++       "image": "public.ecr.aws/datadog/agent:latest",
++       "logConfiguration": {
++         "logDriver": "awslogs",
++         "options": {
++           "awslogs-group": "/ecs/my-app",
++           "awslogs-region": "us-east-1",
++           "awslogs-stream-prefix": "ecs"
++         }
++       },
++       "mountPoints": [
++         {
++           "containerPath": "/var/run/datadog",
++           "readOnly": false,
++           "sourceVolume": "dd-sockets"
++         }
++       ],
++       "name": "datadog-agent",
++       "secrets": [
++         {
++           "name": "DD_API_KEY",
++           "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key-AbCdEf"
++         }
++       ]
+      }
+    ],
+    "cpu": "512",
+    "executionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRole",
+    "family": "my-app",
+    "memory": "1024",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+      "FARGATE"
+    ],
+-   "tags": [],
++   "tags": [
++     {
++       "key": "dd_sls_ci",
++       "value": "vXXXX"
++     }
++   ],
+    "taskRoleArn": "arn:aws:iam::123456789012:role/my-app-task-role",
+-   "volumes": []
++   "volumes": [
++     {
++       "name": "dd-sockets"
++     }
++   ]
+  }
+"
+`;
