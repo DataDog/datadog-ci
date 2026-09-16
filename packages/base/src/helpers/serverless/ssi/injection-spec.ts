@@ -66,10 +66,10 @@ const PROBE_SERVER_VERSION_BASELINES: Record<Language, string> = {
 /** Returns domain compatibility errors after individual CLI arguments have been validated. */
 export const getLanguageCompatibilityErrors = (
   options: LanguageCompatibilityOptions,
-  extras: LanguageCompatibilityExtras = {}
+  {probeServer = false}: LanguageCompatibilityExtras = {}
 ): readonly string[] => [
   ...(LANGUAGE_CONFIG[options.language].getCompatibilityErrors?.(options) ?? []),
-  ...((extras.probeServer ?? true) ? getProbeServerCompatibilityErrors(options.language, options.version) : []),
+  ...(probeServer ? getProbeServerCompatibilityErrors(options.language, options.version) : []),
 ]
 
 const getProbeServerCompatibilityErrors = (language: Language, version: string): readonly string[] => {

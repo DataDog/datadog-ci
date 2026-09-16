@@ -95,7 +95,6 @@ describe('Container Apps automatic APM instrumentation', () => {
       [{tracing: 'inject', tracerVersion: '1.2.3'}, '--tracer-version'],
       [{tracing: 'inject', tracerLibc: 'musl'}, '--tracer-libc'],
       [{tracing: 'inject', language: 'go'}, 'Install dd-trace-go'],
-      [{tracing: 'inject', language: 'dotnet'}, 'supports only these languages'],
       [{tracing: 'inject', language: 'rust'}, 'supports only these languages'],
       [{tracerVersion: '1.2.3'}, '--tracing inject'],
       [{tracerLibc: 'musl'}, '--tracing inject'],
@@ -111,11 +110,32 @@ describe('Container Apps automatic APM instrumentation', () => {
       }
     )
 
+    test('accepts dotnet as an alias for csharp', () => {
+      const result = resolveSsiConfig(injectConfig('dotnet'))
+
+      expect(result.kind).toBe('single-language')
+      expect(result.kind === 'single-language' && result.language).toBe('csharp')
+    })
+
     test('accepts arbitrary language values without injection', () => {
       expect(resolveSsiConfig({...DEFAULT_CONFIG, tracing: 'manual', language: 'rust'})).toMatchObject({
         kind: 'no-injection',
         tracing: 'manual',
       })
+    })
+
+    // The init container copies and exits, so it never runs the readiness probe server those
+    // baselines exist for.
+    test('does not apply Cloud Run probe-server version floors', () => {
+      expect(resolveSsiConfig({...injectConfig('python'), tracerVersion: '4.12.9'}).kind).toBe('single-language')
+    })
+
+    // Rejecting it would break configuration files that already carry it, so it is reported instead.
+    test('ignores --container-name without --tracing inject', () => {
+      const result = resolveSsiConfig({...DEFAULT_CONFIG, containerName: 'app'})
+
+      expect(result.kind).toBe('no-injection')
+      expect(result.warnings.join('\n')).toContain('Ignoring --container-name')
     })
 
     test('warns for Java 24+', () => {
@@ -233,6 +253,30 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(removeInjectionEnv(merged)).toEqual(original)
     })
 
+    // An application image carrying its own .NET tracer sets the same two values injection would,
+    // so removing them without the paths that name the tracer directory would stop its profiler
+    // from loading.
+    test('keeps a tracer the application image installs itself', () => {
+      const manual: EnvironmentVar[] = [
+        {name: 'CORECLR_ENABLE_PROFILING', value: '1'},
+        {name: 'CORECLR_PROFILER', value: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'},
+        {name: 'CORECLR_PROFILER_PATH', value: '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so'},
+        {name: 'DD_DOTNET_TRACER_HOME', value: '/opt/datadog'},
+      ]
+
+      expect(removeInjectionEnv(manual)).toEqual(manual)
+    })
+
+    test('removes the shared .NET settings once the injected tracer shows it wrote them', () => {
+      const dotnetResult = resolveSsiConfig(injectConfig('csharp'))
+      const merged = mergeLanguageInjectionEnv(
+        [],
+        dotnetResult.kind === 'single-language' ? dotnetResult.spec : (undefined as never)
+      )
+
+      expect(removeInjectionEnv(merged)).toEqual([])
+    })
+
     test.each(['LD_PRELOAD', 'DD_INJECT_SENDER_TYPE'])('rejects unsafe composite environment %s', (name) => {
       expect(() =>
         mergeCompositeInjectionEnv(
@@ -310,6 +354,13 @@ describe('Container Apps automatic APM instrumentation', () => {
       expect(
         result.template?.containers?.find(({name}) => name === 'datadog-sidecar')?.volumeMounts
       ).not.toContainEqual(expect.objectContaining({volumeName: TRACER_VOLUME_NAME}))
+    })
+
+    test('names the injected tracer in DD_SOURCE when --language is an alias', () => {
+      const result = createInstrumentedApp(injectConfig('dotnet'))
+      const app = result.template!.containers![0]
+
+      expect(getEnv(app.env, 'DD_SOURCE')?.value).toBe('csharp')
     })
 
     test('adds composite activation only to the selected application container', () => {

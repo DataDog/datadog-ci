@@ -60,9 +60,19 @@ These Agent connection settings are mutually exclusive. Switching from the Unix 
 
 Use `--tracing inject` to detect the application language and add its tracer without rebuilding the application image. Add `--language <language>` to copy only one tracer. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. `dotnet` is accepted as an alias for `csharp`. The command copies the tracer through a non-essential `datadog-tracer` container and waits for that copy to succeed before starting the selected application container. The Datadog Agent sidecar remains responsible for trace transport.
 
-`--tracer-version` and `--tracer-libc` require `--language`. Single-language injection uses the `latest` tracer version and `glibc` by default. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Automatic tracer injection is Linux-only. Go is not supported; install `dd-trace-go` in the application image and use `--tracing manual`.
+`--tracer-version` and `--tracer-libc` require `--tracing inject --language`. Single-language injection uses the `latest` tracer version and `glibc` by default. Omitting `--language` copies a larger composite tracer image than selecting one language. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Automatic tracer injection is Linux-only, and .NET injection is not supported on ARM64 tasks. Go is not supported; install `dd-trace-go` in the application image and use `--tracing manual`.
 
-When the task definition has more than one application container, specify the container to instrument with `--container-name`. The Agent, log router, and tracer sidecars are never selected. Omitting `--tracing` defaults to `manual`, which removes an injected tracer if one is present.
+When the task definition has more than one application container, specify the container to instrument with `--container-name`. The Agent, log router, and tracer sidecars are never selected. `--container-name` only applies with `--tracing inject`; passing it otherwise is reported and ignored. Omitting `--tracing` defaults to `manual`, which removes an injected tracer if one is present and reports that it did.
+
+A tracer your own image installs is left alone. The command removes the startup settings it wrote, which it recognizes from the `/datadog-lib` and `/opt/datadog-packages` paths it copies tracers into. Settings a manual install shares with it, such as `CORECLR_ENABLE_PROFILING`, are only removed alongside one of those paths.
+
+The following names and paths belong to this command. Every run removes them before applying what you asked for, so a tracer left by an earlier release or another tool is replaced rather than left running alongside the new one. Use different names and paths for anything of your own, and the command reports when it replaces something it did not write.
+
+| Resource    | Name or path                            |
+| ----------- | --------------------------------------- |
+| Container   | `datadog-tracer`                        |
+| Volume      | `datadog-tracer`                        |
+| Mount paths | `/datadog-lib`, `/opt/datadog-packages` |
 
 You can use any nonempty `--language` value without `--tracing inject` to set `DD_SOURCE` for log parsing.
 
@@ -189,9 +199,9 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` to detect the language and add a tracer automatically, or `disabled` to turn tracing off. Add `--language` with `inject` to select one tracer. Defaults to `manual`. |  |
 | `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects one tracer instead of detecting the language automatically. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. `dotnet` is accepted as an alias for `csharp`. |  |
-| `--tracer-version` |  | Set the tracer image tag for automatic instrumentation with `--language`. | `latest` |
-| `--tracer-libc` |  | Set the C standard library used by the application image with `--language`. Possible values: "glibc", "musl". | `glibc` |
-| `--container-name` |  | Select the application container to instrument when the task definition has multiple application containers. |  |
+| `--tracer-version` |  | Set the tracer image tag. Requires `--tracing inject --language`. | `latest` |
+| `--tracer-libc` |  | Set the C standard library used by the application image. Requires `--tracing inject --language`. Possible values: "glibc", "musl". | `glibc` |
+| `--container-name` |  | Select the application container to instrument when the task definition has several. Only applies with `--tracing inject`. |  |
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--appsec` |  | Enable Application Security Monitoring for the instrumented task. | `false` |
 | `--llmobs` |  | If specified, enables LLM Observability for the instrumented task with the provided ML application name. |  |
