@@ -5,7 +5,6 @@ import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants
 import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
 import {
   type InstrumentSettings,
-  instrumentTaskDefinition,
   isUpToDate,
   stripReadOnlyFields,
   uninstrumentTaskDefinition,
@@ -29,6 +28,7 @@ import {
   asDescribed,
   fargateTaskDefinition,
   firelensLogConfiguration,
+  instrumentTaskDefinition,
   instrumentedTaskDefinition,
   windowsTaskDefinition,
 } from './fixtures'

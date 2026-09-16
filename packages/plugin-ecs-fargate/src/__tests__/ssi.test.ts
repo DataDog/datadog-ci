@@ -18,7 +18,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 
-import {AGENT_CONTAINER_NAME, SUCCESS_DEPENDENCY_CONDITION} from '../constants'
+import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME, SUCCESS_DEPENDENCY_CONDITION} from '../constants'
 import {
   ECS_FARGATE_TRACER_REGISTRY,
   hasSsi,
@@ -28,9 +28,15 @@ import {
   resolveSsiConfig,
   selectApplicationContainer,
 } from '../ssi'
-import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, uninstrumentTaskDefinition} from '../task-definition'
+import {isUpToDate, stripReadOnlyFields, uninstrumentTaskDefinition} from '../task-definition'
 
-import {APP_CONTAINER, MOCK_SETTINGS, fargateTaskDefinition, windowsTaskDefinition} from './fixtures'
+import {
+  APP_CONTAINER,
+  MOCK_SETTINGS,
+  fargateTaskDefinition,
+  instrumentTaskDefinition,
+  windowsTaskDefinition,
+} from './fixtures'
 
 const injectSettings = (language?: string, overrides: Partial<InstrumentSettings> = {}): InstrumentSettings => ({
   ...MOCK_SETTINGS,
@@ -133,6 +139,18 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(result.kind === 'errors' && result.errors.join('\n')).toContain(message)
     })
 
+    test('accepts --container-name with multi-language injection', () => {
+      expect(resolveSsiConfig({tracing: 'inject', containerName: 'app'}).kind).toBe('multi-language')
+    })
+
+    // Rejecting it would break configuration files that already carry it, so it is reported instead.
+    test.each([undefined, 'manual', 'disabled'] as const)('ignores --container-name with --tracing %s', (tracing) => {
+      const result = resolveSsiConfig({tracing, containerName: 'app'})
+
+      expect(result.kind).toBe('no-injection')
+      expect(result.warnings.join('\n')).toContain('Ignoring --container-name')
+    })
+
     test('accepts arbitrary language values without injection', () => {
       expect(resolveSsiConfig({tracing: 'manual', language: 'rust'})).toMatchObject({
         kind: 'no-injection',
@@ -182,7 +200,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
           {name: 'KEEP', value: 'value'},
         ],
       }
-      const merged = mergeLanguageInjectionEnv(original, nodeSpec!, false)
+      const merged = mergeLanguageInjectionEnv(original, nodeSpec!)
 
       expect(getEnv(merged, 'NODE_OPTIONS')?.value).toBe(
         '--inspect --require /datadog-lib/node_modules/dd-trace/init.js'
@@ -196,7 +214,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
         name: 'app',
         environment: [{name: 'LD_PRELOAD', value: '/customer/preload.so'}],
       }
-      const merged = mergeCompositeInjectionEnv(original, compositeSpec, false)
+      const merged = mergeCompositeInjectionEnv(original, compositeSpec)
 
       expect(merged).toEqual([
         {
@@ -205,7 +223,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
         },
         {name: 'DD_INJECT_SENDER_TYPE', value: 'serverless'},
       ])
-      expect(mergeCompositeInjectionEnv({...original, environment: merged}, compositeSpec, false)).toEqual(merged)
+      expect(mergeCompositeInjectionEnv({...original, environment: merged}, compositeSpec)).toEqual(merged)
       expect(removeInjectionEnv({...original, environment: merged}, false)).toEqual(original.environment)
     })
 
@@ -213,10 +231,24 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(() =>
         mergeLanguageInjectionEnv(
           {name: 'app', secrets: [{name: 'NODE_OPTIONS', valueFrom: 'arn:aws:secretsmanager:secret'}]},
-          nodeSpec!,
-          false
+          nodeSpec!
         )
       ).toThrow(/NODE_OPTIONS/)
+    })
+
+    test('removes tracer fragments from a Windows task whatever case the names use', () => {
+      const container: ContainerDefinition = {
+        name: 'app',
+        environment: [
+          {name: 'node_options', value: '--inspect --require /datadog-lib/node_modules/dd-trace/init.js'},
+          {name: 'Dd_Tags', value: `${SINGLE_LANGUAGE_INJECTION_MODE_TAG},team:serverless`},
+        ],
+      }
+
+      expect(removeInjectionEnv(container, true)).toEqual([
+        {name: 'node_options', value: '--inspect'},
+        {name: 'Dd_Tags', value: 'team:serverless'},
+      ])
     })
   })
 
@@ -316,6 +348,36 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       )
     })
 
+    test('rejects .NET injection on ARM64 tasks', () => {
+      const original = fargateTaskDefinition({
+        runtimePlatform: {operatingSystemFamily: 'LINUX', cpuArchitecture: 'ARM64'},
+      })
+
+      expect(() => instrumentTaskDefinition(original, injectSettings('csharp'))).toThrow('runs ARM64')
+      expect(() => instrumentTaskDefinition(original, injectSettings('dotnet'))).toThrow('runs ARM64')
+    })
+
+    test('injects Node.js on ARM64 tasks', () => {
+      const original = fargateTaskDefinition({
+        runtimePlatform: {operatingSystemFamily: 'LINUX', cpuArchitecture: 'ARM64'},
+      })
+      const {taskDefinition} = instrumentTaskDefinition(original, injectSettings('nodejs'))
+
+      expect(envVarsOf(appOf(taskDefinition.containerDefinitions)).NODE_OPTIONS).toBeDefined()
+    })
+
+    test('instruments the application container after dropping a leading log router', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{name: LOG_ROUTER_CONTAINER_NAME, image: 'fluentbit:latest'}, APP_CONTAINER],
+      })
+      const {taskDefinition} = instrumentTaskDefinition(original, injectSettings('nodejs'))
+
+      expect(envVarsOf(appOf(taskDefinition.containerDefinitions)).NODE_OPTIONS).toBeDefined()
+      expect(
+        envVarsOf(taskDefinition.containerDefinitions?.find((container) => container.name === AGENT_CONTAINER_NAME))
+      ).not.toHaveProperty('NODE_OPTIONS')
+    })
+
     test('sets DD_SOURCE without injecting a tracer when only --language is provided', () => {
       const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
         ...MOCK_SETTINGS,
@@ -338,14 +400,112 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(envVarsOf(agent).DD_TAGS).toBe('team:intake')
     })
 
-    test('rejects a customer container that already uses the tracer name', () => {
-      const original = fargateTaskDefinition({
-        containerDefinitions: [APP_CONTAINER, {name: TRACER_CONTAINER_NAME, image: 'customer:latest'}],
+    // The shape check only recognizes what this release writes, so a tracer container left by
+    // another release or another tool has to be replaced rather than reported as a collision.
+    const staleTracerTaskDefinition = () =>
+      fargateTaskDefinition({
+        containerDefinitions: [
+          APP_CONTAINER,
+          {
+            name: TRACER_CONTAINER_NAME,
+            image: 'public.ecr.aws/datadog/dd-lib-js-init:v2',
+            essential: false,
+            entryPoint: ['/datadog-init/copy-lib.sh'],
+            command: ['/some-other-path'],
+            mountPoints: [{sourceVolume: TRACER_VOLUME_NAME, containerPath: '/some-other-path'}],
+          },
+        ],
+        volumes: [{name: TRACER_VOLUME_NAME}],
       })
 
-      expect(() => instrumentTaskDefinition(original, injectSettings('nodejs'))).toThrow(
-        `A container named '${TRACER_CONTAINER_NAME}' already exists`
+    test('replaces an unrecognized tracer container when injecting', () => {
+      const original = staleTracerTaskDefinition()
+      expect(hasSsi(original, [])).toBe(false)
+
+      const {taskDefinition} = instrumentTaskDefinition(original, injectSettings('nodejs'))
+
+      expect(taskDefinition.containerDefinitions?.filter(({name}) => name === TRACER_CONTAINER_NAME)).toHaveLength(1)
+      expect(tracerOf(taskDefinition.containerDefinitions)?.command).toEqual([TRACER_MOUNT_PATH])
+      expect(taskDefinition.volumes?.filter(({name}) => name === TRACER_VOLUME_NAME)).toHaveLength(1)
+    })
+
+    test('reports replacing a tracer container it did not write', () => {
+      const {warnings} = instrumentTaskDefinition(staleTracerTaskDefinition(), MOCK_SETTINGS)
+
+      expect(warnings.join('\n')).toContain(`declares a ${TRACER_CONTAINER_NAME} container or volume`)
+    })
+
+    test('reports replacing a customer mount at an owned tracer path', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [
+          {
+            ...APP_CONTAINER,
+            mountPoints: [{sourceVolume: 'app-data', containerPath: TRACER_MOUNT_PATH}],
+          },
+        ],
+        volumes: [{name: 'app-data'}],
+      })
+
+      const {taskDefinition, warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+      const app = appOf(taskDefinition.containerDefinitions)
+
+      expect(warnings.join('\n')).toContain(`mounts ${TRACER_MOUNT_PATH}`)
+      expect(app?.mountPoints).not.toContainEqual(expect.objectContaining({containerPath: TRACER_MOUNT_PATH}))
+      expect(taskDefinition.volumes).toContainEqual({name: 'app-data'})
+    })
+
+    test('says nothing about the tracer container it wrote itself', () => {
+      const injected = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('nodejs'))
+      const {warnings} = instrumentTaskDefinition(
+        {...fargateTaskDefinition(), ...injected.taskDefinition},
+        injectSettings('nodejs'),
+        injected.taskDefinition.tags
       )
+
+      expect(warnings.join('\n')).not.toContain(`declares a ${TRACER_CONTAINER_NAME} container or volume`)
+    })
+
+    test.each([['manual'], ['disabled']] as const)(
+      '--tracing %s removes an unrecognized tracer container',
+      (tracing) => {
+        const {taskDefinition} = instrumentTaskDefinition(staleTracerTaskDefinition(), {...MOCK_SETTINGS, tracing})
+
+        expect(tracerOf(taskDefinition.containerDefinitions)).toBeUndefined()
+        expect(taskDefinition.volumes).not.toContainEqual({name: TRACER_VOLUME_NAME})
+      }
+    )
+
+    test('warns before an omitted --tracing turns the task definition back on', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'}]}],
+      })
+
+      const {taskDefinition, warnings} = instrumentTaskDefinition(original, MOCK_SETTINGS)
+
+      expect(envVarsOf(appOf(taskDefinition.containerDefinitions))[DD_TRACE_ENABLED_ENV_VAR]).toBe('true')
+      expect(warnings.join('\n')).toContain(`sets ${DD_TRACE_ENABLED_ENV_VAR} to "false"`)
+    })
+
+    test('leaves an explicit --tracing disabled unremarked', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'}]}],
+      })
+
+      const {taskDefinition, warnings} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing: 'disabled'})
+
+      expect(envVarsOf(appOf(taskDefinition.containerDefinitions))[DD_TRACE_ENABLED_ENV_VAR]).toBe('false')
+      expect(warnings.join('\n')).not.toContain(DD_TRACE_ENABLED_ENV_VAR)
+    })
+
+    test('warns before an omitted --tracing removes an injected tracer', () => {
+      const injected = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('nodejs'))
+      const {warnings} = instrumentTaskDefinition(
+        {...fargateTaskDefinition(), ...injected.taskDefinition},
+        MOCK_SETTINGS,
+        injected.taskDefinition.tags
+      )
+
+      expect(warnings.join('\n')).toContain('Tracing defaults to manual')
     })
 
     test('switches between single- and multi-language injection', () => {
@@ -414,6 +574,61 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(taskDefinition.tags).not.toContainEqual(expect.objectContaining({key: SSI_INJECTION_MODE_TAG}))
     })
 
+    // A .NET image carrying its own tracer sets the same two values injection would, so removing
+    // them without the paths that name the tracer directory would stop its profiler from loading.
+    const MANUAL_DOTNET_ENV: KeyValuePair[] = [
+      {name: 'CORECLR_ENABLE_PROFILING', value: '1'},
+      {name: 'CORECLR_PROFILER', value: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'},
+      {name: 'CORECLR_PROFILER_PATH', value: '/opt/datadog/Datadog.Trace.ClrProfiler.Native.so'},
+      {name: 'DD_DOTNET_TRACER_HOME', value: '/opt/datadog'},
+    ]
+
+    test.each([undefined, 'manual', 'disabled'] as const)(
+      '--tracing %s keeps a tracer the application image installs itself',
+      (tracing) => {
+        const original = fargateTaskDefinition({
+          containerDefinitions: [{...APP_CONTAINER, environment: MANUAL_DOTNET_ENV}],
+        })
+
+        const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing})
+
+        expect(envVarsOf(appOf(taskDefinition.containerDefinitions))).toMatchObject(
+          Object.fromEntries(MANUAL_DOTNET_ENV.map(({name, value}) => [name, value]))
+        )
+      }
+    )
+
+    test('removes the shared .NET settings once the injected tracer shows it wrote them', () => {
+      const injected = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('csharp'))
+      const {taskDefinition} = instrumentTaskDefinition(
+        {...fargateTaskDefinition(), ...injected.taskDefinition},
+        {...MOCK_SETTINGS, tracing: 'manual'},
+        injected.taskDefinition.tags
+      )
+      const app = envVarsOf(appOf(taskDefinition.containerDefinitions))
+
+      expect(app).not.toHaveProperty('CORECLR_ENABLE_PROFILING')
+      expect(app).not.toHaveProperty('CORECLR_PROFILER')
+      expect(app).not.toHaveProperty('CORECLR_PROFILER_PATH')
+      expect(app).not.toHaveProperty('DD_DOTNET_TRACER_HOME')
+    })
+
+    test('rejects an application container that declares a managed variable twice', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [
+          {
+            ...APP_CONTAINER,
+            environment: [
+              {name: 'NODE_OPTIONS', value: '--inspect'},
+              {name: 'NODE_OPTIONS', value: '--trace-warnings'},
+            ],
+          },
+        ],
+      })
+
+      expect(() => instrumentTaskDefinition(original, injectSettings('nodejs'))).toThrow('appears more than once')
+    })
+
     test('names the injected tracer in DD_SOURCE when --language is an alias', () => {
       const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings('dotnet'))
 
@@ -436,6 +651,23 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(envVarsOf(appOf(taskDefinition.containerDefinitions)).NODE_OPTIONS).toBe('--inspect')
       expect(appOf(taskDefinition.containerDefinitions)?.dependsOn).toBeUndefined()
       expect(taskDefinition.tags).not.toContainEqual(expect.objectContaining({key: SSI_INJECTION_MODE_TAG}))
+    })
+
+    test('uninstrument keeps a customer preload after removing composite injection', () => {
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'LD_PRELOAD', value: '/customer/preload.so'}]}],
+      })
+      const injected = instrumentTaskDefinition(original, injectSettings())
+      const {taskDefinition} = uninstrumentTaskDefinition(
+        {...original, ...injected.taskDefinition},
+        {},
+        injected.taskDefinition.tags
+      )
+      const app = envVarsOf(appOf(taskDefinition.containerDefinitions))
+
+      expect(tracerOf(taskDefinition.containerDefinitions)).toBeUndefined()
+      expect(app.LD_PRELOAD).toBe('/customer/preload.so')
+      expect(app).not.toHaveProperty('DD_INJECT_SENDER_TYPE')
     })
   })
 })

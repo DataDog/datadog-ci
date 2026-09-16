@@ -39,7 +39,6 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import {PluginCommand} from '../commands/instrument'
 import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
-import {instrumentTaskDefinition} from '../task-definition'
 
 import {
   CLI_VERSION_TAG,
@@ -58,6 +57,7 @@ import {
   asDescribed,
   fargateService,
   fargateTaskDefinition,
+  instrumentTaskDefinition,
   serviceArn,
   taskDefinitionArn,
   windowsTaskDefinition,

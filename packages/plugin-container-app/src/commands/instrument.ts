@@ -20,6 +20,7 @@ import {
   sortedEqual,
 } from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
+  DD_SOURCE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   DEFAULT_HEALTH_CHECK_PORT,
   SIDECAR_IMAGE,
@@ -29,6 +30,7 @@ import {
   MULTI_LANGUAGE_SSI_MODE,
   SINGLE_LANGUAGE_SSI_MODE,
   SSI_INJECTION_MODE_TAG,
+  TRACER_CONTAINER_NAME,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
@@ -39,7 +41,7 @@ import {
   applySsi,
   assertInjectionEnvCanBeMerged,
   assertSsiEphemeralStorage,
-  assertSsiResourcesCanBeAdded,
+  hasManagedTracerNames,
   hasSsi,
   removeSsiState,
   resolveSsiConfig,
@@ -263,6 +265,14 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       )
     }
 
+    if (!hasSsi(containerApp) && hasManagedTracerNames(containerApp)) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `${containerApp.name} declares a ${TRACER_CONTAINER_NAME} init container or volume that this command did not write. It owns that name and rebuilds it on every run, so yours is being replaced. Rename it to keep it.`
+        )
+      )
+    }
+
     if (!this.dryRun) {
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)
     }
@@ -279,8 +289,9 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       throw new SsiConfigError(ssiConfig.errors.join('\n'))
     }
 
-    const ssiExists = hasSsi(containerApp)
-    const sourceApp = ssiExists ? removeSsiState(containerApp) : containerApp
+    // Unconditional, so that a tracer init container whose shape this release no longer recognizes
+    // is still cleaned up rather than left beside the one the requested state rebuilds.
+    const sourceApp = removeSsiState(containerApp)
     let targetIndex: number | undefined
     if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {
       targetIndex = selectApplicationContainer(
@@ -289,12 +300,12 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         config.containerName
       )
       assertInjectionEnvCanBeMerged(sourceApp.template?.containers?.[targetIndex]?.env, ssiConfig)
-      if (!ssiExists) {
-        assertSsiResourcesCanBeAdded(containerApp, targetIndex, config.sidecarName!, ssiConfig)
-      }
     }
 
     const envVarsByName = getEnvVarsByName(config, subscriptionId, resourceGroup)
+    if (ssiConfig.kind === 'single-language') {
+      envVarsByName[DD_SOURCE_ENV_VAR] = {name: DD_SOURCE_ENV_VAR, value: ssiConfig.language}
+    }
     if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language' || ssiConfig.tracing === 'manual') {
       envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
     } else if (ssiConfig.tracing === 'disabled') {

@@ -9,9 +9,11 @@ import type {
   TaskDefinition,
   Volume,
 } from '@aws-sdk/client-ecs'
+import type {ResolvedSsiConfig} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import type {TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   AGENT_IMAGE,
@@ -30,6 +32,7 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {getInjectionModeTagValue, isInjection} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 import {SSI_INJECTION_MODE_TAG, TRACER_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
@@ -86,18 +89,17 @@ import {
   START_DEPENDENCY_CONDITION,
   VERSION_TAG_KEY,
   WINDOWS_AGENT_IMAGE_SUFFIX,
-  WINDOWS_OS_FAMILY_PREFIX,
   WINDOWS_WORKING_DIRECTORY,
+  isArm64Task,
+  isWindowsTask,
 } from './constants'
 import {
   applySsi,
-  assertSsiResourcesCanBeAdded,
-  getInjectionMountPath,
+  assertInjectionEnvCanBeMerged,
   hasSsi,
+  managedTracerReplacementWarning,
   removeSsiState,
-  resolveSsiConfig,
   selectApplicationContainer,
-  ssiInjectionModeTagValue,
   SsiConfigError,
 } from './ssi'
 
@@ -414,6 +416,12 @@ const withSocketVolume = (existing: Volume[] | undefined, socketEnabled: boolean
  * The environment to give a container: what the command writes, merged into what the container
  * already declares. Windows resolves variable names without case, so the merge does too.
  */
+/** The value a container declares for one variable, resolving the name the way the platform does. */
+const findDeclaredEnv = (container: ContainerDefinition, name: string, windows: boolean): string | undefined =>
+  (container.environment ?? []).find((variable) =>
+    windows ? variable.name?.toLowerCase() === name.toLowerCase() : variable.name === name
+  )?.value
+
 const toEnvironment = (values: ManagedValues, {windows}: Platform, existing?: KeyValuePair[]): KeyValuePair[] => {
   const declared: [string, string | undefined][] = []
   for (const {name, value} of existing ?? []) {
@@ -498,13 +506,6 @@ type Platform = {
   /** Whether the tracers reach the Agent over the shared Unix socket rather than the task loopback address. */
   socket: boolean
 }
-
-/**
- * Whether the task runs Windows containers, which the Agent sidecar has to be built differently
- * for. A task definition that declares no `runtimePlatform`, or declares `LINUX`, runs Linux.
- */
-const isWindowsTask = (taskDefinition: Pick<TaskDefinition, 'runtimePlatform'>): boolean =>
-  taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
 
 /**
  * Whether a declared name is the environment variable `name`.
@@ -790,7 +791,8 @@ const instrumentationTags = (tags: Tag[], ust: UnifiedServiceTags, injectionMode
 export const instrumentTaskDefinition = (
   taskDefinition: TaskDefinition,
   settings: InstrumentSettings,
-  tags: Tag[] = []
+  tags: Tag[],
+  ssiConfig: ResolvedSsiConfig
 ): InstrumentResult => {
   const family = taskDefinition.family
 
@@ -820,11 +822,6 @@ export const instrumentTaskDefinition = (
     )
   }
 
-  const ssiConfig = resolveSsiConfig(settings)
-  if (ssiConfig.kind === 'errors') {
-    throw new SsiConfigError(ssiConfig.errors.join('\n'))
-  }
-
   const platform = resolvePlatform(taskDefinition, settings)
   // FireLens does not support Windows Fargate
   if (settings.logCollection && platform.windows) {
@@ -832,15 +829,26 @@ export const instrumentTaskDefinition = (
       `Task definition ${family} runs Windows, which the ${LOG_ROUTER_CONTAINER_NAME} sidecar does not support. FireLens is Linux-only, so log collection cannot be enabled on this task.`
     )
   }
-  if ((ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') && platform.windows) {
+  if (isInjection(ssiConfig) && platform.windows) {
     throw new SsiConfigError(
       `Task definition ${family} runs Windows, which automatic tracer injection does not support. Install the tracer in the application image and use --tracing manual.`
     )
   }
+  if (ssiConfig.kind === 'single-language' && ssiConfig.language === 'csharp' && isArm64Task(taskDefinition)) {
+    throw new SsiConfigError(
+      `Task definition ${family} runs ARM64, which .NET automatic tracer injection does not support. Install the tracer in the application image and use --tracing manual, or use an X86_64 task.`
+    )
+  }
 
-  const recognized = hasSsi(taskDefinition, tags)
-  const source = recognized ? removeSsiState(taskDefinition) : taskDefinition
+  // Unconditional, so that a tracer container whose shape this release no longer recognizes is
+  // still cleaned up rather than left running beside the one the requested state rebuilds.
+  const source = removeSsiState(taskDefinition)
   const containers = source.containerDefinitions ?? []
+  if (isInjection(ssiConfig)) {
+    // Asked of the task definition as it was described, before this run merges its own environment:
+    // that merge resolves duplicate names to the last one, which would hide the duplicate this reports.
+    assertInjectionEnvCanBeMerged(containers[selectApplicationContainer(containers, settings.containerName)], ssiConfig)
+  }
   const borrowed = borrowedLogConfiguration(containers)
   const firelens = settings.logCollection ? firelensLogConfiguration(settings) : undefined
 
@@ -854,6 +862,18 @@ export const instrumentTaskDefinition = (
     borrowed,
   })
   const warnings = [...ssiConfig.warnings, ...agentWarnings]
+
+  const injected = hasSsi(taskDefinition, tags)
+  if (settings.tracing === undefined && injected) {
+    warnings.push(
+      `Tracing defaults to manual for ${family}, which removes the injected tracer. Use --tracing inject to keep it.`
+    )
+  } else if (!injected) {
+    const replacement = managedTracerReplacementWarning(taskDefinition, family)
+    if (replacement) {
+      warnings.push(replacement)
+    }
+  }
 
   if (platform.windows && settings.agentSocket !== false) {
     warnings.push(
@@ -903,8 +923,15 @@ export const instrumentTaskDefinition = (
       return logRouterContainer ? [logRouterContainer] : []
     }
 
-    if (container.name === TRACER_CONTAINER_NAME) {
-      return [container]
+    // Tracing is managed, so a task that turned the tracers off itself is told that this run turns
+    // them back on rather than having the change buried in the diff.
+    const disabledTracing = findDeclaredEnv(container, DD_TRACE_ENABLED_ENV_VAR, platform.windows)
+    if (settings.tracing === undefined && toBoolean(disabledTracing) === false) {
+      warnings.push(
+        `The ${container.name} container sets ${DD_TRACE_ENABLED_ENV_VAR} to ${JSON.stringify(
+          disabledTracing
+        )}, which this run replaces with "true". Pass --tracing disabled to keep tracing off.`
+      )
     }
 
     if (firelens) {
@@ -932,20 +959,11 @@ export const instrumentTaskDefinition = (
   }
 
   let volumes = withSocketVolume(source.volumes, platform.socket)
-  if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {
+  if (isInjection(ssiConfig)) {
+    // Selected on the rewritten list so dropping the log router cannot shift the application
+    // container onto another index.
     const targetIndex = selectApplicationContainer(containerDefinitions, settings.containerName)
-    if (!recognized) {
-      assertSsiResourcesCanBeAdded(containerDefinitions, volumes, targetIndex, getInjectionMountPath(ssiConfig))
-    }
-
-    const applied = applySsi(
-      containerDefinitions,
-      volumes,
-      targetIndex,
-      ssiConfig,
-      firelens ?? borrowed,
-      platform.windows
-    )
+    const applied = applySsi(containerDefinitions, volumes, targetIndex, ssiConfig, firelens ?? borrowed)
     containerDefinitions = applied.containerDefinitions
     volumes = applied.volumes
 
@@ -977,7 +995,7 @@ export const instrumentTaskDefinition = (
       ...stripReadOnlyFields(source),
       containerDefinitions: resolved,
       volumes,
-      tags: instrumentationTags(tags, ust, ssiInjectionModeTagValue(ssiConfig)),
+      tags: instrumentationTags(tags, ust, getInjectionModeTagValue(ssiConfig)),
     }),
     warnings,
   }
@@ -1003,6 +1021,10 @@ const isSidecar = (container: ContainerDefinition): boolean =>
   container.name === AGENT_CONTAINER_NAME ||
   container.name === LOG_ROUTER_CONTAINER_NAME ||
   container.name === TRACER_CONTAINER_NAME
+
+/** The sidecars left to filter out once `removeSsiState` has taken the tracer container away. */
+const isRemainingSidecar = (container: ContainerDefinition): boolean =>
+  container.name === AGENT_CONTAINER_NAME || container.name === LOG_ROUTER_CONTAINER_NAME
 
 /**
  * The Docker labels instrumentation writes. Only these three are removed, rather than everything in
@@ -1099,7 +1121,7 @@ export const uninstrumentTaskDefinition = (
     taskDefinition: removeUndefinedValues({
       ...stripReadOnlyFields(cleaned),
       containerDefinitions: containers
-        .filter((container) => !isSidecar(container))
+        .filter((container) => !isRemainingSidecar(container))
         .map((container) => uninstrumentContainer(container, settings, warnings)),
       volumes: cleaned.volumes?.filter((volume) => volume.name !== AGENT_SOCKET_VOLUME_NAME),
       tags: tags.filter((tag) => tag.key === undefined || !INSTRUMENTATION_TAG_KEYS.has(tag.key)),

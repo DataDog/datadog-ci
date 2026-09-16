@@ -2,6 +2,7 @@ import type {App} from '../apps'
 import type {InstrumentSettings} from '../task-definition'
 import type {ECSClient} from '@aws-sdk/client-ecs'
 import type {EcsFargateConfigOptions} from '@datadog/datadog-ci-base/commands/ecs-fargate/common'
+import type {ResolvedSsiConfig} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 
 import {EcsFargateInstrumentCommand} from '@datadog/datadog-ci-base/commands/ecs-fargate/instrument'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
@@ -22,7 +23,7 @@ import {
   registerTaskDefinition,
 } from '../aws'
 import {AWS_REGION_ENV_VARS} from '../constants'
-import {hasSsi, resolveSsiConfig} from '../ssi'
+import {resolveSsiConfig} from '../ssi'
 import {instrumentTaskDefinition, isUpToDate, stripReadOnlyFields, withMaskedApiKey} from '../task-definition'
 
 export class PluginCommand extends EcsFargateInstrumentCommand {
@@ -30,12 +31,11 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     this.enableFips()
 
     const [config, configErrors] = await this.ensureConfig()
-    // Checked before any AWS call, so a bad tracer option cannot register a revision for an earlier
-    // task definition before a later one fails on it.
+    // Resolved before any AWS call, so that a tracer option the command cannot honour stops the run
+    // rather than registering a revision for the task definitions it reaches first.
     const ssiConfig = resolveSsiConfig(config)
-    const errors = [...(ssiConfig.kind === 'errors' ? ssiConfig.errors : []), ...configErrors]
-    if (errors.length > 0) {
-      for (const error of errors) {
+    if (ssiConfig.kind === 'errors' || configErrors.length > 0) {
+      for (const error of [...(ssiConfig.kind === 'errors' ? ssiConfig.errors : []), ...configErrors]) {
         this.context.stdout.write(renderError(error))
       }
 
@@ -85,7 +85,9 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       this.context.stdout.write(renderError(error))
     }
 
-    const results = await Promise.all(apps.map((app) => this.processApp(client, config.cluster, app, settings)))
+    const results = await Promise.all(
+      apps.map((app) => this.processApp(client, config.cluster, app, settings, ssiConfig))
+    )
 
     return resolutionErrors.length > 0 || results.some((result) => !result) ? 1 : 0
   }
@@ -93,17 +95,21 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
   /**
    * Instruments one app's task definition and points its services at the revision that comes out.
    *
+   * Apps are independent on purpose: one this command cannot instrument leaves the others on their
+   * new revision rather than holding back a rollout that would have worked.
+   *
    * @returns whether the app was instrumented and every one of its services runs the new revision.
    */
   private async processApp(
     client: ECSClient,
     cluster: string | undefined,
     app: App,
-    settings: InstrumentSettings
+    settings: InstrumentSettings,
+    ssiConfig: ResolvedSsiConfig
   ): Promise<boolean> {
     const output: string[] = []
     try {
-      const taskDefinitionArn = await this.instrument(client, app, settings, output)
+      const taskDefinitionArn = await this.instrument(client, app, settings, ssiConfig, output)
       const deployed = await Promise.all(
         app.services.map((service) =>
           deployService({
@@ -139,20 +145,13 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     client: ECSClient,
     app: App,
     settings: InstrumentSettings,
+    ssiConfig: ResolvedSsiConfig,
     output: string[]
   ): Promise<string | undefined> {
     const {taskDefinition, tags} = await describeTaskDefinition(client, app.target)
     const family = taskDefinition.family ?? app.target
 
-    if (settings.tracing === undefined && hasSsi(taskDefinition, tags)) {
-      output.push(
-        renderSoftWarning(
-          `Tracing defaults to manual for ${family}. Use --tracing inject to retain automatic tracer injection.`
-        )
-      )
-    }
-
-    const {taskDefinition: updated, warnings} = instrumentTaskDefinition(taskDefinition, settings, tags)
+    const {taskDefinition: updated, warnings} = instrumentTaskDefinition(taskDefinition, settings, tags, ssiConfig)
     for (const warning of warnings) {
       output.push(renderSoftWarning(warning))
     }
