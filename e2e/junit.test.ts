@@ -34,28 +34,33 @@ describe('junit', () => {
     })
   })
 
-  it('upload with measures (literal glob string)', async () => {
-    const result = await execPromise(
-      `${DATADOG_CI_COMMAND} junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80 --tags job:${JOB_KEY} --report-tags job:${JOB_KEY}`,
-      {
-        DD_API_KEY: process.env.DD_API_KEY,
-        DATADOG_API_KEY: undefined,
-      }
-    )
-    expect(result.exitCode).toBe(0)
+  // cmd.exe never expands globs (that's a POSIX shell behavior), so on Windows this test would be
+  // indistinguishable from "glob expansion" above -- there's no shell-expansion-vs-literal
+  // distinction to exercise there.
+  if (process.platform !== 'win32') {
+    it('upload with measures (literal glob string)', async () => {
+      const result = await execPromise(
+        `${DATADOG_CI_COMMAND} junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80 --tags job:${JOB_KEY} --report-tags job:${JOB_KEY}`,
+        {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DATADOG_API_KEY: undefined,
+        }
+      )
+      expect(result.exitCode).toBe(0)
 
-    await checkJunitUpload({
-      service: DD_SERVICE,
-      commitSha: process.env.GITHUB_SHA!,
-      testLevel: 'test',
-      extraFilter: `@testmeasure2:60 @job:${JOB_KEY}`,
-    })
+      await checkJunitUpload({
+        service: DD_SERVICE,
+        commitSha: process.env.GITHUB_SHA!,
+        testLevel: 'test',
+        extraFilter: `@testmeasure2:60 @job:${JOB_KEY}`,
+      })
 
-    await checkJunitUpload({
-      service: DD_SERVICE,
-      commitSha: process.env.GITHUB_SHA!,
-      testLevel: 'session',
-      extraFilter: `@sessionmeasure2:80 @job:${JOB_KEY}`,
+      await checkJunitUpload({
+        service: DD_SERVICE,
+        commitSha: process.env.GITHUB_SHA!,
+        testLevel: 'session',
+        extraFilter: `@sessionmeasure2:80 @job:${JOB_KEY}`,
+      })
     })
-  })
+  }
 })
