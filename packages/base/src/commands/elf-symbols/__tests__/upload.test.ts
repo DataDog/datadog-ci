@@ -38,6 +38,7 @@ const commonMetadata = {
   origin_version: cliVersion,
   type: 'elf_symbol_file',
   overwrite: false,
+  generate_cfi_cache: true,
 }
 
 const requireObjcopy = () => {

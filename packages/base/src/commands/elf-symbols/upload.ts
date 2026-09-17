@@ -205,6 +205,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
       filename: upath.basename(elfFileMetadata.filename),
       overwrite: this.replaceExisting,
+      generate_cfi_cache: true,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
