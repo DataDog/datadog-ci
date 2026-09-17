@@ -65,6 +65,18 @@ For backward compatibility, running a command that requires a plugin automatical
 > [!WARNING]
 > Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>` to skip auto-installation. You can also disable auto-installation with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
+### Overriding the plugin version
+
+By default, `datadog-ci plugin install` installs a plugin version that matches the version of `datadog-ci` you are running. To override that behavior, use the `PLUGIN_INSTALL_VERSION_OVERRIDE` environment variable:
+
+```sh
+PLUGIN_INSTALL_VERSION_OVERRIDE=5.23.0 datadog-ci plugin install synthetics
+```
+
+This environment variable is also respected when datadog-ci auto-installs a missing plugin.
+
+The value must be an exact semantic version (`X.Y.Z`), without ranges such as `^5.23.0`.
+
 ## Usage
 
 ```bash
