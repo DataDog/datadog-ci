@@ -745,6 +745,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/.debug/dyn_aarch64.debug`)).toEqual({
@@ -761,6 +762,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: false,
         hasSymbolTable: true,
         hasCode: false,
+        hasEhFrame: false,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/dyn_aarch64_nobuildid`)).toEqual({
@@ -777,6 +779,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`)).toEqual({
@@ -793,6 +796,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: false,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/go_x86_64_only_go_build_id`)).toEqual({
@@ -809,6 +813,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: false,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/exec_arm_big`)).toEqual({
@@ -825,6 +830,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: false,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
       })
     })
   })

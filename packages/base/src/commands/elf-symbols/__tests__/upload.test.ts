@@ -38,6 +38,7 @@ const commonMetadata = {
   origin_version: cliVersion,
   type: 'elf_symbol_file',
   overwrite: false,
+  generate_cfi_cache: true,
 }
 
 const requireObjcopy = () => {
@@ -183,6 +184,7 @@ describe('elf-symbols upload', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
         gnuBuildId: 'fake-gnu-build-id',
         goBuildId: 'fake-go-build-id',
         fileHash: 'fake-file-hash',
