@@ -15,10 +15,6 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
             "value": "8080"
 -         },
 -         {
--           "name": "DD_TRACE_ENABLED",
--           "value": "true"
--         },
--         {
 -           "name": "DD_LOGS_INJECTION",
 -           "value": "true"
 -         },
@@ -33,6 +29,10 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
 -         {
 -           "name": "DD_DOGSTATSD_URL",
 -           "value": "unix:///var/run/datadog/dsd.socket"
+-         },
+-         {
+-           "name": "DD_TRACE_ENABLED",
+-           "value": "true"
           }
         ],
         "essential": true,

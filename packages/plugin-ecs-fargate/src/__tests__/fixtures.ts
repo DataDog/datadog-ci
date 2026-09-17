@@ -1,4 +1,4 @@
-import type {InstrumentSettings} from '../task-definition'
+import type {InstrumentResult, InstrumentSettings} from '../task-definition'
 import type {
   ContainerDefinition,
   LogConfiguration,
@@ -11,7 +11,25 @@ import type {
   Volume,
 } from '@aws-sdk/client-ecs'
 
-import {instrumentTaskDefinition} from '../task-definition'
+import {resolveSsiConfig} from '../ssi'
+import {instrumentTaskDefinition as transformTaskDefinition} from '../task-definition'
+
+/**
+ * `instrumentTaskDefinition` with the tracer inputs resolved from the settings, which the command
+ * does once for the whole run before it transforms any task definition.
+ */
+export const instrumentTaskDefinition = (
+  taskDefinition: TaskDefinition,
+  settings: InstrumentSettings,
+  tags: Tag[] = []
+): InstrumentResult => {
+  const ssiConfig = resolveSsiConfig(settings)
+  if (ssiConfig.kind === 'errors') {
+    throw new Error(`Test settings the command would have rejected: ${ssiConfig.errors.join('\n')}`)
+  }
+
+  return transformTaskDefinition(taskDefinition, settings, tags, ssiConfig)
+}
 
 export const MOCK_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_API_KEY_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key-AbCdEf'

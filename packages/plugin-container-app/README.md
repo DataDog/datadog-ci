@@ -60,15 +60,25 @@ datadog-ci container-app instrument \
 
 ### Automatic APM instrumentation
 
-Use `--tracing inject` to detect the application language and add its tracer without rebuilding the application image. Add `--language <language>` to copy only one tracer. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
+Use `--tracing inject` to detect the application language and add its tracer without rebuilding the application image. Add `--language <language>` to copy only one tracer. Supported language values are `java`, `nodejs`, `csharp`, `python`, `ruby`, and `php`. `dotnet` is accepted as an alias for `csharp`. The command copies the tracer through an init container and keeps the Datadog sidecar for trace transport.
 
-`--tracer-version` and `--tracer-libc` require `--language`. Single-language injection uses the `latest` tracer version and `glibc` by default. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Runtime support follows the [APM compatibility requirements](https://docs.datadoghq.com/tracing/trace_collection/compatibility/); `latest` can drop runtimes after they reach end of life.
+`--tracer-version` and `--tracer-libc` require `--tracing inject --language`. Single-language injection uses the `latest` tracer version and `glibc` by default. Ruby injection does not support musl, and .NET tracer versions before 3.0 are not supported. Runtime support follows the [APM compatibility requirements](https://docs.datadoghq.com/tracing/trace_collection/compatibility/); `latest` can drop runtimes after they reach end of life.
 
 Go tracers cannot be injected. Install `dd-trace-go` in the application image, and use `--tracing manual`.
 
 Automatic instrumentation can increase cold-start delays when the app scales to zero. Automatic language detection copies a larger composite tracer image than selecting one language. For scale-to-zero workloads, install the tracer in the application image, and use `--tracing manual`.
 
 For a Container App with multiple application containers, use `--container-name` to select one container. This differs from `--name`, which selects the Container App resource.
+
+A tracer your own image installs is left alone. The command removes the startup settings it wrote, which it recognizes from the `/datadog-lib` and `/opt/datadog-packages` paths it copies tracers into. Settings a manual install shares with it, such as `CORECLR_ENABLE_PROFILING`, are only removed alongside one of those paths.
+
+The following names and paths belong to this command. Every run removes them before applying what you asked for, so a tracer left by an earlier release or another tool is replaced rather than left alongside the new one. Use different names and paths for anything of your own, and the command reports when it replaces something it did not write.
+
+| Resource       | Name or path                            |
+| -------------- | --------------------------------------- |
+| Init container | `datadog-tracer`                        |
+| Volume         | `datadog-tracer`                        |
+| Mount paths    | `/datadog-lib`, `/opt/datadog-packages` |
 
 Tracing defaults to `manual`, which uses a tracer already installed in the application image. Use `--tracing disabled` to turn tracing off.
 
@@ -115,6 +125,7 @@ You must have valid Azure credentials configured with access to the Container Ap
 - Azure PowerShell credentials
 
 For local development, ensure you're authenticated through the Azure CLI:
+
 ```bash
 az login
 ```
@@ -123,16 +134,17 @@ az login
 
 You must expose these environment variables in the environment where you are running `datadog-ci container-app instrument`:
 
-| Environment Variable | Description | Example |
-| -------------------- | ----------- | ------- |
-| `DD_API_KEY` | **Required**. Datadog API Key. Sets the `DD_API_KEY` environment variable on your Container App. For more information about getting a Datadog API key, see the [API key documentation][1]. | `export DD_API_KEY=<API_KEY>` |
-| `DD_SITE` | Set which Datadog site to send data to. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, `uk1.datadoghq.com`, `ddog-gov.com`, and `us2.ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com` |
+| Environment Variable | Description                                                                                                                                                                                                                                                                   | Example                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `DD_API_KEY`         | **Required**. Datadog API Key. Sets the `DD_API_KEY` environment variable on your Container App. For more information about getting a Datadog API key, see the [API key documentation][1].                                                                                    | `export DD_API_KEY=<API_KEY>`  |
+| `DD_SITE`            | Set which Datadog site to send data to. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, `uk1.datadoghq.com`, `ddog-gov.com`, and `us2.ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com` |
 
 ### Arguments
 
 Configuration can be done using command-line arguments or a JSON configuration file (see the next section).
 
 #### `instrument`
+
 You can pass the following arguments to `instrument` to specify its behavior. Values in the configuration file override command-line arguments.
 
 <!-- BEGIN_USAGE:instrument -->
@@ -156,16 +168,17 @@ You can pass the following arguments to `instrument` to specify its behavior. Va
 | `--sidecar-memory` |  | The amount of memory (in GiB) to allocate to the sidecar container. | `1` |
 | `--sidecar-image` |  | Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. | `index.docker.io/datadog/serverless-init:latest` |
 | `--tracing` |  | Configure APM instrumentation. Use `manual` when the tracer is installed, `inject` to detect the language and add a tracer automatically, or `disabled` to turn tracing off. Add `--language` with `inject` to select one tracer. Defaults to `manual`. |  |
-| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects one tracer instead of detecting the language automatically. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. |  |
-| `--tracer-version` |  | Set the tracer image tag for automatic instrumentation with `--language`. | `latest` |
-| `--tracer-libc` |  | Set the C standard library used by the application image with `--language`. Possible values: "glibc", "musl". | `glibc` |
-| `--container-name` |  | Select the application container to instrument when the Container App has multiple application containers. |  |
+| `--language` |  | Set the application language for log parsing. With `--tracing inject`, this selects one tracer instead of detecting the language automatically. Supported injection values: `java`, `nodejs`, `csharp`, `python`, `ruby`, `php`. `dotnet` is accepted as an alias for `csharp`. |  |
+| `--tracer-version` |  | Set the tracer image tag. Requires `--tracing inject --language`. | `latest` |
+| `--tracer-libc` |  | Set the C standard library used by the application image. Requires `--tracing inject --language`. Possible values: "glibc", "musl". | `glibc` |
+| `--container-name` |  | Select the application container to instrument when the Container App has several. Only applies with `--tracing inject`. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the app in the format "key1:value1,key2:value2". |  |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`
+
 You can pass the following arguments to `uninstrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
 
 <!-- BEGIN_USAGE:uninstrument -->
@@ -201,10 +214,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "sourceCodeIntegration": true,
     "uploadGitMetadata": true,
     "extraTags": "team:backend,project:api",
-    "envVars": [
-      "CUSTOM_VAR1=value1",
-      "CUSTOM_VAR2=value2"
-    ]
+    "envVars": ["CUSTOM_VAR1=value1", "CUSTOM_VAR2=value2"]
   }
 }
 ```
@@ -265,7 +275,6 @@ datadog-ci container-app instrument \
   --name my-container-app \
   --log-path /home/LogFiles/myapp/*.log \
 ```
-
 
 ### Dry run to preview changes
 

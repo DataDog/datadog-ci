@@ -39,9 +39,13 @@ import type {ContainerApp} from '@azure/arm-appcontainers'
 import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
 import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  MULTI_LANGUAGE_SSI_MODE,
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
-import {MULTI_LANGUAGE_SSI_MODE, SINGLE_LANGUAGE_SSI_MODE, SSI_INJECTION_MODE_TAG} from '../ssi'
 
 import {
   CONTAINER_APP_ID,

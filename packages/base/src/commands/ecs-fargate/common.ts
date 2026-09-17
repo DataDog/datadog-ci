@@ -5,6 +5,8 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {ENV_VAR_REGEX} from '../../helpers/serverless/constants'
+import type {Libc} from '../../helpers/serverless/ssi/injection-spec'
+import type {TracingMode} from '../../helpers/serverless/ssi/tracing'
 import {DEFAULT_CONFIG_PATHS, removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -33,7 +35,11 @@ export type EcsFargateConfigOptions = Partial<{
   sourceCodeIntegration: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
-  tracing: string
+  tracing: TracingMode
+  language: string
+  tracerVersion: string
+  tracerLibc: Libc
+  containerName: string
   logLevel: string
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   appsec: boolean
