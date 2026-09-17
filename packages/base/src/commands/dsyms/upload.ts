@@ -27,6 +27,7 @@ import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {CompressedDsym} from './interfaces'
+import {detectAppleSymbolPlatformFromFile} from './macho'
 import {
   renderCommandDetail,
   renderCommandInfo,
@@ -323,9 +324,10 @@ export class DsymsUploadCommand extends BaseCommand {
     return Promise.all(
       dsyms.map(async (dsym) => {
         const archivePath = buildPath(output, `${dsym.dwarf[0].uuid}.zip`)
+        const platform = await detectAppleSymbolPlatformFromFile(dsym.dwarf[0].object)
         await zipDirectoryToArchive(dsym.bundle, archivePath)
 
-        return new CompressedDsym(archivePath, dsym)
+        return new CompressedDsym(archivePath, dsym, platform)
       })
     )
   }

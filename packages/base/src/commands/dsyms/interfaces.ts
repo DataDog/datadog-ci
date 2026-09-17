@@ -1,3 +1,4 @@
+import type {AppleSymbolPlatform} from './macho'
 import type {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 export interface Dsym {
@@ -13,10 +14,12 @@ export interface DWARF {
 export class CompressedDsym {
   public archivePath: string
   public dsym: Dsym
+  public platform?: AppleSymbolPlatform
 
-  constructor(archivePath: string, dsym: Dsym) {
+  constructor(archivePath: string, dsym: Dsym, platform?: AppleSymbolPlatform) {
     this.archivePath = archivePath
     this.dsym = dsym
+    this.platform = platform
   }
 
   public asMultipartPayload(): MultipartPayload {
@@ -42,6 +45,7 @@ export class CompressedDsym {
       value: JSON.stringify({
         type: 'ios_symbols',
         uuids: concatUUIDs,
+        ...(this.platform === undefined ? {} : {platform: this.platform}),
       }),
     }
   }
