@@ -241,6 +241,12 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `correlate-image`: Correlate an image from a CD provider with its source commit. [🔗](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 - `gate`: Evaluate a Deployment Gate. [🔗](https://docs.datadoghq.com/deployment_gates/)
 
+#### `ecs-fargate`
+
+<sub>**README:** [📚](/packages/plugin-ecs-fargate) | **Documentation:** [🔗](https://docs.datadoghq.com/integrations/aws-fargate/) | **Plugin:** `@datadog/datadog-ci-plugin-ecs-fargate`</sub>
+
+- `instrument`: Apply Datadog instrumentation to an AWS ECS Fargate Task Definition.
+
 #### `elf-symbols`
 
 <sub>**README:** [📚](/packages/base/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
