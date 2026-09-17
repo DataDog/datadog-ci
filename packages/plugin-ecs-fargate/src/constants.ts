@@ -1,4 +1,4 @@
-import type {FirelensConfigurationType, LogDriver} from '@aws-sdk/client-ecs'
+import type {ContainerCondition, FirelensConfigurationType, LogDriver} from '@aws-sdk/client-ecs'
 
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
@@ -19,8 +19,25 @@ export const LAUNCH_TYPE_FARGATE = 'FARGATE'
  */
 export const AWSVPC_NETWORK_MODE = 'awsvpc'
 
+/**
+ * ECS spells the Windows operating system families with the `WINDOWS_SERVER` prefix (e.g.
+ * `WINDOWS_SERVER_2019_CORE`, `WINDOWS_SERVER_2022_FULL`) Anything else, `LINUX` and
+ * declaring no family at all included, runs Linux.
+ */
+export const WINDOWS_OS_FAMILY_PREFIX = 'WINDOWS_SERVER'
+
 // Agent sidecar defaults
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
+
+/**
+ * The tag suffix for the Windows build of the Agent image
+ */
+export const WINDOWS_AGENT_IMAGE_SUFFIX = '-servercore'
+
+/**
+ * The working directory the Agent requires on Windows, which its image does not set itself.
+ */
+export const WINDOWS_WORKING_DIRECTORY = 'C:\\'
 
 /**
  * The task definition tag keys for the unified service tags, which name the same three concepts as
@@ -42,12 +59,22 @@ export const DOCKER_LABEL_VERSION = 'com.datadoghq.tags.version'
 /**
  * The Agent's own health probe. Shipping it means application containers can gate their startup on
  * the Agent being ready through a `dependsOn` HEALTHY condition.
+ *
+ * Linux only: `/probe.sh` is a shell script shipped in the Linux image, and the Windows image has
+ * no equivalent on its `PATH`, so Windows tasks get no health check at all.
  */
 export const AGENT_HEALTH_CHECK_COMMAND = ['CMD-SHELL', '/probe.sh']
 export const AGENT_HEALTH_CHECK_INTERVAL = 15
 export const AGENT_HEALTH_CHECK_TIMEOUT = 5
 export const AGENT_HEALTH_CHECK_RETRIES = 3
 export const AGENT_HEALTH_CHECK_START_PERIOD = 60
+
+/**
+ * The `dependsOn` conditions that matter to the sidecars: ECS only accepts `HEALTHY` on a container
+ * that declares a health check, so a dependency on a sidecar that has none waits for its `START`.
+ */
+export const HEALTHY_DEPENDENCY_CONDITION: ContainerCondition = 'HEALTHY'
+export const START_DEPENDENCY_CONDITION: ContainerCondition = 'START'
 
 /**
  * The only log driver whose configuration can be borrowed for a sidecar as-is. Other drivers route
@@ -61,6 +88,7 @@ export const LOG_ROUTER_CONTAINER_NAME = 'datadog-log-router'
 
 /**
  * The Fluent Bit build AWS publishes for FireLens, which ships the Datadog output plugin.
+ * Linux only: FireLens does not run on Windows Fargate.
  */
 export const LOG_ROUTER_IMAGE = 'public.ecr.aws/aws-observability/aws-for-fluent-bit:stable'
 
@@ -116,6 +144,9 @@ export const DD_AGENT_HOST_ENV_VAR = 'DD_AGENT_HOST'
 /**
  * The volume carrying the Agent's APM and DogStatsD sockets. The tracers write to it and the Agent
  * reads from it, which is why both sides mount it at the path the Agent's image already listens on.
+ *
+ * Linux only: Windows containers have no Unix sockets, so a Windows task reaches the Agent over the
+ * loopback address instead.
  */
 export const AGENT_SOCKET_VOLUME_NAME = 'dd-sockets'
 export const AGENT_SOCKET_MOUNT_PATH = '/var/run/datadog'
