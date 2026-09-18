@@ -17,6 +17,9 @@ To release a new version of `datadog-ci`:
    - Once approved, retry the `pre-approval-checks` job.
 7. The `npm-publish` job should now be waiting for an approval from a datadog-ci admin.
    - Ask for approval and wait for it and its downstream jobs to succeed.
+   - The job publishes the base package and plugins first, then polls the public NPM registry for their exact versions in both full and installation metadata before publishing `datadog-ci`.
+   - The availability check retries up to 40 times, waiting 15 seconds between attempts, with a 20-minute step timeout. If it fails, `datadog-ci` is not published. Check the logs for unavailable packages and retry the failed job once NPM has caught up; already published packages are skipped.
+   - This checks the registry cache reached by the release runner; it cannot guarantee that every regional cache has refreshed.
 8. Once all jobs are successful, merge the PR **with the "Create a merge commit" strategy**.
    - The "Create a merge commit" strategy is required for the GitHub Release to point to an existing commit once the PR is merged.
 9. Go to the draft GitHub Release, and publish it as **latest**.

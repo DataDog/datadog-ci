@@ -33,6 +33,8 @@ jobs:
       - run: yarn install --immutable
       - run: yarn lint:packages
       - run: yarn lint:readme-usage
+      - name: Test NPM publication availability check
+        run: bash bin/tests/wait-for-npm-packages.sh
       - run: yarn build
       - name: Run yarn lint:ci
         run: |
