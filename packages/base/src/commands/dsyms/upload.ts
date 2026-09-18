@@ -2,6 +2,7 @@ import {promises} from 'fs'
 
 import type {Dsym, DWARF} from './interfaces'
 import type {ApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 
@@ -17,11 +18,7 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {
-  getRepositoryData,
-  newSimpleGit,
-  RepositoryData,
-} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
@@ -31,7 +28,7 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {CompressedDsym, GitData} from './interfaces'
+import {CompressedDsym} from './interfaces'
 import {
   renderCommandDetail,
   renderCommandInfo,

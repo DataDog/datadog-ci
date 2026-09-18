@@ -1,7 +1,7 @@
 import {existsSync, promises} from 'fs'
 import {platform} from 'os'
 
-import type {Dsym} from '../interfaces'
+import type {Dsym, GitData} from '../interfaces'
 
 import {Cli} from 'clipanion'
 import upath from 'upath'
@@ -11,7 +11,7 @@ import * as APIKeyHelpers from '@datadog/datadog-ci-base/helpers/apikey'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {CompressedDsym, GitData} from '../interfaces'
+import {CompressedDsym} from '../interfaces'
 import {DsymsUploadCommand} from '../upload'
 import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
 
