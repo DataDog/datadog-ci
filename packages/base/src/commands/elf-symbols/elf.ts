@@ -550,7 +550,8 @@ export const copyElfDebugInfo = async (
   filename: string,
   outputFile: string,
   elfFileMetadata: ElfFileMetadata,
-  compressDebugSections: boolean
+  compressDebugSections: boolean,
+  includeUnwindInfo = false
 ): Promise<void> => {
   // Initialize cached values
   const supportedTargets = await getSupportedBfdTargetsCached()
@@ -584,7 +585,7 @@ export const copyElfDebugInfo = async (
   // Remove .gdb_index section as it is not needed and can be quite big
   let options = `${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index`
 
-  if (elfFileMetadata.hasEhFrame) {
+  if (includeUnwindInfo && elfFileMetadata.hasEhFrame) {
     // --only-keep-debug turns allocated unwind sections into NOBITS sections. Preserve the contents so downstream
     // processors can generate call frame information used to unwind optimized crash stacks.
     options += ' --set-section-flags .eh_frame=alloc,readonly,contents'

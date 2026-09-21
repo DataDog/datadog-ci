@@ -74,6 +74,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
   private repositoryUrl = Option.String('--repository-url')
   private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--upload-dynamic-symbols', false)
   private replaceExisting = Option.Boolean('--replace-existing', false)
+  private includeUnwindInfo = Option.Boolean('--include-unwind-info', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = cliVersion
@@ -205,7 +206,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
       filename: upath.basename(elfFileMetadata.filename),
       overwrite: this.replaceExisting,
-      generate_cfi_cache: true,
+      generate_cfi_cache: this.includeUnwindInfo,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
@@ -346,7 +347,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
         const metadata = this.getMappingMetadata(fileMetadata)
         const outputFilename = getOutputFilenameFromBuildId(getBuildIdWithArch(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
-        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, true)
+        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, true, this.includeUnwindInfo)
 
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
