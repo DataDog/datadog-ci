@@ -46,6 +46,8 @@ jobs:
             echo ""
             exit 1
           fi
+      - name: NPM publication availability check
+        run: bash bin/tests/wait-for-npm-packages.sh
       - run: yarn test
         env:
           CI: true
