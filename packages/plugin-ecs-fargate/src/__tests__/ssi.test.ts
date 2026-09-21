@@ -18,7 +18,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SINGLE_LANGUAGE_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 
-import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME, SUCCESS_DEPENDENCY_CONDITION} from '../constants'
+import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME, SUCCESS_DEPENDENCY_CONDITION, TRACER_USER} from '../constants'
 import {
   ECS_FARGATE_TRACER_REGISTRY,
   hasSsi,
@@ -282,6 +282,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
         name: TRACER_CONTAINER_NAME,
         image: expect.stringContaining('public.ecr.aws/datadog/dd-lib-'),
         essential: false,
+        user: TRACER_USER,
         entryPoint: ['/datadog-init/copy-lib.sh'],
         command: [TRACER_MOUNT_PATH],
       })
@@ -309,6 +310,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       })
       expect(tracer).toMatchObject({
         image: 'public.ecr.aws/datadog/dd-lib-composite-init:latest',
+        user: TRACER_USER,
         command: [COMPOSITE_TRACER_MOUNT_PATH],
       })
       expect(envVarsOf(agent).LD_PRELOAD).toBeUndefined()
@@ -540,6 +542,29 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(
         isUpToDate({...stripReadOnlyFields(described), tags: first.taskDefinition.tags}, second.taskDefinition)
       ).toBe(true)
+    })
+
+    test.each(INJECTION_MODES)('updates a %s tracer sidecar that was not running as root', (_, language) => {
+      const first = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings(language))
+      const described = {
+        ...fargateTaskDefinition(),
+        ...first.taskDefinition,
+        containerDefinitions: first.taskDefinition.containerDefinitions?.map((container) => {
+          if (container.name !== TRACER_CONTAINER_NAME) {
+            return container
+          }
+          const rest = {...container}
+          delete rest.user
+
+          return rest
+        }),
+      }
+      const second = instrumentTaskDefinition(described, injectSettings(language), first.taskDefinition.tags)
+
+      expect(tracerOf(second.taskDefinition.containerDefinitions)?.user).toBe(TRACER_USER)
+      expect(
+        isUpToDate({...stripReadOnlyFields(described), tags: first.taskDefinition.tags}, second.taskDefinition)
+      ).toBe(false)
     })
 
     // The tracer container mounts the volume it copies into, which must not make the task definition

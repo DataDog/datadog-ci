@@ -47,7 +47,13 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/recognition'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME, SUCCESS_DEPENDENCY_CONDITION, isWindowsTask} from './constants'
+import {
+  AGENT_CONTAINER_NAME,
+  LOG_ROUTER_CONTAINER_NAME,
+  SUCCESS_DEPENDENCY_CONDITION,
+  TRACER_USER,
+  isWindowsTask,
+} from './constants'
 
 export {SsiConfigError} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 export type {InjectionConfig, ResolvedSsiConfig, SsiConfigResult, SsiOptions}
@@ -302,6 +308,7 @@ const managedTracerConfig = (container: ContainerDefinition): ManagedTracerConfi
 const hasManagedTracerContainerShape = (container: ContainerDefinition, mountPath: string): boolean =>
   container.name === TRACER_CONTAINER_NAME &&
   container.essential === false &&
+  container.user === TRACER_USER &&
   container.entryPoint?.length === 1 &&
   container.entryPoint[0] === TRACER_COPY_ENTRYPOINT &&
   container.command?.length === 1 &&
@@ -319,6 +326,7 @@ const buildTracerContainer = (
     name: TRACER_CONTAINER_NAME,
     image,
     essential: false,
+    user: TRACER_USER,
     entryPoint: [TRACER_COPY_ENTRYPOINT],
     command: [mountPath],
     mountPoints: [{sourceVolume: TRACER_VOLUME_NAME, containerPath: mountPath, readOnly: false}],
