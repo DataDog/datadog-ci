@@ -38,7 +38,7 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -38,114 +15,20 @@
+@@ -38,114 +15,19 @@
             "awslogs-group": "/ecs/my-app",
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
@@ -146,7 +146,6 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
 -       "value": "vXXXX"
 -     }
 -   ],
-+   "tags": [],
     "taskRoleArn": "arn:aws:iam::123456789012:role/my-app-task-role",
 -   "volumes": [
 -     {

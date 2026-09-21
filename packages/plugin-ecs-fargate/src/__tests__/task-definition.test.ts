@@ -1346,7 +1346,7 @@ describe('isUpToDate', () => {
 
 describe('uninstrumentTaskDefinition', () => {
   /** What registering the given task definition unchanged would send. */
-  const registerable = (original = fargateTaskDefinition()) => ({...stripReadOnlyFields(original), tags: []})
+  const registerable = (original = fargateTaskDefinition()) => stripReadOnlyFields(original)
 
   describe('gives back the task definition the revision was registered from', () => {
     test.each([
@@ -1479,6 +1479,12 @@ describe('uninstrumentTaskDefinition', () => {
     ])
 
     expect(taskDefinition.tags).toStrictEqual([{key: 'team', value: 'intake'}])
+  })
+
+  test('omits tags when only instrumentation tags were present', () => {
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition(), {}, INSTRUMENTATION_TAGS)
+
+    expect(taskDefinition.tags).toBeUndefined()
   })
 
   describe('log collection', () => {

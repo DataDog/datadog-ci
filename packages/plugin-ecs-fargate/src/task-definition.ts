@@ -1044,6 +1044,9 @@ const INSTRUMENTATION_TAG_KEYS: ReadonlySet<string> = new Set([
   SSI_INJECTION_MODE_TAG,
 ])
 
+/** ECS rejects `RegisterTaskDefinition` with `tags: []`*/
+const presentTags = (tags: Tag[]): Tag[] | undefined => (tags.length > 0 ? tags : undefined)
+
 /**
  * Whether a variable is one instrumentation is responsible for: anything in the Datadog namespace,
  * the switch telling the Agent it runs on Fargate, or one the user named on the command line.
@@ -1125,7 +1128,7 @@ export const uninstrumentTaskDefinition = (
         .filter((container) => !isRemainingSidecar(container))
         .map((container) => uninstrumentContainer(container, settings, warnings)),
       volumes: cleaned.volumes?.filter((volume) => volume.name !== AGENT_SOCKET_VOLUME_NAME),
-      tags: tags.filter((tag) => tag.key === undefined || !INSTRUMENTATION_TAG_KEYS.has(tag.key)),
+      tags: presentTags(tags.filter((tag) => tag.key === undefined || !INSTRUMENTATION_TAG_KEYS.has(tag.key))),
     }),
     warnings,
   }

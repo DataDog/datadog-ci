@@ -132,10 +132,10 @@ describe('ecs-fargate uninstrument', () => {
     expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.volumes).toStrictEqual([])
   })
 
-  test('removes the instrumentation tags from the new revision', async () => {
+  test('omits tags when the revision only had instrumentation tags', async () => {
     await runCLI([])
 
-    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toStrictEqual([])
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toBeUndefined()
   })
 
   test('registers nothing on a dry run, and shows what it would change', async () => {
@@ -168,7 +168,7 @@ describe('ecs-fargate uninstrument', () => {
     const {code} = await runCLI([])
 
     expect(code).toBe(0)
-    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toStrictEqual([])
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toBeUndefined()
   })
 
   test('warns that a log configuration routed through the log router cannot be put back', async () => {

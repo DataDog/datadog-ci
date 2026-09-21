@@ -5,6 +5,7 @@ import type {ECSClient} from '@aws-sdk/client-ecs'
 import {EcsFargateUninstrumentCommand} from '@datadog/datadog-ci-base/commands/ecs-fargate/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
 import {deployService, resolveApps} from '../apps'
@@ -126,7 +127,10 @@ export class PluginCommand extends EcsFargateUninstrumentCommand {
     // Compared in full rather than through `isUpToDate`, which ignores the tag recording the CLI
     // version: here that tag is one of the things to remove, so a revision carrying nothing but it
     // still gets a clean one registered.
-    const original = {...stripReadOnlyFields(taskDefinition), tags}
+    const original = removeUndefinedValues({
+      ...stripReadOnlyFields(taskDefinition),
+      tags: tags.length > 0 ? tags : undefined,
+    })
     if (sortedEqual(original, updated)) {
       output.push(`${this.dryRunPrefix}${chalk.bold(family)} is not instrumented, no changes needed.\n`)
 
