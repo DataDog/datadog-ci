@@ -20,6 +20,7 @@ import {
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
   MOCK_LOG_COLLECTION_SETTINGS,
+  MOCK_REGION,
   MOCK_SETTINGS,
   SERVICE_TAG,
   SOCKET_MOUNT,
@@ -1493,6 +1494,18 @@ describe('uninstrumentTaskDefinition', () => {
       expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
         APP_CONTAINER.logConfiguration
       )
+      expect(warnings).toStrictEqual([])
+    })
+
+    test("leaves a FireLens configuration that is not Datadog's alone", () => {
+      const custom = {logDriver: 'awsfirelens' as const, options: {Name: 'cloudwatch', region: MOCK_REGION}}
+      const original = fargateTaskDefinition({
+        containerDefinitions: [{...APP_CONTAINER, logConfiguration: custom}],
+      })
+
+      const {taskDefinition, warnings} = uninstrumentTaskDefinition(instrumentedTaskDefinition(MOCK_SETTINGS, original))
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(custom)
       expect(warnings).toStrictEqual([])
     })
   })

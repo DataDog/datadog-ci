@@ -5,7 +5,7 @@ import type {EcsFargateConfigOptions} from '@datadog/datadog-ci-base/commands/ec
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 
-import {describeService, taskDefinitionFamily, taskDefinitionRevision, updateServiceTaskDefinition} from './aws'
+import {describeServices, taskDefinitionFamily, taskDefinitionRevision, updateServiceTaskDefinition} from './aws'
 
 /**
  * One application a run acts on: the task definition to rewrite, and the ECS services running it
@@ -49,18 +49,10 @@ export const resolveApps = async (
   )
 
   const errors: string[] = []
-  const described = await Promise.allSettled(
-    (config.ecsServices ?? []).map((name) => describeService(client, config.cluster, name))
-  )
+  const [described, describeErrors] = await describeServices(client, config.cluster, config.ecsServices ?? [])
+  errors.push(...describeErrors)
 
-  for (const result of described) {
-    if (result.status === 'rejected') {
-      const reason: unknown = result.reason
-      errors.push(reason instanceof Error ? reason.message : String(reason))
-      continue
-    }
-
-    const service = result.value
+  for (const service of described) {
     const family = taskDefinitionFamily(service.taskDefinition)
     const app = apps.get(family)
     if (!app) {

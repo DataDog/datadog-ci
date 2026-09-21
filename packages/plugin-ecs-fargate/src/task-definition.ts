@@ -661,21 +661,23 @@ const buildLogRouterContainer = ({existing, borrowed}: LogRouterContainerContext
 }
 
 /**
- * The first awslogs configuration on an application container.
- */
-const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfiguration | undefined =>
-  containers.find(
-    (container) =>
-      container.name !== AGENT_CONTAINER_NAME &&
-      container.name !== LOG_ROUTER_CONTAINER_NAME &&
-      container.logConfiguration?.logDriver === AWSLOGS_LOG_DRIVER
-  )?.logConfiguration
-
-/**
  * The containers whose presence and health checks this command decides, and whose dependents it
  * therefore has to keep pointing at something the task can satisfy.
  */
-const SIDECAR_CONTAINER_NAMES: string[] = [AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME]
+const SIDECAR_CONTAINER_NAMES: ReadonlySet<string> = new Set([AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME])
+
+/**
+ * The sidecars instrumentation adds, which are keyed by name.
+ */
+const isSidecar = (container: ContainerDefinition): container is ContainerDefinition & {name: string} =>
+  container.name !== undefined && SIDECAR_CONTAINER_NAMES.has(container.name)
+
+/**
+ * The first awslogs configuration on an application container.
+ */
+const borrowedLogConfiguration = (containers: ContainerDefinition[]): LogConfiguration | undefined =>
+  containers.find((container) => !isSidecar(container) && container.logConfiguration?.logDriver === AWSLOGS_LOG_DRIVER)
+    ?.logConfiguration
 
 /**
  * A container with its dependencies on the Datadog sidecars resolved to what the instrumented task
@@ -697,7 +699,7 @@ const withResolvedSidecarDependencies = (
   const warnings: string[] = []
   const dependsOn = container.dependsOn.flatMap((dependency) => {
     const name = dependency.containerName
-    if (name === undefined || !SIDECAR_CONTAINER_NAMES.includes(name)) {
+    if (name === undefined || !SIDECAR_CONTAINER_NAMES.has(name)) {
       return [dependency]
     }
 
@@ -850,13 +852,15 @@ export const instrumentTaskDefinition = (
   const ust = unifiedServiceTags(settings, family)
   const appEnvironment = getAppContainerEnvVars(settings, platform, family)
   const appLabels = getUstDockerLabels(settings, family)
+  const sidecarReplacements = new Map<string, ContainerDefinition | undefined>([
+    [AGENT_CONTAINER_NAME, agentContainer],
+    [LOG_ROUTER_CONTAINER_NAME, logRouterContainer],
+  ])
   const containerDefinitions = containers.flatMap((container) => {
-    if (container.name === AGENT_CONTAINER_NAME) {
-      return [agentContainer]
-    }
+    if (isSidecar(container)) {
+      const replacement = sidecarReplacements.get(container.name)
 
-    if (container.name === LOG_ROUTER_CONTAINER_NAME) {
-      return logRouterContainer ? [logRouterContainer] : []
+      return replacement ? [replacement] : []
     }
 
     if (firelens) {
@@ -923,12 +927,6 @@ export type UninstrumentResult = {
 }
 
 /**
- * The sidecars instrumentation adds, which are keyed by name.
- */
-const isSidecar = (container: ContainerDefinition): boolean =>
-  container.name === AGENT_CONTAINER_NAME || container.name === LOG_ROUTER_CONTAINER_NAME
-
-/**
  * The Docker labels instrumentation writes. Only these three are removed, rather than everything in
  * the `com.datadoghq` namespace, so that the Autodiscovery labels a task definition may carry are
  * left alone: those are configuration the user wrote, not something this command put there.
@@ -972,10 +970,11 @@ const uninstrumentContainer = (
   const secrets = container.secrets?.filter((secret) => !isDatadogEnvVar(secret.name, settings))
   const mountPoints = container.mountPoints?.filter((mount) => mount.sourceVolume !== AGENT_SOCKET_VOLUME_NAME)
 
-  // The driver routes to the log router, which is being removed, so a container left with it would
-  // start no tasks. What it was configured with before log collection was turned on is recorded
-  // nowhere, so the container is left with none rather than with a guess.
-  const firelens = container.logConfiguration?.logDriver === AWSFIRELENS_LOG_DRIVER
+  // The Datadog FireLens driver routes to the log router, which is being removed, so a container
+  // left with it would start no tasks. What it was configured with before log collection was turned
+  // on is recorded nowhere, so the container is left with none rather than with a guess. A FireLens
+  // configuration that is not Datadog's is left alone: it does not route through this sidecar.
+  const firelens = isDatadogFirelens(container.logConfiguration)
   if (firelens) {
     warnings.push(
       `Removing the ${AWSFIRELENS_LOG_DRIVER} log configuration from the ${container.name} container, which routed its logs through ${LOG_ROUTER_CONTAINER_NAME}. The configuration it had before log collection was turned on cannot be restored, so add one to the task definition to keep collecting its logs.`
@@ -989,7 +988,7 @@ const uninstrumentContainer = (
     dockerLabels: Object.keys(dockerLabels).length > 0 ? dockerLabels : undefined,
     // Instrumentation only ever adds the socket mount, so a container left with none declared none.
     mountPoints: mountPoints?.length ? mountPoints : undefined,
-    logConfiguration: firelens ? undefined : container.logConfiguration,
+    logConfiguration: withoutDatadogFirelens(container.logConfiguration),
   })
 }
 

@@ -115,7 +115,7 @@ Running the command twice is safe: a task definition with no Datadog instrumenta
 
 #### Log configurations
 
-`--log-collection` replaces each container's log configuration with one routing through `datadog-log-router`. The container's previous configuration is recorded nowhere, so it cannot be put back. Removing the router leaves each affected container with no log configuration at all, which the command warns about: add one to the task definition to keep collecting those logs.
+`--log-collection` replaces each container's log configuration with one routing through `datadog-log-router`. The container's previous configuration is recorded nowhere, so it cannot be put back. Removing the router leaves each container that was routing through Datadog FireLens with no log configuration at all, which the command warns about: add one to the task definition to keep collecting those logs. A FireLens configuration you set up yourself is left alone.
 
 ### Configuration
 
