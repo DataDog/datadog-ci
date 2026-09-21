@@ -42,9 +42,25 @@ DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ~/your/build/bin/
 If the location is a directory, the command scans it recursively looking for PE files. For each PE file, it uploads the corresponding .PDB file to Datadog.
 If the location is a file, the command uploads the corresponding .PDB file to Datadog.
 
+For minidump stack walking, add `--generate-cfi-cache` to send the matching EXE/DLL
+alongside its PDB in the same request. The backend uses the PDB for symbol names
+and the PE binary for supported unwind information. This increases upload size;
+without the flag, native uploads still send only the PDB. Breakpad `.sym` uploads
+already contain their own unwind records and do not need a companion binary.
+
+```bash
+DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ~/your/build/bin/ --generate-cfi-cache
+```
+
+If the symbols were already uploaded without unwind information, also pass
+`--replace-existing`. The backend must support paired uploads before using this
+option; older processors do not consume the companion attachment. Unsupported
+or absent unwind data does not guarantee a CFI cache will be generated.
+
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|
 | `--dry-run` | Optional | Run the command without the final step of uploading. All other checks are performed. |
+| `--generate-cfi-cache` | Optional | Include the matching EXE/DLL and request server-side CFI cache generation for minidump stack walking. Disabled by default. |
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
