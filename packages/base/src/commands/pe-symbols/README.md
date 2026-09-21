@@ -39,28 +39,26 @@ Run the following command to upload all the necessary files:
 DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ~/your/build/bin/
 ```
 
-If the location is a directory, the command scans it recursively looking for PE files. For each PE file, it uploads the corresponding .PDB file to Datadog.
-If the location is a file, the command uploads the corresponding .PDB file to Datadog.
+If the location is a directory, the command scans it recursively looking for PE files.
+For each PE file, it uploads the EXE/DLL and its matching .PDB together by default.
+If the location is a file, the command uploads that PE file and its matching .PDB.
+Files without a matching PDB are skipped.
 
-For minidump stack walking, add `--generate-cfi-cache` to send the matching EXE/DLL
-alongside its PDB in the same request. The backend uses the PDB for symbol names
-and the PE binary for supported unwind information. This increases upload size;
-without the flag, native uploads still send only the PDB. Breakpad `.sym` uploads
-already contain their own unwind records and do not need a companion binary.
-
-```bash
-DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ~/your/build/bin/ --generate-cfi-cache
-```
+The request includes `generate_cfi_cache: true`. The backend uses the PDB for
+symbol names and the PE binary for supported unwind information. This increases
+upload size compared with PDB-only uploads, but the companion EXE/DLL is deleted
+after successful processing and database indexing; the PDB and generated caches
+are retained. Inputs remain available for retries until indexing succeeds.
+Breakpad `.sym` uploads remain a single attachment and use their own unwind records.
 
 If the symbols were already uploaded without unwind information, also pass
-`--replace-existing`. The backend must support paired uploads before using this
-option; older processors do not consume the companion attachment. Unsupported
+`--replace-existing`. Deploy backend support for paired uploads before releasing
+this CLI change; older processors do not consume the companion attachment. Unsupported
 or absent unwind data does not guarantee a CFI cache will be generated.
 
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|
 | `--dry-run` | Optional | Run the command without the final step of uploading. All other checks are performed. |
-| `--generate-cfi-cache` | Optional | Include the matching EXE/DLL and request server-side CFI cache generation for minidump stack walking. Disabled by default. |
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |

@@ -72,7 +72,6 @@ export class PeSymbolsUploadCommand extends BaseCommand {
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
   private replaceExisting = Option.Boolean('--replace-existing', false)
-  private generateCFICache = Option.Boolean('--generate-cfi-cache', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = cliVersion
@@ -213,6 +212,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       symbol_source: symbolSource,
       filename: upath.basename(peFileMetadata.pdbFilename),
       overwrite: this.replaceExisting,
+      generate_cfi_cache: true,
       type: TYPE_PE_DEBUG_INFOS,
     }
   }
@@ -429,9 +429,6 @@ export class PeSymbolsUploadCommand extends BaseCommand {
           symbolFilePath = pdbFilename
         }
 
-        if (this.generateCFICache) {
-          metadata.generate_cfi_cache = true
-        }
         const eventValue = JSON.stringify(metadata)
         this.context.stdout.write(renderEventPayload(eventValue))
 
@@ -458,7 +455,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
 
         // Breakpad files already carry their unwind records; native PDBs need
         // the matching executable/library for PE unwind tables.
-        if (this.generateCFICache && fileMetadata.sourceType !== 'breakpad_sym') {
+        if (fileMetadata.sourceType !== 'breakpad_sym') {
           payload.content.set(VALUE_NAME_PE_BINARY, {
             type: 'file',
             path: fileMetadata.filename,

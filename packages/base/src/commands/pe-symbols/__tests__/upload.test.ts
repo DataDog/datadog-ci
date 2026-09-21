@@ -31,41 +31,37 @@ describe('pe-symbols paired upload', () => {
     fs.rmSync(directory, {recursive: true, force: true})
   })
 
-  const upload = async (filename: string, generateCFICache: boolean) => {
+  const upload = async (filename: string) => {
     const command = createCommand(PeSymbolsUploadCommand)
     command['symbolsLocations'] = [filename]
     command['config'] = {apiKey: 'test', datadogSite: 'datadoghq.com'}
-    command['generateCFICache'] = generateCFICache
 
     return command['performPESymbolsUpload']()
   }
 
-  test.each([false, true])('native upload with generate-cfi-cache=%s', async (enabled) => {
-    const binary = path.join(directory, 'application.dll')
+  test.each(['dll', 'exe'])('native .%s uploads its companion by default', async (extension) => {
+    const binary = path.join(directory, `application.${extension}`)
     const pdb = path.join(directory, 'application.pdb')
     fs.copyFileSync(path.join(fixtureDir, 'exports_with_pdb_64.dll'), binary)
     // Payload construction only: native PDB validation is performed by the processor.
     fs.writeFileSync(pdb, 'test PDB payload')
 
-    expect(await upload(binary, enabled)).toEqual([UploadStatus.Success])
+    expect(await upload(binary)).toEqual([UploadStatus.Success])
     expect(uploadMultipartHelper).toHaveBeenCalledTimes(1)
     const payload = jest.mocked(uploadMultipartHelper).mock.calls[0][1]
     expect((payload.content.get('pe_symbol_file') as MultipartFileValue).path).toBe(pdb)
     const metadata = JSON.parse((payload.content.get('event') as MultipartStringValue).value)
-    expect(metadata.generate_cfi_cache).toBe(enabled ? true : undefined)
-    const expectedCompanion = enabled
-      ? {
-          type: 'file',
-          path: binary,
-          options: {filename: 'pe_binary_file'},
-        }
-      : undefined
-    expect(payload.content.get('pe_binary_file')).toEqual(expectedCompanion)
+    expect(metadata.generate_cfi_cache).toBe(true)
+    expect(payload.content.get('pe_binary_file')).toEqual({
+      type: 'file',
+      path: binary,
+      options: {filename: 'pe_binary_file'},
+    })
   })
 
   test('Breakpad remains a single symbol attachment', async () => {
     const sym = path.join(fixtureDir, 'breakpad_example.sym')
-    expect(await upload(sym, true)).toEqual([UploadStatus.Success])
+    expect(await upload(sym)).toEqual([UploadStatus.Success])
     const payload = jest.mocked(uploadMultipartHelper).mock.calls[0][1]
     expect((payload.content.get('pe_symbol_file') as MultipartFileValue).path).toBe(sym)
     expect(payload.content.has('pe_binary_file')).toBe(false)
@@ -74,7 +70,7 @@ describe('pe-symbols paired upload', () => {
   test('missing PDB does not upload the executable on its own', async () => {
     const binary = path.join(directory, 'application.dll')
     fs.copyFileSync(path.join(fixtureDir, 'exports_with_pdb_64.dll'), binary)
-    expect(await upload(binary, true)).toEqual([UploadStatus.Skipped])
+    expect(await upload(binary)).toEqual([UploadStatus.Skipped])
     expect(uploadMultipartHelper).not.toHaveBeenCalled()
   })
 })

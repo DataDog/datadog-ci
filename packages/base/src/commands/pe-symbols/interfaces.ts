@@ -19,7 +19,7 @@ export interface MappingMetadata {
   origin: string // will contain 'datadog-ci'
   type: string
   overwrite: boolean
-  generate_cfi_cache?: boolean
+  generate_cfi_cache: boolean
 
   // origin: string
   git_commit_sha?: string
