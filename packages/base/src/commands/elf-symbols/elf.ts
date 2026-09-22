@@ -620,7 +620,12 @@ export const copyElfDebugInfo = async (
   if (includeUnwindInfo && elfFileMetadata.hasEhFrame) {
     // --only-keep-debug turns allocated unwind sections into NOBITS sections. Preserve the contents so downstream
     // processors can generate call frame information used to unwind optimized crash stacks.
-    options += ' --set-section-flags .eh_frame=alloc,readonly,contents'
+    options +=
+      ' ' +
+      elfFileMetadata.sectionHeaders
+        .filter((section) => section.name === '.eh_frame' && section.sh_type !== SectionHeaderType.SHT_NOBITS)
+        .map((section) => `--set-section-flags ${section.name}=${getObjcopySectionFlags(section.sh_flags)}`)
+        .join(' ')
   }
 
   if (keepDynamicSymbolTable) {
