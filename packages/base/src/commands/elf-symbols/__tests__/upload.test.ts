@@ -6,11 +6,12 @@ import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@
 
 import upath from 'upath'
 
-import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {getElfFileMetadata} from '../elf'
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'
 import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
@@ -38,6 +39,7 @@ const commonMetadata = {
   origin_version: cliVersion,
   type: 'elf_symbol_file',
   overwrite: false,
+  generate_cfi_cache: false,
 }
 
 const requireObjcopy = () => {
@@ -183,6 +185,7 @@ describe('elf-symbols upload', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
         gnuBuildId: 'fake-gnu-build-id',
         goBuildId: 'fake-go-build-id',
         fileHash: 'fake-file-hash',
@@ -207,6 +210,32 @@ describe('elf-symbols upload', () => {
       const metadataReplaceExisting = command['getMappingMetadata'](elfFileMatadata)
 
       expect(metadataReplaceExisting).toEqual({...metadata, overwrite: true})
+    })
+
+    test.each([false, true])('includes unwind information only when opted in: %s', async (includeUnwindInfo) => {
+      requireObjcopy()
+      const uploadMock = jest.mocked(uploadMultipartHelper)
+      uploadMock.mockImplementationOnce(async (_requestBuilder, payload) => {
+        const metadata = JSON.parse((payload.content.get('event') as MultipartStringValue).value)
+        const file = payload.content.get('elf_symbol_file') as MultipartFileValue
+        const uploadedElf = await getElfFileMetadata(file.path)
+
+        expect(metadata.generate_cfi_cache).toBe(includeUnwindInfo)
+        expect(uploadedElf.hasEhFrame).toBe(includeUnwindInfo)
+        expect(uploadedElf.hasDebugInfo).toBe(true)
+
+        return UploadStatus.Success
+      })
+
+      const runCLI = makeRunCLI(ElfSymbolsUploadCommand, ['elf-symbols', 'upload'])
+      const args = ['--disable-git', `${fixtureDir}/dyn_aarch64`]
+      if (includeUnwindInfo) {
+        args.push('--include-unwind-info')
+      }
+      const {code} = await runCLI(args, {DD_BETA_COMMANDS_ENABLED: '1'})
+
+      expect(code).toBe(0)
+      expect(uploadMock).toHaveBeenCalledTimes(1)
     })
 
     test('uploads correct multipart payload with multiple locations', async () => {

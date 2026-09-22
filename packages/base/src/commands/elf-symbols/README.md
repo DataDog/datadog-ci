@@ -45,9 +45,18 @@ If location is a file, command will split debug info from it and upload them to 
 
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|
+| `--include-unwind-info` | Optional | Preserve available `.eh_frame` contents and request CFI-cache generation for minidump stack walking. Defaults to false. |
 | `--dry-run` | Optional | Run the command without the final step of uploading. All other checks are performed. |
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
 | `--replace-existing` | Optional | If symbol information with the same build ID is already present on Datadog side, discard it and use the newly uploaded information.<br>Default behavior is to only replace existing debug information if the newly uploaded information is considered a better source with the following ordering: debug info > symbol table > dynamic symbol table. |
 | `--upload-dynamic-symbols` | Optional | Upload dynamic symbol information if neither debug information nor symbol table are present but a dynamic symbol table is available.<br>Default behavior is to upload symbol information only when a symbol table or debug information are present, since dynamic symbol table has less information and only contains exported symbols.  |
+
+To include unwind information for minidump stack walking, pass `--include-unwind-info`:
+
+```bash
+DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload --include-unwind-info ~/your/build/bin/
+```
+
+This preserves available `.eh_frame` contents and requests CFI-cache generation on the backend. By default, `.eh_frame` contents are not preserved and CFI-cache generation is not requested. The flag cannot restore unwind information already stripped from the input files.

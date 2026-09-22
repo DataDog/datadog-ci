@@ -747,6 +747,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/.debug/dyn_aarch64.debug`)).toEqual({
@@ -764,6 +765,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: false,
         hasSymbolTable: true,
         hasCode: false,
+        hasEhFrame: false,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/dyn_aarch64_nobuildid`)).toEqual({
@@ -781,6 +783,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`)).toEqual({
@@ -798,6 +801,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: false,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/go_x86_64_only_go_build_id`)).toEqual({
@@ -815,6 +819,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: true,
         hasSymbolTable: false,
         hasCode: true,
+        hasEhFrame: true,
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/exec_arm_big`)).toEqual({
@@ -832,6 +837,7 @@ describe('elf', () => {
         hasDynamicSymbolTable: false,
         hasSymbolTable: true,
         hasCode: true,
+        hasEhFrame: true,
       })
     })
   })
@@ -871,7 +877,7 @@ describe('elf', () => {
       const filename = upath.basename(elfFile)
       const outputFilename = `${tmpDirectory}/${filename}.debug`
       const elfFileMetadata = await getElfFileMetadata(elfFile)
-      await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, true)
+      await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, true, true)
       const debugInfoMetadata = await getElfFileMetadata(outputFilename)
 
       // Section headers, file hash and code presence change during extraction.
@@ -886,6 +892,17 @@ describe('elf', () => {
         sectionHeaders: debugInfoMetadata.sectionHeaders,
         hasDynamicSymbolTable,
       })
+
+      if (elfFileMetadata.hasEhFrame) {
+        const original = elfFileMetadata.sectionHeaders.find((section) => section.name === '.eh_frame')!
+        const extracted = debugInfoMetadata.sectionHeaders.find((section) => section.name === '.eh_frame')!
+        expect(extracted).toMatchObject({
+          sh_type: original.sh_type,
+          sh_flags: original.sh_flags,
+          sh_addr: original.sh_addr,
+          sh_size: original.sh_size,
+        })
+      }
 
       if (hasDynamicSymbolTable) {
         const sections = debugInfoMetadata.sectionHeaders
@@ -910,6 +927,22 @@ describe('elf', () => {
       for (const testFile of testFiles) {
         await checkCopyDebugInfo(`${fixtureDir}/${testFile}`)
       }
+    })
+
+    test.each([
+      [BigInt(0x2), 'contents,alloc,load,readonly,data'],
+      [BigInt(0x3), 'contents,alloc,load,data'],
+    ])('preserves original unwind section flags %s', async (flags, expected) => {
+      const filename = `${fixtureDir}/go_x86_64_only_go_build_id`
+      const metadata = await getElfFileMetadata(filename)
+      const ehFrame = metadata.sectionHeaders.find((section) => section.name === '.eh_frame')!
+      ehFrame.sh_flags = flags
+      const executeSpy = jest.spyOn(utils, 'execute').mockResolvedValue({stdout: '', stderr: ''})
+      hasZstdSupport.value = false
+
+      await copyElfDebugInfo(filename, `${tmpDirectory}/unwind.debug`, metadata, true, true)
+
+      expect(executeSpy).toHaveBeenCalledWith(expect.stringContaining(`--set-section-flags .eh_frame=${expected}`))
     })
 
     test('no zstd support', async () => {
