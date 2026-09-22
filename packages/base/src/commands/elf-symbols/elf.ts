@@ -12,6 +12,7 @@ import {
   ElfFileType,
   MachineType,
   SectionHeaderType,
+  SectionHeaderFlag,
   ElfClass,
   NoteType,
 } from './elf-constants'
@@ -30,6 +31,7 @@ export type ElfFileMetadata = {
   hasDynamicSymbolTable: boolean
   hasSymbolTable: boolean
   hasCode: boolean
+  sectionHeaders: SectionHeader[]
   error?: Error
 }
 
@@ -423,6 +425,7 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     hasSymbolTable: false,
     hasDynamicSymbolTable: false,
     hasCode: false,
+    sectionHeaders: [],
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
@@ -445,6 +448,7 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     }
 
     const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
+    metadata.sectionHeaders = sectionHeaders
     const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
     const {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode} = getSectionInfo(sectionHeaders)
     let fileHash = ''
@@ -536,6 +540,34 @@ const replaceElfHeader = async (targetFilename: string, sourceFilename: string):
   await fd2.close()
 }
 
+export const getObjcopySectionFlags = (flags: bigint): string => {
+  // Match the flags BFD derives from the input section header. Otherwise binutils < 2.35
+  // changes the section type to SHT_PROGBITS and clears sh_link, making .dynsym unreadable.
+  // The sections handled here have contents; SHT_NOBITS is not supported.
+  // eslint-disable-next-line no-bitwise
+  const hasFlag = (flag: bigint): boolean => (flags & flag) !== BigInt(0)
+  const stringFlags = ['contents']
+  if (hasFlag(SectionHeaderFlag.SHF_ALLOC)) {
+    stringFlags.push('alloc', 'load')
+  }
+  if (!hasFlag(SectionHeaderFlag.SHF_WRITE)) {
+    stringFlags.push('readonly')
+  }
+  if (hasFlag(SectionHeaderFlag.SHF_EXECINSTR)) {
+    stringFlags.push('code')
+  } else if (hasFlag(SectionHeaderFlag.SHF_ALLOC)) {
+    stringFlags.push('data')
+  }
+  if (hasFlag(SectionHeaderFlag.SHF_MERGE)) {
+    stringFlags.push('merge')
+  }
+  if (hasFlag(SectionHeaderFlag.SHF_STRINGS)) {
+    stringFlags.push('strings')
+  }
+
+  return stringFlags.join(',')
+}
+
 export const copyElfDebugInfo = async (
   filename: string,
   outputFile: string,
@@ -576,8 +608,12 @@ export const copyElfDebugInfo = async (
 
   if (keepDynamicSymbolTable) {
     // If the file has only a dynamic symbol table, preserve the sections needed by symbolic to create a symcache
-    const sectionsToKeep = ['.dynsym', '.dynstr', '.dynamic', '.hash', '.gnu.hash', '.gnu.version*', '.rel*']
-    options += ' ' + sectionsToKeep.map((section) => `--set-section-flags ${section}=alloc,readonly,contents`).join(' ')
+    options +=
+      ' ' +
+      elfFileMetadata.sectionHeaders
+        .filter((section) => ['.dynsym', '.dynstr'].includes(section.name))
+        .map((section) => `--set-section-flags ${section.name}=${getObjcopySectionFlags(section.sh_flags)}`)
+        .join(' ')
   }
 
   try {

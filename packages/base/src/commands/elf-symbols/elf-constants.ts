@@ -430,6 +430,14 @@ export enum SectionHeaderType {
   SHT_GNU_versym = 0x6fffffff, // Version symbol table.
 }
 
+export const SectionHeaderFlag = {
+  SHF_WRITE: BigInt(0x1),
+  SHF_ALLOC: BigInt(0x2),
+  SHF_EXECINSTR: BigInt(0x4),
+  SHF_MERGE: BigInt(0x10),
+  SHF_STRINGS: BigInt(0x20),
+} as const
+
 export enum ProgramHeaderType {
   PT_NULL = 0, // Program header table entry unused
   PT_LOAD = 1, // Loadable program segment
