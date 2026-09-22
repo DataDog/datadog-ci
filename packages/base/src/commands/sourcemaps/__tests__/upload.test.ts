@@ -1,12 +1,26 @@
 import fs from 'fs'
 
+import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+
 import chalk from 'chalk'
 import upath from 'upath'
 
 import {createCommand, makeRunCLI, withTempDirectory} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
+import {checkExistingDebugIds} from '../checkExists'
 import {Sourcemap} from '../interfaces'
 import {SourcemapsUploadCommand} from '../upload'
+
+jest.mock('../checkExists', () => ({
+  ...jest.requireActual('../checkExists'),
+  checkExistingDebugIds: jest.fn(),
+}))
+
+jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
+  httpRequest: jest.fn(),
+}))
 
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())
@@ -582,3 +596,192 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
     expect(output.slice(-2, -1)[0]).toContain(`[DRYRUN] Handled ${uploadedFileLines.length} sourcemap with success`)
   }
 }
+
+describe('filterExistingDebugIds', () => {
+  const mockedCheckExistingDebugIds = jest.mocked(checkExistingDebugIds)
+
+  const stubMetricsLogger = (): MetricsLogger =>
+    ({logger: {increment: jest.fn()}, flush: jest.fn()}) as unknown as MetricsLogger
+
+  const makePayload = (debugId?: string): Sourcemap => {
+    const payload = new Sourcemap('a.min.js', 'http://example/a.min.js', 'a.min.js.map', 'a.min.js.map')
+    payload.debugId = debugId
+
+    return payload
+  }
+
+  const createDebugIdCommand = () => {
+    const command = createCommand(SourcemapsUploadCommand)
+    command['debugId'] = true
+    command['config'].apiKey = 'test-api-key'
+
+    return command
+  }
+
+  beforeEach(() => {
+    mockedCheckExistingDebugIds.mockReset()
+  })
+
+  test('partitions out payloads whose debug ID already exists', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({'id-a': true, 'id-b': false})
+    const command = createDebugIdCommand()
+    const [existing, missing, noId] = [makePayload('id-a'), makePayload('id-b'), makePayload()]
+
+    const [toUpload, skipped] = await command['filterExistingDebugIds']([existing, missing, noId], stubMetricsLogger())
+
+    expect(toUpload).toStrictEqual([missing, noId])
+    expect(skipped).toBe(1)
+    expect(mockedCheckExistingDebugIds).toHaveBeenCalledWith(
+      'test-api-key',
+      command['config'].datadogSite,
+      command['cliVersion'],
+      ['id-a', 'id-b']
+    )
+    expect(command.context.stdout.toString()).toContain('already exists in Datadog')
+  })
+
+  test('increments the skipped_existing metric per skipped payload', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({'id-a': true, 'id-b': true})
+    const command = createDebugIdCommand()
+    const metricsLogger = stubMetricsLogger()
+
+    const [, skipped] = await command['filterExistingDebugIds'](
+      [makePayload('id-a'), makePayload('id-b')],
+      metricsLogger
+    )
+
+    expect(skipped).toBe(2)
+    expect(metricsLogger.logger.increment).toHaveBeenCalledTimes(2)
+    expect(metricsLogger.logger.increment).toHaveBeenCalledWith('skipped_existing', 1)
+  })
+
+  test('fails open and keeps all payloads when the check errors', async () => {
+    mockedCheckExistingDebugIds.mockRejectedValue(new Error('Request failed with status code 500'))
+    const command = createDebugIdCommand()
+    const payloads = [makePayload('id-a'), makePayload('id-b')]
+
+    const [toUpload, skipped] = await command['filterExistingDebugIds'](payloads, stubMetricsLogger())
+
+    expect(toUpload).toStrictEqual(payloads)
+    expect(skipped).toBe(0)
+    expect(command.context.stdout.toString()).toContain('Could not check for existing sourcemaps')
+    expect(command.context.stdout.toString()).toContain('500')
+  })
+
+  test('does not run the check on dry-run', async () => {
+    const command = createDebugIdCommand()
+    command['dryRun'] = true
+
+    const [toUpload, skipped] = await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+
+    expect(toUpload).toHaveLength(1)
+    expect(skipped).toBe(0)
+    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+  })
+
+  test('does not run the check without an API key', async () => {
+    const command = createDebugIdCommand()
+    command['config'].apiKey = undefined
+
+    await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+
+    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+  })
+
+  test('does not run the check without --debug-id', async () => {
+    const command = createCommand(SourcemapsUploadCommand)
+    command['debugId'] = false
+    command['config'].apiKey = 'test-api-key'
+
+    await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+
+    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+  })
+
+  test('does not render skip lines in quiet mode', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({'id-a': true})
+    const command = createDebugIdCommand()
+    command['quiet'] = true
+
+    const [, skipped] = await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+
+    expect(skipped).toBe(1)
+    expect(command.context.stdout.toString()).not.toContain('already exists in Datadog')
+  })
+})
+
+describe('execute with check_exists', () => {
+  const mockedCheckExistingDebugIds = jest.mocked(checkExistingDebugIds)
+  const mockedHttpRequest = jest.mocked(requestModule.httpRequest)
+
+  const runCLIWithDebugIdNoDryRun = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--debug-id',
+    '--disable-git',
+  ])
+
+  const runCLIWithDebugIdDryRun = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--debug-id',
+    '--dry-run',
+    '--disable-git',
+  ])
+
+  const debugIdFixture = './src/commands/sourcemaps/__tests__/fixtures/bundle-with-debug-id'
+  const fixtureDebugId = '2f1d7f52-4e1b-4f7c-8c0d-2f4a5f6d8e91'
+
+  beforeEach(() => {
+    mockedCheckExistingDebugIds.mockReset()
+    mockedHttpRequest.mockReset()
+    mockedHttpRequest.mockResolvedValue({config: {}, data: {}, headers: {}, status: 200, statusText: 'OK'})
+  })
+
+  test('skips the upload when the debug ID already exists in Datadog', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: true})
+
+    const {context, code} = await runCLIWithDebugIdNoDryRun([debugIdFixture])
+
+    expect(code).toBe(0)
+    expect(mockedCheckExistingDebugIds).toHaveBeenCalledTimes(1)
+    expect(mockedHttpRequest).not.toHaveBeenCalled()
+    const stdout = context.stdout.toString()
+    expect(stdout).toContain('Skipping sourcemap')
+    expect(stdout).toContain('1 sourcemap already exists in Datadog, nothing to upload.')
+    expect(stdout).not.toContain('Uploading sourcemap')
+  })
+
+  test('uploads when the debug ID does not exist in Datadog', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: false})
+
+    const {context, code} = await runCLIWithDebugIdNoDryRun([debugIdFixture])
+
+    expect(code).toBe(0)
+    expect(mockedHttpRequest).toHaveBeenCalledTimes(1)
+    const stdout = context.stdout.toString()
+    expect(stdout).toContain('Uploading sourcemap')
+    expect(stdout).toContain('Uploaded 1 sourcemap')
+  })
+
+  test('fails open and uploads everything when the check errors', async () => {
+    mockedCheckExistingDebugIds.mockRejectedValue(new Error('Request failed with status code 404'))
+
+    const {context, code} = await runCLIWithDebugIdNoDryRun([debugIdFixture])
+
+    expect(code).toBe(0)
+    expect(mockedHttpRequest).toHaveBeenCalledTimes(1)
+    const stdout = context.stdout.toString()
+    expect(stdout).toContain('Could not check for existing sourcemaps, uploading all of them')
+    expect(stdout).toContain('Uploading sourcemap')
+  })
+
+  test('does not run the check on dry-run', async () => {
+    const {context, code} = await runCLIWithDebugIdDryRun([debugIdFixture])
+
+    expect(code).toBe(0)
+    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+    expect(mockedHttpRequest).not.toHaveBeenCalled()
+    expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
+  })
+})

@@ -21,6 +21,7 @@ export const DATADOG_ROUTE_PATHS = [
   '/api/v2/git/repository/packfile',
   '/api/v2/git/repository/search_commits',
   '/api/v2/quality-gates/evaluate',
+  '/api/v2/sourcemaps/check_exists',
   '/api/v2/srcmap',
   '/api/v2/static-analysis-sca/dependencies',
   '/synthetics/ci/batch/:batchId',
