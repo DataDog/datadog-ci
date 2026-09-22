@@ -21,6 +21,7 @@ import {
   readElfProgramHeaderTable,
   getBuildIds,
   computeFileHash,
+  getObjcopySectionFlags,
 } from '../elf'
 import * as elfModule from '../elf'
 import {MachineType, ElfFileType, ElfClass, SectionHeaderType, ProgramHeaderType} from '../elf-constants'
@@ -732,6 +733,7 @@ describe('elf', () => {
 
     test('return metadata for ELF file', async () => {
       expect(await getElfFileMetadata(`${fixtureDir}/dyn_aarch64`)).toEqual({
+        sectionHeaders: expect.any(Array),
         filename: `${fixtureDir}/dyn_aarch64`,
         isElf: true,
         littleEndian: true,
@@ -749,6 +751,7 @@ describe('elf', () => {
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/.debug/dyn_aarch64.debug`)).toEqual({
+        sectionHeaders: expect.any(Array),
         filename: `${fixtureDir}/.debug/dyn_aarch64.debug`,
         isElf: true,
         littleEndian: true,
@@ -766,6 +769,7 @@ describe('elf', () => {
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/dyn_aarch64_nobuildid`)).toEqual({
+        sectionHeaders: expect.any(Array),
         filename: `${fixtureDir}/dyn_aarch64_nobuildid`,
         isElf: true,
         littleEndian: true,
@@ -783,6 +787,7 @@ describe('elf', () => {
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`)).toEqual({
+        sectionHeaders: expect.any(Array),
         filename: `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
         isElf: true,
         littleEndian: true,
@@ -800,6 +805,7 @@ describe('elf', () => {
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/go_x86_64_only_go_build_id`)).toEqual({
+        sectionHeaders: expect.any(Array),
         filename: `${fixtureDir}/go_x86_64_only_go_build_id`,
         isElf: true,
         littleEndian: true,
@@ -817,6 +823,7 @@ describe('elf', () => {
       })
 
       expect(await getElfFileMetadata(`${fixtureDir}/exec_arm_big`)).toEqual({
+        sectionHeaders: expect.any(Array),
         filename: `${fixtureDir}/exec_arm_big`,
         isElf: true,
         littleEndian: false,
@@ -848,6 +855,16 @@ describe('elf', () => {
     })
   })
 
+  describe('getObjcopySectionFlags', () => {
+    test.each([
+      [BigInt(0x0), 'contents,readonly'],
+      [BigInt(0x7), 'contents,alloc,load,code'],
+      [BigInt(0x32), 'contents,alloc,load,readonly,data,merge,strings'],
+    ])('convert ELF flags %s to BFD flags %s', (flags, expected) => {
+      expect(getObjcopySectionFlags(flags)).toBe(expected)
+    })
+  })
+
   describe('copyElfDebugInfo', () => {
     let tmpDirectory: string
 
@@ -863,7 +880,7 @@ describe('elf', () => {
       await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, true, true)
       const debugInfoMetadata = await getElfFileMetadata(outputFilename)
 
-      // check that elf and debug info metadata are equal except for hasCode and filename
+      // Section headers, file hash and code presence change during extraction.
       // dynamic symbol table is kept only if there is no debug info nor symbol table
       const hasDynamicSymbolTable =
         !elfFileMetadata.hasDebugInfo && !elfFileMetadata.hasSymbolTable && elfFileMetadata.hasDynamicSymbolTable
@@ -872,8 +889,16 @@ describe('elf', () => {
         hasCode: false,
         filename: outputFilename,
         fileHash: debugInfoMetadata.fileHash,
+        sectionHeaders: debugInfoMetadata.sectionHeaders,
         hasDynamicSymbolTable,
       })
+
+      if (hasDynamicSymbolTable) {
+        const sections = debugInfoMetadata.sectionHeaders
+        const dynsym = sections.find((section) => section.name === '.dynsym')!
+        expect(dynsym.sh_type).toBe(SectionHeaderType.SHT_DYNSYM)
+        expect(sections[dynsym.sh_link]).toMatchObject({name: '.dynstr', sh_type: SectionHeaderType.SHT_STRTAB})
+      }
     }
 
     test('copy debug info from elf files', async () => {
