@@ -34,6 +34,7 @@ export const checkExistingDebugIds = async (
     apiKey,
     baseUrl: getApiUrl(datadogSite),
     headers: new Map([
+      ['Content-Type', 'application/vnd.api+json'],
       ['DD-EVP-ORIGIN', 'datadog-ci_sourcemaps'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
@@ -44,7 +45,8 @@ export const checkExistingDebugIds = async (
     const response = await requestBuilder({
       method: 'POST',
       url: datadogRoute('/api/v2/sourcemaps/check_exists'),
-      data: {debug_ids: chunk},
+      // The endpoint (sourcemap-admin, Rapid) speaks JSON:API on the wire.
+      data: {data: {type: 'check_exists', attributes: {debug_ids: chunk}}},
     })
     const chunkResults = (response.data as CheckExistsResponse).data?.attributes?.results
     if (chunkResults === undefined) {

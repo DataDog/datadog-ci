@@ -35,8 +35,9 @@ describe('checkExists', () => {
     expect(config.method).toBe('POST')
     expect(config.baseURL).toBe('https://api.datadoghq.com')
     expect(String(config.url)).toBe('/api/v2/sourcemaps/check_exists')
-    expect(config.data).toStrictEqual({debug_ids: ['id-a', 'id-b']})
+    expect(config.data).toStrictEqual({data: {type: 'check_exists', attributes: {debug_ids: ['id-a', 'id-b']}}})
     expect(config.headers).toMatchObject({
+      'Content-Type': 'application/vnd.api+json',
       'DD-API-KEY': 'api-key',
       'DD-EVP-ORIGIN': 'datadog-ci_sourcemaps',
       'DD-EVP-ORIGIN-VERSION': '1.0.0',
@@ -58,7 +59,9 @@ describe('checkExists', () => {
 
     expect(results).toStrictEqual({'id-a': true})
     expect(mockedHttpRequest).toHaveBeenCalledTimes(1)
-    expect(mockedHttpRequest.mock.calls[0][0].data).toStrictEqual({debug_ids: ['id-a']})
+    expect(mockedHttpRequest.mock.calls[0][0].data).toStrictEqual({
+      data: {type: 'check_exists', attributes: {debug_ids: ['id-a']}},
+    })
   })
 
   test('returns an empty map without requesting when there are no debug IDs', async () => {
@@ -71,7 +74,7 @@ describe('checkExists', () => {
   test('chunks requests to at most 1000 debug IDs', async () => {
     const ids = Array.from({length: 1500}, (_, i) => `id-${i}`)
     mockedHttpRequest.mockImplementation(async (config) => {
-      const chunk = (config.data as {debug_ids: string[]}).debug_ids
+      const chunk = (config.data as {data: {attributes: {debug_ids: string[]}}}).data.attributes.debug_ids
 
       return successResponse(Object.fromEntries(chunk.map((id) => [id, true])))
     })
@@ -79,8 +82,11 @@ describe('checkExists', () => {
     const results = await checkExistingDebugIds('api-key', 'datadoghq.com', '1.0.0', ids)
 
     expect(mockedHttpRequest).toHaveBeenCalledTimes(2)
-    expect((mockedHttpRequest.mock.calls[0][0].data as {debug_ids: string[]}).debug_ids).toHaveLength(1000)
-    expect((mockedHttpRequest.mock.calls[1][0].data as {debug_ids: string[]}).debug_ids).toHaveLength(500)
+    const sentIds = (call: number) =>
+      (mockedHttpRequest.mock.calls[call][0].data as {data: {attributes: {debug_ids: string[]}}}).data.attributes
+        .debug_ids
+    expect(sentIds(0)).toHaveLength(1000)
+    expect(sentIds(1)).toHaveLength(500)
     expect(Object.keys(results)).toHaveLength(1500)
   })
 
