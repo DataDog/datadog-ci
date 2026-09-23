@@ -27,10 +27,14 @@ export const findEnv = <T>(env: readonly T[], name: string, ops: EnvOps<T>): T |
 
 export const upsertEnv = <T>(env: readonly T[], name: string, value: string, ops: EnvOps<T>): T[] => {
   const index = env.findIndex((variable) => ops.matches(variable, name))
+  if (index === -1) {
+    return [...env, ops.create(name, value)]
+  }
 
-  return index === -1
-    ? [...env, ops.create(name, value)]
-    : env.map((variable, variableIndex) => (variableIndex === index ? ops.withValue(variable, value) : variable))
+  const updated = env.slice()
+  updated[index] = ops.withValue(env[index], value)
+
+  return updated
 }
 
 /**
