@@ -34,7 +34,7 @@ describe('checkExists', () => {
     const config = mockedHttpRequest.mock.calls[0][0]
     expect(config.method).toBe('POST')
     expect(config.baseURL).toBe('https://api.datadoghq.com')
-    expect(String(config.url)).toBe('/api/v2/sourcemaps/check_exists')
+    expect(String(config.url)).toBe('/api/unstable/sourcemaps/check_exists')
     expect(config.data).toStrictEqual({data: {type: 'check_exists', attributes: {debug_ids: ['id-a', 'id-b']}}})
     expect(config.headers).toMatchObject({
       'Content-Type': 'application/vnd.api+json',

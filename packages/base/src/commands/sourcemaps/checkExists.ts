@@ -44,7 +44,7 @@ export const checkExistingDebugIds = async (
     const chunk = uniqueIds.slice(i, i + MAX_DEBUG_IDS_PER_REQUEST)
     const response = await requestBuilder({
       method: 'POST',
-      url: datadogRoute('/api/v2/sourcemaps/check_exists'),
+      url: datadogRoute('/api/unstable/sourcemaps/check_exists'),
       // The endpoint (sourcemap-admin, Rapid) speaks JSON:API on the wire.
       data: {data: {type: 'check_exists', attributes: {debug_ids: chunk}}},
     })
