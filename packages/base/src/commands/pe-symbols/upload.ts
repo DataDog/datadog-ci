@@ -1,4 +1,5 @@
 import fs from 'fs'
+import os from 'os'
 
 import type {MappingMetadata} from './interfaces'
 import type {PEFileMetadata} from './pe'
@@ -34,11 +35,12 @@ import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {
   PE_DEBUG_INFOS_FILENAME,
   TYPE_PE_DEBUG_INFOS,
-  VALUE_NAME_PE_DEBUG_INFOS,
   VALUE_NAME_PE_BINARY,
+  VALUE_NAME_PE_DEBUG_INFOS,
 } from './interfaces'
 import {getBuildId, getPEFileMetadata} from './pe'
 import {MachineArchitecture} from './pe-constants'
+import {copyPeUnwindInfo} from './pe-unwind'
 import {
   renderArgumentMissingError,
   renderCommandInfo,
@@ -74,7 +76,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private includeUnwindInfo = Option.Boolean('--include-unwind-info', false, {
     description:
-      'Include the matching EXE/DLL to provide unwind information for minidump stack walking. Increases upload size.',
+      'Upload unwind information for minidump stack walking: a reduced copy of x64 EXE/DLL files without code or data, or the PDB frame data for x86. ARM binaries are not supported.',
   })
   private symbolsLocations = Option.Rest({required: 1})
 
@@ -138,7 +140,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       return 1
     }
 
-    return 0
+    return callResults.includes(UploadStatus.Failure) ? 1 : 0
   }
 
   private getApiKeyValidator(metricsLogger: MetricsLogger) {
@@ -378,115 +380,149 @@ export class PeSymbolsUploadCommand extends BaseCommand {
     return newPathname
   }
 
-  private async performPESymbolsUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger()
-    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+  /** Returns the reduced PE path, or undefined when the PDB alone carries the unwind data (x86). */
+  private async extractUnwindInfo(fileMetadata: PEFileMetadata, directory: string): Promise<string | undefined> {
+    const reducedPath = upath.join(directory, 'unwind.pe')
+    const reduced = await copyPeUnwindInfo(fileMetadata.filename, reducedPath)
+    if (!reduced.data) {
+      this.context.stdout.write(`Using PDB unwind information for x86: ${fileMetadata.filename}\n`)
 
+      return undefined
+    }
+    const reducedMetadata = await getPEFileMetadata(reducedPath)
+    if (
+      reducedMetadata.error ||
+      getBuildId(reducedMetadata) !== getBuildId(fileMetadata) ||
+      reducedMetadata.arch !== fileMetadata.arch
+    ) {
+      throw new Error('Reduced PE identity does not match the original binary')
+    }
+    this.context.stdout.write(
+      `Extracted unwind information from ${fileMetadata.filename} (${reduced.functions} runtime functions)\n`
+    )
+
+    return reducedPath
+  }
+
+  private async performPESymbolsUpload(): Promise<UploadStatus[]> {
     let peFilesMetadata = (
       await Promise.all(this.symbolsLocations.map((location) => this.getPESymbolFiles(location)))
     ).flat()
     peFilesMetadata = this.removeBuildIdDuplicates(peFilesMetadata)
 
+    const metricsLogger = this.getMetricsLogger()
+    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
     const requestBuilder = getPERequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
 
     try {
-      const results = await doWithMaxConcurrency(this.maxConcurrency, peFilesMetadata, async (fileMetadata) => {
-        const metadata = this.getMappingMetadata(fileMetadata)
+      // Unwind extraction holds each input binary and its reduced copy in memory.
+      const concurrency = this.includeUnwindInfo ? Math.min(this.maxConcurrency, 2) : this.maxConcurrency
+      const results = await doWithMaxConcurrency(concurrency, peFilesMetadata, async (fileMetadata) => {
+        let reducedDirectory: string | undefined
+        try {
+          const metadata = this.getMappingMetadata(fileMetadata)
 
-        if (this.dryRun) {
-          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
-
-          // TODO: uncomment the following when dryRun won't be TRUE by default
-          // return UploadStatus.Success
-        }
-
-        // get the .pdb filename based on the .dll filename and copy it into a temp folder
-        // --> not sure the ELF-based code makes any sense for PE files...
-        //     instead, we should not need to copy anything:
-        //     1. get the .pdb filename from the .dll file (ex: foo64.dll --> foo.pdb)
-        //     2. look for it in the same folder as the .dll file
-        //     3. if it is not there, look in the same folder for a file with the same name as .dll but with a .pdb extension
-        //     4. if it is there, upload it; if not generate a skip warning
-        //
-        let symbolFilePath: string | undefined
-        if (fileMetadata.sourceType === 'breakpad_sym') {
-          symbolFilePath = fileMetadata.symbolPath
-          if (!symbolFilePath || !fs.existsSync(symbolFilePath)) {
-            this.context.stdout.write(
-              renderWarning(`Skipped ${fileMetadata.filename} because the Breakpad .sym file is not readable`)
-            )
-
-            return UploadStatus.Skipped
-          }
-        } else {
-          let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
-
-          if (!fs.existsSync(pdbFilename)) {
-            pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
-
-            if (!fs.existsSync(pdbFilename)) {
-              this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+          let symbolFilePath: string | undefined
+          if (fileMetadata.sourceType === 'breakpad_sym') {
+            symbolFilePath = fileMetadata.symbolPath
+            if (!symbolFilePath || !fs.existsSync(symbolFilePath)) {
+              this.context.stdout.write(
+                renderWarning(`Skipped ${fileMetadata.filename} because the Breakpad .sym file is not readable`)
+              )
 
               return UploadStatus.Skipped
             }
+          } else {
+            let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
+
+            if (!fs.existsSync(pdbFilename)) {
+              pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
+
+              if (!fs.existsSync(pdbFilename)) {
+                this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+
+                return UploadStatus.Skipped
+              }
+            }
+            symbolFilePath = pdbFilename
           }
-          symbolFilePath = pdbFilename
-        }
 
-        const eventValue = JSON.stringify(metadata)
-        this.context.stdout.write(renderEventPayload(eventValue))
+          const eventValue = JSON.stringify(metadata)
+          this.context.stdout.write(renderEventPayload(eventValue))
 
-        const payload = {
-          content: new Map<string, MultipartValue>([
-            [
-              'event',
-              {
-                type: 'string',
-                value: eventValue,
-                options: {filename: 'event', contentType: 'application/json'},
-              },
-            ],
-            [
-              VALUE_NAME_PE_DEBUG_INFOS,
-              {
-                type: 'file',
-                path: symbolFilePath,
-                options: {filename: PE_DEBUG_INFOS_FILENAME},
-              },
-            ],
-          ]),
-        }
+          const payload = {
+            content: new Map<string, MultipartValue>([
+              [
+                'event',
+                {
+                  type: 'string',
+                  value: eventValue,
+                  options: {filename: 'event', contentType: 'application/json'},
+                },
+              ],
+              [
+                VALUE_NAME_PE_DEBUG_INFOS,
+                {
+                  type: 'file',
+                  path: symbolFilePath,
+                  options: {filename: PE_DEBUG_INFOS_FILENAME},
+                },
+              ],
+            ]),
+          }
 
-        // Breakpad files already carry their unwind records; native PDBs need
-        // the matching executable/library for PE unwind tables.
-        if (this.includeUnwindInfo && fileMetadata.sourceType !== 'breakpad_sym') {
-          payload.content.set(VALUE_NAME_PE_BINARY, {
-            type: 'file',
-            path: fileMetadata.filename,
-            options: {filename: VALUE_NAME_PE_BINARY},
+          if (this.includeUnwindInfo && fileMetadata.sourceType !== 'breakpad_sym') {
+            try {
+              reducedDirectory = await fs.promises.mkdtemp(upath.join(os.tmpdir(), 'datadog-pe-unwind-'))
+              const reducedPath = await this.extractUnwindInfo(fileMetadata, reducedDirectory)
+              if (reducedPath) {
+                payload.content.set(VALUE_NAME_PE_BINARY, {
+                  type: 'file',
+                  path: reducedPath,
+                  options: {filename: VALUE_NAME_PE_BINARY},
+                })
+              }
+            } catch (error) {
+              this.context.stdout.write(
+                renderFailedUpload(fileMetadata.filename, error instanceof Error ? error.message : String(error))
+              )
+              metricsLogger.logger.increment('failed', 1)
+
+              return UploadStatus.Failure
+            }
+          }
+
+          if (this.gitData !== undefined) {
+            payload.content.set('repository', this.getGitDataPayload(this.gitData))
+          }
+
+          if (this.dryRun) {
+            this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
+
+            return UploadStatus.Success
+          }
+
+          return await uploadMultipartHelper(requestBuilder, payload, {
+            apiKeyValidator,
+            onError: (e) => {
+              this.context.stdout.write(renderFailedUpload(fileMetadata.filename, e.message))
+              metricsLogger.logger.increment('failed', 1)
+            },
+            onRetry: (e, attempts) => {
+              this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, (e as Error).message, attempts))
+              metricsLogger.logger.increment('retries', 1)
+            },
+            onUpload: () => {
+              this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
+            },
+            retries: 5,
+            useGzip: true,
           })
+        } finally {
+          if (reducedDirectory) {
+            await fs.promises.rm(reducedDirectory, {recursive: true, force: true})
+          }
         }
-
-        if (this.gitData !== undefined) {
-          payload.content.set('repository', this.getGitDataPayload(this.gitData))
-        }
-
-        return uploadMultipartHelper(requestBuilder, payload, {
-          apiKeyValidator,
-          onError: (e) => {
-            this.context.stdout.write(renderFailedUpload(fileMetadata.filename, e.message))
-            metricsLogger.logger.increment('failed', 1)
-          },
-          onRetry: (e, attempts) => {
-            this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, (e as Error).message, attempts))
-            metricsLogger.logger.increment('retries', 1)
-          },
-          onUpload: () => {
-            this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
-          },
-          retries: 5,
-          useGzip: true,
-        })
       })
 
       return results
