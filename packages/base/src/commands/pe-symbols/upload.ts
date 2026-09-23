@@ -140,7 +140,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       return 1
     }
 
-    return callResults.includes(UploadStatus.Failure) ? 1 : 0
+    return 0
   }
 
   private getApiKeyValidator(metricsLogger: MetricsLogger) {

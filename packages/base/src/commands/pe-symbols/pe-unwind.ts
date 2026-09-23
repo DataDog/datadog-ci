@@ -1,12 +1,107 @@
 /* eslint-disable no-bitwise -- PE records contain packed bit fields. */
 import fs from 'fs'
 
-/** PE record filter for unwind uploads. Native conversion remains server-side. */
+import {
+  CV_INFO_PDB_FILENAME_OFFSET,
+  DOS_HEADER_LFANEW_OFFSET,
+  DOS_HEADER_SIZE,
+  IMAGE_DATA_DIRECTORY32_OFFSET,
+  IMAGE_DATA_DIRECTORY64_OFFSET,
+  IMAGE_DATA_DIRECTORY_SIZE,
+  IMAGE_DATA_DIRECTORY_SIZE_OFFSET,
+  IMAGE_DATA_DIRECTORY_VIRTUAL_ADDRESS_OFFSET,
+  IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET,
+  IMAGE_DEBUG_DIRECTORY_POINTERTORAWDATA_OFFSET,
+  IMAGE_DEBUG_DIRECTORY_SIZE,
+  IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET,
+  IMAGE_DEBUG_DIRECTORY_TYPE_OFFSET,
+  IMAGE_DEBUG_TYPE_CODEVIEW,
+  IMAGE_DIRECTORY_ENTRY_DEBUG,
+  IMAGE_DIRECTORY_ENTRY_EXCEPTION,
+  IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
+  IMAGE_DOS_SIGNATURE,
+  IMAGE_FILE_EXECUTABLE_IMAGE,
+  IMAGE_FILE_HEADER_CHARACTERISTICS_OFFSET,
+  IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET,
+  IMAGE_FILE_LARGE_ADDRESS_AWARE,
+  IMAGE_FILE_MACHINE_AMD64,
+  IMAGE_FILE_MACHINE_I386,
+  IMAGE_LOAD_CONFIG32_CHPE_METADATA_OFFSET,
+  IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
+  IMAGE_NT_HEADERS32_SIZE,
+  IMAGE_NT_HEADERS64_SIZE,
+  IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET,
+  IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET,
+  IMAGE_NT_HEADERS_GENERIC_TIMESTAMP_OFFSET,
+  IMAGE_NT_OPTIONAL_HDR32_MAGIC,
+  IMAGE_NT_OPTIONAL_HDR64_MAGIC,
+  IMAGE_NT_SIGNATURE,
+  IMAGE_NUMBEROF_DIRECTORY_ENTRIES,
+  IMAGE_OPTIONAL_HEADER64_IMAGEBASE_OFFSET,
+  IMAGE_OPTIONAL_HEADER_FILEALIGNMENT_OFFSET,
+  IMAGE_OPTIONAL_HEADER_OFFSET,
+  IMAGE_OPTIONAL_HEADER_SIZEOFHEADERS_OFFSET,
+  IMAGE_OPTIONAL_HEADER_SIZEOFIMAGE_OFFSET,
+  IMAGE_OPTIONAL_HEADER_SUBSYSTEM_OFFSET,
+  IMAGE_SCN_CNT_CODE,
+  IMAGE_SCN_CNT_INITIALIZED_DATA,
+  IMAGE_SCN_MEM_EXECUTE,
+  IMAGE_SCN_MEM_READ,
+  IMAGE_SECTION_HEADER_CHARACTERISTICS_OFFSET,
+  IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET,
+  IMAGE_SECTION_HEADER_SIZE,
+  IMAGE_SECTION_HEADER_SIZEOFRAWDATA_OFFSET,
+  IMAGE_SECTION_HEADER_VIRTUALADDRESS_OFFSET,
+  IMAGE_SECTION_HEADER_VIRTUALSIZE_OFFSET,
+  IMAGE_SHORT_NAME_SIZE,
+  IMAGE_SIZEOF_OPTIONAL_HEADER32,
+  IMAGE_SIZEOF_OPTIONAL_HEADER64,
+  IMAGE_SUBSYSTEM_WINDOWS_CUI,
+  PDB70_SIGNATURE,
+  RUNTIME_FUNCTION_BEGIN_OFFSET,
+  RUNTIME_FUNCTION_END_OFFSET,
+  RUNTIME_FUNCTION_INDIRECT,
+  RUNTIME_FUNCTION_SIZE,
+  RUNTIME_FUNCTION_UNWIND_OFFSET,
+  UNW_FLAG_CHAININFO,
+  UNW_FLAG_EHANDLER,
+  UNW_FLAG_UHANDLER,
+  UNWIND_CODE_OP_OFFSET,
+  UNWIND_CODE_SIZE,
+  UNWIND_INFO_COUNT_OF_CODES_OFFSET,
+  UNWIND_INFO_HEADER_SIZE,
+  UNWIND_INFO_VERSION_FLAGS_OFFSET,
+  UWOP_ALLOC_LARGE,
+  UWOP_EPILOG,
+  UWOP_PUSH_MACHFRAME,
+  UWOP_SAVE_NONVOL,
+  UWOP_SAVE_NONVOL_FAR,
+  UWOP_SAVE_XMM128,
+  UWOP_SAVE_XMM128_FAR,
+  UWOP_SPARE_CODE,
+} from './pe-constants'
+
+/**
+ * A "reduced PE" is a copy of an x64 EXE/DLL that keeps only what a stack walker needs:
+ * module identity, section addresses, the exception table and the unwind records it references.
+ * Everything else (code, data, resources, the PDB path...) is left zeroed. Section addresses and
+ * file offsets are unchanged, so every RVA inside the kept records stays valid.
+ *
+ * x86 images have no exception table; their unwind data lives in the PDB, so no reduced PE is built.
+ */
 export interface ReducedPE {
   architecture: 'x86' | 'x64'
+  /** Undefined for x86, where the PDB alone carries the unwind data. */
   data?: Buffer
   functions: number
 }
+
+const MAX_PE_HEADER_OFFSET = 4096
+const MAX_SECTIONS = 96
+const MAX_DEBUG_ENTRIES = 128
+const MAX_UNWIND_CHAIN_DEPTH = 64
+const REDUCED_PDB_NAME = '_.pdb\0'
+const REDUCED_CODEVIEW_SIZE = CV_INFO_PDB_FILENAME_OFFSET + REDUCED_PDB_NAME.length
 
 const requireValid: (condition: boolean, message: string) => asserts condition = (condition, message) => {
   if (!condition) {
@@ -14,262 +109,450 @@ const requireValid: (condition: boolean, message: string) => asserts condition =
   }
 }
 
-/**
- * Keeps original RVAs/file mappings, but starts with zero-filled storage and rebuilds
- * headers. Only RSDS identity, runtime functions and reachable unwind records survive.
- * This is a parser input, not an executable or an exception-dispatch-capable image.
- */
-export const extractPeUnwindInfo = (input: Buffer): ReducedPE => {
-  const bounds = (offset: number, size: number) => {
+/** Bounds-checked little-endian reads, so malformed files fail with a clear error. */
+class PeReader {
+  constructor(public readonly data: Buffer) {}
+
+  public checkRange(offset: number, size: number): void {
     requireValid(
-      Number.isSafeInteger(offset) && offset >= 0 && size >= 0 && offset + size <= input.length,
+      Number.isSafeInteger(offset) && offset >= 0 && size >= 0 && offset + size <= this.data.length,
       'out-of-bounds record'
     )
   }
-  const u16 = (offset: number) => {
-    bounds(offset, 2)
 
-    return input.readUInt16LE(offset)
-  }
-  const u32 = (offset: number) => {
-    bounds(offset, 4)
+  public u8(offset: number): number {
+    this.checkRange(offset, 1)
 
-    return input.readUInt32LE(offset)
+    return this.data.readUInt8(offset)
   }
-  requireValid(u16(0) === 0x5a4d, 'invalid DOS signature')
-  const pe = u32(60)
-  requireValid(pe >= 64 && pe <= 4096 && u32(pe) === 0x4550, 'invalid PE header')
-  const machine = u16(pe + 4)
+
+  public u16(offset: number): number {
+    this.checkRange(offset, 2)
+
+    return this.data.readUInt16LE(offset)
+  }
+
+  public u32(offset: number): number {
+    this.checkRange(offset, 4)
+
+    return this.data.readUInt32LE(offset)
+  }
+}
+
+interface Section {
+  headerOffset: number
+  virtualAddress: number
+  virtualSize: number
+  rawOffset: number
+  rawSize: number
+  characteristics: number
+}
+
+interface PeLayout {
+  peOffset: number
+  machine: number
+  is64: boolean
+  optionalHeader: number
+  dataDirectories: number
+  sections: Section[]
+  headerSize: number
+  imageSize: number
+}
+
+const virtualEnd = (section: Section) => section.virtualAddress + Math.max(section.rawSize, section.virtualSize)
+
+const rangesOverlap = (startA: number, endA: number, startB: number, endB: number) => startA < endB && startB < endA
+
+const parseLayout = (reader: PeReader): PeLayout => {
+  requireValid(reader.u16(0) === IMAGE_DOS_SIGNATURE, 'invalid DOS signature')
+  const peOffset = reader.u32(DOS_HEADER_LFANEW_OFFSET)
   requireValid(
-    machine === 0x8664 || machine === 0x14c,
+    peOffset >= DOS_HEADER_SIZE && peOffset <= MAX_PE_HEADER_OFFSET && reader.u32(peOffset) === IMAGE_NT_SIGNATURE,
+    'invalid PE header'
+  )
+
+  const machine = reader.u16(peOffset + IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET)
+  requireValid(
+    machine === IMAGE_FILE_MACHINE_AMD64 || machine === IMAGE_FILE_MACHINE_I386,
     `unsupported machine 0x${machine.toString(16)} (only x64 and x86 are supported)`
   )
-  const architecture = machine === 0x8664 ? 'x64' : 'x86'
-  const optional = pe + 24
-  const is64 = architecture === 'x64'
-  const optionalSize = is64 ? 240 : 224
-  requireValid(u16(pe + 20) === optionalSize && u16(optional) === (is64 ? 0x20b : 0x10b), 'unsupported optional header')
-  const directories = optional + (is64 ? 112 : 96)
-  requireValid(u32(directories - 4) === 16, 'expected 16 data directories')
-  const sectionTable = optional + optionalSize
-  const sectionCount = u16(pe + 6)
-  const headerSize = u32(optional + 60)
-  const imageSize = u32(optional + 56)
-  requireValid(sectionCount > 0 && sectionCount <= 96, 'invalid section count')
-  requireValid(headerSize >= sectionTable + sectionCount * 40 && headerSize <= input.length, 'invalid header size')
-  const sections = Array.from({length: sectionCount}, (_, i) => {
-    const off = sectionTable + i * 40
+  const is64 = machine === IMAGE_FILE_MACHINE_AMD64
+
+  const optionalHeader = peOffset + IMAGE_OPTIONAL_HEADER_OFFSET
+  requireValid(
+    reader.u16(peOffset + IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET) ===
+      (is64 ? IMAGE_SIZEOF_OPTIONAL_HEADER64 : IMAGE_SIZEOF_OPTIONAL_HEADER32) &&
+      reader.u16(optionalHeader) === (is64 ? IMAGE_NT_OPTIONAL_HDR64_MAGIC : IMAGE_NT_OPTIONAL_HDR32_MAGIC),
+    'unsupported optional header'
+  )
+  const dataDirectories = peOffset + (is64 ? IMAGE_DATA_DIRECTORY64_OFFSET : IMAGE_DATA_DIRECTORY32_OFFSET)
+  // NumberOfRvaAndSizes is the optional header field right before the data directories.
+  requireValid(reader.u32(dataDirectories - 4) === IMAGE_NUMBEROF_DIRECTORY_ENTRIES, 'expected 16 data directories')
+
+  const sectionTable = peOffset + (is64 ? IMAGE_NT_HEADERS64_SIZE : IMAGE_NT_HEADERS32_SIZE)
+  const sectionCount = reader.u16(peOffset + IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET)
+  const headerSize = reader.u32(optionalHeader + IMAGE_OPTIONAL_HEADER_SIZEOFHEADERS_OFFSET)
+  const imageSize = reader.u32(optionalHeader + IMAGE_OPTIONAL_HEADER_SIZEOFIMAGE_OFFSET)
+  requireValid(sectionCount > 0 && sectionCount <= MAX_SECTIONS, 'invalid section count')
+  requireValid(
+    headerSize >= sectionTable + sectionCount * IMAGE_SECTION_HEADER_SIZE && headerSize <= reader.data.length,
+    'invalid header size'
+  )
+
+  const sections = Array.from({length: sectionCount}, (_, i): Section => {
+    const headerOffset = sectionTable + i * IMAGE_SECTION_HEADER_SIZE
     const section = {
-      off,
-      virtualSize: u32(off + 8),
-      rva: u32(off + 12),
-      size: u32(off + 16),
-      raw: u32(off + 20),
-      flags: u32(off + 36),
+      headerOffset,
+      virtualAddress: reader.u32(headerOffset + IMAGE_SECTION_HEADER_VIRTUALADDRESS_OFFSET),
+      virtualSize: reader.u32(headerOffset + IMAGE_SECTION_HEADER_VIRTUALSIZE_OFFSET),
+      rawOffset: reader.u32(headerOffset + IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET),
+      rawSize: reader.u32(headerOffset + IMAGE_SECTION_HEADER_SIZEOFRAWDATA_OFFSET),
+      characteristics: reader.u32(headerOffset + IMAGE_SECTION_HEADER_CHARACTERISTICS_OFFSET),
     }
-    bounds(section.raw, section.size)
-    requireValid(section.size === 0 || section.raw >= headerSize, 'section overlaps headers')
+    reader.checkRange(section.rawOffset, section.rawSize)
+    requireValid(section.rawSize === 0 || section.rawOffset >= headerSize, 'section overlaps headers')
     requireValid(
-      section.rva >= headerSize && section.rva + Math.max(section.size, section.virtualSize) <= imageSize,
+      section.virtualAddress >= headerSize && virtualEnd(section) <= imageSize,
       'invalid section address range'
     )
 
     return section
   })
-  for (let i = 0; i < sections.length; i++) {
+
+  // The reduced PE keeps the original layout, so overlapping sections could leak or corrupt bytes.
+  sections.forEach((current, i) => {
     for (const other of sections.slice(i + 1)) {
-      const current = sections[i]
       requireValid(
-        !current.size ||
-          !other.size ||
-          current.raw + current.size <= other.raw ||
-          other.raw + other.size <= current.raw,
+        !current.rawSize ||
+          !other.rawSize ||
+          !rangesOverlap(
+            current.rawOffset,
+            current.rawOffset + current.rawSize,
+            other.rawOffset,
+            other.rawOffset + other.rawSize
+          ),
         'overlapping raw sections'
       )
       requireValid(
-        current.rva + Math.max(current.size, current.virtualSize) <= other.rva ||
-          other.rva + Math.max(other.size, other.virtualSize) <= current.rva,
+        !rangesOverlap(current.virtualAddress, virtualEnd(current), other.virtualAddress, virtualEnd(other)),
         'overlapping virtual sections'
       )
     }
-  }
-  const offsetOf = (rva: number, size: number): number => {
-    const section = sections.find((s) => rva >= s.rva && rva + size <= s.rva + s.size)
-    requireValid(section !== undefined, 'unmapped record RVA')
-    requireValid((section.flags & 0x20000020) === 0, 'metadata in a code/executable section is unsupported')
+  })
 
-    return section.raw + rva - section.rva
-  }
-  const directory = (index: number): [number, number] => [
-    u32(directories + index * 8),
-    u32(directories + index * 8 + 4),
-  ]
-  // ARM64EC images use the x64 machine type but keep alternate unwind tables in load-config metadata.
-  const [loadRva, loadSize] = directory(10)
-  if (loadRva && loadSize) {
-    const chpeOffset = is64 ? 200 : 124
-    if (loadSize >= chpeOffset + (is64 ? 8 : 4)) {
-      const load = offsetOf(loadRva, loadSize)
-      if (u32(load) >= chpeOffset + (is64 ? 8 : 4)) {
-        requireValid(
-          u32(load + chpeOffset) === 0 && (!is64 || u32(load + chpeOffset + 4) === 0),
-          'hybrid CHPE/ARM64EC metadata is unsupported'
-        )
-      }
-    }
-  }
-  // x86 unwind information comes from PDB frame-data/FPO. Never attach an empty PE.
-  if (architecture === 'x86') {
-    return {architecture, functions: 0}
-  }
-  const [pdataRva, pdataSize] = directory(3)
-  requireValid(pdataRva > 0 && pdataSize > 0 && pdataSize % 12 === 0, 'missing or invalid exception table')
-  const pdata = offsetOf(pdataRva, pdataSize)
-  const outputSize = Math.max(headerSize, ...sections.map((s) => (s.size ? s.raw + s.size : 0)))
-  const output = Buffer.alloc(outputSize)
-  const copied = new Map<number, number>()
-  const copyRecord = (offset: number, size: number) => {
-    bounds(offset, size)
-    requireValid(!copied.has(offset), 'overlapping metadata records')
-    copied.set(offset, size)
-    input.copy(output, offset, offset, offset + size)
-  }
-  // Reconstruct essential headers; do not copy DOS stub, Rich header, names, slack,
-  // entry point, symbol tables, certificates, resources or unused data directories.
-  output.writeUInt16LE(0x5a4d, 0)
-  output.writeUInt32LE(pe, 60)
-  output.writeUInt32LE(0x4550, pe)
-  output.writeUInt16LE(machine, pe + 4)
-  output.writeUInt16LE(sectionCount, pe + 6)
-  output.writeUInt32LE(u32(pe + 8), pe + 8)
-  output.writeUInt16LE(optionalSize, pe + 20)
-  output.writeUInt16LE(0x22, pe + 22)
-  output.writeUInt16LE(0x20b, optional)
-  // Image base, section/file alignment, image size and header size.
-  input.copy(output, optional + 24, optional + 24, optional + 40)
-  output.writeUInt32LE(imageSize, optional + 56)
-  output.writeUInt32LE(headerSize, optional + 60)
-  output.writeUInt16LE(3, optional + 68)
-  output.writeUInt32LE(16, directories - 4)
-  for (const [i, section] of sections.entries()) {
-    output.write(`.s${i}`, section.off, 8, 'ascii')
-    for (const [off, value] of [
-      [8, section.virtualSize],
-      [12, section.rva],
-      [16, section.size],
-      [20, section.raw],
-    ]) {
-      output.writeUInt32LE(value, section.off + off)
-    }
-    output.writeUInt32LE(0x40000040, section.off + 36)
-  }
-  const [debugRva, debugSize] = directory(6)
+  return {peOffset, machine, is64, optionalHeader, dataDirectories, sections, headerSize, imageSize}
+}
+
+/** Converts an RVA range to a file offset. Records inside code sections are rejected: copying them would copy code. */
+const fileOffsetOf = (layout: PeLayout, rva: number, size: number): number => {
+  const section = layout.sections.find((s) => rva >= s.virtualAddress && rva + size <= s.virtualAddress + s.rawSize)
+  requireValid(section !== undefined, 'unmapped record RVA')
   requireValid(
-    debugRva > 0 && debugSize > 0 && debugSize % 28 === 0 && debugSize <= 28 * 128,
+    (section.characteristics & (IMAGE_SCN_CNT_CODE | IMAGE_SCN_MEM_EXECUTE)) === 0,
+    'metadata in a code/executable section is unsupported'
+  )
+
+  return section.rawOffset + rva - section.virtualAddress
+}
+
+const readDataDirectory = (reader: PeReader, layout: PeLayout, index: number) => {
+  const entry = layout.dataDirectories + index * IMAGE_DATA_DIRECTORY_SIZE
+
+  return {
+    rva: reader.u32(entry + IMAGE_DATA_DIRECTORY_VIRTUAL_ADDRESS_OFFSET),
+    size: reader.u32(entry + IMAGE_DATA_DIRECTORY_SIZE_OFFSET),
+  }
+}
+
+const writeDataDirectory = (output: Buffer, layout: PeLayout, index: number, rva: number, size: number) => {
+  const entry = layout.dataDirectories + index * IMAGE_DATA_DIRECTORY_SIZE
+  output.writeUInt32LE(rva, entry + IMAGE_DATA_DIRECTORY_VIRTUAL_ADDRESS_OFFSET)
+  output.writeUInt32LE(size, entry + IMAGE_DATA_DIRECTORY_SIZE_OFFSET)
+}
+
+/** ARM64EC images use the x64 machine type but describe their ARM64 code through CHPE metadata. */
+const rejectHybridImage = (reader: PeReader, layout: PeLayout) => {
+  const loadConfig = readDataDirectory(reader, layout, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG)
+  const chpeOffset = layout.is64 ? IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET : IMAGE_LOAD_CONFIG32_CHPE_METADATA_OFFSET
+  const chpeEnd = chpeOffset + (layout.is64 ? 8 : 4)
+  if (!loadConfig.rva || loadConfig.size < chpeEnd) {
+    return
+  }
+  const offset = fileOffsetOf(layout, loadConfig.rva, loadConfig.size)
+  // The first field of the load config structure is its own size; older images stop before the CHPE pointer.
+  if (reader.u32(offset) < chpeEnd) {
+    return
+  }
+  requireValid(
+    reader.u32(offset + chpeOffset) === 0 && (!layout.is64 || reader.u32(offset + chpeOffset + 4) === 0),
+    'hybrid CHPE/ARM64EC metadata is unsupported'
+  )
+}
+
+/** Zero-filled buffer the size of the input; only explicitly claimed or copied ranges get content. */
+class ReducedPeWriter {
+  public readonly output: Buffer
+  private readonly claimed = new Map<number, number>()
+
+  constructor(
+    private readonly reader: PeReader,
+    size: number
+  ) {
+    this.output = Buffer.alloc(size)
+  }
+
+  /** Reserves a range whose content is written by the caller. */
+  public claim(offset: number, size: number): void {
+    this.reader.checkRange(offset, size)
+    requireValid(!this.claimed.has(offset), 'overlapping metadata records')
+    this.claimed.set(offset, size)
+  }
+
+  public copy(offset: number, size: number): void {
+    this.claim(offset, size)
+    this.reader.data.copy(this.output, offset, offset, offset + size)
+  }
+
+  public verifyNoOverlaps(): void {
+    const ranges = [...this.claimed].sort(([a], [b]) => a - b)
+    for (let i = 1; i < ranges.length; i++) {
+      const [previousOffset, previousSize] = ranges[i - 1]
+      requireValid(previousOffset + previousSize <= ranges[i][0], 'overlapping metadata records')
+    }
+  }
+}
+
+/**
+ * Rebuilds only the header fields needed to parse the image and identify the module. The DOS stub,
+ * Rich header, entry point, certificates and unused data directories are left zeroed.
+ */
+const writeHeaders = (writer: ReducedPeWriter, reader: PeReader, layout: PeLayout) => {
+  const {output} = writer
+  const {peOffset, optionalHeader} = layout
+
+  output.writeUInt16LE(IMAGE_DOS_SIGNATURE, 0)
+  output.writeUInt32LE(peOffset, DOS_HEADER_LFANEW_OFFSET)
+  output.writeUInt32LE(IMAGE_NT_SIGNATURE, peOffset)
+  output.writeUInt16LE(layout.machine, peOffset + IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET)
+  output.writeUInt16LE(layout.sections.length, peOffset + IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET)
+  // TimeDateStamp and SizeOfImage form the module's code identifier, used to match minidump modules.
+  const timestamp = peOffset + IMAGE_NT_HEADERS_GENERIC_TIMESTAMP_OFFSET
+  output.writeUInt32LE(reader.u32(timestamp), timestamp)
+  output.writeUInt16LE(IMAGE_SIZEOF_OPTIONAL_HEADER64, peOffset + IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET)
+  output.writeUInt16LE(
+    IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_LARGE_ADDRESS_AWARE,
+    peOffset + IMAGE_FILE_HEADER_CHARACTERISTICS_OFFSET
+  )
+
+  output.writeUInt16LE(IMAGE_NT_OPTIONAL_HDR64_MAGIC, optionalHeader)
+  // ImageBase, SectionAlignment and FileAlignment are contiguous.
+  reader.data.copy(
+    output,
+    optionalHeader + IMAGE_OPTIONAL_HEADER64_IMAGEBASE_OFFSET,
+    optionalHeader + IMAGE_OPTIONAL_HEADER64_IMAGEBASE_OFFSET,
+    optionalHeader + IMAGE_OPTIONAL_HEADER_FILEALIGNMENT_OFFSET + 4
+  )
+  output.writeUInt32LE(layout.imageSize, optionalHeader + IMAGE_OPTIONAL_HEADER_SIZEOFIMAGE_OFFSET)
+  output.writeUInt32LE(layout.headerSize, optionalHeader + IMAGE_OPTIONAL_HEADER_SIZEOFHEADERS_OFFSET)
+  output.writeUInt16LE(IMAGE_SUBSYSTEM_WINDOWS_CUI, optionalHeader + IMAGE_OPTIONAL_HEADER_SUBSYSTEM_OFFSET)
+  output.writeUInt32LE(IMAGE_NUMBEROF_DIRECTORY_ENTRIES, layout.dataDirectories - 4)
+
+  for (const [i, section] of layout.sections.entries()) {
+    // Original names are dropped; parsers only need addresses and sizes.
+    output.write(`.s${i}`, section.headerOffset, IMAGE_SHORT_NAME_SIZE, 'ascii')
+    output.writeUInt32LE(section.virtualSize, section.headerOffset + IMAGE_SECTION_HEADER_VIRTUALSIZE_OFFSET)
+    output.writeUInt32LE(section.virtualAddress, section.headerOffset + IMAGE_SECTION_HEADER_VIRTUALADDRESS_OFFSET)
+    output.writeUInt32LE(section.rawSize, section.headerOffset + IMAGE_SECTION_HEADER_SIZEOFRAWDATA_OFFSET)
+    output.writeUInt32LE(section.rawOffset, section.headerOffset + IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET)
+    output.writeUInt32LE(
+      IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ,
+      section.headerOffset + IMAGE_SECTION_HEADER_CHARACTERISTICS_OFFSET
+    )
+  }
+}
+
+/** Keeps the PDB GUID and age, which identify the module, and replaces the PDB path with a placeholder. */
+const copyCodeViewIdentity = (writer: ReducedPeWriter, reader: PeReader, layout: PeLayout) => {
+  const debug = readDataDirectory(reader, layout, IMAGE_DIRECTORY_ENTRY_DEBUG)
+  requireValid(
+    debug.rva > 0 &&
+      debug.size > 0 &&
+      debug.size % IMAGE_DEBUG_DIRECTORY_SIZE === 0 &&
+      debug.size <= IMAGE_DEBUG_DIRECTORY_SIZE * MAX_DEBUG_ENTRIES,
     'invalid debug directory'
   )
-  const debug = offsetOf(debugRva, debugSize)
-  const codeViews = Array.from({length: debugSize / 28}, (_, i) => debug + i * 28).filter((off) => u32(off + 12) === 2)
-  requireValid(codeViews.length === 1, 'expected one CodeView identity')
-  const cvDirectory = codeViews[0]
-  const cvSize = u32(cvDirectory + 16)
-  const cvRva = u32(cvDirectory + 20)
-  const cv = offsetOf(cvRva, cvSize)
-  requireValid(cvSize >= 30 && cv === u32(cvDirectory + 24) && u32(cv) === 0x53445352, 'invalid RSDS identity')
-  copyRecord(cvDirectory, 28)
-  output.fill(0, cvDirectory, cvDirectory + 28)
-  output.writeUInt32LE(2, cvDirectory + 12)
-  output.writeUInt32LE(30, cvDirectory + 16)
-  output.writeUInt32LE(cvRva, cvDirectory + 20)
-  output.writeUInt32LE(cv, cvDirectory + 24)
-  copyRecord(cv, 30)
-  output.write('_.pdb\0', cv + 24, 'ascii')
-  output.writeUInt32LE(debugRva + cvDirectory - debug, directories + 6 * 8)
-  output.writeUInt32LE(28, directories + 6 * 8 + 4)
-  copyRecord(pdata, pdataSize)
-  output.writeUInt32LE(pdataRva, directories + 3 * 8)
-  output.writeUInt32LE(pdataSize, directories + 3 * 8 + 4)
+  const debugOffset = fileOffsetOf(layout, debug.rva, debug.size)
+  const codeViewEntries = Array.from(
+    {length: debug.size / IMAGE_DEBUG_DIRECTORY_SIZE},
+    (_, i) => debugOffset + i * IMAGE_DEBUG_DIRECTORY_SIZE
+  ).filter((candidate) => reader.u32(candidate + IMAGE_DEBUG_DIRECTORY_TYPE_OFFSET) === IMAGE_DEBUG_TYPE_CODEVIEW)
+  requireValid(codeViewEntries.length === 1, 'expected one CodeView identity')
+
+  const [entry] = codeViewEntries
+  const codeViewSize = reader.u32(entry + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET)
+  const codeViewRva = reader.u32(entry + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET)
+  const codeView = fileOffsetOf(layout, codeViewRva, codeViewSize)
+  requireValid(
+    codeViewSize >= REDUCED_CODEVIEW_SIZE &&
+      codeView === reader.u32(entry + IMAGE_DEBUG_DIRECTORY_POINTERTORAWDATA_OFFSET) &&
+      reader.u32(codeView) === PDB70_SIGNATURE,
+    'invalid RSDS identity'
+  )
+
+  const {output} = writer
+  writer.claim(entry, IMAGE_DEBUG_DIRECTORY_SIZE)
+  output.writeUInt32LE(IMAGE_DEBUG_TYPE_CODEVIEW, entry + IMAGE_DEBUG_DIRECTORY_TYPE_OFFSET)
+  output.writeUInt32LE(REDUCED_CODEVIEW_SIZE, entry + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET)
+  output.writeUInt32LE(codeViewRva, entry + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET)
+  output.writeUInt32LE(codeView, entry + IMAGE_DEBUG_DIRECTORY_POINTERTORAWDATA_OFFSET)
+  writer.copy(codeView, REDUCED_CODEVIEW_SIZE)
+  output.write(REDUCED_PDB_NAME, codeView + CV_INFO_PDB_FILENAME_OFFSET, 'ascii')
+  writeDataDirectory(
+    output,
+    layout,
+    IMAGE_DIRECTORY_ENTRY_DEBUG,
+    debug.rva + entry - debugOffset,
+    IMAGE_DEBUG_DIRECTORY_SIZE
+  )
+}
+
+/** Number of 2-byte slots an x64 unwind code occupies, including its own. */
+const unwindCodeSlots = (op: number, info: number, version: number): number => {
+  switch (op) {
+    case UWOP_ALLOC_LARGE:
+      return info === 0 ? 2 : 3
+    case UWOP_SAVE_NONVOL:
+    case UWOP_SAVE_XMM128:
+      return 2
+    case UWOP_SAVE_NONVOL_FAR:
+    case UWOP_SPARE_CODE:
+    case UWOP_SAVE_XMM128_FAR:
+      return 3
+    case UWOP_EPILOG:
+      return version === 1 ? 2 : 1
+    default:
+      return 1
+  }
+}
+
+/** Walks the unwind codes by opcode width, so a corrupt code count cannot pull unrelated bytes into the copy. */
+const validateUnwindCodes = (reader: PeReader, unwindInfo: number, codeCount: number, version: number) => {
+  for (let slot = 0; slot < codeCount; ) {
+    const opAndInfo = reader.u8(unwindInfo + UNWIND_INFO_HEADER_SIZE + slot * UNWIND_CODE_SIZE + UNWIND_CODE_OP_OFFSET)
+    const op = opAndInfo & 0xf
+    const info = opAndInfo >>> 4
+    requireValid(op <= UWOP_PUSH_MACHFRAME, 'unsupported unwind opcode')
+    requireValid(op !== UWOP_ALLOC_LARGE || info <= 1, 'invalid ALLOC_LARGE')
+    requireValid(op !== UWOP_PUSH_MACHFRAME || info <= 1, 'invalid PUSH_MACHFRAME')
+    slot += unwindCodeSlots(op, info, version)
+    requireValid(slot <= codeCount, 'truncated unwind opcode')
+  }
+}
+
+/** Copies the exception table and every unwind record it reaches. Returns the number of functions. */
+const copyExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layout: PeLayout): number => {
+  const table = readDataDirectory(reader, layout, IMAGE_DIRECTORY_ENTRY_EXCEPTION)
+  requireValid(
+    table.rva > 0 && table.size > 0 && table.size % RUNTIME_FUNCTION_SIZE === 0,
+    'missing or invalid exception table'
+  )
+  const tableStart = fileOffsetOf(layout, table.rva, table.size)
+  const tableEnd = tableStart + table.size
+  writer.copy(tableStart, table.size)
+  writeDataDirectory(writer.output, layout, IMAGE_DIRECTORY_ENTRY_EXCEPTION, table.rva, table.size)
+
   const visited = new Set<number>()
-  const active = new Set<number>()
-  const x64Unwind = (rva: number, depth = 0): void => {
-    requireValid(depth <= 64 && !active.has(rva), 'cyclic or excessively deep unwind chain')
+  const inProgress = new Set<number>()
+
+  const copyUnwindData = (rva: number, depth: number): void => {
+    requireValid(depth <= MAX_UNWIND_CHAIN_DEPTH && !inProgress.has(rva), 'cyclic or excessively deep unwind chain')
     if (visited.has(rva)) {
       return
     }
-    active.add(rva)
-    if (rva & 1) {
-      const indirect = offsetOf(rva - 1, 12)
-      // Indirect entries normally point at another runtime function, already copied with the table.
-      if (indirect < pdata || indirect >= pdata + pdataSize) {
-        copyRecord(indirect, 12)
-      } else {
-        requireValid((indirect - pdata) % 12 === 0, 'unaligned indirect runtime function')
-      }
-      x64Unwind(u32(indirect + 8), depth + 1)
+    inProgress.add(rva)
+    if (rva & RUNTIME_FUNCTION_INDIRECT) {
+      copyIndirectRuntimeFunction(rva - RUNTIME_FUNCTION_INDIRECT, depth)
     } else {
-      requireValid(rva > 0 && rva % 4 === 0, 'unaligned unwind record')
-      const off = offsetOf(rva, 4)
-      const flags = input[off] >>> 3
-      const count = input[off + 2]
-      const version = input[off] & 7
-      requireValid([1, 2].includes(version) && flags <= 4, 'unsupported unwind version or flags')
-      const codesSize = 4 + 2 * count
-      const alignedSize = (codesSize + 3) & ~3
-      offsetOf(rva, alignedSize + (flags === 4 ? 12 : flags & 3 ? 4 : 0))
-      // Validate opcode slot widths instead of blindly copying an advertised byte range.
-      for (let slot = 0; slot < count; ) {
-        const code = input[off + 5 + slot * 2]
-        const op = code & 15
-        const info = code >>> 4
-        requireValid(op <= 10, 'unsupported unwind opcode')
-        requireValid(op !== 1 || info <= 1, 'invalid ALLOC_LARGE')
-        requireValid(op !== 10 || info <= 1, 'invalid PUSH_MACHFRAME')
-        slot +=
-          op === 1
-            ? info === 0
-              ? 2
-              : 3
-            : op === 6
-              ? version === 1
-                ? 2
-                : 1
-              : [4, 8].includes(op)
-                ? 2
-                : [5, 7, 9].includes(op)
-                  ? 3
-                  : 1
-        requireValid(slot <= count, 'truncated unwind opcode')
-      }
-      copyRecord(off, codesSize)
-      // Handler-specific data is not used by our CFI converter. Remove handler flags
-      // and pointers; leave alignment padding zero. Preserve chain records only.
-      output[off] = version | (flags === 4 ? 4 << 3 : 0)
-      if (flags === 4) {
-        copyRecord(off + alignedSize, 12)
-        x64Unwind(u32(off + alignedSize + 8), depth + 1)
-      }
+      copyUnwindInfo(rva, depth)
     }
-    active.delete(rva)
+    inProgress.delete(rva)
     visited.add(rva)
   }
+
+  const copyIndirectRuntimeFunction = (rva: number, depth: number) => {
+    const target = fileOffsetOf(layout, rva, RUNTIME_FUNCTION_SIZE)
+    // Indirect entries usually point at another function of the exception table, which is already copied.
+    if (target >= tableStart && target < tableEnd) {
+      requireValid((target - tableStart) % RUNTIME_FUNCTION_SIZE === 0, 'unaligned indirect runtime function')
+    } else {
+      writer.copy(target, RUNTIME_FUNCTION_SIZE)
+    }
+    copyUnwindData(reader.u32(target + RUNTIME_FUNCTION_UNWIND_OFFSET), depth + 1)
+  }
+
+  const copyUnwindInfo = (rva: number, depth: number) => {
+    requireValid(rva > 0 && rva % 4 === 0, 'unaligned unwind record')
+    const unwindInfo = fileOffsetOf(layout, rva, UNWIND_INFO_HEADER_SIZE)
+    const versionAndFlags = reader.u8(unwindInfo + UNWIND_INFO_VERSION_FLAGS_OFFSET)
+    const version = versionAndFlags & 0x7
+    const flags = versionAndFlags >>> 3
+    const codeCount = reader.u8(unwindInfo + UNWIND_INFO_COUNT_OF_CODES_OFFSET)
+    requireValid((version === 1 || version === 2) && flags <= UNW_FLAG_CHAININFO, 'unsupported unwind version or flags')
+
+    const codesSize = UNWIND_INFO_HEADER_SIZE + UNWIND_CODE_SIZE * codeCount
+    const trailer = (codesSize + 3) & ~3
+    const hasHandler = (flags & (UNW_FLAG_EHANDLER | UNW_FLAG_UHANDLER)) !== 0
+    const trailerSize = flags === UNW_FLAG_CHAININFO ? RUNTIME_FUNCTION_SIZE : hasHandler ? 4 : 0
+    fileOffsetOf(layout, rva, trailer + trailerSize)
+    validateUnwindCodes(reader, unwindInfo, codeCount, version)
+
+    writer.copy(unwindInfo, codesSize)
+    // Exception handlers and their language-specific data are not needed to unwind: drop them and their flags.
+    writer.output[unwindInfo + UNWIND_INFO_VERSION_FLAGS_OFFSET] =
+      version | (flags === UNW_FLAG_CHAININFO ? UNW_FLAG_CHAININFO << 3 : 0)
+    if (flags === UNW_FLAG_CHAININFO) {
+      writer.copy(unwindInfo + trailer, RUNTIME_FUNCTION_SIZE)
+      copyUnwindData(reader.u32(unwindInfo + trailer + RUNTIME_FUNCTION_UNWIND_OFFSET), depth + 1)
+    }
+  }
+
   let functions = 0
-  for (let off = pdata; off < pdata + pdataSize; off += 12) {
-    const begin = u32(off)
-    if (begin === 0 && u32(off + 4) === 0 && u32(off + 8) === 0) {
+  for (let entry = tableStart; entry < tableEnd; entry += RUNTIME_FUNCTION_SIZE) {
+    const begin = reader.u32(entry + RUNTIME_FUNCTION_BEGIN_OFFSET)
+    const end = reader.u32(entry + RUNTIME_FUNCTION_END_OFFSET)
+    const unwind = reader.u32(entry + RUNTIME_FUNCTION_UNWIND_OFFSET)
+    if (begin === 0 && end === 0 && unwind === 0) {
       continue
     }
-    requireValid(begin > 0 && begin < imageSize, 'invalid function address')
-    requireValid(u32(off + 4) > begin && u32(off + 4) <= imageSize, 'invalid function range')
-    x64Unwind(u32(off + 8))
+    requireValid(begin > 0 && begin < layout.imageSize, 'invalid function address')
+    requireValid(end > begin && end <= layout.imageSize, 'invalid function range')
+    copyUnwindData(unwind, 0)
     functions++
   }
   requireValid(functions > 0, 'empty exception table')
-  const ranges = [...copied].sort(([a], [b]) => a - b)
-  for (let i = 1; i < ranges.length; i++) {
-    requireValid(ranges[i - 1][0] + ranges[i - 1][1] <= ranges[i][0], 'overlapping metadata records')
+
+  return functions
+}
+
+export const extractPeUnwindInfo = (input: Buffer): ReducedPE => {
+  const reader = new PeReader(input)
+  const layout = parseLayout(reader)
+  rejectHybridImage(reader, layout)
+  if (!layout.is64) {
+    return {architecture: 'x86', functions: 0}
   }
 
-  return {architecture, data: output, functions}
+  const outputSize = Math.max(
+    layout.headerSize,
+    ...layout.sections.map((s) => (s.rawSize ? s.rawOffset + s.rawSize : 0))
+  )
+  const writer = new ReducedPeWriter(reader, outputSize)
+  writeHeaders(writer, reader, layout)
+  copyCodeViewIdentity(writer, reader, layout)
+  const functions = copyExceptionTable(writer, reader, layout)
+  writer.verifyNoOverlaps()
+
+  return {architecture: 'x64', data: writer.output, functions}
 }
 
 export const copyPeUnwindInfo = async (filename: string, outputFile: string): Promise<ReducedPE> => {

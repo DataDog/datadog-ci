@@ -11,7 +11,14 @@ import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {uploadMultipartHelper} from '../helpers'
 import {PeSymbolsUploadCommand} from '../upload'
 
-import {makePE} from './pe-fixture'
+import {bytesAt, FUNCTION, MACHINE, makePE, RVA, SECTION_SIZE, setRuntimeFunction} from './pe-fixture'
+
+const makeMalformedPE = () => {
+  const pe = makePE()
+  setRuntimeFunction(pe, 0, {...FUNCTION, unwind: 0xfffffffc})
+
+  return pe
+}
 
 jest.unmock('chalk')
 
@@ -79,7 +86,7 @@ describe('pe-symbols upload with unwind information', () => {
       companion = (payload.content.get('pe_binary_file') as MultipartFileValue).path
       const contents = fs.readFileSync(companion)
       expect(contents.includes(Buffer.from('PRIVATE_DATA'))).toBe(false)
-      expect(contents.subarray(0x200, 0x400)).toEqual(Buffer.alloc(0x200))
+      expect(bytesAt(contents, RVA.code, SECTION_SIZE)).toEqual(Buffer.alloc(SECTION_SIZE))
 
       return fail ? UploadStatus.Failure : UploadStatus.Success
     })
@@ -90,22 +97,23 @@ describe('pe-symbols upload with unwind information', () => {
   })
 
   test('x86 requests PDB CFI without a binary attachment', async () => {
-    const {command} = prepare(makePE(0x14c))
+    const {command} = prepare(makePE(MACHINE.x86))
     expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Success])
     expect(lastPayload().content.has('pe_binary_file')).toBe(false)
     expect(generatesCfi()).toBe(true)
   })
 
-  test.each([0x1c4, 0xaa64, 0xa641, 0xa64e])('rejects ARM/hybrid binaries without uploading: %s', async (machine) => {
-    const {command} = prepare(makePE(machine))
-    expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Failure])
-    expect(uploadMultipartHelper).not.toHaveBeenCalled()
-  })
+  test.each([MACHINE.thumb2, MACHINE.arm64, MACHINE.arm64ec, MACHINE.arm64x])(
+    'rejects ARM/hybrid binaries without uploading: %s',
+    async (machine) => {
+      const {command} = prepare(makePE(machine))
+      expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Failure])
+      expect(uploadMultipartHelper).not.toHaveBeenCalled()
+    }
+  )
 
   test('malformed unwind data uploads neither file', async () => {
-    const contents = makePE()
-    contents.writeUInt32LE(0xfffffffc, 0x608)
-    const {command} = prepare(contents)
+    const {command} = prepare(makeMalformedPE())
     expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Failure])
     expect(uploadMultipartHelper).not.toHaveBeenCalled()
   })
@@ -143,9 +151,7 @@ describe('pe-symbols upload with unwind information', () => {
   })
 
   test('dry run reports missing PDBs and extraction failures', async () => {
-    const malformed = makePE()
-    malformed.writeUInt32LE(0xfffffffc, 0x608)
-    const {command} = prepare(malformed)
+    const {command} = prepare(makeMalformedPE())
     command['dryRun'] = true
     expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Failure])
 
@@ -156,15 +162,17 @@ describe('pe-symbols upload with unwind information', () => {
     expect(uploadMultipartHelper).not.toHaveBeenCalled()
   })
 
-  test.each([false, true])('extraction failures exit nonzero with dry-run=%s', async (dryRun) => {
-    const malformed = makePE()
-    malformed.writeUInt32LE(0xfffffffc, 0x608)
-    const {command} = prepare(malformed)
-    command['dryRun'] = dryRun
-    command['disableGit'] = true
-    expect(await command.execute()).toBe(1)
-    expect(uploadMultipartHelper).not.toHaveBeenCalled()
-  })
+  test.each([false, true])(
+    'extraction failures are reported in the summary and exit 0 like other symbol uploads, dry-run=%s',
+    async (dryRun) => {
+      const {command} = prepare(makeMalformedPE())
+      command['dryRun'] = dryRun
+      command['disableGit'] = true
+      expect(await command.execute()).toBe(0)
+      expect(command.context.stdout.toString()).toContain('Cannot extract PE unwind data')
+      expect(uploadMultipartHelper).not.toHaveBeenCalled()
+    }
+  )
 
   test('missing PDB does not upload the executable on its own', async () => {
     const {pdb, command} = prepare(makePE())
