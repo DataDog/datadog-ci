@@ -675,7 +675,7 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       expect(taskDefinition.volumes).toEqual([])
       expect(envVarsOf(appOf(taskDefinition.containerDefinitions)).NODE_OPTIONS).toBe('--inspect')
       expect(appOf(taskDefinition.containerDefinitions)?.dependsOn).toBeUndefined()
-      expect(taskDefinition.tags).not.toContainEqual(expect.objectContaining({key: SSI_INJECTION_MODE_TAG}))
+      expect(taskDefinition.tags).toBeUndefined()
     })
 
     test('uninstrument keeps a customer preload after removing composite injection', () => {
