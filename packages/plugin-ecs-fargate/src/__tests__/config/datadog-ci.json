@@ -1,0 +1,7 @@
+{
+  "ecsFargate": {
+    "taskDefinitions": ["my-app"],
+    "agentImage": "public.ecr.aws/datadog/agent:7-from-config",
+    "agentSocket": false
+  }
+}
