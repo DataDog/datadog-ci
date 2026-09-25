@@ -1,4 +1,4 @@
-import type {InstrumentSettings} from '../task-definition'
+import type {InstrumentResult, InstrumentSettings} from '../task-definition'
 import type {
   ContainerDefinition,
   LogConfiguration,
@@ -11,7 +11,25 @@ import type {
   Volume,
 } from '@aws-sdk/client-ecs'
 
-import {instrumentTaskDefinition} from '../task-definition'
+import {resolveSsiConfig} from '../ssi'
+import {instrumentTaskDefinition as transformTaskDefinition} from '../task-definition'
+
+/**
+ * `instrumentTaskDefinition` with the tracer inputs resolved from the settings, which the command
+ * does once for the whole run before it transforms any task definition.
+ */
+export const instrumentTaskDefinition = (
+  taskDefinition: TaskDefinition,
+  settings: InstrumentSettings,
+  tags: Tag[] = []
+): InstrumentResult => {
+  const ssiConfig = resolveSsiConfig(settings)
+  if (ssiConfig.kind === 'errors') {
+    throw new Error(`Test settings the command would have rejected: ${ssiConfig.errors.join('\n')}`)
+  }
+
+  return transformTaskDefinition(taskDefinition, settings, tags, ssiConfig)
+}
 
 export const MOCK_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_API_KEY_SECRET_ARN = 'arn:aws:secretsmanager:us-east-1:123456789012:secret:dd-api-key-AbCdEf'
@@ -42,9 +60,13 @@ export const MOCK_SETTINGS: InstrumentSettings = {
 /** The same, with the log router collecting the containers' logs. */
 export const MOCK_LOG_COLLECTION_SETTINGS: InstrumentSettings = {...MOCK_SETTINGS, logCollection: true}
 
-/** The log driver every container the router collects is given. */
+/**
+ * The log driver every container the router collects is given. `dd_service` is the family, since
+ * `MOCK_SETTINGS` names no service, and the other unified service tags are absent for the same reason.
+ */
 export const firelensLogConfiguration = (
-  apiKey: {secretArn: string} | {plaintext: string} = {secretArn: MOCK_API_KEY_SECRET_ARN}
+  apiKey: {secretArn: string} | {plaintext: string} = {secretArn: MOCK_API_KEY_SECRET_ARN},
+  tagging: {dd_service?: string; dd_source?: string; dd_tags?: string} = {dd_service: MOCK_FAMILY}
 ): LogConfiguration => ({
   logDriver: 'awsfirelens',
   options: {
@@ -53,6 +75,7 @@ export const firelensLogConfiguration = (
     TLS: 'on',
     provider: 'ecs',
     retry_limit: '2',
+    ...tagging,
     ...('plaintext' in apiKey ? {apikey: apiKey.plaintext} : {}),
   },
   ...('secretArn' in apiKey ? {secretOptions: [{name: 'apikey', valueFrom: apiKey.secretArn}]} : {}),

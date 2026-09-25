@@ -132,10 +132,10 @@ describe('ecs-fargate uninstrument', () => {
     expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.volumes).toStrictEqual([])
   })
 
-  test('removes the instrumentation tags from the new revision', async () => {
+  test('omits tags when the revision only had instrumentation tags', async () => {
     await runCLI([])
 
-    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toStrictEqual([])
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toBeUndefined()
   })
 
   test('registers nothing on a dry run, and shows what it would change', async () => {
@@ -160,6 +160,22 @@ describe('ecs-fargate uninstrument', () => {
     expect(context.stdout.toString()).toContain('my-app is not instrumented, no changes needed.')
   })
 
+  // DescribeTaskDefinition answers with `[]` for every collection a revision declares none of,
+  // which must read the same as declaring none at all.
+  test('registers nothing for a task definition whose empty collections are spelled out', async () => {
+    const described = fargateTaskDefinition({
+      containerDefinitions: [{...APP_CONTAINER, environment: [], mountPoints: [], secrets: []}],
+      volumes: [],
+    })
+    ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: described, tags: []})
+
+    const {code, context} = await runCLI([])
+
+    expect(code).toBe(0)
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    expect(context.stdout.toString()).toContain('my-app is not instrumented, no changes needed.')
+  })
+
   test('registers a clean revision when only the CLI version tag is left behind', async () => {
     ecsMock
       .on(DescribeTaskDefinitionCommand)
@@ -168,7 +184,7 @@ describe('ecs-fargate uninstrument', () => {
     const {code} = await runCLI([])
 
     expect(code).toBe(0)
-    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toStrictEqual([])
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)[0].args[0].input.tags).toBeUndefined()
   })
 
   test('warns that a log configuration routed through the log router cannot be put back', async () => {

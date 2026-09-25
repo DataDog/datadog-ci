@@ -31,6 +31,11 @@ export interface LanguageInjectionOptions {
 
 export type LanguageCompatibilityOptions = Pick<LanguageInjectionOptions, 'language' | 'libc' | 'version'>
 
+export type LanguageCompatibilityExtras = {
+  /** Cloud Run probe-server version floors. Off for copy-and-exit platforms. */
+  probeServer?: boolean
+}
+
 /**
  * Builds the image, required artifacts, and environment for one tracer.
  *
@@ -59,9 +64,12 @@ const PROBE_SERVER_VERSION_BASELINES: Record<Language, string> = {
 }
 
 /** Returns domain compatibility errors after individual CLI arguments have been validated. */
-export const getLanguageCompatibilityErrors = (options: LanguageCompatibilityOptions): readonly string[] => [
+export const getLanguageCompatibilityErrors = (
+  options: LanguageCompatibilityOptions,
+  {probeServer = false}: LanguageCompatibilityExtras = {}
+): readonly string[] => [
   ...(LANGUAGE_CONFIG[options.language].getCompatibilityErrors?.(options) ?? []),
-  ...getProbeServerCompatibilityErrors(options.language, options.version),
+  ...(probeServer ? getProbeServerCompatibilityErrors(options.language, options.version) : []),
 ]
 
 const getProbeServerCompatibilityErrors = (language: Language, version: string): readonly string[] => {

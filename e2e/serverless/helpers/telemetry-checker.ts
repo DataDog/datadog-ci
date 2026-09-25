@@ -4,8 +4,8 @@ import {v2} from '@datadog/datadog-api-client'
 
 import {createE2EConfiguration} from '../../helpers/api-client'
 
-const POLL_INTERVAL_SECONDS = 15
-const MAX_ATTEMPTS = 40
+const POLL_INTERVAL_SECONDS = 30
+const MAX_ATTEMPTS = 20
 
 interface TelemetryIdentity {
   serviceName: string
@@ -108,8 +108,8 @@ export const checkTelemetryFlowing = async (
   {checkLogs = true, maxAttempts = MAX_ATTEMPTS}: {checkLogs?: boolean; maxAttempts?: number} = {}
 ): Promise<void> => {
   const configuration = createE2EConfiguration({
-    apiKeyAuth: process.env.DATADOG_API_KEY,
-    appKeyAuth: process.env.DATADOG_APP_KEY,
+    apiKeyAuth: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+    appKeyAuth: process.env.DATADOG_APP_KEY ?? process.env.DD_APP_KEY,
   })
   const checks = [pollUntilFound('spans', () => querySpans(configuration, identity), maxAttempts)]
   if (checkLogs) {

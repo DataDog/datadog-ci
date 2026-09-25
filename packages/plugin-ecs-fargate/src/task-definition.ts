@@ -9,7 +9,11 @@ import type {
   TaskDefinition,
   Volume,
 } from '@aws-sdk/client-ecs'
+import type {ResolvedSsiConfig} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import type {TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   AGENT_IMAGE,
@@ -19,6 +23,7 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
+  DD_SOURCE_ENV_VAR,
   DD_TAGS_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -27,6 +32,8 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {getInjectionModeTagValue, isInjection} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import {SSI_INJECTION_MODE_TAG, TRACER_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -82,9 +89,19 @@ import {
   START_DEPENDENCY_CONDITION,
   VERSION_TAG_KEY,
   WINDOWS_AGENT_IMAGE_SUFFIX,
-  WINDOWS_OS_FAMILY_PREFIX,
   WINDOWS_WORKING_DIRECTORY,
+  isArm64Task,
+  isWindowsTask,
 } from './constants'
+import {
+  applySsi,
+  assertInjectionEnvCanBeMerged,
+  hasSsi,
+  managedTracerReplacementWarning,
+  removeSsiState,
+  selectApplicationContainer,
+  SsiConfigError,
+} from './ssi'
 
 /**
  * What the user asked for, resolved into the decisions the transform needs.
@@ -117,8 +134,14 @@ export type InstrumentSettings = {
   extraTags?: string
   /** Additional environment variables to set on the application containers and the Datadog Agent. */
   envVars?: Record<string, string>
-  /** Whether the tracers send traces. Absent leaves the choice to the task definition. */
-  tracing?: boolean
+  /** APM tracing mode. Absent resolves to manual tracing. */
+  tracing?: TracingMode
+  /** Application language for log parsing, and the tracer to inject with `--tracing inject`. */
+  language?: string
+  tracerVersion?: string
+  tracerLibc?: Libc
+  /** Application container to inject when the task definition has several. */
+  containerName?: string
   logLevel?: string
   /** Whether Application Security Monitoring is enabled. Disabled by default. */
   appsec?: boolean
@@ -264,7 +287,7 @@ const getAgentEnvVars = (settings: InstrumentSettings, family?: string): Managed
   const serviceTags = getServiceTagEnvVars(settings, family)
   // LLM Observability payloads still go through the sidecar, so its intake stays on even when the
   // tracers themselves are turned off.
-  const apmEnabled = settings.llmobs ? true : (settings.tracing ?? true)
+  const apmEnabled = settings.llmobs ? true : settings.tracing !== 'disabled'
 
   return {
     managed: {
@@ -291,16 +314,18 @@ const getAgentEnvVars = (settings: InstrumentSettings, family?: string): Managed
  * Builds the environment the application containers run with: the unified service tags, the
  * switches the tracer libraries read, and where they send what they produce.
  *
- * Tracing and log injection are defaults rather than managed values, so a task definition that has
- * already made a choice about either keeps it. Product settings resolve to an enabled value or to
- * absence: turning them off removes the fields an earlier run wrote, rather than leaving them
- * behind. The transport is managed too, because it has to agree with the volume mounts: the two
- * ways of reaching the Agent are mutually exclusive, so the unused one is removed rather than left
- * behind to point at a socket that is no longer mounted.
+ * Tracing is managed: omitted and `manual` set `DD_TRACE_ENABLED=true`, and `disabled` sets it
+ * false. Log injection is a default, so a task definition that has already made a choice keeps it.
+ * Product settings resolve to an enabled value or to absence: turning them off removes the fields
+ * an earlier run wrote, rather than leaving them behind. The transport is managed too, because it
+ * has to agree with the volume mounts: the two ways of reaching the Agent are mutually exclusive,
+ * so the unused one is removed rather than left behind to point at a socket that is no longer
+ * mounted.
  */
 const getAppContainerEnvVars = (
   settings: InstrumentSettings,
   {socket: socketEnabled}: Platform,
+  sourceLanguage: string | undefined,
   family?: string
 ): ManagedValues => {
   const serviceTags = getServiceTagEnvVars(settings, family)
@@ -317,8 +342,9 @@ const getAppContainerEnvVars = (
     managed[DD_AGENT_HOST_ENV_VAR] = AGENT_LOOPBACK_HOST
   }
 
-  if (settings.tracing !== undefined) {
-    managed[DD_TRACE_ENABLED_ENV_VAR] = String(settings.tracing)
+  managed[DD_TRACE_ENABLED_ENV_VAR] = String(settings.tracing !== 'disabled')
+  if (sourceLanguage) {
+    managed[DD_SOURCE_ENV_VAR] = sourceLanguage
   }
   if (settings.appsec) {
     managed[DD_APPSEC_ENABLED_ENV_VAR] = 'true'
@@ -340,7 +366,6 @@ const getAppContainerEnvVars = (
     removed,
     defaults: {
       ...serviceTags.defaults,
-      [DD_TRACE_ENABLED_ENV_VAR]: 'true',
       [LOGS_INJECTION_ENV_VAR]: 'true',
     },
   }
@@ -391,6 +416,12 @@ const withSocketVolume = (existing: Volume[] | undefined, socketEnabled: boolean
  * The environment to give a container: what the command writes, merged into what the container
  * already declares. Windows resolves variable names without case, so the merge does too.
  */
+/** The value a container declares for one variable, resolving the name the way the platform does. */
+const findDeclaredEnv = (container: ContainerDefinition, name: string, windows: boolean): string | undefined =>
+  (container.environment ?? []).find((variable) =>
+    windows ? variable.name?.toLowerCase() === name.toLowerCase() : variable.name === name
+  )?.value
+
 const toEnvironment = (values: ManagedValues, {windows}: Platform, existing?: KeyValuePair[]): KeyValuePair[] => {
   const declared: [string, string | undefined][] = []
   for (const {name, value} of existing ?? []) {
@@ -416,10 +447,34 @@ const toDockerLabels = (
 }
 
 /**
- * The FireLens log configuration given to containers the router collects.
+ * The unified service tags as the Datadog output plugin spells them, so that logs carry the same
+ * `env` and `version` the tracers report and can be correlated with the traces they belong to.
  */
-const firelensLogConfiguration = (settings: InstrumentSettings): LogConfiguration =>
-  removeUndefinedValues({
+const firelensTags = (ust: UnifiedServiceTags, extraTags?: string): string | undefined => {
+  const tags = [
+    ...(ust.environment ? [`${ENVIRONMENT_TAG_KEY}:${ust.environment}`] : []),
+    ...(ust.version ? [`${VERSION_TAG_KEY}:${ust.version}`] : []),
+    ...(extraTags ? [extraTags] : []),
+  ]
+
+  return tags.length > 0 ? tags.join(',') : undefined
+}
+
+/**
+ * The FireLens log configuration given to containers the router collects.
+ *
+ * The Datadog output plugin names the service, source, and tags itself: FireLens forwards the log
+ * stream without the container's environment, so nothing else would carry them.
+ */
+const firelensLogConfiguration = (
+  settings: InstrumentSettings,
+  family?: string,
+  sourceLanguage?: string
+): LogConfiguration => {
+  const ust = unifiedServiceTags(settings, family)
+  const tags = firelensTags(ust, settings.extraTags)
+
+  return removeUndefinedValues({
     logDriver: AWSFIRELENS_LOG_DRIVER,
     options: {
       Name: DATADOG_FLUENTBIT_OUTPUT,
@@ -427,12 +482,16 @@ const firelensLogConfiguration = (settings: InstrumentSettings): LogConfiguratio
       TLS: 'on',
       provider: 'ecs',
       retry_limit: LOG_ROUTER_RETRY_LIMIT,
+      ...(ust.service ? {dd_service: ust.service} : {}),
+      ...(sourceLanguage ? {dd_source: sourceLanguage} : {}),
+      ...(tags ? {dd_tags: tags} : {}),
       ...(settings.apiKey ? {[FIRELENS_API_KEY_OPTION]: settings.apiKey} : {}),
     },
     secretOptions: settings.apiKeySecretArn
       ? [{name: FIRELENS_API_KEY_OPTION, valueFrom: settings.apiKeySecretArn}]
       : undefined,
   })
+}
 
 /**
  * Whether this log configuration is the Datadog FireLens routing this command writes.
@@ -475,13 +534,6 @@ type Platform = {
   /** Whether the tracers reach the Agent over the shared Unix socket rather than the task loopback address. */
   socket: boolean
 }
-
-/**
- * Whether the task runs Windows containers, which the Agent sidecar has to be built differently
- * for. A task definition that declares no `runtimePlatform`, or declares `LINUX`, runs Linux.
- */
-const isWindowsTask = (taskDefinition: Pick<TaskDefinition, 'runtimePlatform'>): boolean =>
-  taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
 
 /**
  * Whether a declared name is the environment variable `name`.
@@ -664,13 +716,21 @@ const buildLogRouterContainer = ({existing, borrowed}: LogRouterContainerContext
  * The containers whose presence and health checks this command decides, and whose dependents it
  * therefore has to keep pointing at something the task can satisfy.
  */
-const SIDECAR_CONTAINER_NAMES: ReadonlySet<string> = new Set([AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME])
+const SIDECAR_CONTAINER_NAMES: ReadonlySet<string> = new Set([
+  AGENT_CONTAINER_NAME,
+  LOG_ROUTER_CONTAINER_NAME,
+  TRACER_CONTAINER_NAME,
+])
 
 /**
  * The sidecars instrumentation adds, which are keyed by name.
  */
 const isSidecar = (container: ContainerDefinition): container is ContainerDefinition & {name: string} =>
   container.name !== undefined && SIDECAR_CONTAINER_NAMES.has(container.name)
+
+/** The sidecars left to filter out once `removeSsiState` has taken the tracer container away. */
+const isRemainingSidecar = (container: ContainerDefinition): boolean =>
+  isSidecar(container) && container.name !== TRACER_CONTAINER_NAME
 
 /**
  * The first awslogs configuration on an application container.
@@ -732,7 +792,7 @@ const withResolvedSidecarDependencies = (
  * The tags the revision carries: the unified service tags the task now reports under, and the
  * version of the CLI that produced the revision. Both replace whatever the task definition had.
  */
-const instrumentationTags = (tags: Tag[], ust: UnifiedServiceTags): Tag[] => {
+const instrumentationTags = (tags: Tag[], ust: UnifiedServiceTags, injectionMode?: string): Tag[] => {
   const managed = new Map<string, string>()
   if (ust.service) {
     managed.set(SERVICE_TAG_KEY, ust.service)
@@ -744,9 +804,13 @@ const instrumentationTags = (tags: Tag[], ust: UnifiedServiceTags): Tag[] => {
     managed.set(VERSION_TAG_KEY, ust.version)
   }
   managed.set(SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE)
+  if (injectionMode) {
+    managed.set(SSI_INJECTION_MODE_TAG, injectionMode)
+  }
+  const dropped = new Set([...managed.keys(), SSI_INJECTION_MODE_TAG])
 
   return [
-    ...tags.filter((tag) => tag.key === undefined || !managed.has(tag.key)),
+    ...tags.filter((tag) => tag.key === undefined || !dropped.has(tag.key)),
     ...[...managed].map(([key, value]) => ({key, value})),
   ]
 }
@@ -764,7 +828,8 @@ const instrumentationTags = (tags: Tag[], ust: UnifiedServiceTags): Tag[] => {
 export const instrumentTaskDefinition = (
   taskDefinition: TaskDefinition,
   settings: InstrumentSettings,
-  tags: Tag[] = []
+  tags: Tag[],
+  ssiConfig: ResolvedSsiConfig
 ): InstrumentResult => {
   const family = taskDefinition.family
 
@@ -801,13 +866,34 @@ export const instrumentTaskDefinition = (
       `Task definition ${family} runs Windows, which the ${LOG_ROUTER_CONTAINER_NAME} sidecar does not support. FireLens is Linux-only, so log collection cannot be enabled on this task.`
     )
   }
+  if (isInjection(ssiConfig) && platform.windows) {
+    throw new SsiConfigError(
+      `Task definition ${family} runs Windows, which automatic tracer injection does not support. Install the tracer in the application image and use --tracing manual.`
+    )
+  }
+  if (ssiConfig.kind === 'single-language' && ssiConfig.language === 'csharp' && isArm64Task(taskDefinition)) {
+    throw new SsiConfigError(
+      `Task definition ${family} runs ARM64, which .NET automatic tracer injection does not support. Install the tracer in the application image and use --tracing manual, or use an X86_64 task.`
+    )
+  }
 
-  const containers = taskDefinition.containerDefinitions ?? []
+  // Unconditional, so that a tracer container whose shape this release no longer recognizes is
+  // still cleaned up rather than left running beside the one the requested state rebuilds.
+  const source = removeSsiState(taskDefinition)
+  const containers = source.containerDefinitions ?? []
+  if (isInjection(ssiConfig)) {
+    // Asked of the task definition as it was described, before this run merges its own environment:
+    // that merge resolves duplicate names to the last one, which would hide the duplicate this reports.
+    assertInjectionEnvCanBeMerged(containers[selectApplicationContainer(containers, settings.containerName)], ssiConfig)
+  }
   const borrowed = borrowedLogConfiguration(containers)
-  const firelens = settings.logCollection ? firelensLogConfiguration(settings) : undefined
+  // `--language dotnet` selects the csharp tracer, so DD_SOURCE names the tracer that was injected
+  // rather than the alias the user typed.
+  const sourceLanguage = ssiConfig.kind === 'single-language' ? ssiConfig.language : settings.language
+  const firelens = settings.logCollection ? firelensLogConfiguration(settings, family, sourceLanguage) : undefined
 
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
-  const {container: agentContainer, warnings} = buildAgentContainer({
+  const {container: agentContainer, warnings: agentWarnings} = buildAgentContainer({
     settings,
     platform,
     family,
@@ -815,6 +901,19 @@ export const instrumentTaskDefinition = (
     firelens,
     borrowed,
   })
+  const warnings = [...ssiConfig.warnings, ...agentWarnings]
+
+  const injected = hasSsi(taskDefinition, tags)
+  if (settings.tracing === undefined && injected) {
+    warnings.push(
+      `Tracing defaults to manual for ${family}, which removes the injected tracer. Use --tracing inject to keep it.`
+    )
+  } else if (!injected) {
+    const replacement = managedTracerReplacementWarning(taskDefinition, family)
+    if (replacement) {
+      warnings.push(replacement)
+    }
+  }
 
   if (platform.windows && settings.agentSocket !== false) {
     warnings.push(
@@ -850,17 +949,31 @@ export const instrumentTaskDefinition = (
   // container carrying them, so an Agent labelled with the application's service would report its
   // own resource usage under that service.
   const ust = unifiedServiceTags(settings, family)
-  const appEnvironment = getAppContainerEnvVars(settings, platform, family)
+  const appEnvironment = getAppContainerEnvVars(settings, platform, sourceLanguage, family)
   const appLabels = getUstDockerLabels(settings, family)
   const sidecarReplacements = new Map<string, ContainerDefinition | undefined>([
     [AGENT_CONTAINER_NAME, agentContainer],
     [LOG_ROUTER_CONTAINER_NAME, logRouterContainer],
   ])
-  const containerDefinitions = containers.flatMap((container) => {
+  let containerDefinitions = containers.flatMap((container) => {
     if (isSidecar(container)) {
+      if (!sidecarReplacements.has(container.name)) {
+        return [container]
+      }
       const replacement = sidecarReplacements.get(container.name)
 
       return replacement ? [replacement] : []
+    }
+
+    // Tracing is managed, so a task that turned the tracers off itself is told that this run turns
+    // them back on rather than having the change buried in the diff.
+    const disabledTracing = findDeclaredEnv(container, DD_TRACE_ENABLED_ENV_VAR, platform.windows)
+    if (settings.tracing === undefined && toBoolean(disabledTracing) === false) {
+      warnings.push(
+        `The ${container.name} container sets ${DD_TRACE_ENABLED_ENV_VAR} to ${JSON.stringify(
+          disabledTracing
+        )}, which this run replaces with "true". Pass --tracing disabled to keep tracing off.`
+      )
     }
 
     if (firelens) {
@@ -887,11 +1000,26 @@ export const instrumentTaskDefinition = (
     containerDefinitions.push(logRouterContainer)
   }
 
+  let volumes = withSocketVolume(source.volumes, platform.socket)
+  if (isInjection(ssiConfig)) {
+    // Selected on the rewritten list so dropping the log router cannot shift the application
+    // container onto another index.
+    const targetIndex = selectApplicationContainer(containerDefinitions, settings.containerName)
+    const applied = applySsi(containerDefinitions, volumes, targetIndex, ssiConfig, firelens ?? borrowed)
+    containerDefinitions = applied.containerDefinitions
+    volumes = applied.volumes
+
+    const tracer = containerDefinitions.find((container) => container.name === TRACER_CONTAINER_NAME)
+    if (tracer && !tracer.logConfiguration) {
+      warnings.push(
+        `The ${TRACER_CONTAINER_NAME} container has no logConfiguration, so its own logs will not be collected and a failure will be hard to diagnose. Add one to the task definition.`
+      )
+    }
+  }
+
   // Last, because what a dependency on a sidecar can wait for is only settled once the sidecars the
   // task runs, and the health checks they declare, are known.
-  const sidecars = [agentContainer, logRouterContainer].filter(
-    (sidecar): sidecar is ContainerDefinition => sidecar !== undefined
-  )
+  const sidecars = containerDefinitions.filter(isSidecar)
   const resolved = containerDefinitions.map((container) => {
     const {container: withDependencies, warnings: dependencyWarnings} = withResolvedSidecarDependencies(
       container,
@@ -904,10 +1032,10 @@ export const instrumentTaskDefinition = (
 
   return {
     taskDefinition: removeUndefinedValues({
-      ...stripReadOnlyFields(taskDefinition),
+      ...stripReadOnlyFields(source),
       containerDefinitions: resolved,
-      volumes: withSocketVolume(taskDefinition.volumes, platform.socket),
-      tags: instrumentationTags(tags, ust),
+      volumes,
+      tags: instrumentationTags(tags, ust, getInjectionModeTagValue(ssiConfig)),
     }),
     warnings,
   }
@@ -941,7 +1069,11 @@ const INSTRUMENTATION_TAG_KEYS: ReadonlySet<string> = new Set([
   ENVIRONMENT_TAG_KEY,
   VERSION_TAG_KEY,
   SERVERLESS_CLI_VERSION_TAG_NAME,
+  SSI_INJECTION_MODE_TAG,
 ])
+
+/** ECS rejects `RegisterTaskDefinition` with `tags: []`*/
+const presentTags = (tags: Tag[]): Tag[] | undefined => (tags.length > 0 ? tags : undefined)
 
 /**
  * Whether a variable is one instrumentation is responsible for: anything in the Datadog namespace,
@@ -1007,9 +1139,11 @@ export const uninstrumentTaskDefinition = (
   tags: Tag[] = []
 ): UninstrumentResult => {
   const warnings: string[] = []
-  const containers = taskDefinition.containerDefinitions ?? []
+  const cleaned = removeSsiState(taskDefinition)
+  const containers = cleaned.containerDefinitions ?? []
 
-  if (!containers.some(isSidecar)) {
+  // Asked of the task definition as it was described: `cleaned` has already dropped the tracer.
+  if (!(taskDefinition.containerDefinitions ?? []).some(isSidecar)) {
     warnings.push(
       `Task definition ${taskDefinition.family} runs no ${AGENT_CONTAINER_NAME} container, so there is no Datadog sidecar to remove. Anything else instrumentation left on it is still removed.`
     )
@@ -1017,12 +1151,12 @@ export const uninstrumentTaskDefinition = (
 
   return {
     taskDefinition: removeUndefinedValues({
-      ...stripReadOnlyFields(taskDefinition),
+      ...stripReadOnlyFields(cleaned),
       containerDefinitions: containers
-        .filter((container) => !isSidecar(container))
+        .filter((container) => !isRemainingSidecar(container))
         .map((container) => uninstrumentContainer(container, settings, warnings)),
-      volumes: taskDefinition.volumes?.filter((volume) => volume.name !== AGENT_SOCKET_VOLUME_NAME),
-      tags: tags.filter((tag) => tag.key === undefined || !INSTRUMENTATION_TAG_KEYS.has(tag.key)),
+      volumes: cleaned.volumes?.filter((volume) => volume.name !== AGENT_SOCKET_VOLUME_NAME),
+      tags: presentTags(tags.filter((tag) => tag.key === undefined || !INSTRUMENTATION_TAG_KEYS.has(tag.key))),
     }),
     warnings,
   }
@@ -1083,6 +1217,35 @@ const withoutCliVersion = (input: RegisterTaskDefinitionCommandInput): RegisterT
   tags: (input.tags ?? []).filter((tag) => tag.key !== SERVERLESS_CLI_VERSION_TAG_NAME),
 })
 
+/** Whether the value holds nothing: `[]` for a collection, `{}` for a volume's `host` and its like. */
+const isEmpty = (value: unknown): boolean => typeof value === 'object' && !!value && Object.keys(value).length === 0
+
+/**
+ * Whether the field carries a value `DescribeTaskDefinition` fills in for one a revision left unset:
+ * an empty collection, or `0` for the CPU units a container reserves.
+ */
+const isEcsDefault = (field: string, value: unknown): boolean => isEmpty(value) || (field === 'cpu' && value === 0)
+
+/**
+ * The task definition without the values ECS fills in for the fields it was not given. Registering
+ * either form produces the same revision, so a comparison must not read them as a change.
+ */
+const withoutEcsDefaults = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(withoutEcsDefaults)
+  }
+
+  if (typeof value !== 'object' || !value) {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([field, item]): [string, unknown] => [field, withoutEcsDefaults(item)])
+      .filter(([field, item]) => !isEcsDefault(field, item))
+  )
+}
+
 /**
  * Whether the task definition already matches what instrumentation would register, ignoring the CLI
  * version so that upgrading datadog-ci alone does not produce a new revision. A revision registered
@@ -1091,7 +1254,18 @@ const withoutCliVersion = (input: RegisterTaskDefinitionCommandInput): RegisterT
 export const isUpToDate = (
   original: RegisterTaskDefinitionCommandInput,
   updated: RegisterTaskDefinitionCommandInput
-): boolean => sortedEqual(withoutCliVersion(original), withoutCliVersion(updated))
+): boolean =>
+  sortedEqual(withoutEcsDefaults(withoutCliVersion(original)), withoutEcsDefaults(withoutCliVersion(updated)))
+
+/**
+ * Whether uninstrumenting the task definition would change anything.
+ *
+ * The CLI version tag is compared rather than ignored as {@link isUpToDate} does
+ */
+export const isAlreadyClean = (
+  original: RegisterTaskDefinitionCommandInput,
+  updated: RegisterTaskDefinitionCommandInput
+): boolean => sortedEqual(withoutEcsDefaults(original), withoutEcsDefaults(updated))
 
 /**
  * The read-only fields, narrowed to keys of `TaskDefinition` so a name that stops existing in a

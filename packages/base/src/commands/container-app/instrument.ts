@@ -78,18 +78,18 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     validator: t.cascade(t.isString(), t.matchesRegExp(/.+/)),
   })
   private tracerVersion = Option.String('--tracer-version', {
-    description: `Set the tracer image tag for automatic instrumentation with \`--language\`. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
+    description: `Set the tracer image tag. Requires \`--tracing inject --language\`. Defaults to '${DEFAULT_TRACER_VERSION}'.`,
     validator: t.cascade(t.isString(), t.matchesRegExp(TRACER_IMAGE_TAG_REG_EXP)),
   })
   private tracerLibc: ContainerAppConfigOptions['tracerLibc'] = Option.String('--tracer-libc', {
-    description: `Set the C standard library used by the application image with \`--language\`. Possible values: ${LIBCS.map(
+    description: `Set the C standard library used by the application image. Requires \`--tracing inject --language\`. Possible values: ${LIBCS.map(
       (libc) => `"${libc}"`
     ).join(', ')}. Defaults to '${DEFAULT_TRACER_LIBC}'.`,
     validator: t.isEnum(LIBCS),
   })
   private containerName = Option.String('--container-name', {
     description:
-      'Select the application container to instrument when the Container App has multiple application containers.',
+      'Select the application container to instrument when the Container App has several. Requires `--tracing inject`.',
   })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {

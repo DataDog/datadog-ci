@@ -112,6 +112,7 @@ jobs:
       - check-cloud-run-changes
       - check-version-bump-only
       - check-lambda-changes
+      - check-ecs-fargate-changes
       
     permissions:
       contents: read
@@ -186,7 +187,7 @@ jobs:
         if: needs.check-cloud-run-changes.outputs.should_run == 'true' && matrix.version == 24
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
       - name: Configure AWS credentials (OIDC)
-        if: needs.check-lambda-changes.outputs.should_run == 'true' && matrix.version == 24
+        if: (needs.check-lambda-changes.outputs.should_run == 'true' || needs.check-ecs-fargate-changes.outputs.should_run == 'true') && matrix.version == 24
         uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN_E2E }}
@@ -203,6 +204,7 @@ jobs:
           SKIP_AAS_TESTS: ${{ matrix.version != 24 || needs.check-aas-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           SKIP_CLOUD_RUN_TESTS: ${{ matrix.version != 24 || needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           SKIP_LAMBDA_TESTS: ${{ matrix.version != 24 || needs.check-lambda-changes.outputs.should_run != 'true' }}
+          SKIP_ECS_FARGATE_TESTS: ${{ matrix.version != 24 || needs.check-ecs-fargate-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
           GCP_REGION: ${{ vars.GCP_REGION_E2E }}
           GCP_CLOUD_RUN_APP_IMAGE_E2E: ${{ vars.GCP_CLOUD_RUN_APP_IMAGE_E2E }}
@@ -214,6 +216,14 @@ jobs:
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
           AWS_REGION: eu-central-1
           AWS_LAMBDA_EXECUTION_ROLE_ARN: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN_E2E }}
+          AWS_ECS_CLUSTER: ${{ vars.AWS_ECS_CLUSTER_E2E }}
+          AWS_ECS_SUBNETS: ${{ vars.AWS_ECS_SUBNETS_E2E }}
+          AWS_ECS_SECURITY_GROUP: ${{ vars.AWS_ECS_SECURITY_GROUP_E2E }}
+          AWS_ECS_EXECUTION_ROLE_ARN: ${{ vars.AWS_ECS_EXECUTION_ROLE_ARN_E2E }}
+          AWS_ECS_TASK_ROLE_ARN: ${{ vars.AWS_ECS_TASK_ROLE_ARN_E2E }}
+          AWS_ECS_APP_IMAGE_REGISTRY: ${{ vars.AWS_ECS_APP_IMAGE_REGISTRY_E2E }}
+          AWS_ECS_API_KEY_SECRET_ARN: ${{ vars.AWS_ECS_API_KEY_SECRET_ARN_E2E }}
+          AWS_ECS_LOG_GROUP: ${{ vars.AWS_ECS_LOG_GROUP_E2E }}
 
   check-container-app-changes:
     name: Check container-app changes
@@ -323,6 +333,31 @@ jobs:
               - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
 
+  check-ecs-fargate-changes:
+    name: Check ecs-fargate changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.ecs-fargate }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
+          fetch-depth: 0
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        id: filter
+        with:
+          filters: |
+            ecs-fargate:
+              - 'packages/plugin-ecs-fargate/**'
+              - 'packages/base/package.json'
+              - 'packages/base/src/commands/ecs-fargate/**'
+              - 'packages/base/src/helpers/serverless/**'
+              - 'packages/base/src/helpers/tags.ts'
+              - 'e2e/serverless/ecs-fargate/**'
+              - 'e2e/serverless/helpers/**'
+              - 'jest.config-e2e.js'
+              - '.github/workflows/ci.yml'
+
   check-version-bump-only:
     name: Check if only version fields changed
     runs-on: ubuntu-latest
@@ -422,6 +457,7 @@ jobs:
           SKIP_AAS_TESTS: 'true'
           SKIP_CLOUD_RUN_TESTS: 'true'
           SKIP_LAMBDA_TESTS: 'true'
+          SKIP_ECS_FARGATE_TESTS: 'true'
 
   # We only test with a single plugin and a single Node.js version.
   test-plugin-auto-install-during-npx:

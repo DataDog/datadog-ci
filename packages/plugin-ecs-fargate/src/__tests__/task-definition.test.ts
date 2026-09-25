@@ -4,7 +4,7 @@ import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants
 
 import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
 import {
-  instrumentTaskDefinition,
+  type InstrumentSettings,
   isUpToDate,
   stripReadOnlyFields,
   uninstrumentTaskDefinition,
@@ -19,6 +19,7 @@ import {
   LOG_ROUTER_CONTAINER,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
+  MOCK_FAMILY,
   MOCK_LOG_COLLECTION_SETTINGS,
   MOCK_REGION,
   MOCK_SETTINGS,
@@ -29,6 +30,7 @@ import {
   asDescribed,
   fargateTaskDefinition,
   firelensLogConfiguration,
+  instrumentTaskDefinition,
   instrumentedTaskDefinition,
   windowsTaskDefinition,
 } from './fixtures'
@@ -95,11 +97,11 @@ describe('instrumentTaskDefinition', () => {
       ...APP_CONTAINER,
       environment: [
         {name: 'PORT', value: '8080'},
-        {name: 'DD_TRACE_ENABLED', value: 'true'},
         {name: 'DD_LOGS_INJECTION', value: 'true'},
         {name: 'DD_SERVICE', value: 'my-app'},
         {name: 'DD_TRACE_AGENT_URL', value: 'unix:///var/run/datadog/apm.socket'},
         {name: 'DD_DOGSTATSD_URL', value: 'unix:///var/run/datadog/dsd.socket'},
+        {name: 'DD_TRACE_ENABLED', value: 'true'},
       ],
       dockerLabels: {'com.datadoghq.tags.service': 'my-app'},
       mountPoints: [SOCKET_MOUNT],
@@ -350,20 +352,23 @@ describe('instrumentTaskDefinition', () => {
 
   describe('product toggles', () => {
     test('turns tracing off on both the tracers and the Agent', () => {
-      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {...MOCK_SETTINGS, tracing: false})
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_SETTINGS,
+        tracing: 'disabled',
+      })
 
       expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'false')
       expect(envVarsOf(agentContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_APM_ENABLED', 'false')
     })
 
-    test('leaves tracing as the application container set it', () => {
+    test('enables tracing when the application container had turned it off', () => {
       const original = fargateTaskDefinition({
         containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TRACE_ENABLED', value: 'false'}]}],
       })
 
       const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
-      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'false')
+      expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'true')
     })
 
     test('enables tracing over the application container when asked to', () => {
@@ -371,7 +376,7 @@ describe('instrumentTaskDefinition', () => {
         containerDefinitions: [{...APP_CONTAINER, environment: [{name: 'DD_TRACE_ENABLED', value: 'false'}]}],
       })
 
-      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing: true})
+      const {taskDefinition} = instrumentTaskDefinition(original, {...MOCK_SETTINGS, tracing: 'manual'})
 
       expect(envVarsOf(appContainerOf(taskDefinition.containerDefinitions))).toHaveProperty('DD_TRACE_ENABLED', 'true')
     })
@@ -439,7 +444,7 @@ describe('instrumentTaskDefinition', () => {
     test('keeps the Agent intake on for LLM Observability when tracing is off', () => {
       const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
         ...MOCK_SETTINGS,
-        tracing: false,
+        tracing: 'disabled',
         llmobs: 'my-ml-app',
       })
 
@@ -786,7 +791,7 @@ describe('instrumentTaskDefinition', () => {
       const {taskDefinition} = instrumentTaskDefinition(original, MOCK_SETTINGS)
 
       const app = appContainerOf(taskDefinition.containerDefinitions)
-      expect(envVarsOf(app)).toHaveProperty('dd_trace_enabled', 'false')
+      expect(envVarsOf(app)).toHaveProperty('dd_trace_enabled', 'true')
       expect(envVarsOf(app)).not.toHaveProperty('DD_TRACE_ENABLED')
       // Application Security Monitoring is off, so the variable enabling it is dropped either case.
       expect(envVarsOf(app)).not.toHaveProperty('dd_appsec_enabled')
@@ -979,6 +984,36 @@ describe('instrumentTaskDefinition', () => {
       const logConfiguration = appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration
       expect(logConfiguration).toStrictEqual(firelensLogConfiguration({plaintext: MOCK_API_KEY}))
       expect(logConfiguration?.secretOptions).toBeUndefined()
+    })
+
+    // FireLens forwards the log stream without the container's environment, so the unified service
+    // tags only reach Datadog if the log driver names them.
+    test('tags the logs with the unified service tags', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_LOG_COLLECTION_SETTINGS,
+        service: 'my-service',
+        environment: 'prod',
+        version: '1.0.0',
+        extraTags: 'team:backend',
+        language: 'nodejs',
+      })
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        firelensLogConfiguration(
+          {secretArn: MOCK_API_KEY_SECRET_ARN},
+          {dd_service: 'my-service', dd_source: 'nodejs', dd_tags: 'env:prod,version:1.0.0,team:backend'}
+        )
+      )
+    })
+
+    test('leaves the unified service tags off the log driver when there are none to name', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      const options = appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration?.options
+      // The family stands in for an unnamed service, so only it is written.
+      expect(options).toHaveProperty('dd_service', MOCK_FAMILY)
+      expect(options).not.toHaveProperty('dd_source')
+      expect(options).not.toHaveProperty('dd_tags')
     })
 
     test('sends the logs to the intake of the site it is given', () => {
@@ -1342,7 +1377,7 @@ describe('isUpToDate', () => {
 
 describe('uninstrumentTaskDefinition', () => {
   /** What registering the given task definition unchanged would send. */
-  const registerable = (original = fargateTaskDefinition()) => ({...stripReadOnlyFields(original), tags: []})
+  const registerable = (original = fargateTaskDefinition()) => stripReadOnlyFields(original)
 
   describe('gives back the task definition the revision was registered from', () => {
     test.each([
@@ -1356,11 +1391,11 @@ describe('uninstrumentTaskDefinition', () => {
       ],
       [
         'every product turned on',
-        {...MOCK_SETTINGS, tracing: true, appsec: true, llmobs: 'my-ml-app', logLevel: 'debug'},
+        {...MOCK_SETTINGS, tracing: 'manual' as const, appsec: true, llmobs: 'my-ml-app', logLevel: 'debug'},
         fargateTaskDefinition(),
       ],
       ['a Windows task', MOCK_SETTINGS, windowsTaskDefinition()],
-    ])('instrumented with %s', (_case, settings, original) => {
+    ])('instrumented with %s', (_case, settings: InstrumentSettings, original) => {
       const {taskDefinition} = uninstrumentTaskDefinition(
         instrumentedTaskDefinition(settings, original),
         {},
@@ -1475,6 +1510,12 @@ describe('uninstrumentTaskDefinition', () => {
     ])
 
     expect(taskDefinition.tags).toStrictEqual([{key: 'team', value: 'intake'}])
+  })
+
+  test('omits tags when only instrumentation tags were present', () => {
+    const {taskDefinition} = uninstrumentTaskDefinition(instrumentedTaskDefinition(), {}, INSTRUMENTATION_TAGS)
+
+    expect(taskDefinition.tags).toBeUndefined()
   })
 
   describe('log collection', () => {

@@ -15,10 +15,6 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
             "value": "8080"
 -         },
 -         {
--           "name": "DD_TRACE_ENABLED",
--           "value": "true"
--         },
--         {
 -           "name": "DD_LOGS_INJECTION",
 -           "value": "true"
 -         },
@@ -33,12 +29,16 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
 -         {
 -           "name": "DD_DOGSTATSD_URL",
 -           "value": "unix:///var/run/datadog/dsd.socket"
+-         },
+-         {
+-           "name": "DD_TRACE_ENABLED",
+-           "value": "true"
           }
         ],
         "essential": true,
         "image": "my-app:latest",
         "logConfiguration": {
-@@ -38,114 +15,20 @@
+@@ -38,114 +15,19 @@
             "awslogs-group": "/ecs/my-app",
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "ecs"
@@ -146,7 +146,6 @@ exports[`ecs-fargate uninstrument registers nothing on a dry run, and shows what
 -       "value": "vXXXX"
 -     }
 -   ],
-+   "tags": [],
     "taskRoleArn": "arn:aws:iam::123456789012:role/my-app-task-role",
 -   "volumes": [
 -     {

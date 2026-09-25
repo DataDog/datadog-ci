@@ -1,4 +1,4 @@
-import type {ContainerCondition, FirelensConfigurationType, LogDriver} from '@aws-sdk/client-ecs'
+import type {ContainerCondition, FirelensConfigurationType, LogDriver, TaskDefinition} from '@aws-sdk/client-ecs'
 
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
@@ -25,6 +25,22 @@ export const AWSVPC_NETWORK_MODE = 'awsvpc'
  * declaring no family at all included, runs Linux.
  */
 export const WINDOWS_OS_FAMILY_PREFIX = 'WINDOWS_SERVER'
+
+/**
+ * Whether the task runs Windows containers. ECS spells those families with the `WINDOWS_SERVER`
+ * prefix; `LINUX` and an omitted family run Linux.
+ */
+export const isWindowsTask = (taskDefinition: Pick<TaskDefinition, 'runtimePlatform'>): boolean =>
+  taskDefinition.runtimePlatform?.operatingSystemFamily?.toUpperCase().startsWith(WINDOWS_OS_FAMILY_PREFIX) ?? false
+
+/**
+ * Fargate ARM64, which the .NET tracer's profiler wrapper does not support. An omitted architecture
+ * is left alone: those tasks are X86_64 in practice, and guessing would reject working revisions.
+ */
+export const ARM64_CPU_ARCHITECTURE = 'ARM64'
+
+export const isArm64Task = (taskDefinition: Pick<TaskDefinition, 'runtimePlatform'>): boolean =>
+  taskDefinition.runtimePlatform?.cpuArchitecture?.toUpperCase() === ARM64_CPU_ARCHITECTURE
 
 // Agent sidecar defaults
 export const AGENT_CONTAINER_NAME = 'datadog-agent'
@@ -75,6 +91,7 @@ export const AGENT_HEALTH_CHECK_START_PERIOD = 60
  */
 export const HEALTHY_DEPENDENCY_CONDITION: ContainerCondition = 'HEALTHY'
 export const START_DEPENDENCY_CONDITION: ContainerCondition = 'START'
+export const SUCCESS_DEPENDENCY_CONDITION: ContainerCondition = 'SUCCESS'
 
 /**
  * The only log driver whose configuration can be borrowed for a sidecar as-is. Other drivers route
@@ -128,6 +145,11 @@ export const LOG_ROUTER_HEALTH_CHECK_START_PERIOD = 15
  * FireLens runs the log router as root so that it can read the other containers' log streams.
  */
 export const LOG_ROUTER_USER = '0'
+
+/**
+ tracer sidecar runs as root.
+ */
+export const TRACER_USER = '0'
 
 /**
  * The namespace every environment variable the tracers and the Agent read lives in. Uninstrumenting
