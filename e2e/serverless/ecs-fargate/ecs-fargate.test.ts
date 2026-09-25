@@ -18,6 +18,7 @@ import {
   registerBaseTaskDefinition,
   requireEnv,
   runId,
+  waitForAgentHealthy,
   waitForServiceStable,
 } from './ecs-fargate-fixtures'
 import {
@@ -106,6 +107,7 @@ describeOrSkip('ecs-fargate', () => {
 
   it('invoke and verify telemetry', async () => {
     await waitForServiceStable(serviceName)
+    await waitForAgentHealthy(serviceName)
 
     // The deployment replaced the task, so its address is resolved again.
     await triggerTraffic(getTaskUrl(serviceName), {attempts: 20, requiredSuccesses: 5, intervalSeconds: 10})

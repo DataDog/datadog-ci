@@ -1,10 +1,9 @@
 import {execSync} from '../../helpers/exec'
 
-import {parseJson, region} from './ecs-fargate-fixtures'
+import {AGENT_CONTAINER_NAME, parseJson, region} from './ecs-fargate-fixtures'
 
 // The e2e job checks out only e2e/, so these mirror the plugin's constants rather than importing
 // them. A rename on either side must be made deliberately on both.
-const AGENT_CONTAINER_NAME = 'datadog-agent'
 const LOG_ROUTER_CONTAINER_NAME = 'datadog-log-router'
 const TRACER_CONTAINER_NAME = 'datadog-tracer'
 const AGENT_IMAGE = 'public.ecr.aws/datadog/agent:latest'

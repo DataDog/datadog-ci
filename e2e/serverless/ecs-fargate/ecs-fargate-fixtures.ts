@@ -8,6 +8,12 @@ import {execPromise, execPromiseWithRetries, execSync} from '../../helpers/exec'
 
 export const APP_CONTAINER_NAME = 'app'
 export const APP_CONTAINER_PORT = 8080
+export const AGENT_CONTAINER_NAME = 'datadog-agent'
+
+// The Agent's own health check starts after 60 seconds and gives up after three failures 15 seconds
+// apart, so four minutes covers both outcomes with room for a slow start.
+const AGENT_HEALTH_ATTEMPTS = 12
+const AGENT_HEALTH_INTERVAL_SECONDS = 20
 
 export const region = process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION ?? 'eu-central-1'
 
@@ -216,11 +222,13 @@ export const getServiceRevision = (serviceName: string): number => {
   return Number(services[0].taskDefinition.split(':').pop())
 }
 
-/**
- * The public address of the service's running task. Each deployment replaces the task, and with it
- * the elastic network interface, so this is resolved again after every rollout.
- */
-const getTaskPublicIp = (serviceName: string): string => {
+interface DescribedTask {
+  taskArn: string
+  containers?: {name: string; healthStatus?: string}[]
+  attachments?: {details?: {name: string; value: string}[]}[]
+}
+
+const describeRunningTasks = (serviceName: string): DescribedTask[] => {
   const cluster = requireEnv('AWS_ECS_CLUSTER')
   const {taskArns = []} = parseJson<{taskArns?: string[]}>(
     execSync(
@@ -228,18 +236,65 @@ const getTaskPublicIp = (serviceName: string): string => {
     )
   )
   if (taskArns.length === 0) {
+    return []
+  }
+
+  const {tasks = []} = parseJson<{tasks?: DescribedTask[]}>(
+    execSync(
+      `aws ecs describe-tasks --cluster "${cluster}" --tasks ${taskArns.map((arn) => `"${arn}"`).join(' ')} --region "${region}" --output json`
+    )
+  )
+
+  return tasks
+}
+
+/**
+ * Waits for the Agent sidecar of every running task to pass its health check.
+ */
+export const waitForAgentHealthy = async (serviceName: string): Promise<void> => {
+  for (let attempt = 1; attempt <= AGENT_HEALTH_ATTEMPTS; attempt++) {
+    const statuses = describeRunningTasks(serviceName)
+      .map((task) => task.containers?.find(({name}) => name === AGENT_CONTAINER_NAME)?.healthStatus)
+      .filter((status): status is string => status !== undefined)
+    console.log(`[agent health] attempt ${attempt}/${AGENT_HEALTH_ATTEMPTS}: ${statuses.join(', ') || 'no Agent yet'}`)
+
+    if (statuses.length > 0 && statuses.every((status) => status === 'HEALTHY')) {
+      return
+    }
+    if (statuses.includes('UNHEALTHY')) {
+      throw new Error(
+        `The ${AGENT_CONTAINER_NAME} container of ${serviceName} failed its health check, so no telemetry will arrive. ` +
+          'The usual cause is an unusable API key: check that AWS_ECS_API_KEY_SECRET_ARN holds the bare key, ' +
+          'or names the JSON field that does, and that the execution role can read it.'
+      )
+    }
+
+    if (attempt < AGENT_HEALTH_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, AGENT_HEALTH_INTERVAL_SECONDS * 1000))
+    }
+  }
+
+  throw new Error(
+    `The ${AGENT_CONTAINER_NAME} container of ${serviceName} did not report healthy after ${
+      AGENT_HEALTH_ATTEMPTS * AGENT_HEALTH_INTERVAL_SECONDS
+    }s`
+  )
+}
+
+/**
+ * The public address of the service's running task. Each deployment replaces the task, and with it
+ * the elastic network interface, so this is resolved again after every rollout.
+ */
+const getTaskPublicIp = (serviceName: string): string => {
+  const [task] = describeRunningTasks(serviceName)
+  if (!task) {
     throw new Error(`ECS service ${serviceName} is running no tasks`)
   }
 
-  const {tasks = []} = parseJson<{tasks?: {attachments?: {details?: {name: string; value: string}[]}[]}[]}>(
-    execSync(
-      `aws ecs describe-tasks --cluster "${cluster}" --tasks "${taskArns[0]}" --region "${region}" --output json`
-    )
-  )
-  const details = tasks[0]?.attachments?.[0]?.details ?? []
+  const details = task.attachments?.[0]?.details ?? []
   const networkInterfaceId = details.find(({name}) => name === 'networkInterfaceId')?.value
   if (!networkInterfaceId) {
-    throw new Error(`Task ${taskArns[0]} has no elastic network interface`)
+    throw new Error(`Task ${task.taskArn} has no elastic network interface`)
   }
 
   const {NetworkInterfaces = []} = parseJson<{NetworkInterfaces?: {Association?: {PublicIp?: string}}[]}>(
