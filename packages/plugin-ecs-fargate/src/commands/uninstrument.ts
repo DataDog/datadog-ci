@@ -4,7 +4,7 @@ import type {ECSClient} from '@aws-sdk/client-ecs'
 
 import {EcsFargateUninstrumentCommand} from '@datadog/datadog-ci-base/commands/ecs-fargate/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
@@ -17,7 +17,7 @@ import {
   registerTaskDefinition,
 } from '../aws'
 import {AWS_REGION_ENV_VARS} from '../constants'
-import {stripReadOnlyFields, uninstrumentTaskDefinition, withMaskedApiKey} from '../task-definition'
+import {isAlreadyClean, stripReadOnlyFields, uninstrumentTaskDefinition, withMaskedApiKey} from '../task-definition'
 
 export class PluginCommand extends EcsFargateUninstrumentCommand {
   public async execute(): Promise<0 | 1> {
@@ -131,7 +131,7 @@ export class PluginCommand extends EcsFargateUninstrumentCommand {
       ...stripReadOnlyFields(taskDefinition),
       tags: tags.length > 0 ? tags : undefined,
     })
-    if (sortedEqual(original, updated)) {
+    if (isAlreadyClean(original, updated)) {
       output.push(`${this.dryRunPrefix}${chalk.bold(family)} is not instrumented, no changes needed.\n`)
 
       return taskDefinition.taskDefinitionArn

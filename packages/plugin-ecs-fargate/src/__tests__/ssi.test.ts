@@ -544,6 +544,35 @@ describe('ECS Fargate automatic APM instrumentation', () => {
       ).toBe(true)
     })
 
+    // DescribeTaskDefinition fills in `cpu: 0` and empty collections on the containers, and
+    // `host: {}` on the volumes, for the fields the tracer sidecar is registered without. None may
+    // read as a change, or every run would register a revision that changes nothing.
+    test.each(INJECTION_MODES)(
+      're-injecting %s registers no new revision after ECS fills in its defaults',
+      (_, language) => {
+        const first = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings(language))
+        const described = {
+          ...fargateTaskDefinition(),
+          ...first.taskDefinition,
+          containerDefinitions: (first.taskDefinition.containerDefinitions ?? []).map((container) => ({
+            cpu: 0,
+            environment: [],
+            mountPoints: [],
+            portMappings: [],
+            systemControls: [],
+            volumesFrom: [],
+            ...container,
+          })),
+          volumes: (first.taskDefinition.volumes ?? []).map((volume) => ({host: {}, ...volume})),
+        }
+        const second = instrumentTaskDefinition(described, injectSettings(language), first.taskDefinition.tags)
+
+        expect(
+          isUpToDate({...stripReadOnlyFields(described), tags: first.taskDefinition.tags}, second.taskDefinition)
+        ).toBe(true)
+      }
+    )
+
     test.each(INJECTION_MODES)('updates a %s tracer sidecar that was not running as root', (_, language) => {
       const first = instrumentTaskDefinition(fargateTaskDefinition(), injectSettings(language))
       const described = {

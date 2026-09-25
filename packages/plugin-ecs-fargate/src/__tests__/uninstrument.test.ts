@@ -160,6 +160,22 @@ describe('ecs-fargate uninstrument', () => {
     expect(context.stdout.toString()).toContain('my-app is not instrumented, no changes needed.')
   })
 
+  // DescribeTaskDefinition answers with `[]` for every collection a revision declares none of,
+  // which must read the same as declaring none at all.
+  test('registers nothing for a task definition whose empty collections are spelled out', async () => {
+    const described = fargateTaskDefinition({
+      containerDefinitions: [{...APP_CONTAINER, environment: [], mountPoints: [], secrets: []}],
+      volumes: [],
+    })
+    ecsMock.on(DescribeTaskDefinitionCommand).resolves({taskDefinition: described, tags: []})
+
+    const {code, context} = await runCLI([])
+
+    expect(code).toBe(0)
+    expect(ecsMock.commandCalls(RegisterTaskDefinitionCommand)).toHaveLength(0)
+    expect(context.stdout.toString()).toContain('my-app is not instrumented, no changes needed.')
+  })
+
   test('registers a clean revision when only the CLI version tag is left behind', async () => {
     ecsMock
       .on(DescribeTaskDefinitionCommand)

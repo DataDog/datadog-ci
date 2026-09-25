@@ -447,10 +447,34 @@ const toDockerLabels = (
 }
 
 /**
- * The FireLens log configuration given to containers the router collects.
+ * The unified service tags as the Datadog output plugin spells them, so that logs carry the same
+ * `env` and `version` the tracers report and can be correlated with the traces they belong to.
  */
-const firelensLogConfiguration = (settings: InstrumentSettings): LogConfiguration =>
-  removeUndefinedValues({
+const firelensTags = (ust: UnifiedServiceTags, extraTags?: string): string | undefined => {
+  const tags = [
+    ...(ust.environment ? [`${ENVIRONMENT_TAG_KEY}:${ust.environment}`] : []),
+    ...(ust.version ? [`${VERSION_TAG_KEY}:${ust.version}`] : []),
+    ...(extraTags ? [extraTags] : []),
+  ]
+
+  return tags.length > 0 ? tags.join(',') : undefined
+}
+
+/**
+ * The FireLens log configuration given to containers the router collects.
+ *
+ * The Datadog output plugin names the service, source, and tags itself: FireLens forwards the log
+ * stream without the container's environment, so nothing else would carry them.
+ */
+const firelensLogConfiguration = (
+  settings: InstrumentSettings,
+  family?: string,
+  sourceLanguage?: string
+): LogConfiguration => {
+  const ust = unifiedServiceTags(settings, family)
+  const tags = firelensTags(ust, settings.extraTags)
+
+  return removeUndefinedValues({
     logDriver: AWSFIRELENS_LOG_DRIVER,
     options: {
       Name: DATADOG_FLUENTBIT_OUTPUT,
@@ -458,12 +482,16 @@ const firelensLogConfiguration = (settings: InstrumentSettings): LogConfiguratio
       TLS: 'on',
       provider: 'ecs',
       retry_limit: LOG_ROUTER_RETRY_LIMIT,
+      ...(ust.service ? {dd_service: ust.service} : {}),
+      ...(sourceLanguage ? {dd_source: sourceLanguage} : {}),
+      ...(tags ? {dd_tags: tags} : {}),
       ...(settings.apiKey ? {[FIRELENS_API_KEY_OPTION]: settings.apiKey} : {}),
     },
     secretOptions: settings.apiKeySecretArn
       ? [{name: FIRELENS_API_KEY_OPTION, valueFrom: settings.apiKeySecretArn}]
       : undefined,
   })
+}
 
 /**
  * Whether this log configuration is the Datadog FireLens routing this command writes.
@@ -859,7 +887,10 @@ export const instrumentTaskDefinition = (
     assertInjectionEnvCanBeMerged(containers[selectApplicationContainer(containers, settings.containerName)], ssiConfig)
   }
   const borrowed = borrowedLogConfiguration(containers)
-  const firelens = settings.logCollection ? firelensLogConfiguration(settings) : undefined
+  // `--language dotnet` selects the csharp tracer, so DD_SOURCE names the tracer that was injected
+  // rather than the alias the user typed.
+  const sourceLanguage = ssiConfig.kind === 'single-language' ? ssiConfig.language : settings.language
+  const firelens = settings.logCollection ? firelensLogConfiguration(settings, family, sourceLanguage) : undefined
 
   const existingAgent = containers.find((container) => container.name === AGENT_CONTAINER_NAME)
   const {container: agentContainer, warnings: agentWarnings} = buildAgentContainer({
@@ -918,9 +949,6 @@ export const instrumentTaskDefinition = (
   // container carrying them, so an Agent labelled with the application's service would report its
   // own resource usage under that service.
   const ust = unifiedServiceTags(settings, family)
-  // `--language dotnet` selects the csharp tracer, so DD_SOURCE names the tracer that was injected
-  // rather than the alias the user typed.
-  const sourceLanguage = ssiConfig.kind === 'single-language' ? ssiConfig.language : settings.language
   const appEnvironment = getAppContainerEnvVars(settings, platform, sourceLanguage, family)
   const appLabels = getUstDockerLabels(settings, family)
   const sidecarReplacements = new Map<string, ContainerDefinition | undefined>([
@@ -1189,6 +1217,35 @@ const withoutCliVersion = (input: RegisterTaskDefinitionCommandInput): RegisterT
   tags: (input.tags ?? []).filter((tag) => tag.key !== SERVERLESS_CLI_VERSION_TAG_NAME),
 })
 
+/** Whether the value holds nothing: `[]` for a collection, `{}` for a volume's `host` and its like. */
+const isEmpty = (value: unknown): boolean => typeof value === 'object' && !!value && Object.keys(value).length === 0
+
+/**
+ * Whether the field carries a value `DescribeTaskDefinition` fills in for one a revision left unset:
+ * an empty collection, or `0` for the CPU units a container reserves.
+ */
+const isEcsDefault = (field: string, value: unknown): boolean => isEmpty(value) || (field === 'cpu' && value === 0)
+
+/**
+ * The task definition without the values ECS fills in for the fields it was not given. Registering
+ * either form produces the same revision, so a comparison must not read them as a change.
+ */
+const withoutEcsDefaults = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(withoutEcsDefaults)
+  }
+
+  if (typeof value !== 'object' || !value) {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([field, item]): [string, unknown] => [field, withoutEcsDefaults(item)])
+      .filter(([field, item]) => !isEcsDefault(field, item))
+  )
+}
+
 /**
  * Whether the task definition already matches what instrumentation would register, ignoring the CLI
  * version so that upgrading datadog-ci alone does not produce a new revision. A revision registered
@@ -1197,7 +1254,18 @@ const withoutCliVersion = (input: RegisterTaskDefinitionCommandInput): RegisterT
 export const isUpToDate = (
   original: RegisterTaskDefinitionCommandInput,
   updated: RegisterTaskDefinitionCommandInput
-): boolean => sortedEqual(withoutCliVersion(original), withoutCliVersion(updated))
+): boolean =>
+  sortedEqual(withoutEcsDefaults(withoutCliVersion(original)), withoutEcsDefaults(withoutCliVersion(updated)))
+
+/**
+ * Whether uninstrumenting the task definition would change anything.
+ *
+ * The CLI version tag is compared rather than ignored as {@link isUpToDate} does
+ */
+export const isAlreadyClean = (
+  original: RegisterTaskDefinitionCommandInput,
+  updated: RegisterTaskDefinitionCommandInput
+): boolean => sortedEqual(withoutEcsDefaults(original), withoutEcsDefaults(updated))
 
 /**
  * The read-only fields, narrowed to keys of `TaskDefinition` so a name that stops existing in a

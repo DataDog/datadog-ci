@@ -19,6 +19,7 @@ import {
   LOG_ROUTER_CONTAINER,
   MOCK_API_KEY,
   MOCK_API_KEY_SECRET_ARN,
+  MOCK_FAMILY,
   MOCK_LOG_COLLECTION_SETTINGS,
   MOCK_REGION,
   MOCK_SETTINGS,
@@ -983,6 +984,36 @@ describe('instrumentTaskDefinition', () => {
       const logConfiguration = appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration
       expect(logConfiguration).toStrictEqual(firelensLogConfiguration({plaintext: MOCK_API_KEY}))
       expect(logConfiguration?.secretOptions).toBeUndefined()
+    })
+
+    // FireLens forwards the log stream without the container's environment, so the unified service
+    // tags only reach Datadog if the log driver names them.
+    test('tags the logs with the unified service tags', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), {
+        ...MOCK_LOG_COLLECTION_SETTINGS,
+        service: 'my-service',
+        environment: 'prod',
+        version: '1.0.0',
+        extraTags: 'team:backend',
+        language: 'nodejs',
+      })
+
+      expect(appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration).toStrictEqual(
+        firelensLogConfiguration(
+          {secretArn: MOCK_API_KEY_SECRET_ARN},
+          {dd_service: 'my-service', dd_source: 'nodejs', dd_tags: 'env:prod,version:1.0.0,team:backend'}
+        )
+      )
+    })
+
+    test('leaves the unified service tags off the log driver when there are none to name', () => {
+      const {taskDefinition} = instrumentTaskDefinition(fargateTaskDefinition(), MOCK_LOG_COLLECTION_SETTINGS)
+
+      const options = appContainerOf(taskDefinition.containerDefinitions)?.logConfiguration?.options
+      // The family stands in for an unnamed service, so only it is written.
+      expect(options).toHaveProperty('dd_service', MOCK_FAMILY)
+      expect(options).not.toHaveProperty('dd_source')
+      expect(options).not.toHaveProperty('dd_tags')
     })
 
     test('sends the logs to the intake of the site it is given', () => {
