@@ -26,6 +26,7 @@ const extraBundlePatterns = Array.isArray(bundleConfig.extraBundlePatterns) ? bu
 const extraBundleExternalPatterns = Array.isArray(bundleConfig.extraBundleExternalPatterns)
   ? bundleConfig.extraBundleExternalPatterns
   : []
+const externalPatterns = Array.isArray(bundleConfig.externalPatterns) ? bundleConfig.externalPatterns : []
 const srcDir = path.join(packageDir, 'src')
 
 const srcCommandsDir = path.join(packageDir, 'src', 'commands')
@@ -108,7 +109,10 @@ try {
     outputOptions: createOutputOptions(),
     deps: {
       alwaysBundle: [/.*/],
-      neverBundle: ['cpu-features'],
+      neverBundle: [
+        'cpu-features',
+        ...externalPatterns.map((prefix) => new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)),
+      ],
       onlyBundle: false,
     },
   }
