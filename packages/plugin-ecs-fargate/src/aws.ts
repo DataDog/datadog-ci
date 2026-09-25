@@ -136,21 +136,88 @@ export type DescribedService = {
   taskDefinition: string
 }
 
-export const describeService = async (
+/**
+ * DescribeServices accepts at most 10 names per call.
+ * https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_DescribeServices.html
+ */
+export const DESCRIBE_SERVICES_MAX = 10
+
+const lastSegment = (value: string): string => value.split('/').pop() ?? value
+
+/**
+ * Whether a DescribeServices result names the service the run asked for: the API returns a short
+ * name, a full ARN, or either as the last path segment.
+ */
+const refersTo = (requested: string, candidate?: string): boolean =>
+  candidate !== undefined && (candidate === requested || lastSegment(candidate) === lastSegment(requested))
+
+/**
+ * Describes the named ECS services, in batches of {@link DESCRIBE_SERVICES_MAX}.
+ *
+ * A service the API cannot find is reported without blocking the rest of its batch, and a batch
+ * that fails to send is reported without blocking the other batches.
+ */
+export const describeServices = async (
   client: ECSClient,
   cluster: string | undefined,
-  service: string
-): Promise<DescribedService> => {
-  const response = await client.send(new DescribeServicesCommand({cluster, services: [service]}))
-  const described = response.services?.[0]
-  if (!described?.taskDefinition) {
-    const reason = response.failures?.[0]?.reason
-    throw Error(
+  services: string[]
+): Promise<[DescribedService[], string[]]> => {
+  if (services.length === 0) {
+    return [[], []]
+  }
+
+  const batches = Array.from({length: Math.ceil(services.length / DESCRIBE_SERVICES_MAX)}, (_, i) =>
+    services.slice(i * DESCRIBE_SERVICES_MAX, (i + 1) * DESCRIBE_SERVICES_MAX)
+  )
+  const results = await Promise.allSettled(batches.map((batch) => describeServicesBatch(client, cluster, batch)))
+
+  const described: DescribedService[] = []
+  const errors: string[] = []
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      const reason: unknown = result.reason
+      errors.push(reason instanceof Error ? reason.message : String(reason))
+      continue
+    }
+
+    described.push(...result.value.described)
+    errors.push(...result.value.errors)
+  }
+
+  return [described, errors]
+}
+
+const describeServicesBatch = async (
+  client: ECSClient,
+  cluster: string | undefined,
+  services: string[]
+): Promise<{described: DescribedService[]; errors: string[]}> => {
+  const response = await client.send(new DescribeServicesCommand({cluster, services}))
+  const remaining = [...(response.services ?? [])]
+  const failures = [...(response.failures ?? [])]
+  const described: DescribedService[] = []
+  const errors: string[] = []
+
+  for (const service of services) {
+    const index = remaining.findIndex(
+      (candidate) => refersTo(service, candidate.serviceName) || refersTo(service, candidate.serviceArn)
+    )
+    if (index >= 0) {
+      const [match] = remaining.splice(index, 1)
+      if (match?.taskDefinition) {
+        described.push({name: match.serviceName ?? service, taskDefinition: match.taskDefinition})
+        continue
+      }
+    }
+
+    const failureIndex = failures.findIndex((failure) => refersTo(service, failure.arn))
+    const reason = failureIndex >= 0 ? failures.splice(failureIndex, 1)[0]?.reason : undefined
+    errors.push(
       `No ECS service found for ${service}${reason ? ` (${reason})` : ''} in the ${cluster ?? 'default'} cluster.`
     )
   }
 
-  return {name: described.serviceName ?? service, taskDefinition: described.taskDefinition}
+  return {described, errors}
 }
 
 /**

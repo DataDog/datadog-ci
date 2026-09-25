@@ -37,6 +37,7 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
+import {DESCRIBE_SERVICES_MAX} from '../aws'
 import {PluginCommand} from '../commands/instrument'
 import {AGENT_CONTAINER_NAME, LOG_ROUTER_CONTAINER_NAME} from '../constants'
 import {instrumentTaskDefinition} from '../task-definition'
@@ -420,7 +421,7 @@ describe('ecs-fargate instrument', () => {
 
       expect(code).toBe(1)
       const output = context.stdout.toString()
-      expect(output).toContain('No task definitions specified to instrument')
+      expect(output).toContain('No task definitions specified. Use --task-definition.')
       expect(output).toContain('All env vars must be in the format `KEY=VALUE`')
       expect(output).toContain('Extra tags do not comply with the <key>:<value> array.')
       expect(output).toContain('--tracing must be either `true` or `false`.')
@@ -624,10 +625,12 @@ describe('ecs-fargate instrument', () => {
       ecsMock
         .on(RegisterTaskDefinitionCommand, {family: 'my-worker'})
         .resolves({taskDefinition: fargateTaskDefinition({family: 'my-worker', revision: 5})})
-      ecsMock.on(DescribeServicesCommand, {services: ['my-worker-service']}).resolves({
+      ecsMock.on(DescribeServicesCommand).resolves({
         services: [
+          fargateService(),
           fargateService({serviceName: 'my-worker-service', taskDefinition: taskDefinitionArn('my-worker', 4)}),
         ],
+        failures: [],
       })
 
       const {code} = await runCLI([
@@ -642,10 +645,36 @@ describe('ecs-fargate instrument', () => {
       ])
 
       expect(code).toBe(0)
+      expect(ecsMock.commandCalls(DescribeServicesCommand)).toHaveLength(1)
+      expect(ecsMock.commandCalls(DescribeServicesCommand)[0].args[0].input.services).toStrictEqual([
+        MOCK_SERVICE,
+        'my-worker-service',
+      ])
       expect(ecsMock.commandCalls(UpdateServiceCommand).map((call) => call.args[0].input)).toStrictEqual([
         {cluster: undefined, service: MOCK_SERVICE, taskDefinition: taskDefinitionArn(MOCK_FAMILY, 2)},
         {cluster: undefined, service: 'my-worker-service', taskDefinition: taskDefinitionArn('my-worker', 5)},
       ])
+    })
+
+    test('describes services in batches of 10', async () => {
+      const names = Array.from({length: DESCRIBE_SERVICES_MAX + 1}, (_, i) => `service-${i}`)
+      ecsMock.on(DescribeServicesCommand).callsFake((input) => ({
+        services: (input.services ?? []).map((name: string) => fargateService({serviceName: name})),
+        failures: [],
+      }))
+
+      const {code} = await runCLI([
+        '--api-key-secret-arn',
+        MOCK_API_KEY_SECRET_ARN,
+        ...names.flatMap((name) => ['--ecs-service', name]),
+      ])
+
+      expect(code).toBe(0)
+      expect(ecsMock.commandCalls(DescribeServicesCommand).map((call) => call.args[0].input.services)).toStrictEqual([
+        names.slice(0, DESCRIBE_SERVICES_MAX),
+        names.slice(DESCRIBE_SERVICES_MAX),
+      ])
+      expect(ecsMock.commandCalls(UpdateServiceCommand)).toHaveLength(names.length)
     })
 
     test('leaves a service that already runs the instrumented revision alone', async () => {
@@ -788,8 +817,8 @@ describe('ecs-fargate instrument', () => {
     })
 
     test('keeps deploying after a service it cannot find', async () => {
-      ecsMock.on(DescribeServicesCommand, {services: ['gone']}).resolves({
-        services: [],
+      ecsMock.on(DescribeServicesCommand).resolves({
+        services: [fargateService()],
         failures: [{arn: 'arn:aws:ecs:us-east-1:123456789012:service/gone', reason: 'MISSING'}],
       })
 
