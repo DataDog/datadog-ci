@@ -20,6 +20,7 @@ import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as measureCommands} from './commands/measure/cli'
 import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
+import {commands as ppdbSymbolsCommands} from './commands/ppdb-symbols/cli'
 import {commands as reactNativeCommands} from './commands/react-native/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
@@ -55,6 +56,7 @@ export const commands = {
   'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,
   'plugin': pluginCommands,
+  'ppdb-symbols': ppdbSymbolsCommands,
   'react-native': reactNativeCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
@@ -84,6 +86,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'measure',
   'pe-symbols',
   'plugin',
+  'ppdb-symbols',
   'react-native',
   'sourcemaps',
   'span',
