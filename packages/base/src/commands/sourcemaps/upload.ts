@@ -31,12 +31,14 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {checkExistingDebugIds} from './checkExists'
 import {addDebugIdToPayloads, extractDebugId} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
   renderAbsolutePathWarning,
+  renderCheckExistsWarning,
   renderConfigurationError,
   renderDiscoveryWarning,
   renderFailedUpload,
@@ -46,6 +48,7 @@ import {
   renderInvalidPrefix,
   renderNoDebugIdFound,
   renderRetriedUpload,
+  renderSkippedExisting,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
   renderUpload,
@@ -156,12 +159,14 @@ export class SourcemapsUploadCommand extends BaseCommand {
       }
     }
 
+    const [payloadsToUpload, skippedExisting] = await this.filterExistingDebugIds(payloads, metricsLogger)
+
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await doWithMaxConcurrency(this.maxConcurrency, payloads, uploadMultipart)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, payloadsToUpload, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
-      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun, skippedExisting))
       metricsLogger.logger.gauge('duration', totalTime)
 
       return 0
@@ -319,6 +324,49 @@ export class SourcemapsUploadCommand extends BaseCommand {
       this.context.stdout.write(renderGitDataNotAttachedWarning(sourcemapPath, error.message))
 
       return undefined
+    }
+  }
+
+  // Queries the check_exists endpoint for payload debug IDs that already exist in Datadog and
+  // returns the payloads that still need uploading plus the number of skipped payloads. Only
+  // runs in --debug-id mode (not on dry-run). Best-effort: on any failure (endpoint not
+  // deployed yet, network error, ...) it warns and falls back to uploading everything.
+  private filterExistingDebugIds = async (
+    payloads: Sourcemap[],
+    metricsLogger: MetricsLogger
+  ): Promise<[Sourcemap[], number]> => {
+    if (!this.debugId || this.dryRun || payloads.length === 0 || !this.config.apiKey) {
+      return [payloads, 0]
+    }
+    try {
+      const debugIds = payloads
+        .map((payload) => payload.debugId)
+        .filter((debugId): debugId is string => debugId !== undefined)
+      const existing = await checkExistingDebugIds(
+        this.config.apiKey,
+        this.config.datadogSite,
+        this.cliVersion,
+        debugIds
+      )
+      const payloadsToUpload: Sourcemap[] = []
+      let skippedExisting = 0
+      for (const payload of payloads) {
+        if (payload.debugId !== undefined && existing[payload.debugId]) {
+          skippedExisting += 1
+          metricsLogger.logger.increment('skipped_existing', 1)
+          if (!this.quiet) {
+            this.context.stdout.write(renderSkippedExisting(payload))
+          }
+        } else {
+          payloadsToUpload.push(payload)
+        }
+      }
+
+      return [payloadsToUpload, skippedExisting]
+    } catch (error) {
+      this.context.stdout.write(renderCheckExistsWarning((error as Error).message))
+
+      return [payloads, 0]
     }
   }
 
