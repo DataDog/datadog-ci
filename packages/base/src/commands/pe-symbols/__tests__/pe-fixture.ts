@@ -126,6 +126,13 @@ export const bytesAt = (pe: Buffer, rva: number, size: number): Buffer =>
 
 const is64 = (pe: Buffer) => pe.readUInt16LE(OPTIONAL_HEADER) === IMAGE_NT_OPTIONAL_HDR64_MAGIC
 
+export const setDataDirectoryCount = (pe: Buffer, count: number) => {
+  const peOffset = pe.readUInt32LE(DOS_HEADER_LFANEW_OFFSET)
+  const wide = pe.readUInt16LE(peOffset + IMAGE_OPTIONAL_HEADER_OFFSET) === IMAGE_NT_OPTIONAL_HDR64_MAGIC
+  const directories = peOffset + (wide ? IMAGE_DATA_DIRECTORY64_OFFSET : IMAGE_DATA_DIRECTORY32_OFFSET)
+  pe.writeUInt32LE(count, directories - 4)
+}
+
 export const setDataDirectory = (pe: Buffer, index: number, rva: number, size: number) => {
   const directories = PE_OFFSET + (is64(pe) ? IMAGE_DATA_DIRECTORY64_OFFSET : IMAGE_DATA_DIRECTORY32_OFFSET)
   pe.writeUInt32LE(rva, directories + index * IMAGE_DATA_DIRECTORY_SIZE)

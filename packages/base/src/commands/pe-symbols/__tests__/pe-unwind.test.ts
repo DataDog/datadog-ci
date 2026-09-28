@@ -31,6 +31,7 @@ import {
   SECTIONS,
   sectionHeaderOffset,
   setDataDirectory,
+  setDataDirectoryCount,
   setRuntimeFunction,
   unwindCode,
   writeRuntimeFunction,
@@ -242,8 +243,48 @@ describe('reduced PE extraction', () => {
     expect(() => extractPeUnwindInfo(makePE(0xffff))).toThrow('unsupported machine')
   })
 
+  test.each([7, 10, 11, 15])('accepts a standard-sized optional header declaring %i data directories', (count) => {
+    const input = makePE()
+    const expected = extract(input)
+    setDataDirectoryCount(input, count)
+
+    expect(extract(input)).toEqual(expected)
+  })
+
+  test('does not read an undeclared load-config directory', () => {
+    const input = makePE()
+    setDataDirectory(input, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, 0xffffffff, 0xffffffff)
+    setDataDirectoryCount(input, 7)
+
+    expect(extract(input).functions).toBe(1)
+  })
+
+  test('rejects an undeclared debug directory even when its bytes are present', () => {
+    const input = makePE()
+    setDataDirectoryCount(input, 6)
+
+    expect(() => extractPeUnwindInfo(input)).toThrow('missing or invalid debug directory')
+  })
+
+  test('rejects a directory count exceeding the supported optional-header capacity', () => {
+    const input = makePE()
+    setDataDirectoryCount(input, 17)
+
+    expect(() => extractPeUnwindInfo(input)).toThrow('data directory count exceeds supported optional-header capacity')
+  })
+
+  test('accepts an x86 image with no data directories', () => {
+    const input = makePE(MACHINE.x86)
+    setDataDirectoryCount(input, 0)
+
+    expect(extractPeUnwindInfo(input)).toEqual({architecture: 'x86', functions: 0})
+  })
+
   test('reduces a real x64 DLL', () => {
     const input = fs.readFileSync(`${__dirname}/fixtures/exports_with_pdb_64.dll`)
-    expect(extractPeUnwindInfo(input).functions).toBeGreaterThan(0)
+    const expected = extract(input)
+    expect(expected.functions).toBeGreaterThan(0)
+    setDataDirectoryCount(input, 15)
+    expect(extract(input)).toEqual(expected)
   })
 })

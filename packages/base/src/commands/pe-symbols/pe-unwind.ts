@@ -155,6 +155,7 @@ interface PeLayout {
   is64: boolean
   optionalHeader: number
   dataDirectories: number
+  dataDirectoryCount: number
   sections: Section[]
   headerSize: number
   imageSize: number
@@ -188,8 +189,12 @@ const parseLayout = (reader: PeReader): PeLayout => {
   )
   const dataDirectories = peOffset + (is64 ? IMAGE_DATA_DIRECTORY64_OFFSET : IMAGE_DATA_DIRECTORY32_OFFSET)
   // NumberOfRvaAndSizes is the optional header field right before the data directories.
-  requireValid(reader.u32(dataDirectories - 4) === IMAGE_NUMBEROF_DIRECTORY_ENTRIES, 'expected 16 data directories')
-
+  const dataDirectoryCount = reader.u32(dataDirectories - 4)
+  // Fewer declared directories are supported within the standard-sized optional headers checked above.
+  requireValid(
+    dataDirectoryCount <= IMAGE_NUMBEROF_DIRECTORY_ENTRIES,
+    'data directory count exceeds supported optional-header capacity'
+  )
   const sectionTable = peOffset + (is64 ? IMAGE_NT_HEADERS64_SIZE : IMAGE_NT_HEADERS32_SIZE)
   const sectionCount = reader.u16(peOffset + IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET)
   const headerSize = reader.u32(optionalHeader + IMAGE_OPTIONAL_HEADER_SIZEOFHEADERS_OFFSET)
@@ -241,7 +246,7 @@ const parseLayout = (reader: PeReader): PeLayout => {
     }
   })
 
-  return {peOffset, machine, is64, optionalHeader, dataDirectories, sections, headerSize, imageSize}
+  return {peOffset, machine, is64, optionalHeader, dataDirectories, dataDirectoryCount, sections, headerSize, imageSize}
 }
 
 /** Converts an RVA range to a file offset. Records inside code sections are rejected: copying them would copy code. */
@@ -257,6 +262,10 @@ const fileOffsetOf = (layout: PeLayout, rva: number, size: number): number => {
 }
 
 const readDataDirectory = (reader: PeReader, layout: PeLayout, index: number) => {
+  // Undeclared entries are absent, even if the optional header has room for their bytes.
+  if (index >= layout.dataDirectoryCount) {
+    return {rva: 0, size: 0}
+  }
   const entry = layout.dataDirectories + index * IMAGE_DATA_DIRECTORY_SIZE
 
   return {
@@ -380,7 +389,7 @@ const copyCodeViewIdentity = (writer: ReducedPeWriter, reader: PeReader, layout:
       debug.size > 0 &&
       debug.size % IMAGE_DEBUG_DIRECTORY_SIZE === 0 &&
       debug.size <= IMAGE_DEBUG_DIRECTORY_SIZE * MAX_DEBUG_ENTRIES,
-    'invalid debug directory'
+    'missing or invalid debug directory'
   )
   const debugOffset = fileOffsetOf(layout, debug.rva, debug.size)
   const codeViewEntries = Array.from(

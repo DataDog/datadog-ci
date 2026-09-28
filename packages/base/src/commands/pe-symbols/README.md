@@ -50,7 +50,7 @@ Add `--include-unwind-info` to also upload the information Datadog needs to unwi
 - **x86:** only the PDB is uploaded, and its frame data is used for unwinding.
 - **ARM and ARM64EC:** not supported. These modules fail, and nothing is uploaded for them.
 
-Unwind records are validated before extraction. If any record is malformed or uses an unsupported encoding, the module is reported as failed and nothing is uploaded for it, even if the binary still runs on Windows. The command never falls back to uploading the complete binary. The PDB is uploaded unchanged.
+The binary's headers and unwind records are validated before extraction. If anything is malformed or uses an unsupported layout, the module is reported as failed and nothing is uploaded for it, even if the binary still runs on Windows. The command never falls back to uploading the complete binary. The PDB is uploaded unchanged.
 
 Breakpad `.sym` files already contain unwind records and are uploaded unchanged.
 
