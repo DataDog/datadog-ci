@@ -46,11 +46,12 @@ Files without a matching PDB are skipped.
 
 Add `--include-unwind-info` to also upload the information Datadog needs to unwind minidump stack traces:
 
-- **x64:** a reduced copy of the EXE/DLL is uploaded alongside the PDB. It keeps only the module identity, section addresses, the exception table and the unwind records. Code, data, resources, and the PDB path are removed, and the original binary is never uploaded.
+- **x64:** a reduced copy of the EXE/DLL is uploaded alongside the PDB. Only the regions the PE format defines as module identity and unwind metadata are copied: headers, section table, exception table, the unwind records it references, and the CodeView identity with the PDB path replaced. All other bytes (code, data, resources, strings) are zeroed. The original binary is never uploaded.
 - **x86:** only the PDB is uploaded, and its frame data is used for unwinding.
 - **ARM and ARM64EC:** not supported. These modules fail, and nothing is uploaded for them.
 
-If a binary's unwind data cannot be extracted, nothing is uploaded for that module. The command never falls back to uploading the complete binary.
+Unwind records are validated before extraction. If any record is malformed or uses an unsupported encoding, the module is reported as failed and nothing is uploaded for it, even if the binary still runs on Windows. The command never falls back to uploading the complete binary. The PDB is uploaded unchanged.
+
 Breakpad `.sym` files already contain unwind records and are uploaded unchanged.
 
 ```bash

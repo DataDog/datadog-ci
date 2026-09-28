@@ -11,8 +11,10 @@ import {
   UNW_FLAG_CHAININFO,
   UNW_FLAG_EHANDLER,
   UNWIND_CODE_SIZE,
+  UNWIND_INFO_COUNT_OF_CODES_OFFSET,
   UNWIND_INFO_HEADER_SIZE,
   UWOP_ALLOC_LARGE,
+  UWOP_ALLOC_SMALL,
   UWOP_EPILOG,
 } from '../pe-constants'
 import {extractPeUnwindInfo} from '../pe-unwind'
@@ -68,6 +70,32 @@ describe('reduced PE extraction', () => {
     for (const secret of SECRETS) {
       expect(output.includes(Buffer.from(secret))).toBe(false)
     }
+  })
+
+  test('rejects an inflated unwind code count that includes adjacent private data', () => {
+    const input = makePE()
+    bytesAt(input, RVA.unwindInfo + UNWIND_INFO_HEADER_SIZE + UNWIND_CODE_SIZE, UNWIND_CODE_SIZE).fill(0)
+    bytesAt(input, RVA.unwindInfo + UNWIND_INFO_HEADER_SIZE + 2 * UNWIND_CODE_SIZE, 6).write('SECRET')
+
+    // With the original count, padding and the adjacent bytes are excluded.
+    expect(extract(input).data.includes(Buffer.from('SECRET'))).toBe(false)
+
+    // Padding becomes PUSH_NONVOL; SECRET becomes a three-slot SAVE_NONVOL_FAR.
+    // The opcode widths fit, but its CodeOffset (83) exceeds SizeOfProlog (4).
+    bytesAt(input, RVA.unwindInfo + UNWIND_INFO_COUNT_OF_CODES_OFFSET, 1)[0] = 5
+
+    expect(() => extractPeUnwindInfo(input)).toThrow('unwind code offset exceeds prolog size')
+  })
+
+  test.each([1, 2])('keeps version %i operand slots whose bytes exceed the prolog size', (version) => {
+    const input = makePE()
+    writeUnwindInfo(input, RVA.unwindInfo, {
+      version,
+      codes: [unwindCode(4, UWOP_ALLOC_LARGE), [0x80, 0]],
+    })
+    const size = UNWIND_INFO_HEADER_SIZE + 2 * UNWIND_CODE_SIZE
+
+    expect(bytesAt(extract(input).data, RVA.unwindInfo, size)).toEqual(bytesAt(input, RVA.unwindInfo, size))
   })
 
   test('drops exception handler data and handler flags', () => {
@@ -179,13 +207,24 @@ describe('reduced PE extraction', () => {
     expect(() => extractPeUnwindInfo(input)).toThrow(message)
   })
 
-  test('keeps version 2 epilog codes', () => {
+  test('keeps version 2 epilog codes whose offset exceeds the prolog size', () => {
     const input = makePE()
-    writeUnwindInfo(input, RVA.unwindInfo, {version: 2, codes: [unwindCode(4, UWOP_EPILOG)]})
+    writeUnwindInfo(input, RVA.unwindInfo, {version: 2, prologSize: 4, codes: [unwindCode(16, UWOP_EPILOG, 1)]})
 
     expect(bytesAt(extract(input).data, RVA.unwindInfo, UNWIND_INFO_WITH_ONE_CODE)).toEqual(
       bytesAt(input, RVA.unwindInfo, UNWIND_INFO_WITH_ONE_CODE)
     )
+  })
+
+  test('rejects a version 2 prolog offset beyond the prolog size after an epilog code', () => {
+    const input = makePE()
+    writeUnwindInfo(input, RVA.unwindInfo, {
+      version: 2,
+      prologSize: 4,
+      codes: [unwindCode(16, UWOP_EPILOG, 1), unwindCode(5, UWOP_ALLOC_SMALL, 3)],
+    })
+
+    expect(() => extractPeUnwindInfo(input)).toThrow('unwind code offset exceeds prolog size')
   })
 
   test('x86 relies on the PDB and produces no PE artifact', () => {

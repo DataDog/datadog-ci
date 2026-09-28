@@ -70,6 +70,7 @@ import {
   UNWIND_CODE_SIZE,
   UNWIND_INFO_COUNT_OF_CODES_OFFSET,
   UNWIND_INFO_HEADER_SIZE,
+  UNWIND_INFO_SIZE_OF_PROLOG_OFFSET,
   UNWIND_INFO_VERSION_FLAGS_OFFSET,
   UWOP_ALLOC_LARGE,
   UWOP_EPILOG,
@@ -435,12 +436,18 @@ const unwindCodeSlots = (op: number, info: number, version: number): number => {
   }
 }
 
-/** Walks the unwind codes by opcode width, so a corrupt code count cannot pull unrelated bytes into the copy. */
+/** Checks opcode widths and prolog offsets to catch some corrupt counts that would include unrelated bytes. */
 const validateUnwindCodes = (reader: PeReader, unwindInfo: number, codeCount: number, version: number) => {
+  const sizeOfProlog = reader.u8(unwindInfo + UNWIND_INFO_SIZE_OF_PROLOG_OFFSET)
   for (let slot = 0; slot < codeCount; ) {
-    const opAndInfo = reader.u8(unwindInfo + UNWIND_INFO_HEADER_SIZE + slot * UNWIND_CODE_SIZE + UNWIND_CODE_OP_OFFSET)
+    const code = unwindInfo + UNWIND_INFO_HEADER_SIZE + slot * UNWIND_CODE_SIZE
+    const opAndInfo = reader.u8(code + UNWIND_CODE_OP_OFFSET)
     const op = opAndInfo & 0xf
     const info = opAndInfo >>> 4
+    // Operand slots are skipped below; only version-2 epilogs have different offset semantics.
+    if (version === 1 || op !== UWOP_EPILOG) {
+      requireValid(reader.u8(code) <= sizeOfProlog, 'unwind code offset exceeds prolog size')
+    }
     requireValid(op <= UWOP_PUSH_MACHFRAME, 'unsupported unwind opcode')
     requireValid(op !== UWOP_ALLOC_LARGE || info <= 1, 'invalid ALLOC_LARGE')
     requireValid(op !== UWOP_PUSH_MACHFRAME || info <= 1, 'invalid PUSH_MACHFRAME')
