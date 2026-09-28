@@ -101,8 +101,7 @@ const MAX_PE_HEADER_OFFSET = 4096
 const MAX_SECTIONS = 96
 const MAX_DEBUG_ENTRIES = 128
 const MAX_UNWIND_CHAIN_DEPTH = 64
-const REDUCED_PDB_NAME = '_.pdb\0'
-const REDUCED_CODEVIEW_SIZE = CV_INFO_PDB_FILENAME_OFFSET + REDUCED_PDB_NAME.length
+const REDUCED_PDB_NAME = '_.pdb'
 
 const requireValid: (condition: boolean, message: string) => asserts condition = (condition, message) => {
   if (!condition) {
@@ -403,20 +402,29 @@ const copyCodeViewIdentity = (writer: ReducedPeWriter, reader: PeReader, layout:
   const codeViewRva = reader.u32(entry + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET)
   const codeView = fileOffsetOf(layout, codeViewRva, codeViewSize)
   requireValid(
-    codeViewSize >= REDUCED_CODEVIEW_SIZE &&
+    codeViewSize > CV_INFO_PDB_FILENAME_OFFSET &&
       codeView === reader.u32(entry + IMAGE_DEBUG_DIRECTORY_POINTERTORAWDATA_OFFSET) &&
       reader.u32(codeView) === PDB70_SIGNATURE,
     'invalid RSDS identity'
   )
 
+  requireValid(
+    reader.data.subarray(codeView + CV_INFO_PDB_FILENAME_OFFSET, codeView + codeViewSize).includes(0),
+    'unterminated RSDS filename'
+  )
+
+  // Fit the placeholder into the validated input record, reserving one byte for its terminator.
+  const nameCapacity = codeViewSize - CV_INFO_PDB_FILENAME_OFFSET - 1
+  const reducedPdbName = `${REDUCED_PDB_NAME.slice(0, nameCapacity)}\0`
+  const reducedCodeViewSize = CV_INFO_PDB_FILENAME_OFFSET + reducedPdbName.length
   const {output} = writer
   writer.claim(entry, IMAGE_DEBUG_DIRECTORY_SIZE)
   output.writeUInt32LE(IMAGE_DEBUG_TYPE_CODEVIEW, entry + IMAGE_DEBUG_DIRECTORY_TYPE_OFFSET)
-  output.writeUInt32LE(REDUCED_CODEVIEW_SIZE, entry + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET)
+  output.writeUInt32LE(reducedCodeViewSize, entry + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET)
   output.writeUInt32LE(codeViewRva, entry + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET)
   output.writeUInt32LE(codeView, entry + IMAGE_DEBUG_DIRECTORY_POINTERTORAWDATA_OFFSET)
-  writer.copy(codeView, REDUCED_CODEVIEW_SIZE)
-  output.write(REDUCED_PDB_NAME, codeView + CV_INFO_PDB_FILENAME_OFFSET, 'ascii')
+  writer.copy(codeView, reducedCodeViewSize)
+  output.write(reducedPdbName, codeView + CV_INFO_PDB_FILENAME_OFFSET, 'ascii')
   writeDataDirectory(
     output,
     layout,

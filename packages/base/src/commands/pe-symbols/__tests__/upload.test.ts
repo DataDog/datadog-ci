@@ -9,9 +9,19 @@ import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {uploadMultipartHelper} from '../helpers'
+import {getPEFileMetadata} from '../pe'
 import {PeSymbolsUploadCommand} from '../upload'
 
-import {bytesAt, FUNCTION, MACHINE, makePE, RVA, SECTION_SIZE, setRuntimeFunction} from './pe-fixture'
+import {
+  bytesAt,
+  FUNCTION,
+  MACHINE,
+  makePE,
+  RVA,
+  SECTION_SIZE,
+  setCodeViewFilename,
+  setRuntimeFunction,
+} from './pe-fixture'
 
 const makeMalformedPE = () => {
   const pe = makePE()
@@ -77,6 +87,24 @@ describe('pe-symbols upload with unwind information', () => {
     expect((lastPayload().content.get('pe_symbol_file') as MultipartFileValue).path).toBe(pdb)
     expect(companion).not.toBe(binary)
     expect(generatesCfi()).toBe(true)
+  })
+
+  test('uploads a reduced companion for a short RSDS filename', async () => {
+    const input = makePE()
+    setCodeViewFilename(input, 'x')
+    const {command} = prepare(input)
+    jest.mocked(uploadMultipartHelper).mockImplementation(async (_request, payload) => {
+      const companion = (payload.content.get('pe_binary_file') as MultipartFileValue).path
+      const metadata = await getPEFileMetadata(companion)
+      expect(metadata.error).toBeUndefined()
+      expect(metadata.hasPdbInfo).toBe(true)
+      expect(metadata.pdbFilename).toBe('_')
+
+      return UploadStatus.Success
+    })
+
+    expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Success])
+    expect(uploadMultipartHelper).toHaveBeenCalledTimes(1)
   })
 
   test.each([false, true])('reduced x64 PE drops code and data, and is cleaned up after failure=%s', async (fail) => {

@@ -3,6 +3,7 @@ import fs from 'fs'
 import {
   CV_INFO_GUID_OFFSET,
   CV_INFO_PDB_FILENAME_OFFSET,
+  IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET,
   IMAGE_DIRECTORY_ENTRY_EXCEPTION,
   IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
   IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
@@ -30,6 +31,7 @@ import {
   SECTION_SIZE,
   SECTIONS,
   sectionHeaderOffset,
+  setCodeViewFilename,
   setDataDirectory,
   setDataDirectoryCount,
   setRuntimeFunction,
@@ -71,6 +73,43 @@ describe('reduced PE extraction', () => {
     for (const secret of SECRETS) {
       expect(output.includes(Buffer.from(secret))).toBe(false)
     }
+  })
+
+  test.each(['', 'x', 'xy', 'xyz', 'xyzw', 'abcde', 'original.pdb'])(
+    'accepts RSDS filename %j without copying adjacent data',
+    (filename) => {
+      const input = makePE()
+      setCodeViewFilename(input, filename)
+      const inputSize = CV_INFO_PDB_FILENAME_OFFSET + filename.length + 1
+      bytesAt(input, RVA.codeView + inputSize, 6).write('SECRET')
+
+      const {data: output} = extract(input)
+      const outputSize = bytesAt(output, RVA.debugDirectory + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET, 4).readUInt32LE()
+      expect(outputSize).toBeLessThanOrEqual(inputSize)
+      expect(bytesAt(output, RVA.codeView, CV_INFO_PDB_FILENAME_OFFSET)).toEqual(
+        bytesAt(input, RVA.codeView, CV_INFO_PDB_FILENAME_OFFSET)
+      )
+      const name = bytesAt(output, RVA.codeView + CV_INFO_PDB_FILENAME_OFFSET, outputSize - CV_INFO_PDB_FILENAME_OFFSET)
+      expect(name.toString()).toBe(`${'_.pdb'.slice(0, filename.length)}\0`)
+      expect(output.includes(Buffer.from('SECRET'))).toBe(false)
+    }
+  )
+
+  test.each([CV_INFO_PDB_FILENAME_OFFSET - 1, CV_INFO_PDB_FILENAME_OFFSET])(
+    'rejects a truncated RSDS record of %i bytes',
+    (size) => {
+      const input = makePE()
+      bytesAt(input, RVA.debugDirectory + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET, 4).writeUInt32LE(size)
+      expect(() => extractPeUnwindInfo(input)).toThrow('invalid RSDS identity')
+    }
+  )
+
+  test('rejects an RSDS filename terminated only outside its declared record', () => {
+    const input = makePE()
+    setCodeViewFilename(input, 'x')
+    bytesAt(input, RVA.codeView + CV_INFO_PDB_FILENAME_OFFSET, 3).set([0x78, 0x79, 0])
+
+    expect(() => extractPeUnwindInfo(input)).toThrow('unterminated RSDS filename')
   })
 
   test('rejects an inflated unwind code count that includes adjacent private data', () => {
