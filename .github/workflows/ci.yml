@@ -30,6 +30,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ matrix.version }}
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn lint:packages
       - run: yarn lint:readme-usage
@@ -59,7 +60,10 @@ jobs:
           NODE_OPTIONS: -r dd-trace/ci/init
       - run: |
           mkdir artifacts
-          yarn loop-packages pack --out ../../artifacts/%s-${{ matrix.version }}.tgz
+          # The `@datadog/datadog-ci` bundle reads the plugin packages, so it must be packed before the plugins' `prepack` rewrites them.
+          # Packing everything in parallel produces a different (much larger) CLI bundle.
+          yarn loop-packages --include @datadog/datadog-ci-base --include @datadog/datadog-ci pack --out ../../artifacts/%s-${{ matrix.version }}.tgz
+          yarn loop-packages --exclude @datadog/datadog-ci-base --exclude @datadog/datadog-ci --parallel pack --out ../../artifacts/%s-${{ matrix.version }}.tgz
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: artifacts-${{ matrix.version }}
@@ -86,6 +90,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ matrix.version }}
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn test:windows
@@ -100,6 +105,7 @@ jobs:
 
   e2e-test:
     strategy:
+      fail-fast: false
       matrix:
         version: [20, 22, 24]
 
@@ -386,6 +392,7 @@ jobs:
 
   e2e-test-windows:
     strategy:
+      fail-fast: false
       matrix:
         version: [20, 22, 24]
 
@@ -666,6 +673,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -694,6 +702,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -850,6 +859,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -880,6 +890,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -908,6 +919,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -966,6 +978,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn lint:yaml
 
@@ -979,6 +992,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22.19.0
+          cache: yarn
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable

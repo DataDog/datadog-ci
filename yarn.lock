@@ -6307,6 +6307,9 @@ __metadata:
     tsx: "npm:4.20.6"
     typescript: "npm:5.1.6"
     typescript-eslint: "npm:8.42.0"
+  dependenciesMeta:
+    cpu-features:
+      built: false
   languageName: unknown
   linkType: soft
 
