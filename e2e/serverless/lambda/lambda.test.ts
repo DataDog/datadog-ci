@@ -78,6 +78,7 @@ const instrumentEnv = {
   DATADOG_API_KEY: process.env.DATADOG_API_KEY,
   DATADOG_SITE: process.env.DATADOG_SITE,
   DD_API_KEY: process.env.DD_API_KEY,
+  DD_APP_KEY: process.env.DATADOG_APP_KEY,
 }
 
 describeOrSkip('lambda', () => {
