@@ -41,6 +41,27 @@ In addition, some optional parameters are available:
 
 * `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
+* `--repository-url`: the git repository URL to associate with the uploaded dSYMs. By default, the command will automatically detect the repository URL from your local git configuration.
+* `--commit`: the git commit SHA to associate with the uploaded dSYMs. By default, the command will automatically detect the current commit SHA.
+* `--disable-git` (default: `false`): prevents the command from collecting git information (repository URL and commit SHA).
+
+#### Source Code Integration
+
+By default, the upload command automatically collects git information (repository URL and commit SHA) from your local git repository and includes it with the uploaded dSYMs. This enables [Source Code Integration][3], which links crash reports to the specific lines of code in your repository.
+
+To manually specify git information:
+
+```bash
+datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData/ \
+  --repository-url https://github.com/your-org/your-repo \
+  --commit abc123def456
+```
+
+To disable git information collection:
+
+```bash
+datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData/ --disable-git
+```
 
 #### Bitcode
 
@@ -84,6 +105,8 @@ Command summary:
 Additional helpful documentation, links, and articles:
 
 - [Learn about iOS Crash Reporting and Error Tracking][1]
+- [Learn about Source Code Integration][3]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/
 [2]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
+[3]: https://docs.datadoghq.com/integrations/guide/source-code-integration/
