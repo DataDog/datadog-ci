@@ -2,7 +2,12 @@ jest.mock('../../loggroup')
 
 import {Architecture, LambdaClient, Runtime} from '@aws-sdk/client-lambda'
 import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  API_KEY_ENV_VAR,
+  APP_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_APP_KEY_ENV_VAR,
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
@@ -201,6 +206,55 @@ describe('instrument', () => {
           ],
         }
       `)
+    })
+
+    test('calculates an update request with a lambda library, extension, and DATADOG_APP_KEY', async () => {
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      process.env[CI_APP_KEY_ENV_VAR] = 'some-datadog-app-key'
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 5,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest?.Environment?.Variables?.[APP_KEY_ENV_VAR]).toBe('some-datadog-app-key')
+      expect(updateRequest?.Environment?.Variables?.[API_KEY_ENV_VAR]).toBe(MOCK_DATADOG_API_KEY)
+    })
+
+    test('writes DD_APP_KEY when DATADOG_APP_KEY is unset', async () => {
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      process.env[APP_KEY_ENV_VAR] = 'some-dd-app-key'
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 5,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest?.Environment?.Variables?.[APP_KEY_ENV_VAR]).toBe('some-dd-app-key')
     })
 
     test('calculates an update request with a lambda library, extension, and DD_API_KEY', async () => {

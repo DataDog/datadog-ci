@@ -98,6 +98,7 @@ export const verifyLambdaInstrumented = (
   expect(env.DD_VERSION).toBe(expectedTags.version)
   expect(env.DD_TRACE_ENABLED).toBe('true')
   expect(env.DD_API_KEY).toBeDefined()
+  expect(env.DD_APP_KEY).toBeDefined()
   expect(env.DD_SITE).toBeDefined()
   expect(Object.keys(tags)).toContain(SERVERLESS_CI_TAG)
 
@@ -132,6 +133,7 @@ export const verifyLambdaExtensionOnly = (
   expect(env.DD_ENV).toBe(expectedTags.environment)
   expect(env.DD_VERSION).toBe(expectedTags.version)
   expect(env.DD_API_KEY).toBeDefined()
+  expect(env.DD_APP_KEY).toBeDefined()
   expect(env.DD_SITE).toBeDefined()
   expect(Object.keys(tags)).toContain(SERVERLESS_CI_TAG)
 

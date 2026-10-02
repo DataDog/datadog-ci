@@ -10,6 +10,7 @@ import type {
 
 import {
   API_KEY_ENV_VAR,
+  APP_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
   SERVICE_ENV_VAR,
@@ -180,6 +181,7 @@ export const calculateUpdateRequest = (
    */
   const environmentVarsArray = [
     API_KEY_ENV_VAR,
+    APP_KEY_ENV_VAR,
     API_KEY_SECRET_ARN_ENV_VAR,
     KMS_API_KEY_ENV_VAR,
     SITE_ENV_VAR,

@@ -5,6 +5,7 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListFunctionsCommand, Runtime} from '@aws-sdk/client-lambda'
 import {
   API_KEY_ENV_VAR,
+  APP_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
   SERVICE_ENV_VAR,
@@ -554,6 +555,7 @@ describe('uninstrument', () => {
             Environment: {
               Variables: {
                 [API_KEY_ENV_VAR]: '1234',
+                [APP_KEY_ENV_VAR]: 'app-key',
                 [ENVIRONMENT_ENV_VAR]: 'staging',
                 [FLUSH_TO_LOG_ENV_VAR]: 'true',
                 [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',

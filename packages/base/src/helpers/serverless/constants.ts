@@ -1,6 +1,8 @@
 // Environment variables for Lambda and Cloud Run
 export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
+export const APP_KEY_ENV_VAR = 'DD_APP_KEY'
+export const CI_APP_KEY_ENV_VAR = 'DATADOG_APP_KEY'
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
 export const SITE_ENV_VAR = 'DD_SITE'
 export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
