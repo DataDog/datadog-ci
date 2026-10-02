@@ -50,6 +50,54 @@ describe('extractDebugId', () => {
     })
   })
 
+  test('extracts a debug ID with a single-quoted value', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'single-quoted-value.min.js')
+      fs.writeFileSync(
+        filePath,
+        `!function(){}({service:"app",version:"1.0.0",ddDebugId:'${DEBUG_ID}'},"DD_SOURCE_CODE_CONTEXT");`
+      )
+
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+    })
+  })
+
+  test('extracts a debug ID with a quoted key and a single-quoted value', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'mixed-quotes.min.js')
+      fs.writeFileSync(
+        filePath,
+        `!function(){}({"service":"app","version":"1.0.0","ddDebugId":'${DEBUG_ID}'},"DD_SOURCE_CODE_CONTEXT");`
+      )
+
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+    })
+  })
+
+  test('extracts a debug ID with a backticked value', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'backticked-value.min.js')
+      fs.writeFileSync(
+        filePath,
+        '!function(){}' + `({service:"app",version:"1.0.0",ddDebugId:\`${DEBUG_ID}\`},` + '"DD_SOURCE_CODE_CONTEXT");'
+      )
+
+      expect(extractDebugId(filePath)).toBe(DEBUG_ID)
+    })
+  })
+
+  test('returns undefined when the opening and closing quotes do not match', () => {
+    withTempDirectory((directory) => {
+      const filePath = upath.join(directory, 'mismatched-quotes.min.js')
+      fs.writeFileSync(
+        filePath,
+        `!function(){}({service:"app",version:"1.0.0",ddDebugId:'${DEBUG_ID}"},"DD_SOURCE_CODE_CONTEXT");`
+      )
+
+      expect(extractDebugId(filePath)).toBeUndefined()
+    })
+  })
+
   test('stops reading after finding the debug ID in the first chunk', () => {
     withTempDirectory((directory) => {
       const filePath = upath.join(directory, 'first-chunk.min.js')
