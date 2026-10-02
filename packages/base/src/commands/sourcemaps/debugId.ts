@@ -10,7 +10,12 @@ import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
 // Bundle scanner: keep this progressive scanner in sync with build-plugins PR #489:
 // https://github.com/DataDog/build-plugins/pull/489
-const DEBUG_ID_REGEX = /"?ddDebugId"?:"([0-9a-fA-F-]{36})"/
+// The key is quoted in source (`JSON.stringify(context)`) but minifiers like terser strip quotes
+// from object keys that are valid identifiers, so the built output can have either
+// `"ddDebugId":"..."` or `ddDebugId:"..."`. The value can also end up wrapped in single quotes or
+// backticks depending on the minifier, so all three of `"`, `'` and `` ` `` are accepted around it.
+// The opening quote is captured and backreferenced so the closing quote must match it.
+const DEBUG_ID_REGEX = /"?ddDebugId"?:(["'`])([0-9a-fA-F-]{36})\1/
 const SOURCE_CODE_CONTEXT_MARKER = 'DD_SOURCE_CODE_CONTEXT'
 
 // Single source of truth for the UUID v4-ish shape used by debug IDs. The sourcemap find command
@@ -29,7 +34,7 @@ const VARIANT_CHARS = ['8', '9', 'a', 'b'] as const
 
 export const isValidDebugId = (debugId: string): boolean => DEBUG_ID_VALUE_REGEX.test(debugId)
 
-const matchDebugId = (fileContent: string): string | undefined => DEBUG_ID_REGEX.exec(fileContent)?.[1]
+const matchDebugId = (fileContent: string): string | undefined => DEBUG_ID_REGEX.exec(fileContent)?.[2]
 
 // Search in fixed-size reads and stop as soon as a match is found. Only a small overlap is retained
 // between reads, so even the worst case (scanning to EOF) uses bounded memory.
