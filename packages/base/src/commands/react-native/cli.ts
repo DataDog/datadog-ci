@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {ReactNativeCodepushCommand} from './codepush'
 import {ReactNativeInjectDebugIdCommand} from './injectDebugId'
 import {ReactNativeUploadCommand} from './upload'

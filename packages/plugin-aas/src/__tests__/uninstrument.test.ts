@@ -33,6 +33,11 @@ const webAppsOperations = {
 const updateTags = jest.fn().mockResolvedValue({})
 const deleteAzureResource = jest.fn().mockResolvedValue({})
 
+const deleteDirectory = jest.fn()
+jest.mock('../kudu', () => ({
+  getKuduClient: jest.fn().mockImplementation(async () => ({deleteDirectory})),
+}))
+
 jest.mock('@azure/arm-resources', () => ({
   ResourceManagementClient: jest.fn().mockImplementation(() => ({
     tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
@@ -46,6 +51,7 @@ import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
 import {
   CONTAINER_WEB_APP,
+  LINUX_CODE_WEB_APP,
   WINDOWS_DOTNET_WEB_APP,
   WINDOWS_DOTNET_FUNCTION_APP,
   WINDOWS_NODE_WEB_APP,
@@ -99,6 +105,7 @@ describe('aas instrument', () => {
       webAppsOperations.updateSlotConfigurationNames.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
+      deleteDirectory.mockReset().mockResolvedValue(undefined)
     })
 
     test('Fails if not authenticated with Azure', async () => {
@@ -164,6 +171,71 @@ describe('aas instrument', () => {
         properties: {hello: 'world'}, // ensure existing settings are preserved
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {ava: 'true'}}})
+    })
+
+    test('Removes staged tracer files from code-based Linux apps without requiring env markers', async () => {
+      webAppsOperations.get.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
+      webAppsOperations.getConfiguration.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
+
+      const {code} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(deleteDirectory).toHaveBeenCalledWith('/home/data/datadog-tracer')
+    })
+
+    test('Does not require SCM access for containerized Linux apps', async () => {
+      const {code} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(deleteDirectory).not.toHaveBeenCalled()
+    })
+
+    test('Logs and continues when the SCM site is inaccessible', async () => {
+      webAppsOperations.get.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
+      webAppsOperations.getConfiguration.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
+      deleteDirectory.mockRejectedValue(new Error('scm down'))
+
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toContain('Could not remove staged tracer files')
+      expect(context.stdout.toString()).toContain('There may be inactive tracer files left behind')
+      expect(context.stdout.toString()).toContain('Uninstrumentation completed successfully')
+    })
+
+    test('Unregisters sticky injection settings on code-based Linux slots', async () => {
+      webAppsOperations.getSlot.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
+      webAppsOperations.getConfigurationSlot.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
+      webAppsOperations.listSlotConfigurationNames.mockResolvedValue({appSettingNames: ['NODE_OPTIONS', 'DD_ENV']})
+
+      const {code} = await runCLI(SLOT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(deleteDirectory).toHaveBeenCalledWith('/home/data/datadog-tracer')
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({appSettingNames: ['DD_ENV']})
+      )
+    })
+
+    test('Treats the SSI telemetry tag as a tag, not SSI state', async () => {
+      webAppsOperations.get.mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        tags: {service: 'my-service', dd_sls_injection_mode: 'single_language'},
+      })
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {DD_API_KEY: process.env.DD_API_KEY, DD_SITE: 'datadoghq.com', hello: 'world'},
+      })
+      updateTags.mockRejectedValue(new Error('tag update failed'))
+
+      const {code} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world'},
+      })
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
     })
 
     test('Uninstrument sidecar and updates app settings with .NET settings', async () => {

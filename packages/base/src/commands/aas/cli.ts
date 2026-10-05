@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {AasInstrumentCommand} from './instrument'
 import {AasUninstrumentCommand} from './uninstrument'
 

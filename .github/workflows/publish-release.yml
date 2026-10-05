@@ -480,7 +480,13 @@ jobs:
       - run: yarn build
       # Given every package is version X.X.X (enforced by `yarn lint:packages`), we can skip
       # already published packages with `--tolerate-republish` (for example when OIDC was not yet enabled)
-      - run: yarn publish:all --provenance --tolerate-republish
+      - name: Publish base package and plugins
+        run: yarn publish:deps --provenance --tolerate-republish
+      - name: Wait for base package and plugins to be available on NPM
+        timeout-minutes: 20
+        run: bash bin/wait-for-npm-packages.sh
+      - name: Publish datadog-ci
+        run: yarn publish:cli --provenance --tolerate-republish
 
   bump-ci-integrations:
     name: Bump datadog-ci in integration

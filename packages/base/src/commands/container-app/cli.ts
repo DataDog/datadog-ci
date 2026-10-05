@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {ContainerAppInstrumentCommand} from './instrument'
 import {ContainerAppUninstrumentCommand} from './uninstrument'
 

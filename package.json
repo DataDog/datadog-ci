@@ -22,19 +22,18 @@
     "launch:debug": "tsx --conditions=development --inspect-brk packages/datadog-ci/src/cli.ts",
     "launch:dist": "node packages/datadog-ci/dist/bundle.js",
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
-    "lint:all": "eslint --cache --quiet '**/*.ts'",
+    "lint:all": "eslint --cache '**/*.ts'",
     "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:packages": "FORCE_COLOR=1 tsx --conditions=development bin/lint-packages.ts",
     "lint:readme-usage": "FORCE_COLOR=1 tsx --conditions=development bin/lint-readme-usage.ts",
-    "lint:yaml": "eslint --cache --quiet '**/*.yml' '**/*.yaml'",
+    "lint:yaml": "eslint --cache '**/*.yml' '**/*.yaml'",
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "package:build": "yarn tsc:build $INIT_CWD",
     "package:bundle:npm": "cd $INIT_CWD && node ../../scripts/tsdown-plugin.mjs",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
     "package:clean-dist": "cd $INIT_CWD && rimraf --glob 'dist/**/__tests__'",
-    "package:lint": "eslint --cache --quiet $INIT_CWD/src/**/*.ts",
+    "package:lint": "eslint --cache $INIT_CWD/src/**/*.ts",
     "plugin:create": "bin/create-plugin.sh",
-    "publish:all": "yarn publish:deps \"$@\" && yarn publish:cli \"$@\"",
     "publish:cli": "yarn workspace @datadog/datadog-ci npm publish",
     "publish:deps": "yarn workspaces foreach --all --no-private --exclude packages/datadog-ci --topological --verbose npm publish",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest --colors",
@@ -53,7 +52,7 @@
     "@types/node": "20.19.37",
     "@yao-pkg/pkg": "6.19.0",
     "chalk": "3.0.0",
-    "dd-trace": "5.99.1",
+    "dd-trace": "5.125.0",
     "eslint": "9.34.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.4",
@@ -76,6 +75,11 @@
     "tsx": "4.20.6",
     "typescript": "5.1.6",
     "typescript-eslint": "8.42.0"
+  },
+  "dependenciesMeta": {
+    "cpu-features": {
+      "built": false
+    }
   },
   "knip": {
     "ignoreDependencies": [

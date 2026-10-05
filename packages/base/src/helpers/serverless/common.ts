@@ -89,17 +89,17 @@ export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, 
 }
 
 /**
- * Recursively sort object keys to ensure consistent ordering
+ * Recursively sort object keys, and optionally array elements, to ensure consistent ordering
  */
-const sortObject = (obj: any): any => {
+const sortRecursively = (obj: any, sortArrays: boolean): any => {
   if (!obj) {
     return obj
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(sortObject).sort((a, b) => {
-      return JSON.stringify(a).localeCompare(JSON.stringify(b))
-    })
+    const items = obj.map((item) => sortRecursively(item, sortArrays))
+
+    return sortArrays ? items.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) : items
   }
 
   if (typeof obj === 'object') {
@@ -107,7 +107,7 @@ const sortObject = (obj: any): any => {
     Object.keys(obj)
       .sort()
       .forEach((key) => {
-        sorted[key] = sortObject(obj[key])
+        sorted[key] = sortRecursively(obj[key], sortArrays)
       })
 
     return sorted
@@ -115,6 +115,18 @@ const sortObject = (obj: any): any => {
 
   return obj
 }
+
+/**
+ * Sorts keys only. Array order is meaningful in a configuration -- a container's `command` or
+ * `entryPoint` says something different when it is reordered -- so it is left alone.
+ */
+const sortKeys = (obj: any): any => sortRecursively(obj, false)
+
+/**
+ * Sorts keys and array elements, so that two configurations differing only in the order they list
+ * things compare as equal.
+ */
+const sortObject = (obj: any): any => sortRecursively(obj, true)
 
 export const sortedEqual = (a: any, b: any): boolean => {
   const sortedA = sortObject(a)
@@ -140,9 +152,10 @@ const obfuscateSensitiveValues = (line: string): string => {
  */
 
 export const generateConfigDiff = (original: any, updated: any): string => {
-  // Sort keys consistently before comparison
-  const sortedOriginal = sortObject(original)
-  const sortedUpdated = sortObject(updated)
+  // Keys are sorted so the two sides line up, but array order is preserved: the diff is read as a
+  // preview of what will be written, so it has to show the order that will actually be sent.
+  const sortedOriginal = sortKeys(original)
+  const sortedUpdated = sortKeys(updated)
 
   const originalJson = JSON.stringify(sortedOriginal, undefined, 2)
   const updatedJson = JSON.stringify(sortedUpdated, undefined, 2)

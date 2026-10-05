@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {TerraformUploadCommand} from './upload'
 
 // prettier-ignore

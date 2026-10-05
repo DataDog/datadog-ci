@@ -1,137 +1,68 @@
 import type {Container, ContainerApp, EnvironmentVar, InitContainer} from '@azure/arm-appcontainers'
 import type {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
-import type {EnvFragment} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
-import type {LanguageInjectionSpec, Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
-import type {Language} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+import type {CompositeInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/composite'
+import type {InjectionConfig, SsiConfigResult} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import type {EnvOps} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env-merge'
+import type {LanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
+import type {ManagedTracerConfig, TracerArtifacts} from '@datadog/datadog-ci-base/helpers/serverless/ssi/recognition'
 
 import {DD_TAGS_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
+  getInjectionMountPath,
+  resolveInjectionConfig,
+  selectApplicationContainer as selectContainer,
+  SsiConfigError,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import {
+  SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
+  TRACER_COPY_ENTRYPOINT,
   TRACER_MOUNT_PATH,
   TRACER_VOLUME_NAME,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
+import {hasInjectionModeTag, mergeInjectionModeTag} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
 import {
-  hasEnvFragment,
-  hasInjectionModeTag,
-  mergeEnvFragment,
-  mergeInjectionModeTag,
-  removeEnvFragment,
-  removeInjectionModeTag,
-} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env'
+  assertFragmentsCanBeMerged,
+  findEnv,
+  hasAllFragments,
+  mergeFragments,
+  removeFragmentGroups,
+  upsertEnv,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/env-merge'
 import {
-  DEFAULT_TRACER_LIBC,
-  LIBCS,
-  getLanguageCompatibilityErrors,
-  getLanguageInjectionSpec,
-} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
-import {
-  DEFAULT_TRACER_VERSION,
-  LANGUAGE_METADATA,
-  TRACER_IMAGE_TAG_REG_EXP,
-  TRACER_INJECTION_LANGUAGES,
-  isTracerInjectionLanguage,
-} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
-import {TRACING_MODES, type TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
+  getInjectedTracer,
+  getInjectionEnvGroups,
+  getManagedTracerConfig,
+  getManagedTracerMountPaths,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/recognition'
 
-export const SSI_INJECTION_MODE_TAG = 'dd_sls_injection_mode'
-export const SINGLE_LANGUAGE_SSI_MODE = 'single_language'
+export {SsiConfigError} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+export type {SsiConfigResult}
+
 export const CONTAINER_APP_TRACER_REGISTRY = 'datadoghq.azurecr.io' as const
-export type SsiConfigResult = (
-  | {kind: 'errors'; errors: readonly string[]}
-  | {kind: 'no-injection'; tracing: Exclude<TracingMode, 'inject'>}
-  | {kind: 'single-language'; language: Language; libc: Libc; spec: LanguageInjectionSpec}
-) & {warnings: readonly string[]}
+
+const INJECTION_ENV_GROUPS = getInjectionEnvGroups(CONTAINER_APP_TRACER_REGISTRY)
+const MANAGED_TRACER_MOUNT_PATHS = getManagedTracerMountPaths(CONTAINER_APP_TRACER_REGISTRY)
+
+const EPHEMERAL_STORAGE_TIERS = [
+  {maximumCpu: 0.25, storageGiB: 1},
+  {maximumCpu: 0.5, storageGiB: 2},
+  {maximumCpu: 1, storageGiB: 4},
+] as const
 
 /** Resolves Container Apps tracer inputs before any remote work. */
 export const resolveSsiConfig = (config: ContainerAppConfigOptions): SsiConfigResult => {
-  const errors = validateSsiInputs(config)
-  if (errors.length > 0) {
-    return {kind: 'errors', errors, warnings: []}
+  const resolved = resolveInjectionConfig(config, {
+    registry: CONTAINER_APP_TRACER_REGISTRY,
+    languageAliases: {dotnet: 'csharp'},
+  })
+  if (resolved.kind !== 'single-language' && resolved.kind !== 'multi-language') {
+    return resolved
   }
 
-  const tracing = config.tracing ?? 'manual'
-  if (tracing !== 'inject') {
-    const unusedFlags = [
-      config.tracerVersion !== undefined ? '--tracer-version' : undefined,
-      config.tracerLibc !== undefined ? '--tracer-libc' : undefined,
-    ].filter((flag): flag is string => flag !== undefined)
+  const collisionErrors = getResourceCollisionErrors(config, getInjectionMountPath(resolved))
 
-    return unusedFlags.length > 0
-      ? {
-          kind: 'errors',
-          errors: [
-            `Tracer options ${unusedFlags.join(', ')} require --tracing inject. Remove these options or use --tracing inject.`,
-          ],
-          warnings: [],
-        }
-      : {kind: 'no-injection', tracing, warnings: []}
-  }
-
-  const collisionErrors = [
-    config.sharedVolumeName === TRACER_VOLUME_NAME
-      ? `--shared-volume-name cannot be '${TRACER_VOLUME_NAME}' with --tracing inject. Choose a different logging volume name.`
-      : undefined,
-    config.sharedVolumePath === TRACER_MOUNT_PATH
-      ? `--shared-volume-path cannot be '${TRACER_MOUNT_PATH}' with --tracing inject. Choose a different logging volume path.`
-      : undefined,
-  ].filter((error): error is string => error !== undefined)
-  if (collisionErrors.length > 0) {
-    return {kind: 'errors', errors: collisionErrors, warnings: []}
-  }
-
-  if (config.language === undefined) {
-    return {
-      kind: 'errors',
-      errors: [
-        `--tracing inject requires --language until automatic multi-language injection is supported. Possible values: ${TRACER_INJECTION_LANGUAGES.join(
-          ', '
-        )}.`,
-      ],
-      warnings: [],
-    }
-  }
-  if (config.language === 'go') {
-    return {
-      kind: 'errors',
-      errors: [
-        'Go automatic instrumentation is not supported. Install dd-trace-go in the application image and use --tracing manual.',
-      ],
-      warnings: [],
-    }
-  }
-  if (!isTracerInjectionLanguage(config.language)) {
-    return {
-      kind: 'errors',
-      errors: [`--tracing inject supports only these languages: ${TRACER_INJECTION_LANGUAGES.join(', ')}.`],
-      warnings: [],
-    }
-  }
-
-  const version = config.tracerVersion ?? DEFAULT_TRACER_VERSION
-  const libc = config.tracerLibc ?? DEFAULT_TRACER_LIBC
-  const compatibilityErrors = getLanguageCompatibilityErrors({language: config.language, libc, version})
-  if (compatibilityErrors.length > 0) {
-    return {kind: 'errors', errors: compatibilityErrors, warnings: []}
-  }
-
-  return {
-    kind: 'single-language',
-    language: config.language,
-    libc,
-    spec: getLanguageInjectionSpec({
-      language: config.language,
-      registry: CONTAINER_APP_TRACER_REGISTRY,
-      version,
-      libc,
-      root: TRACER_MOUNT_PATH,
-    }),
-    warnings:
-      config.language === 'java'
-        ? [
-            'Java 24+ applications require an additional JVM flag that datadog-ci cannot set safely without knowing your runtime version.',
-          ]
-        : [],
-  }
+  return collisionErrors.length > 0 ? {kind: 'errors', errors: collisionErrors, warnings: []} : resolved
 }
 
 /** Selects one application container by stable index. */
@@ -139,73 +70,37 @@ export const selectApplicationContainer = (
   containers: readonly Container[],
   sidecarName: string,
   requestedName: string | undefined
-): number => {
-  const candidates = containers
-    .map((container, index) => ({container, index}))
-    .filter(({container}) => container.name !== sidecarName)
-  const containerName = requestedName?.trim() || undefined
+): number =>
+  selectContainer(containers, requestedName, {
+    reservedNames: new Set([sidecarName]),
+    noCandidatesHint:
+      'Add an application container, or choose a different --sidecar-name if it matches your application container.',
+  })
 
-  if (containerName !== undefined) {
-    const matches = candidates.filter(({container}) => container.name === containerName)
-    if (matches.length !== 1) {
-      throw new SsiConfigError(
-        matches.length === 0
-          ? `Application container '${containerName}' was not found. Choose one of: ${formatContainerNames(candidates)}.`
-          : `Application container name '${containerName}' is not unique. Give each application container a unique name before retrying.`
-      )
-    }
-
-    return matches[0].index
-  }
-
-  if (candidates.length === 1) {
-    return candidates[0].index
-  }
-  if (candidates.length === 0) {
-    throw new SsiConfigError(
-      'Cannot enable automatic instrumentation because no application container was found. Add an application container, or choose a different --sidecar-name if it matches your application container.'
-    )
-  }
-
-  throw new SsiConfigError(
-    `Cannot select an application container because the Container App has multiple candidates: ${formatContainerNames(
-      candidates
-    )}. Specify one with --container-name.`
+export const assertInjectionEnvCanBeMerged = (
+  env: readonly EnvironmentVar[] | undefined,
+  config: InjectionConfig
+): void =>
+  assertFragmentsCanBeMerged(
+    env ?? [],
+    config.spec.env,
+    config.kind === 'single-language' ? [DD_TAGS_ENV_VAR] : [],
+    envOps(env)
   )
+
+export const getReplicaEphemeralStorageGiB = (containers: readonly Container[]): number => {
+  const totalCpu = containers.reduce((total, container) => total + (container.resources?.cpu ?? 0), 0)
+
+  return EPHEMERAL_STORAGE_TIERS.find(({maximumCpu}) => totalCpu <= maximumCpu)?.storageGiB ?? 8
 }
 
-export const assertLanguageInjectionEnvCanBeMerged = (
-  env: readonly EnvironmentVar[] | undefined,
-  spec: LanguageInjectionSpec
-): void => assertEnvironmentFragmentsCanBeMerged(env, spec.env)
+export const assertSsiEphemeralStorage = (containers: readonly Container[], config: InjectionConfig): void => {
+  const storageGiB = getReplicaEphemeralStorageGiB(containers)
+  const requiredStorageGiB = config.kind === 'single-language' ? 1 : 2
 
-export const assertSsiResourcesCanBeAdded = (
-  containerApp: ContainerApp,
-  targetIndex: number,
-  sidecarName: string
-): void => {
-  if (containerApp.template?.initContainers?.some(({name}) => name === TRACER_CONTAINER_NAME)) {
+  if (storageGiB < requiredStorageGiB) {
     throw new SsiConfigError(
-      `An init container named '${TRACER_CONTAINER_NAME}' already exists. Rename or remove it before retrying.`
-    )
-  }
-  if (containerApp.template?.volumes?.some(({name}) => name === TRACER_VOLUME_NAME)) {
-    throw new SsiConfigError(
-      `A volume named '${TRACER_VOLUME_NAME}' already exists. Rename or remove it before retrying.`
-    )
-  }
-
-  const hasConflictingMount = (containerApp.template?.containers ?? []).some(
-    (container, index) =>
-      container.name !== sidecarName &&
-      (container.volumeMounts ?? []).some(
-        ({volumeName, mountPath}) =>
-          volumeName === TRACER_VOLUME_NAME || (index === targetIndex && mountPath === TRACER_MOUNT_PATH)
-      )
-  )
-  if (hasConflictingMount) {
-    throw new SsiConfigError(
-      `An application container volume mount conflicts with the managed '${TRACER_VOLUME_NAME}' volume at '${TRACER_MOUNT_PATH}'. Rename or remove the conflicting mount before retrying.`
+      `Automatic tracer injection requires at least ${requiredStorageGiB} GiB of replica ephemeral storage, but the final configuration provides the ${storageGiB}-GiB tier. Increase application or Datadog sidecar CPU so their combined CPU exceeds 0.25 vCPU.`
     )
   }
 }
@@ -214,81 +109,98 @@ export const mergeLanguageInjectionEnv = (
   existingEnv: readonly EnvironmentVar[] | undefined,
   spec: LanguageInjectionSpec
 ): EnvironmentVar[] => {
-  assertLanguageInjectionEnvCanBeMerged(existingEnv, spec)
-  const merged = spec.env.reduce<EnvironmentVar[]>(
-    (env, fragment) => {
-      const existing = env.find(({name}) => name === fragment.name)
+  const ops = envOps(existingEnv)
+  const merged = mergeFragments(existingEnv ?? [], spec.env, [DD_TAGS_ENV_VAR], ops)
+  const existingTags = findEnv(merged, DD_TAGS_ENV_VAR, ops)
 
-      return upsertEnv(env, fragment.name, mergeLanguageEnvFragment(existing?.value, fragment))
-    },
-    [...(existingEnv ?? [])]
-  )
-  const existingTags = merged.find(({name}) => name === DD_TAGS_ENV_VAR)
-
-  return upsertEnv(merged, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value))
+  return upsertEnv(merged, DD_TAGS_ENV_VAR, mergeInjectionModeTag(existingTags?.value), ops)
 }
 
-/** Removes exact native tracer fragments for every supported language. */
-export const removeLanguageInjectionEnv = (existingEnv: readonly EnvironmentVar[] | undefined): EnvironmentVar[] =>
-  (existingEnv ?? []).flatMap((variable) => {
-    if (!variable.name || variable.secretRef || !variable.value) {
-      return [variable]
-    }
+export const mergeCompositeInjectionEnv = (
+  existingEnv: readonly EnvironmentVar[] | undefined,
+  spec: CompositeInjectionSpec
+): EnvironmentVar[] => mergeFragments(existingEnv ?? [], spec.env, [], envOps(existingEnv))
 
-    const fragments = LANGUAGE_ENV_FRAGMENTS.filter(({name}) => name === variable.name)
-    const withoutTag = variable.name === DD_TAGS_ENV_VAR ? removeInjectionModeTag(variable.value) : variable.value
-    const value = fragments.reduce<string | undefined>(removeEnvFragment, withoutTag)
-
-    return value === undefined ? [] : [value === variable.value ? variable : {...variable, value}]
-  })
+/** Removes the tracer startup environment of every supported injection mode. */
+export const removeInjectionEnv = (existingEnv: readonly EnvironmentVar[] | undefined): EnvironmentVar[] =>
+  removeFragmentGroups(existingEnv ?? [], INJECTION_ENV_GROUPS, envOps(existingEnv))
 
 export const hasSsiMarker = (containerApp: ContainerApp): boolean =>
   (containerApp.tags !== undefined &&
     Object.prototype.hasOwnProperty.call(containerApp.tags, SSI_INJECTION_MODE_TAG)) ||
   (containerApp.template?.containers ?? []).some((container) =>
-    container.env?.some(
-      ({name, secretRef, value}) => name === DD_TAGS_ENV_VAR && !secretRef && hasInjectionModeTag(value)
-    )
+    hasInjectionModeTag(findEnv(container.env ?? [], DD_TAGS_ENV_VAR, envOps(container.env))?.value)
   )
 
+/**
+ * Whether the Container App carries instrumentation this command would have written.
+ *
+ * Only used to tell the customer that an omitted `--tracing` is about to remove their injected
+ * tracer. Cleanup never consults it: it runs over the Datadog-owned names unconditionally.
+ */
 export const hasSsi = (containerApp: ContainerApp): boolean =>
   hasSsiMarker(containerApp) ||
   (containerApp.template?.containers ?? []).some((_, index) => hasCompleteSsiSignature(containerApp, index))
 
 export const hasCompleteSsiSignature = (containerApp: ContainerApp, targetIndex: number): boolean => {
-  const template = containerApp.template
-  const target = template?.containers?.[targetIndex]
+  const target = containerApp.template?.containers?.[targetIndex]
   if (!target) {
     return false
   }
 
-  const initContainers = template?.initContainers?.filter(isManagedInitContainer) ?? []
-  const volumes =
-    template?.volumes?.filter(({name, storageType}) => name === TRACER_VOLUME_NAME && storageType === 'EmptyDir') ?? []
-  const tracerMounts = (template?.containers ?? []).flatMap((container, index) =>
-    (container.volumeMounts ?? [])
-      .filter(({volumeName}) => volumeName === TRACER_VOLUME_NAME)
-      .map((mount) => ({index, mount}))
-  )
+  const injected = getInjectedTracer(tracerArtifacts(containerApp), targetIndex)
 
   return (
-    initContainers.length === 1 &&
-    volumes.length === 1 &&
-    tracerMounts.length === 1 &&
-    tracerMounts[0].index === targetIndex &&
-    tracerMounts[0].mount.mountPath === TRACER_MOUNT_PATH &&
-    hasManagedTracerEnvironment(target.env, getInitContainerLanguage(initContainers[0]))
+    injected !== undefined &&
+    injected.envVariants.some((fragments) => hasAllFragments(target.env ?? [], fragments, envOps(target.env)))
   )
 }
 
+/**
+ * Whether the Container App declares anything under a name instrumentation owns.
+ *
+ * Paired with {@link hasSsi} to tell the customer that their own `datadog-tracer` init container or
+ * volume is being replaced, rather than removing it silently.
+ */
+export const hasManagedTracerNames = (containerApp: ContainerApp): boolean =>
+  (containerApp.template?.initContainers ?? []).some(({name}) => name === TRACER_CONTAINER_NAME) ||
+  (containerApp.template?.volumes ?? []).some(({name}) => name === TRACER_VOLUME_NAME)
+
+const tracerArtifacts = (containerApp: ContainerApp): TracerArtifacts => {
+  const template = containerApp.template
+
+  return {
+    // Init containers live in their own list, so none of their mounts can be mistaken for the
+    // application container's.
+    tracers: (template?.initContainers ?? [])
+      .map(managedInitConfig)
+      .filter((config): config is ManagedTracerConfig => config !== undefined),
+    volumeCount: (template?.volumes ?? []).filter(
+      ({name, storageType}) => name === TRACER_VOLUME_NAME && storageType === 'EmptyDir'
+    ).length,
+    mounts: (template?.containers ?? []).flatMap((container, index) =>
+      (container.volumeMounts ?? [])
+        .filter(({volumeName}) => volumeName === TRACER_VOLUME_NAME)
+        .map(({mountPath}) => ({index, path: mountPath ?? ''}))
+    ),
+  }
+}
+
+/**
+ * The Container App with every tracer artifact instrumentation owns removed.
+ *
+ * Ownership is the deterministic names and the tracer mount paths, not a judgement about who wrote
+ * them, so this also clears state an older release or another tool left behind. A tracer installed
+ * in the application image names none of those, so it survives.
+ */
 export const removeSsiState = (containerApp: ContainerApp): ContainerApp => {
   const template = containerApp.template
   const initContainers = template?.initContainers?.filter(({name}) => name !== TRACER_CONTAINER_NAME)
   const volumes = template?.volumes?.filter(({name}) => name !== TRACER_VOLUME_NAME)
   const containers = template?.containers?.map((container) => {
-    const env = removeLanguageInjectionEnv(container.env)
+    const env = removeInjectionEnv(container.env)
     const volumeMounts = container.volumeMounts?.filter(
-      ({volumeName, mountPath}) => volumeName !== TRACER_VOLUME_NAME && mountPath !== TRACER_MOUNT_PATH
+      ({volumeName, mountPath}) => volumeName !== TRACER_VOLUME_NAME && !MANAGED_TRACER_MOUNT_PATHS.has(mountPath ?? '')
     )
     const envChanged =
       env.length !== (container.env?.length ?? 0) || env.some((variable, index) => variable !== container.env?.[index])
@@ -315,161 +227,77 @@ export const removeSsiState = (containerApp: ContainerApp): ContainerApp => {
   }
 }
 
-export const applySingleLanguageSsi = (
-  containerApp: ContainerApp,
-  targetIndex: number,
-  spec: LanguageInjectionSpec
-): ContainerApp => ({
-  ...containerApp,
-  template: {
-    ...containerApp.template,
-    initContainers: [...(containerApp.template?.initContainers ?? []), buildTracerInitContainer(spec)],
-    containers: (containerApp.template?.containers ?? []).map((container, index) =>
-      index === targetIndex
-        ? {
-            ...container,
-            env: mergeLanguageInjectionEnv(container.env, spec),
-            volumeMounts: [
-              ...(container.volumeMounts ?? []),
-              {volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH},
-            ],
-          }
-        : container
-    ),
-    volumes: [...(containerApp.template?.volumes ?? []), {name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'}],
-  },
-})
+export const applySsi = (containerApp: ContainerApp, targetIndex: number, config: InjectionConfig): ContainerApp => {
+  const mountPath = getInjectionMountPath(config)
 
-export class SsiConfigError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'SsiConfigError'
+  return {
+    ...containerApp,
+    template: {
+      ...containerApp.template,
+      initContainers: [
+        ...(containerApp.template?.initContainers ?? []),
+        buildTracerInitContainer(config.spec.image, mountPath),
+      ],
+      containers: (containerApp.template?.containers ?? []).map((container, index) =>
+        index === targetIndex
+          ? {
+              ...container,
+              env:
+                config.kind === 'single-language'
+                  ? mergeLanguageInjectionEnv(container.env, config.spec)
+                  : mergeCompositeInjectionEnv(container.env, config.spec),
+              volumeMounts: [...(container.volumeMounts ?? []), {volumeName: TRACER_VOLUME_NAME, mountPath}],
+            }
+          : container
+      ),
+      volumes: [...(containerApp.template?.volumes ?? []), {name: TRACER_VOLUME_NAME, storageType: 'EmptyDir'}],
+    },
   }
 }
 
-const validateSsiInputs = (config: ContainerAppConfigOptions): string[] => {
-  const errors: string[] = []
-  if (config.tracing !== undefined && !(TRACING_MODES as readonly string[]).includes(config.tracing)) {
-    errors.push(`Invalid tracing mode ${JSON.stringify(config.tracing)}. Possible values: ${TRACING_MODES.join(', ')}.`)
-  }
-  if (config.language !== undefined && (typeof config.language !== 'string' || config.language.length === 0)) {
-    errors.push(`Invalid language ${JSON.stringify(config.language)}.`)
-  }
-  if (
-    config.tracerVersion !== undefined &&
-    (typeof config.tracerVersion !== 'string' || !TRACER_IMAGE_TAG_REG_EXP.test(config.tracerVersion))
-  ) {
-    errors.push(`Invalid tracer version ${JSON.stringify(config.tracerVersion)}.`)
-  }
-  if (config.tracerLibc !== undefined && !(LIBCS as readonly string[]).includes(config.tracerLibc)) {
-    errors.push(`Invalid tracer libc ${JSON.stringify(config.tracerLibc)}. Possible values: ${LIBCS.join(', ')}.`)
-  }
-  if (config.containerName !== undefined && typeof config.containerName !== 'string') {
-    errors.push(`Invalid application container name ${JSON.stringify(config.containerName)}.`)
-  }
+const getResourceCollisionErrors = (config: ContainerAppConfigOptions, mountPath: string): string[] =>
+  [
+    config.sharedVolumeName === TRACER_VOLUME_NAME
+      ? `--shared-volume-name cannot be '${TRACER_VOLUME_NAME}' with --tracing inject. Choose a different logging volume name.`
+      : undefined,
+    config.sharedVolumePath === mountPath
+      ? `--shared-volume-path cannot be '${mountPath}' with --tracing inject. Choose a different logging volume path.`
+      : undefined,
+  ].filter((error): error is string => error !== undefined)
 
-  return errors
+const managedInitConfig = (container: InitContainer): ManagedTracerConfig | undefined => {
+  const config = getManagedTracerConfig(container.image, CONTAINER_APP_TRACER_REGISTRY)
+
+  return config !== undefined && hasManagedInitContainerShape(container, config.mountPath) ? config : undefined
 }
 
-const formatContainerNames = (candidates: readonly {container: Container}[]): string =>
-  candidates.map(({container}) => container.name || '<unnamed>').join(', ')
-
-const assertEnvironmentFragmentsCanBeMerged = (
-  env: readonly EnvironmentVar[] | undefined,
-  fragments: readonly EnvFragment[]
-): void => {
-  const targetNames = new Set([...fragments.map(({name}) => name), DD_TAGS_ENV_VAR])
-  for (const name of targetNames) {
-    const matching = (env ?? []).filter((variable) => variable.name === name)
-    if (matching.length > 1) {
-      throw new SsiConfigError(
-        `${name} appears more than once on the selected application container. Remove the duplicate before retrying.`
-      )
-    }
-    if (matching[0]?.secretRef) {
-      throw new SsiConfigError(
-        `${name} on the selected application container comes from a secret reference. Set it to a literal value or remove it before retrying.`
-      )
-    }
-  }
-}
-
-const upsertEnv = <T extends EnvironmentVar>(env: readonly T[], name: string, value: string): T[] => {
-  const index = env.findIndex((variable) => variable.name === name)
-
-  return index === -1
-    ? [...env, {name, value} as T]
-    : env.map((variable, variableIndex) => (variableIndex === index ? {...variable, value} : variable))
-}
-
-const mergeLanguageEnvFragment = (currentValue: string | undefined, fragment: EnvFragment): string => {
-  try {
-    return mergeEnvFragment(currentValue, fragment)
-  } catch (error) {
-    throw new SsiConfigError(
-      `Cannot enable automatic instrumentation while updating ${fragment.name}: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    )
-  }
-}
-
-const LANGUAGE_ENV_VARIANTS = TRACER_INJECTION_LANGUAGES.flatMap((language) =>
-  LIBCS.map((libc) => ({
-    language,
-    env: getLanguageInjectionSpec({
-      language,
-      libc,
-      registry: CONTAINER_APP_TRACER_REGISTRY,
-      version: DEFAULT_TRACER_VERSION,
-      root: TRACER_MOUNT_PATH,
-    }).env,
-  }))
-)
-const LANGUAGE_ENV_FRAGMENTS: readonly EnvFragment[] = LANGUAGE_ENV_VARIANTS.flatMap(({env}) => env)
-
-const hasManagedTracerEnvironment = (
-  env: readonly EnvironmentVar[] | undefined,
-  language: Language | undefined
-): boolean => {
-  const literalEnv = env ?? []
-
-  return LANGUAGE_ENV_VARIANTS.some(
-    (variant) =>
-      variant.language === language &&
-      variant.env.every((fragment) =>
-        hasEnvFragment(literalEnv.find(({name, secretRef}) => name === fragment.name && !secretRef)?.value, fragment)
-      )
-  )
-}
-
-const getInitContainerLanguage = (container: InitContainer): Language | undefined =>
-  TRACER_INJECTION_LANGUAGES.find((language) => {
-    const prefix = `${CONTAINER_APP_TRACER_REGISTRY}/dd-lib-${LANGUAGE_METADATA[language].tracerLanguage}-init:`
-    const version = container.image?.startsWith(prefix) ? container.image.slice(prefix.length) : undefined
-
-    return version !== undefined && TRACER_IMAGE_TAG_REG_EXP.test(version)
-  })
-
-const isManagedInitContainer = (container: InitContainer): boolean =>
+const hasManagedInitContainerShape = (container: InitContainer, mountPath: string): boolean =>
   container.name === TRACER_CONTAINER_NAME &&
-  getInitContainerLanguage(container) !== undefined &&
   container.command?.length === 1 &&
-  container.command[0] === '/datadog-init/copy-lib.sh' &&
+  container.command[0] === TRACER_COPY_ENTRYPOINT &&
   container.args?.length === 1 &&
-  container.args[0] === TRACER_MOUNT_PATH &&
+  container.args[0] === mountPath &&
   container.resources?.cpu === 0.25 &&
   container.resources.memory === '0.5Gi' &&
   container.volumeMounts?.length === 1 &&
   container.volumeMounts.some(
-    ({volumeName, mountPath}) => volumeName === TRACER_VOLUME_NAME && mountPath === TRACER_MOUNT_PATH
+    ({volumeName, mountPath: existingPath}) => volumeName === TRACER_VOLUME_NAME && existingPath === mountPath
   )
 
-const buildTracerInitContainer = (spec: LanguageInjectionSpec): InitContainer => ({
+const buildTracerInitContainer = (image: string, mountPath: string): InitContainer => ({
   name: TRACER_CONTAINER_NAME,
-  image: spec.image,
-  command: ['/datadog-init/copy-lib.sh'],
-  args: [TRACER_MOUNT_PATH],
-  resources: {cpu: 0.25, memory: '0.5Gi', ephemeralStorage: '1Gi'},
-  volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath: TRACER_MOUNT_PATH}],
+  image,
+  command: [TRACER_COPY_ENTRYPOINT],
+  args: [mountPath],
+  resources: {cpu: 0.25, memory: '0.5Gi'},
+  volumeMounts: [{volumeName: TRACER_VOLUME_NAME, mountPath}],
+})
+
+/** A secret-backed variable carries no literal value to merge into. */
+const envOps = (env: readonly EnvironmentVar[] | undefined): EnvOps<EnvironmentVar> => ({
+  matches: (variable, name) => variable.name === name,
+  valueOf: (variable) => (variable.name && !variable.secretRef ? variable.value : undefined),
+  isSecretBacked: (name) => (env ?? []).some((variable) => variable.name === name && variable.secretRef !== undefined),
+  create: (name, value) => ({name, value}),
+  withValue: (variable, value) => ({...variable, value}),
 })

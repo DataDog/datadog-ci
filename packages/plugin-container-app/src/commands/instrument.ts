@@ -20,24 +20,29 @@ import {
   sortedEqual,
 } from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
+  DD_SOURCE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   DEFAULT_HEALTH_CHECK_PORT,
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {
+  MULTI_LANGUAGE_SSI_MODE,
+  SINGLE_LANGUAGE_SSI_MODE,
+  SSI_INJECTION_MODE_TAG,
+  TRACER_CONTAINER_NAME,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
 import {DD_API_KEY_SECRET_NAME, getEnvVarsByName, redactSecrets} from '../common'
 import {
-  SINGLE_LANGUAGE_SSI_MODE,
-  SSI_INJECTION_MODE_TAG,
-  applySingleLanguageSsi,
-  assertLanguageInjectionEnvCanBeMerged,
-  assertSsiResourcesCanBeAdded,
+  applySsi,
+  assertInjectionEnvCanBeMerged,
+  assertSsiEphemeralStorage,
+  hasManagedTracerNames,
   hasSsi,
-  hasSsiMarker,
   removeSsiState,
   resolveSsiConfig,
   selectApplicationContainer,
@@ -159,18 +164,10 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
       config = {...config, service: config.service ?? containerAppName}
 
-      if (config.tracing === undefined && hasSsiMarker(containerApp)) {
+      if (config.tracing === undefined && hasSsi(containerApp)) {
         this.context.stdout.write(
           renderSoftWarning(
-            `Tracing defaults to manual for ${containerAppName}. Use --tracing inject --language <language> to retain automatic tracer injection.`
-          )
-        )
-      }
-
-      if (ssiConfig.kind === 'single-language' && (containerApp.template?.scale?.minReplicas ?? 0) === 0) {
-        this.context.stdout.write(
-          renderSoftWarning(
-            `Automatic APM instrumentation can increase cold-start delays for ${containerAppName} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
+            `Tracing defaults to manual for ${containerAppName}. Use --tracing inject to retain automatic tracer injection.`
           )
         )
       }
@@ -206,6 +203,8 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
     if (ssiConfig.kind === 'single-language') {
       updatedTags[SSI_INJECTION_MODE_TAG] = SINGLE_LANGUAGE_SSI_MODE
+    } else if (ssiConfig.kind === 'multi-language') {
+      updatedTags[SSI_INJECTION_MODE_TAG] = MULTI_LANGUAGE_SSI_MODE
     } else if (ssiConfig.kind === 'no-injection') {
       delete updatedTags[SSI_INJECTION_MODE_TAG]
     }
@@ -255,6 +254,25 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )
 
+    if (
+      (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
+      (containerApp.template?.scale?.minReplicas ?? 0) === 0
+    ) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Automatic APM instrumentation can increase cold-start delays for ${containerApp.name} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
+        )
+      )
+    }
+
+    if (!hasSsi(containerApp) && hasManagedTracerNames(containerApp)) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `${containerApp.name} declares a ${TRACER_CONTAINER_NAME} init container or volume that this command did not write. It owns that name and rebuilds it on every run, so yours is being replaced. Rename it to keep it.`
+        )
+      )
+    }
+
     if (!this.dryRun) {
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)
     }
@@ -271,24 +289,24 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       throw new SsiConfigError(ssiConfig.errors.join('\n'))
     }
 
-    const ssiExists = hasSsi(containerApp)
-    const shouldReplaceSsi = hasSsiMarker(containerApp) || (ssiConfig.kind === 'single-language' && ssiExists)
-    const sourceApp = shouldReplaceSsi ? removeSsiState(containerApp) : containerApp
+    // Unconditional, so that a tracer init container whose shape this release no longer recognizes
+    // is still cleaned up rather than left beside the one the requested state rebuilds.
+    const sourceApp = removeSsiState(containerApp)
     let targetIndex: number | undefined
-    if (ssiConfig.kind === 'single-language') {
+    if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {
       targetIndex = selectApplicationContainer(
         sourceApp.template?.containers ?? [],
         config.sidecarName!,
         config.containerName
       )
-      assertLanguageInjectionEnvCanBeMerged(sourceApp.template?.containers?.[targetIndex]?.env, ssiConfig.spec)
-      if (!ssiExists) {
-        assertSsiResourcesCanBeAdded(containerApp, targetIndex, config.sidecarName!)
-      }
+      assertInjectionEnvCanBeMerged(sourceApp.template?.containers?.[targetIndex]?.env, ssiConfig)
     }
 
     const envVarsByName = getEnvVarsByName(config, subscriptionId, resourceGroup)
-    if (ssiConfig.kind === 'single-language' || ssiConfig.tracing === 'manual') {
+    if (ssiConfig.kind === 'single-language') {
+      envVarsByName[DD_SOURCE_ENV_VAR] = {name: DD_SOURCE_ENV_VAR, value: ssiConfig.language}
+    }
+    if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language' || ssiConfig.tracing === 'manual') {
       envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
     } else if (ssiConfig.tracing === 'disabled') {
       envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'}
@@ -342,8 +360,13 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       template: updatedTemplate,
     }
 
-    return ssiConfig.kind === 'single-language'
-      ? applySingleLanguageSsi(instrumentedApp, targetIndex!, ssiConfig.spec)
-      : instrumentedApp
+    if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {
+      const updatedApp = applySsi(instrumentedApp, targetIndex!, ssiConfig)
+      assertSsiEphemeralStorage(updatedApp.template?.containers ?? [], ssiConfig)
+
+      return updatedApp
+    }
+
+    return instrumentedApp
   }
 }

@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {SpanCommand} from './span'
 
 // prettier-ignore

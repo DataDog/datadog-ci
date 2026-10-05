@@ -1,10 +1,6 @@
-export const SINGLE_LANGUAGE_TRACER_REGISTRIES = [
-  'gcr.io/datadoghq',
-  'public.ecr.aws/datadog',
-  'datadoghq.azurecr.io',
-] as const
+export const TRACER_REGISTRIES = ['gcr.io/datadoghq', 'public.ecr.aws/datadog', 'datadoghq.azurecr.io'] as const
 
-export type SingleLanguageTracerRegistry = (typeof SINGLE_LANGUAGE_TRACER_REGISTRIES)[number]
+export type TracerRegistry = (typeof TRACER_REGISTRIES)[number]
 
 export const LANGUAGE_METADATA = {
   java: {tracerLanguage: 'java', repository: 'dd-trace-java'},
@@ -31,11 +27,11 @@ export const getTracerCopyCompletionMarker = (language: Language, mountPath: str
   `${mountPath}/.${LANGUAGE_METADATA[language].repository}-copy-finished`
 
 export const buildSingleLanguageTracerImage = (
-  registry: SingleLanguageTracerRegistry,
+  registry: TracerRegistry,
   language: Language,
   version: string
 ): string => {
-  if (!(SINGLE_LANGUAGE_TRACER_REGISTRIES as readonly string[]).includes(registry)) {
+  if (!(TRACER_REGISTRIES as readonly string[]).includes(registry)) {
     throw new Error(`Unsupported tracer registry: ${String(registry)}`)
   }
   if (!Object.prototype.hasOwnProperty.call(LANGUAGE_METADATA, language)) {

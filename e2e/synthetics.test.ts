@@ -12,6 +12,12 @@ describe('synthetics', () => {
       }
     )
 
+    // Assert the 2 tests defined in `e2e/fixtures/tests.synthetics.json` were resolved
+    // through the glob pattern defined in `e2e/fixtures/global.config.json`
+    expect(result.stdout).toContain('pwd-mwg-3p5')
+    expect(result.stdout).toContain('2r9-q7u-4nn')
+
+    // Assert it was successful
     expect(result.stdout).toContain('View full summary in Datadog')
     expect(result.exitCode).toBe(0)
   })

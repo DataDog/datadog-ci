@@ -65,6 +65,18 @@ For backward compatibility, running a command that requires a plugin automatical
 > [!WARNING]
 > Datadog recommends explicitly installing plugins with `datadog-ci plugin install <scope>` to skip auto-installation. You can also disable auto-installation with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
+### Overriding the plugin version
+
+By default, `datadog-ci plugin install` installs a plugin version that matches the version of `datadog-ci` you are running. To override that behavior, use the `PLUGIN_INSTALL_VERSION_OVERRIDE` environment variable:
+
+```sh
+PLUGIN_INSTALL_VERSION_OVERRIDE=5.23.0 datadog-ci plugin install synthetics
+```
+
+This environment variable is also respected when datadog-ci auto-installs a missing plugin.
+
+The value must be an exact semantic version (`X.Y.Z`), without ranges such as `^5.23.0`.
+
 ## Usage
 
 ```bash
@@ -247,6 +259,13 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `correlate-image`: Correlate an image from a CD provider with its source commit. [🔗](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 - `gate`: Evaluate a Deployment Gate. [🔗](https://docs.datadoghq.com/deployment_gates/)
 
+#### `ecs-fargate`
+
+<sub>**README:** [📚](/packages/plugin-ecs-fargate) | **Documentation:** [🔗](https://docs.datadoghq.com/integrations/aws-fargate/) | **Plugin:** `@datadog/datadog-ci-plugin-ecs-fargate`</sub>
+
+- `instrument`: Apply Datadog instrumentation to an Amazon ECS Fargate task definition.
+- `uninstrument`: Revert Datadog instrumentation from an Amazon ECS Fargate task definition.
+
 #### `elf-symbols`
 
 <sub>**README:** [📚](/packages/base/src/commands/elf-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>
@@ -255,7 +274,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 #### `wasm-symbols`
 
-<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols)</sub>
+<sub>**README:** [📚](/packages/base/src/commands/wasm-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-webassembly-symbols/)</sub>
 
 - `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
 

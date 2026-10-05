@@ -28,6 +28,7 @@ jest.mock('@azure/identity', () => ({
 const webAppsOperations = {
   get: jest.fn(),
   getConfiguration: jest.fn(),
+  getConfigurationSlot: jest.fn(),
   listSiteContainers: jest.fn(),
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
@@ -51,6 +52,18 @@ const webAppsOperations = {
 
 const updateTags = jest.fn().mockResolvedValue({})
 const createAzureResource = jest.fn().mockResolvedValue({})
+
+const STAGED_ROOT = `/home/data/datadog-tracer/nodejs/6.0.0-${'a'.repeat(64)}`
+const publishTracer = jest.fn()
+const resolveAasTracerStaging = jest.fn()
+jest.mock('../ssi-stage', () => ({
+  resolveAasTracerStaging: (...args: unknown[]) => resolveAasTracerStaging(...args),
+}))
+
+const deleteDirectory = jest.fn()
+jest.mock('../kudu', () => ({
+  getKuduClient: jest.fn().mockImplementation(async () => ({deleteDirectory})),
+}))
 
 jest.mock('@azure/arm-resources', () => ({
   ResourceManagementClient: jest.fn().mockImplementation(() => ({
@@ -102,6 +115,8 @@ const DEFAULT_CONFIG_WITH_DEFAULT_SERVICE = {
   service: DEFAULT_CONFIG.aasName,
 }
 
+const NODE_22_SITE_CONFIG = {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'NODE|22-lts'}
+
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['aas', 'instrument'])
 
@@ -111,6 +126,7 @@ describe('aas instrument', () => {
       getToken.mockClear().mockResolvedValue({token: 'token'})
       webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
       webAppsOperations.getConfiguration.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
+      webAppsOperations.getConfigurationSlot.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
@@ -136,6 +152,9 @@ describe('aas instrument', () => {
       handleSourceCodeIntegration
         .mockClear()
         .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
+      resolveAasTracerStaging.mockReset().mockResolvedValue({root: STAGED_ROOT, publish: publishTracer})
+      publishTracer.mockReset().mockResolvedValue(undefined)
+      deleteDirectory.mockReset().mockResolvedValue(undefined)
     })
 
     test('Adds a sidecar and updates the application settings and tags', async () => {
@@ -175,6 +194,161 @@ describe('aas instrument', () => {
         properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
       })
       expect(webAppsOperations.restart).toHaveBeenCalled()
+    })
+
+    test('Does not treat the SSI telemetry tag as existing SSI', async () => {
+      const siteConfig = {...LINUX_CODE_WEB_APP.siteConfig, linuxFxVersion: 'DOTNET|8.0'}
+      webAppsOperations.get.mockResolvedValue({
+        ...LINUX_CODE_WEB_APP,
+        tags: {dd_sls_injection_mode: 'single_language'},
+        siteConfig,
+      })
+      webAppsOperations.getConfiguration.mockResolvedValue(siteConfig)
+
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            CORECLR_ENABLE_PROFILING: '1',
+            CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          }),
+        })
+      )
+    })
+
+    test('Previews tracer injection in dry run mode without publishing', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled', '--dry-run'])
+
+      expect(code).toEqual(0)
+      expect(resolveAasTracerStaging).toHaveBeenCalled()
+      expect(publishTracer).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
+      expect(context.stdout.toString()).toContain('Staging the nodejs tracer')
+      expect(context.stdout.toString()).toContain(`NODE_OPTIONS=--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`)
+      expect(context.stdout.toString()).toContain('DD_TRACE_ENABLED=true')
+    })
+
+    test('Publishes the staged tracer with --apm-enabled', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      publishTracer.mockResolvedValue(true)
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled'])
+
+      expect(code).toEqual(0)
+      expect(publishTracer).toHaveBeenCalled()
+      expect(context.stdout.toString()).toContain('Staging the nodejs tracer for my-web-app')
+      expect(context.stdout.toString()).toContain('Staged the nodejs tracer for my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            NODE_OPTIONS: `--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`,
+            DD_TRACE_ENABLED: 'true',
+          }),
+        })
+      )
+      expect(deleteDirectory).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateSlotConfigurationNames).not.toHaveBeenCalled()
+    })
+
+    test('Reports when the tracer is already staged with --apm-enabled', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      publishTracer.mockResolvedValue(false)
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--apm-enabled'])
+
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toContain('The nodejs tracer is already staged for my-web-app')
+    })
+
+    test('Pins injection settings sticky when instrumenting a slot with --apm-enabled', async () => {
+      webAppsOperations.getSlot.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfigurationSlot.mockResolvedValue(NODE_22_SITE_CONFIG)
+
+      const {code} = await runCLI([...SLOT_INSTRUMENT_ARGS, '--apm-enabled'])
+
+      expect(code).toEqual(0)
+      expect(publishTracer).toHaveBeenCalled()
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          appSettingNames: expect.arrayContaining(['NODE_OPTIONS', 'LD_PRELOAD', 'JAVA_TOOL_OPTIONS']),
+        })
+      )
+    })
+
+    test('Removing injection without --apm-enabled warns and keeps the staged tracer', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
+          NODE_OPTIONS: `--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`,
+          DD_TRACE_ENABLED: 'true',
+          DD_TAGS: '_dd.injection.mode:serverless-single-lang',
+        },
+      })
+
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+
+      expect(code).toEqual(0)
+      expect(resolveAasTracerStaging).not.toHaveBeenCalled()
+      expect(context.stdout.toString()).toContain('Removing automatic tracer injection')
+      expect(deleteDirectory).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.not.objectContaining({
+            NODE_OPTIONS: expect.anything(),
+            DD_TRACE_ENABLED: expect.anything(),
+          }),
+        })
+      )
+    })
+
+    test('Honors an explicit --dotnet request when removing injection without --apm-enabled', async () => {
+      webAppsOperations.get.mockResolvedValue(LINUX_CODE_WEB_APP)
+      webAppsOperations.getConfiguration.mockResolvedValue(NODE_22_SITE_CONFIG)
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
+          NODE_OPTIONS: `--require ${STAGED_ROOT}/node_modules/dd-trace/init.js`,
+          DD_TRACE_ENABLED: 'true',
+          DD_TAGS: '_dd.injection.mode:serverless-single-lang',
+        },
+      })
+
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dotnet'])
+
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+            CORECLR_ENABLE_PROFILING: '1',
+          }),
+        })
+      )
     })
 
     test('Performs no actions in dry run mode', async () => {
@@ -938,15 +1112,13 @@ describe('aas instrument', () => {
     })
 
     test('Ignores --musl flag and warns on non-containerized dotnet apps', async () => {
-      webAppsOperations.get.mockClear().mockResolvedValue({
-        ...CONTAINER_WEB_APP,
-        siteConfig: {
-          linuxFxVersion: 'DOTNETCORE|9.0',
-        },
-      })
+      const siteConfig = {linuxFxVersion: 'DOTNETCORE|9.0'}
+      webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, siteConfig})
+      webAppsOperations.getConfiguration.mockResolvedValue(siteConfig)
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--musl', '--dotnet'])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toMatchSnapshot()
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
     })
 
     test('Instruments a sidecar on a slot', async () => {
@@ -1102,6 +1274,22 @@ describe('aas instrument', () => {
         'staging'
       )
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_SLOT_ID, expect.any(Object))
+    })
+  })
+
+  describe('addTags', () => {
+    test('keeps SSI tag updates best effort', async () => {
+      const command = new InstrumentCommand()
+      command.context = {stdout: {write: jest.fn()}} as any
+      command.dryRun = false
+      Reflect.set(command, 'resourceClient', {
+        tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
+      })
+      updateTags.mockRejectedValue(new Error('tag update failed'))
+
+      await expect(
+        command.addTags(DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, NULL_SUBSCRIPTION_ID, 'rg', {name: 'app'}, {}, true)
+      ).resolves.toBeUndefined()
     })
   })
 
@@ -1292,6 +1480,7 @@ describe('aas instrument', () => {
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
+            {name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'},
           ],
         })
       )

@@ -1,4 +1,3 @@
-/* eslint-disable import-x/order */
 import {DoraDeploymentCommand} from './deployment'
 
 // prettier-ignore

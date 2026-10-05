@@ -301,9 +301,17 @@ describe('execute', () => {
     '--minified-path-prefix',
     'https://static.com/js',
     '--dry-run',
+    // Git metadata is covered separately above. Keep command behavior tests independent from the local repository.
+    '--disable-git',
   ])
 
-  const runCLIWithDebugId = makeRunCLI(SourcemapsUploadCommand, ['sourcemaps', 'upload', '--debug-id', '--dry-run'])
+  const runCLIWithDebugId = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--debug-id',
+    '--dry-run',
+    '--disable-git',
+  ])
 
   test('debug id', async () => {
     const {context, code} = await runCLIWithDebugId([

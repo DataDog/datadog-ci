@@ -9,11 +9,12 @@ import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {generateConfigDiff, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {SSI_INJECTION_MODE_TAG} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
 import {DD_API_KEY_SECRET_NAME, redactSecrets} from '../common'
-import {SSI_INJECTION_MODE_TAG, removeSsiState} from '../ssi'
+import {removeSsiState} from '../ssi'
 
 export class PluginCommand extends ContainerAppUninstrumentCommand {
   private cred!: DefaultAzureCredential

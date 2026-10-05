@@ -83,6 +83,7 @@ export type AasConfigOptions = Partial<{
   extraTags: string
   windowsRuntime: WindowsRuntime
   sidecarImage: string
+  apmEnabled: boolean
 }>
 
 export abstract class AasCommand extends BaseCommand {

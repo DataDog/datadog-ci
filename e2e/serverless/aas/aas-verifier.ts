@@ -1,3 +1,5 @@
+import {execFileSync} from 'node:child_process'
+
 import {execSync} from '../../helpers/exec'
 
 // Hard-coded because e2e tests run against built artifacts, can't import from source
@@ -15,6 +17,7 @@ const AAS_DD_SETTING_NAMES = [
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
   'DD_TAGS',
+  'DD_TRACE_ENABLED',
   'WEBSITES_ENABLE_APP_SERVICE_STORAGE',
 ]
 
@@ -35,6 +38,58 @@ const getWebApp = (appName: string, rg: string): WebApp => {
   const output = execSync(`az webapp show --name "${appName}" --resource-group "${rg}" --output json`)
 
   return JSON.parse(output)
+}
+
+const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode?: number} => {
+  const credentials = JSON.parse(
+    execSync(
+      `az webapp deployment list-publishing-credentials --name "${appName}" --resource-group "${rg}" --output json`
+    )
+  )
+  const properties = credentials.properties ?? credentials
+  const scmUrl = new URL(properties.scmUri)
+  const accessToken = execSync(
+    'az account get-access-token --resource https://management.azure.com/ --query accessToken --output tsv'
+  ).trim()
+
+  return JSON.parse(
+    execFileSync(
+      'curl',
+      [
+        '--fail',
+        '--silent',
+        '--max-time',
+        '120',
+        '--show-error',
+        '--header',
+        `Authorization: Bearer ${accessToken}`,
+        '--header',
+        'Content-Type: application/json',
+        '--data',
+        JSON.stringify({command, dir: '/'}),
+        `${scmUrl.origin}/api/command`,
+      ],
+      {encoding: 'utf8'}
+    )
+  )
+}
+
+const verifyStagedTracer = (appName: string, rg: string, expected: boolean): void => {
+  // The Azure Files-backed /home mount lags on directory enumeration (CIFS), especially right
+  // after a delete, so poll before asserting.
+  let result: {ExitCode?: number} = {}
+  for (let attempt = 0; attempt < 6; attempt++) {
+    result = runKuduCommand(appName, rg, 'test -d /home/data/datadog-tracer')
+    if ((result.ExitCode === 0) === expected) {
+      break
+    }
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10_000)
+  }
+  if (expected) {
+    expect(result.ExitCode).toBe(0)
+  } else {
+    expect(result.ExitCode).not.toBe(0)
+  }
 }
 
 interface SiteContainer {
@@ -73,7 +128,12 @@ const getSiteExtensions = (appName: string, rg: string, subscriptionId: string):
   }
 }
 
-export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptionId: string): void => {
+export const verifyLinuxInstrumented = (
+  appName: string,
+  rg: string,
+  subscriptionId: string,
+  expectSsi = false
+): void => {
   console.log(`Verifying Linux app "${appName}" is instrumented...\n`)
 
   const settings = getAppSettings(appName, rg)
@@ -89,6 +149,11 @@ export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptio
   }
   // Logs only flow when instance logging is enabled (--instance-logging).
   expect(settings['DD_AAS_INSTANCE_LOGGING_ENABLED']).toBe('true')
+  if (expectSsi) {
+    expect(settings.NODE_OPTIONS).toContain('/home/data/datadog-tracer/nodejs/')
+    expect(settings.NODE_OPTIONS).toContain('/init.js')
+    expect(settings.DD_TAGS).toContain('_dd.injection.mode:serverless-single-lang')
+  }
 
   const containers = getSiteContainers(appName, rg, subscriptionId)
   const sidecar = containers.find((c) => c.name === 'datadog-sidecar')
@@ -100,11 +165,20 @@ export const verifyLinuxInstrumented = (appName: string, rg: string, subscriptio
   const tags = app.tags || {}
   expect(Object.keys(tags)).toContain('service')
   expect(Object.keys(tags)).toContain('dd_sls_ci')
+  if (expectSsi) {
+    expect(tags.dd_sls_injection_mode).toBe('single_language')
+    verifyStagedTracer(appName, rg, true)
+  }
 
   console.log('All Linux instrumented checks passed.\n')
 }
 
-export const verifyLinuxUninstrumented = (appName: string, rg: string, subscriptionId: string): void => {
+export const verifyLinuxUninstrumented = (
+  appName: string,
+  rg: string,
+  subscriptionId: string,
+  expectSsi = false
+): void => {
   console.log(`Verifying Linux app "${appName}" is uninstrumented...\n`)
 
   const settings = getAppSettings(appName, rg)
@@ -120,6 +194,22 @@ export const verifyLinuxUninstrumented = (appName: string, rg: string, subscript
   const tags = app.tags || {}
   expect(Object.keys(tags)).not.toContain('service')
   expect(Object.keys(tags)).not.toContain('dd_sls_ci')
+  if (expectSsi) {
+    expect(tags.dd_sls_injection_mode).toBeUndefined()
+    verifyStagedTracer(appName, rg, false)
+    // Injection settings outside AAS_DD_SETTING_NAMES must also be gone.
+    for (const name of [
+      'NODE_OPTIONS',
+      'JAVA_TOOL_OPTIONS',
+      'PYTHONPATH',
+      'RUBYOPT',
+      'LD_PRELOAD',
+      'PHP_INI_SCAN_DIR',
+      'DD_LOADER_PACKAGE_PATH',
+    ]) {
+      expect(settings[name]).toBeUndefined()
+    }
+  }
 
   console.log('All Linux uninstrumented checks passed.\n')
 }

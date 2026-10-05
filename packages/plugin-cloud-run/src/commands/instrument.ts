@@ -1,3 +1,5 @@
+import type {ServiceUpdatePreview} from '../service-update'
+import type {SsiConfigResult} from '../ssi'
 import type {IEnvVar, IService} from '../types'
 import type {ServerlessConfigOptions} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
@@ -8,7 +10,7 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {generateConfigDiff, getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
@@ -29,13 +31,23 @@ import chalk from 'chalk'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {instrumentServiceConfig} from '../service-config'
+import {previewServiceUpdate} from '../service-update'
+import {getTracingEnvValue, normalizeTracingMode, resolveSsiConfig} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
+
+interface InstrumentedServiceUpdate {
+  existingService: IService
+  updatedService: IService
+  serviceName: string
+  preview: ServiceUpdatePreview
+}
 
 export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
+  private ssiConfig: SsiConfigResult | undefined
 
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
@@ -44,25 +56,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
     )
 
-    // Verify DD API Key
-    const site = getDatadogSite()
-    try {
-      const isApiKeyValid = await newApiKeyValidator({
-        apiKey: process.env.DD_API_KEY,
-        datadogSite: site,
-      }).validateApiKey()
-      if (!isApiKeyValid) {
-        throw Error()
-      }
-    } catch (e) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
-            process.env.DD_API_KEY ?? ''
-          )} and ${chalk.bold('DD_SITE')}: ${site}\nEnsure you've set both DD_API_KEY and DD_SITE.`
-        )
-      )
-
+    if (!this.validateLocalOptions()) {
       return 1
     }
 
@@ -102,16 +96,32 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
 
-    if (this.extraTags && !this.extraTags.match(EXTRA_TAGS_REG_EXP)) {
-      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
-
-      return 1
-    }
-
     if (!this.project || !this.services || !this.services.length || !this.region) {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
+
+    // Verify DD API Key
+    const site = getDatadogSite()
+    try {
+      const isApiKeyValid = await newApiKeyValidator({
+        apiKey: process.env.DD_API_KEY,
+        datadogSite: site,
+      }).validateApiKey()
+      if (!isApiKeyValid) {
+        throw Error()
+      }
+    } catch (e) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
+            process.env.DD_API_KEY ?? ''
+          )} and ${chalk.bold('DD_SITE')}: ${site}\nEnsure you've set both DD_API_KEY and DD_SITE.`
+        )
+      )
+
+      return 1
+    }
 
     // Verify GCP credentials
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
@@ -144,6 +154,38 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     return 0
   }
 
+  public validateLocalOptions(): boolean {
+    if (this.extraTags && !this.extraTags.match(EXTRA_TAGS_REG_EXP)) {
+      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
+
+      return false
+    }
+
+    const ssiConfig = this.getSsiConfig()
+    if (ssiConfig.kind === 'errors') {
+      this.context.stderr.write(renderError(`Invalid APM configuration: ${ssiConfig.errors.join('\n')}\n`))
+
+      return false
+    }
+    for (const warning of ssiConfig.warnings) {
+      this.context.stdout.write(renderSoftWarning(`${warning}\n`))
+    }
+
+    return true
+  }
+
+  public getSsiConfig(): SsiConfigResult {
+    this.ssiConfig ??= resolveSsiConfig({
+      language: this.language,
+      tracing: normalizeTracingMode(this.tracing),
+      tracerVersion: this.tracerVersion,
+      tracerLibc: this.tracerLibc,
+      tracerVolumeMedium: this.tracerVolumeMedium,
+    })
+
+    return this.ssiConfig
+  }
+
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string | undefined) {
     const client = new ServicesClient()
 
@@ -155,56 +197,50 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}🚀 Instrumenting Cloud Run services with sidecar...\n`)
     )
-    for (let i = 0; i < existingServiceConfigs.length; i++) {
-      const serviceConfig = existingServiceConfigs[i]
-      const serviceName = services[i]
+    const updates = await Promise.all(
+      existingServiceConfigs.map(async (existingService, index): Promise<InstrumentedServiceUpdate> => {
+        const serviceName = services[index]
+        try {
+          const ssiConfig = this.getSsiConfig()
+          if (
+            (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
+            (existingService.template?.scaling?.minInstanceCount ?? 0) === 0
+          ) {
+            this.context.stdout.write(
+              renderSoftWarning(
+                `Automatic APM instrumentation can increase cold-start delays for ${serviceName} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
+              )
+            )
+          }
+          const updatedService = this.createInstrumentedServiceConfig(existingService, ddService ?? serviceName)
+          const preview = await previewServiceUpdate(client, existingService, updatedService)
+
+          return {existingService, updatedService, serviceName, preview}
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          throw new Error(`Failed to validate service ${serviceName}: ${message}`)
+        }
+      })
+    )
+
+    const updatedServices: string[] = []
+    for (const update of updates) {
       try {
-        const actualDDService = ddService ?? serviceName
-        await this.instrumentService(client, serviceConfig, serviceName, actualDDService)
+        if (await this.instrumentService(client, update)) {
+          updatedServices.push(update.serviceName)
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        throw new Error(`Failed to instrument service ${serviceName}: ${message}`)
+        const partialSuccess =
+          updatedServices.length === 0 ? '' : `\nServices updated before the failure: ${updatedServices.join(', ')}.`
+        throw new Error(`Failed to instrument service ${update.serviceName}: ${message}${partialSuccess}`)
       }
     }
-  }
-
-  public async instrumentService(
-    client: ServicesClient,
-    existingService: IService,
-    serviceName: string,
-    ddService: string
-  ) {
-    const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
-    this.context.stdout.write(generateConfigDiff(existingService, updatedService))
-    if (this.dryRun) {
-      this.context.stdout.write(
-        `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
-          serviceName
-        )} with the above changes.\n`
-      )
-
-      return
-    } else if (this.interactive) {
-      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
-      if (!confirmed) {
-        throw new Error('Instrumentation cancelled by user.')
-      }
-    }
-
-    await withSpinner(
-      `Instrumenting service ${chalk.bold(serviceName)}...`,
-      async () => {
-        const [operation] = await client.updateService({
-          service: updatedService,
-        })
-        await operation.promise()
-      },
-      `Instrumented service ${chalk.bold(serviceName)}`
-    )
   }
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
     return instrumentServiceConfig(service, {
+      ssiConfig: this.getSsiConfig(),
       ddService,
       environment: this.environment,
       version: this.version,
@@ -217,6 +253,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         envVars: this.envVars,
       }),
       healthCheckPort: this.healthCheckPort,
+      tracerReadinessPort: this.tracerReadinessPort,
       sidecarName: this.sidecarName,
       sidecarImage: this.sidecarImage,
       sidecarCpus: this.sidecarCpus,
@@ -230,7 +267,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     const envVars = getBaseEnvVars(config)
 
     for (const [name, value] of [
-      [DD_TRACE_ENABLED_ENV_VAR, this.tracing],
+      [DD_TRACE_ENABLED_ENV_VAR, getTracingEnvValue(this.tracing)],
       [DD_LOG_LEVEL_ENV_VAR, this.logLevel],
       [DD_SOURCE_ENV_VAR, this.language],
       ...(this.llmobs
@@ -248,5 +285,44 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
 
     return Object.fromEntries(Object.entries(envVars).map(([name, value]) => [name, {name, value}]))
+  }
+
+  private async instrumentService(client: ServicesClient, update: InstrumentedServiceUpdate): Promise<boolean> {
+    const {existingService, updatedService, serviceName, preview} = update
+    this.context.stdout.write(preview.diff)
+    if (!preview.hasChanges && existingService.terminalCondition?.state === 'CONDITION_SUCCEEDED') {
+      this.context.stdout.write(
+        `\n\n${dryRunPrefix(this.dryRun)}Service ${chalk.bold(serviceName)} already has the requested instrumentation.\n`
+      )
+
+      return false
+    }
+    if (this.dryRun) {
+      this.context.stdout.write(
+        `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
+          serviceName
+        )} with the above changes.\n`
+      )
+
+      return false
+    } else if (this.interactive) {
+      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
+      if (!confirmed) {
+        throw new Error('Instrumentation cancelled by user.')
+      }
+    }
+
+    await withSpinner(
+      `Instrumenting service ${chalk.bold(serviceName)}...`,
+      async () => {
+        const [operation] = await client.updateService({
+          service: updatedService,
+        })
+        await operation.promise()
+      },
+      `Instrumented service ${chalk.bold(serviceName)}`
+    )
+
+    return true
   }
 }

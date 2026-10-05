@@ -35,6 +35,8 @@ Then run the following command to install the Synthetics plugin:
 datadog-ci plugin install synthetics
 ```
 
+For more information about plugins, see [Installing a plugin](/packages/datadog-ci/README.md##installing-a-plugin).
+
 ### Setup the client
 
 To setup the client, your Datadog API and application keys need to be configured. These keys can be defined in three different ways:

@@ -109,7 +109,7 @@ describe('import-tests', () => {
         options: {device_ids: ['chrome.laptop_large']},
         type: 'browser',
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       const mockLTD = {
         tests: [
           {
