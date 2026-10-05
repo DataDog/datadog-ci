@@ -129,6 +129,7 @@ describe('cli', () => {
       'ecs-fargate uninstrument': ['--task-definition', 'my-task-definition'],
       'elf-symbols upload': [NONEXISTENT_FILE],
       'pe-symbols upload': [NONEXISTENT_FILE],
+      'ppdb-symbols upload': [NONEXISTENT_FILE, '--debug-id-manifest', NONEXISTENT_FILE],
       'gate evaluate': ['--no-wait'],
       'lambda cloudwatch': ['disable', '-f', 'arn:aws:lambda:us-east-1:123456789012:function:my-func'],
       'junit upload': [NONEXISTENT_FILE],
