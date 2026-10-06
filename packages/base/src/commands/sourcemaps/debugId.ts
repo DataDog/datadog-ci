@@ -107,6 +107,23 @@ export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
 
 // Keep this runtime snippet in sync with build-plugins:
 // https://github.com/DataDog/build-plugins/blob/master/packages/plugins/rum/src/getSourceCodeContextSnippet.ts
+// Unminified version:
+// (function(c, n) {
+//   try {
+//     if (typeof window === 'undefined') return;
+//     var w = window,
+//         m = w[n] = w[n] || {},
+//         l = Error.stackTraceLimit;
+//     try {
+//       Error.stackTraceLimit = 1;
+//       var e = new Error();
+//     } finally {
+//       Error.stackTraceLimit = l;
+//     }
+//     var s = e.stack;
+//     s && (m[s] = c);
+//   } catch (e) {}
+// })({"ddDebugId": "${debugId}"}, "${SOURCE_CODE_CONTEXT_MARKER}");
 const buildSnippet = (debugId: string): string => {
   // Restore before reading .stack so prepareStackTrace sees the application setting.
   return `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},l=Error.stackTraceLimit;try{Error.stackTraceLimit=1;var e=new Error()}finally{Error.stackTraceLimit=l}var s=e.stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"${SOURCE_CODE_CONTEXT_MARKER}");`
