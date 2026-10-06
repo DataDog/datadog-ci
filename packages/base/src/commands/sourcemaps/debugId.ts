@@ -109,10 +109,7 @@ export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
 // https://github.com/DataDog/build-plugins/blob/c9384d115d53578f220cd5e1f29994acb96a1782/packages/plugins/rum/src/getSourceCodeContextSnippet.ts#L55
 const buildSnippet = (debugId: string): string => {
   // Restore before reading .stack so prepareStackTrace sees the application setting.
-  const capture =
-    "var d=Object.getOwnPropertyDescriptor(Error,'stackTraceLimit'),e;if(d&&d.writable&&typeof d.value==='number'){try{Error.stackTraceLimit=1;e=new Error()}finally{Error.stackTraceLimit=d.value}}else{e=new Error()}var s=e.stack;"
-
-  return `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{};${capture}s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"${SOURCE_CODE_CONTEXT_MARKER}");`
+  return `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},l=Error.stackTraceLimit;try{Error.stackTraceLimit=1;var e=new Error()}finally{Error.stackTraceLimit=l}var s=e.stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"${SOURCE_CODE_CONTEXT_MARKER}");`
 }
 
 const HASHBANG_REGEX = /^#!.*(?:\r\n|\r|\n)/
