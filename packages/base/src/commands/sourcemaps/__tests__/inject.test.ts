@@ -37,7 +37,7 @@ describe('sourcemaps inject', () => {
     fs.rmSync(directory, {recursive: true, force: true})
   })
 
-  test('injects a debug ID into the bundle and records it in sourcemap metadata', async () => {
+  test('injects a debug ID with one-frame capture and matching sourcemap metadata', async () => {
     const {context, code} = await runCLI([directory])
 
     expect(code).toBe(0)
@@ -49,6 +49,7 @@ describe('sourcemaps inject', () => {
     const debugId = js.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
 
     expect(debugId).toBeDefined()
+    expect(js).toContain('Error.stackTraceLimit=1')
     expect(js).not.toContain('//# debugId=')
     expect(js.trimEnd().endsWith('//# sourceMappingURL=bundle.js.map')).toBe(true)
     expect(sourcemap.debugId).toBeUndefined()
