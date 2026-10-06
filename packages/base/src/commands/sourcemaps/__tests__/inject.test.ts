@@ -37,41 +37,29 @@ describe('sourcemaps inject', () => {
     fs.rmSync(directory, {recursive: true, force: true})
   })
 
-  test('injects a debug ID into the bundle and records it in sourcemap metadata', async () => {
-    const {context, code} = await runCLI([directory])
+  test.each([{flags: []}, {flags: ['--experimental-limit-stack-trace']}])(
+    'injects a debug ID and matching sourcemap metadata with $flags',
+    async ({flags}) => {
+      const {context, code} = await runCLI([directory, ...flags])
 
-    expect(code).toBe(0)
-    const js = fs.readFileSync(jsPath, 'utf-8')
-    const sourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {
-      debugId?: string
-      debug_id?: string
+      expect(code).toBe(0)
+      const js = fs.readFileSync(jsPath, 'utf-8')
+      const sourcemap = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')) as {
+        debugId?: string
+        debug_id?: string
+      }
+      const debugId = js.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
+
+      expect(debugId).toBeDefined()
+      expect(js.includes('Error.stackTraceLimit=1')).toBe(flags.length > 0)
+      expect(js).not.toContain('//# debugId=')
+      expect(js.trimEnd().endsWith('//# sourceMappingURL=bundle.js.map')).toBe(true)
+      expect(sourcemap.debugId).toBeUndefined()
+      expect(sourcemap.debug_id).toBe(debugId)
+      expect(context.stdout.toString()).toContain('Injected debug IDs into 1 file(s)')
+      expect(context.stdout.toString()).toContain('failed 0 file(s)')
     }
-    const debugId = js.match(/"ddDebugId":"([a-f0-9-]+)"/)?.[1]
-
-    expect(debugId).toBeDefined()
-    expect(js).not.toContain('//# debugId=')
-    expect(js.trimEnd().endsWith('//# sourceMappingURL=bundle.js.map')).toBe(true)
-    expect(sourcemap.debugId).toBeUndefined()
-    expect(sourcemap.debug_id).toBe(debugId)
-    expect(context.stdout.toString()).toContain('Injected debug IDs into 1 file(s)')
-    expect(context.stdout.toString()).toContain('failed 0 file(s)')
-  })
-
-  test('enables experimental capture only when requested and does not reinject', async () => {
-    expect((await runCLI([directory, '--experimental-limit-stack-trace'])).code).toBe(0)
-    const injected = fs.readFileSync(jsPath, 'utf-8')
-    expect(injected).toContain('Error.stackTraceLimit=1')
-    expect((await runCLI([directory])).code).toBe(0)
-    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injected)
-  })
-
-  test('leaves default capture unchanged and respects experimental dry run', async () => {
-    const original = fs.readFileSync(jsPath, 'utf-8')
-    expect((await runCLI([directory, '--experimental-limit-stack-trace', '--dry-run'])).code).toBe(0)
-    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(original)
-    expect((await runCLI([directory])).code).toBe(0)
-    expect(fs.readFileSync(jsPath, 'utf-8')).not.toContain('stackTraceLimit')
-  })
+  )
 
   test('preserves semicolonless directives and strict mode through the command', async () => {
     fs.writeFileSync(
@@ -110,7 +98,7 @@ describe('sourcemaps inject', () => {
     delete sourcemap.debug_id
     fs.writeFileSync(sourcemapPath, JSON.stringify(sourcemap))
 
-    const {context, code} = await runCLI([directory])
+    const {context, code} = await runCLI([directory, '--experimental-limit-stack-trace'])
 
     expect(code).toBe(0)
     expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injectedJs)
@@ -154,17 +142,20 @@ describe('sourcemaps inject', () => {
     expect((await runCLI([directory, '--max-concurrency', '1'])).code).toBe(0)
   })
 
-  test('does not modify files in dry-run mode', async () => {
-    const originalJs = fs.readFileSync(jsPath, 'utf-8')
-    const originalSourcemap = fs.readFileSync(sourcemapPath, 'utf-8')
+  test.each([{flags: []}, {flags: ['--experimental-limit-stack-trace']}])(
+    'does not modify files in dry-run mode with $flags',
+    async ({flags}) => {
+      const originalJs = fs.readFileSync(jsPath, 'utf-8')
+      const originalSourcemap = fs.readFileSync(sourcemapPath, 'utf-8')
 
-    const {context, code} = await runCLI([directory, '--dry-run'])
+      const {context, code} = await runCLI([directory, '--dry-run', ...flags])
 
-    expect(code).toBe(0)
-    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
-    expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe(originalSourcemap)
-    expect(context.stdout.toString()).toContain('Would inject debug IDs into 1 file(s)')
-  })
+      expect(code).toBe(0)
+      expect(fs.readFileSync(jsPath, 'utf-8')).toBe(originalJs)
+      expect(fs.readFileSync(sourcemapPath, 'utf-8')).toBe(originalSourcemap)
+      expect(context.stdout.toString()).toContain('Would inject debug IDs into 1 file(s)')
+    }
+  )
 
   test('skips a sourcemap with no mappings without modifying either file', async () => {
     fs.writeFileSync(

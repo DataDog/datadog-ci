@@ -237,9 +237,23 @@ describe('injectDebugIdSnippet', () => {
     )
     const context = vm.createContext({window: {}, originalLimit: limit})
     vm.runInContext(
-      `Error.stackTraceLimit = originalLimit; Error.prepareStackTrace = function(error, frames) { globalThis.limitDuringFormat = Error.stackTraceLimit; return 'Error\\n' + frames.map(String).join('\\n') };`,
+      `Error.stackTraceLimit = originalLimit;
+       Error.prepareStackTrace = function(error, frames) {
+         globalThis.limitDuringFormat = Error.stackTraceLimit;
+         return 'Error\\n' + frames.map(String).join('\\n');
+       };
+       function applicationLeaf() { return new Error().stack; }
+       function applicationMiddle() { return applicationLeaf(); }
+       function applicationOuter() { return applicationMiddle(); }`,
       context
     )
+    const captureApplicationFrames = () =>
+      (vm.runInContext('applicationOuter()', context, {filename: 'application.js'}) as string).split('\n').slice(1)
+    const before = captureApplicationFrames()
+    expect(before.slice(0, 3).map((frame) => frame.match(/application\w+/)?.[0])).toEqual(
+      ['applicationLeaf', 'applicationMiddle', 'applicationOuter'].slice(0, limit)
+    )
+
     vm.runInContext(result.js, context, {filename: 'bundle.js'})
     expect(vm.runInContext('Error.stackTraceLimit', context)).toBe(limit)
     expect(context.limitDuringFormat).toBe(limit)
@@ -252,14 +266,16 @@ describe('injectDebugIdSnippet', () => {
     expect(entries[0][0].split('\n')).toHaveLength(2)
     expect(entries[0][0]).toContain('bundle.js')
     expect(entries[0][1]).toEqual({ddDebugId: DEBUG_ID_2})
-    expect(vm.runInContext('new Error().stack.split("\\n").length', context)).toBeGreaterThan(Math.min(limit, 2))
+    const after = captureApplicationFrames()
+    expect(after).toHaveLength(before.length)
+    expect(after.slice(0, 3)).toEqual(before.slice(0, 3))
   })
 
   test.each([
     'delete Error.stackTraceLimit;',
     'Object.defineProperty(Error, "stackTraceLimit", {value: 10, writable: false});',
     'Object.defineProperty(Error, "stackTraceLimit", {get: function(){ return 10 }, configurable: true});',
-  ])('preserves unsupported or non-writable property: %s', (setup) => {
+  ])('matches default capture and preserves unsupported settings: %s', (setup) => {
     const result = injectDebugIdSnippet(
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
@@ -268,11 +284,28 @@ describe('injectDebugIdSnippet', () => {
     )
     const context = vm.createContext({window: {}})
     vm.runInContext(setup + ';globalThis.before = Object.getOwnPropertyDescriptor(Error, "stackTraceLimit");', context)
-    vm.runInContext(result.js, context)
+    vm.runInContext(result.js, context, {filename: 'bundle.js'})
     expect(vm.runInContext('Object.getOwnPropertyDescriptor(Error, "stackTraceLimit")', context)).toEqual(
       context.before
     )
     expect(context.finished).toBe(true)
+    const defaultContext = vm.createContext({window: {}})
+    vm.runInContext(setup, defaultContext)
+    const defaultResult = injectDebugIdSnippet(
+      'globalThis.finished = true;',
+      buildIdentitySourcemap('globalThis.finished = true;'),
+      DEBUG_ID_2
+    )
+    vm.runInContext(defaultResult.js, defaultContext, {filename: 'bundle.js'})
+    const registrations = (runtime: vm.Context) => {
+      const entries = vm.runInContext('Object.entries(window.DD_SOURCE_CODE_CONTEXT)', runtime) as [
+        string,
+        {ddDebugId: string},
+      ][]
+
+      return entries.map(([stack, metadata]) => ({hasBundleFrame: stack.includes('bundle.js'), metadata}))
+    }
+    expect(registrations(context)).toEqual(registrations(defaultContext))
   })
 
   test('restores the limit when a custom Error constructor throws', () => {
