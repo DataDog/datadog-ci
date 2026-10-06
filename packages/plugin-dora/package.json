@@ -50,6 +50,6 @@
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "chalk": "3.0.0",
-    "simple-git": "3.36.0"
+    "simple-git": "4.0.2"
   }
 }
