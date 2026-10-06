@@ -1,5 +1,6 @@
 import fs from 'fs'
 import {Writable} from 'stream'
+import vm from 'vm'
 
 import {SourceMapConsumer, SourceMapGenerator} from 'source-map'
 import upath from 'upath'
@@ -226,6 +227,81 @@ describe('injectDebugIdSnippet', () => {
 
   const originalPositionFor = async (sourcemap: string, line: number, column: number) =>
     SourceMapConsumer.with(sourcemap, undefined, (consumer) => consumer.originalPositionFor({line, column}))
+
+  test.each([0, 1, 10, Infinity])('limits registration and restores %s before formatting', (limit) => {
+    const result = injectDebugIdSnippet(
+      'globalThis.finished = true;',
+      buildIdentitySourcemap('globalThis.finished = true;'),
+      DEBUG_ID_2,
+      {experimentalLimitStackTrace: true}
+    )
+    const context = vm.createContext({window: {}, originalLimit: limit})
+    vm.runInContext(
+      `Error.stackTraceLimit = originalLimit; Error.prepareStackTrace = function(error, frames) { globalThis.limitDuringFormat = Error.stackTraceLimit; return 'Error\\n' + frames.map(String).join('\\n') };`,
+      context
+    )
+    vm.runInContext(result.js, context, {filename: 'bundle.js'})
+    expect(vm.runInContext('Error.stackTraceLimit', context)).toBe(limit)
+    expect(context.limitDuringFormat).toBe(limit)
+    expect(context.finished).toBe(true)
+    const entries = vm.runInContext('Object.entries(window.DD_SOURCE_CODE_CONTEXT)', context) as [
+      string,
+      {ddDebugId: string},
+    ][]
+    expect(entries).toHaveLength(1)
+    expect(entries[0][0].split('\n')).toHaveLength(2)
+    expect(entries[0][0]).toContain('bundle.js')
+    expect(entries[0][1]).toEqual({ddDebugId: DEBUG_ID_2})
+    expect(vm.runInContext('new Error().stack.split("\\n").length', context)).toBeGreaterThan(Math.min(limit, 2))
+  })
+
+  test.each([
+    'delete Error.stackTraceLimit;',
+    'Object.defineProperty(Error, "stackTraceLimit", {value: 10, writable: false});',
+    'Object.defineProperty(Error, "stackTraceLimit", {get: function(){ return 10 }, configurable: true});',
+  ])('preserves unsupported or non-writable property: %s', (setup) => {
+    const result = injectDebugIdSnippet(
+      'globalThis.finished = true;',
+      buildIdentitySourcemap('globalThis.finished = true;'),
+      DEBUG_ID_2,
+      {experimentalLimitStackTrace: true}
+    )
+    const context = vm.createContext({window: {}})
+    vm.runInContext(setup + ';globalThis.before = Object.getOwnPropertyDescriptor(Error, "stackTraceLimit");', context)
+    vm.runInContext(result.js, context)
+    expect(vm.runInContext('Object.getOwnPropertyDescriptor(Error, "stackTraceLimit")', context)).toEqual(
+      context.before
+    )
+    expect(context.finished).toBe(true)
+  })
+
+  test('restores the limit when a custom Error constructor throws', () => {
+    const result = injectDebugIdSnippet(
+      'globalThis.finished = true;',
+      buildIdentitySourcemap('globalThis.finished = true;'),
+      DEBUG_ID_2,
+      {experimentalLimitStackTrace: true}
+    )
+    const context = vm.createContext({window: {}})
+    vm.runInContext(
+      'Error = function(){ globalThis.observedLimit = Error.stackTraceLimit; throw "capture failed" }; Error.stackTraceLimit = 10;',
+      context
+    )
+    vm.runInContext(result.js, context)
+    expect(context.observedLimit).toBe(1)
+    expect(vm.runInContext('Error.stackTraceLimit', context)).toBe(10)
+    expect(context.finished).toBe(true)
+  })
+
+  test('preserves mappings with experimental capture', async () => {
+    const js = 'var x = 1;\nconsole.log(x);'
+    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2, {experimentalLimitStackTrace: true})
+    expect(await originalPositionFor(result.sourcemap, 3, 0)).toMatchObject({
+      source: ORIGINAL_SOURCE_NAME,
+      line: 2,
+      column: 0,
+    })
+  })
 
   test('injects the debug ID while preserving original positions', async () => {
     const js = 'var x = 1;\nconsole.log(x);'

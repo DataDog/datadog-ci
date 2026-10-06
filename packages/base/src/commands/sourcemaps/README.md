@@ -36,6 +36,14 @@ Bundles that already contain a debug ID are not reinjected. The command still ad
 
 Valid sourcemaps with an empty `mappings` field contain no original positions to deobfuscate. The command leaves those sourcemaps and their JavaScript bundles unchanged and reports them as skipped.
 
+Use `--experimental-limit-stack-trace` to reduce debug-ID registration overhead on supported engines. It limits only the registration error’s stack and restores the original setting immediately. This experimental option is disabled by default. Rebuild your bundles before enabling it.
+
+Custom `Error` constructors can observe the temporary setting, and custom stack formatters receive only one frame for the registration error.
+
+```sh
+datadog-ci sourcemaps inject ./build --experimental-limit-stack-trace
+```
+
 The inject command always records the ID in the sourcemap's top-level `debug_id` field. The upload command reads the authoritative ID from the JavaScript bundle and sends it as upload metadata; upload matching does not depend on the sourcemap field, so artifacts produced directly by Datadog build plugins remain compatible.
 
 Run your application's normal build again before reinjecting whenever its source code or build configuration changes. The build may reuse the same output filenames, but it must recreate the JavaScript bundles and sourcemaps without the previous injection (a clean build is recommended). Then run `sourcemaps inject` and `sourcemaps upload --debug-id` again. Changed bundle contents receive a new debug ID, while unchanged rebuilt bundles reproduce the same deterministic ID. Do not modify generated artifacts between injection, upload, and deployment: rerunning `inject` preserves an existing debug ID and does not detect post-injection changes.

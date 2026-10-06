@@ -57,6 +57,22 @@ describe('sourcemaps inject', () => {
     expect(context.stdout.toString()).toContain('failed 0 file(s)')
   })
 
+  test('enables experimental capture only when requested and does not reinject', async () => {
+    expect((await runCLI([directory, '--experimental-limit-stack-trace'])).code).toBe(0)
+    const injected = fs.readFileSync(jsPath, 'utf-8')
+    expect(injected).toContain('Error.stackTraceLimit=1')
+    expect((await runCLI([directory])).code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injected)
+  })
+
+  test('leaves default capture unchanged and respects experimental dry run', async () => {
+    const original = fs.readFileSync(jsPath, 'utf-8')
+    expect((await runCLI([directory, '--experimental-limit-stack-trace', '--dry-run'])).code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toBe(original)
+    expect((await runCLI([directory])).code).toBe(0)
+    expect(fs.readFileSync(jsPath, 'utf-8')).not.toContain('stackTraceLimit')
+  })
+
   test('preserves semicolonless directives and strict mode through the command', async () => {
     fs.writeFileSync(
       jsPath,
