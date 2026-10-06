@@ -105,17 +105,9 @@ export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
   return hasAnyDebugId
 }
 
-export interface InjectionOptions {
-  limitStackTrace?: boolean
-}
-
 // Keep this runtime snippet in sync with build-plugins:
 // https://github.com/DataDog/build-plugins/blob/c9384d115d53578f220cd5e1f29994acb96a1782/packages/plugins/rum/src/getSourceCodeContextSnippet.ts#L55
-const buildSnippet = (debugId: string, options: InjectionOptions): string => {
-  if (!options.limitStackTrace) {
-    return `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},s=new Error().stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"${SOURCE_CODE_CONTEXT_MARKER}");`
-  }
-
+const buildSnippet = (debugId: string): string => {
   // Restore before reading .stack so prepareStackTrace sees the application setting.
   const capture =
     "var d=Object.getOwnPropertyDescriptor(Error,'stackTraceLimit'),e;if(d&&d.writable&&typeof d.value==='number'){try{Error.stackTraceLimit=1;e=new Error()}finally{Error.stackTraceLimit=d.value}}else{e=new Error()}var s=e.stack;"
@@ -184,8 +176,7 @@ const PRE_INJECTION_SOURCE_NAME = 'dd-pre-injection.js'
 const injectDebugIdSnippetIntoSourcemap = (
   jsContent: string,
   originalSourcemap: ParsedSourcemap,
-  debugId: string,
-  options: InjectionOptions = {}
+  debugId: string
 ): {js: string; sourcemap: string} => {
   const hashbangMatch = jsContent.match(HASHBANG_REGEX)
   const hashbangPortion = hashbangMatch ? hashbangMatch[0] : ''
@@ -197,7 +188,7 @@ const injectDebugIdSnippetIntoSourcemap = (
   assertSourcemapSupportsInjection(originalSourcemap)
   const source = new SourceMapSource(jsContent, PRE_INJECTION_SOURCE_NAME, originalSourcemap)
   const injected = new ReplaceSource(source)
-  injected.insert(injectionOffset, `${directivePrologue.needsSemicolon ? ';' : ''}${buildSnippet(debugId, options)}\n`)
+  injected.insert(injectionOffset, `${directivePrologue.needsSemicolon ? ';' : ''}${buildSnippet(debugId)}\n`)
 
   const {source: injectedSource, map} = injected.sourceAndMap({columns: true})
   if (!map) {
@@ -227,10 +218,9 @@ const injectDebugIdSnippetIntoSourcemap = (
 export const injectDebugIdSnippet = (
   jsContent: string,
   sourcemapContent: string,
-  debugId: string,
-  options: InjectionOptions = {}
+  debugId: string
 ): {js: string; sourcemap: string} =>
-  injectDebugIdSnippetIntoSourcemap(jsContent, parseSourcemap(sourcemapContent), debugId, options)
+  injectDebugIdSnippetIntoSourcemap(jsContent, parseSourcemap(sourcemapContent), debugId)
 
 export interface InjectionResult {
   failed: number
@@ -303,12 +293,7 @@ const replaceArtifacts = (artifacts: {content: string; filePath: string}[]): voi
  * minified file, injects its runtime snippet, and adjusts the sourcemap mappings
  * (unless `dryRun`). A payload failure does not abort the rest of the batch.
  */
-export const injectMissingDebugIds = (
-  payloads: Sourcemap[],
-  dryRun: boolean,
-  stdout: Writable,
-  options: InjectionOptions = {}
-): InjectionResult => {
+export const injectMissingDebugIds = (payloads: Sourcemap[], dryRun: boolean, stdout: Writable): InjectionResult => {
   const result: InjectionResult = {failed: 0, injected: 0, skipped: 0}
 
   for (const payload of payloads) {
@@ -367,12 +352,7 @@ export const injectMissingDebugIds = (
     stdout.write(`Generated debug ID for ${payload.minifiedFilePath}: ${debugId}\n`)
 
     try {
-      const {js, sourcemap: updatedSourcemap} = injectDebugIdSnippetIntoSourcemap(
-        jsContent,
-        sourcemap,
-        debugId,
-        options
-      )
+      const {js, sourcemap: updatedSourcemap} = injectDebugIdSnippetIntoSourcemap(jsContent, sourcemap, debugId)
       if (dryRun) {
         payload.debugId = debugId
         result.injected++

@@ -232,8 +232,7 @@ describe('injectDebugIdSnippet', () => {
     const result = injectDebugIdSnippet(
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
-      DEBUG_ID_2,
-      {limitStackTrace: true}
+      DEBUG_ID_2
     )
     const context = vm.createContext({window: {}, originalLimit: limit})
     vm.runInContext(
@@ -275,12 +274,11 @@ describe('injectDebugIdSnippet', () => {
     'delete Error.stackTraceLimit;',
     'Object.defineProperty(Error, "stackTraceLimit", {value: 10, writable: false});',
     'Object.defineProperty(Error, "stackTraceLimit", {get: function(){ return 10 }, configurable: true});',
-  ])('matches default capture and preserves unsupported settings: %s', (setup) => {
+  ])('matches normal capture and preserves unsupported settings: %s', (setup) => {
     const result = injectDebugIdSnippet(
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
-      DEBUG_ID_2,
-      {limitStackTrace: true}
+      DEBUG_ID_2
     )
     const context = vm.createContext({window: {}})
     vm.runInContext(setup + ';globalThis.before = Object.getOwnPropertyDescriptor(Error, "stackTraceLimit");', context)
@@ -291,12 +289,14 @@ describe('injectDebugIdSnippet', () => {
     expect(context.finished).toBe(true)
     const defaultContext = vm.createContext({window: {}})
     vm.runInContext(setup, defaultContext)
-    const defaultResult = injectDebugIdSnippet(
-      'globalThis.finished = true;',
-      buildIdentitySourcemap('globalThis.finished = true;'),
-      DEBUG_ID_2
+    // Compare fallback behavior with a plain Error capture, independent of injection.
+    vm.runInContext(
+      `var stack = new Error().stack;
+       window.DD_SOURCE_CODE_CONTEXT = {};
+       if (stack) window.DD_SOURCE_CODE_CONTEXT[stack] = {ddDebugId: '${DEBUG_ID_2}'};`,
+      defaultContext,
+      {filename: 'bundle.js'}
     )
-    vm.runInContext(defaultResult.js, defaultContext, {filename: 'bundle.js'})
     const registrations = (runtime: vm.Context) => {
       const entries = vm.runInContext('Object.entries(window.DD_SOURCE_CODE_CONTEXT)', runtime) as [
         string,
@@ -312,8 +312,7 @@ describe('injectDebugIdSnippet', () => {
     const result = injectDebugIdSnippet(
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
-      DEBUG_ID_2,
-      {limitStackTrace: true}
+      DEBUG_ID_2
     )
     const context = vm.createContext({window: {}})
     vm.runInContext(
@@ -324,16 +323,6 @@ describe('injectDebugIdSnippet', () => {
     expect(context.observedLimit).toBe(1)
     expect(vm.runInContext('Error.stackTraceLimit', context)).toBe(10)
     expect(context.finished).toBe(true)
-  })
-
-  test('preserves mappings with experimental capture', async () => {
-    const js = 'var x = 1;\nconsole.log(x);'
-    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2, {limitStackTrace: true})
-    expect(await originalPositionFor(result.sourcemap, 3, 0)).toMatchObject({
-      source: ORIGINAL_SOURCE_NAME,
-      line: 2,
-      column: 0,
-    })
   })
 
   test('injects the debug ID while preserving original positions', async () => {
