@@ -106,14 +106,13 @@ export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
 }
 
 export interface InjectionOptions {
-  experimentalLimitStackTrace?: boolean
+  limitStackTrace?: boolean
 }
 
-// Keep the default runtime snippet in sync with build-plugins. The opt-in variant
-// below intentionally differs while its performance and compatibility are evaluated.
+// Keep this runtime snippet in sync with build-plugins:
 // https://github.com/DataDog/build-plugins/blob/c9384d115d53578f220cd5e1f29994acb96a1782/packages/plugins/rum/src/getSourceCodeContextSnippet.ts#L55
 const buildSnippet = (debugId: string, options: InjectionOptions): string => {
-  if (!options.experimentalLimitStackTrace) {
+  if (!options.limitStackTrace) {
     return `(function(c,n){try{if(typeof window==='undefined')return;var w=window,m=w[n]=w[n]||{},s=new Error().stack;s&&(m[s]=c)}catch(e){}})({"ddDebugId":"${debugId}"},"${SOURCE_CODE_CONTEXT_MARKER}");`
   }
 

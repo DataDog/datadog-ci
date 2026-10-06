@@ -37,7 +37,7 @@ describe('sourcemaps inject', () => {
     fs.rmSync(directory, {recursive: true, force: true})
   })
 
-  test.each([{flags: []}, {flags: ['--experimental-limit-stack-trace']}])(
+  test.each([{flags: []}, {flags: ['--limit-stack-trace']}])(
     'injects a debug ID and matching sourcemap metadata with $flags',
     async ({flags}) => {
       const {context, code} = await runCLI([directory, ...flags])
@@ -98,7 +98,7 @@ describe('sourcemaps inject', () => {
     delete sourcemap.debug_id
     fs.writeFileSync(sourcemapPath, JSON.stringify(sourcemap))
 
-    const {context, code} = await runCLI([directory, '--experimental-limit-stack-trace'])
+    const {context, code} = await runCLI([directory, '--limit-stack-trace'])
 
     expect(code).toBe(0)
     expect(fs.readFileSync(jsPath, 'utf-8')).toBe(injectedJs)
@@ -142,7 +142,7 @@ describe('sourcemaps inject', () => {
     expect((await runCLI([directory, '--max-concurrency', '1'])).code).toBe(0)
   })
 
-  test.each([{flags: []}, {flags: ['--experimental-limit-stack-trace']}])(
+  test.each([{flags: []}, {flags: ['--limit-stack-trace']}])(
     'does not modify files in dry-run mode with $flags',
     async ({flags}) => {
       const originalJs = fs.readFileSync(jsPath, 'utf-8')

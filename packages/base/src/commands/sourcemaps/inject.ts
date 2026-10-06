@@ -25,16 +25,13 @@ export class SourcemapsInjectCommand extends BaseCommand {
     `,
     examples: [
       ['Inject debug IDs into all bundles in a directory', 'datadog-ci sourcemaps inject ./dist'],
-      [
-        'Experiment with one-frame stack capture',
-        'datadog-ci sourcemaps inject ./dist --experimental-limit-stack-trace',
-      ],
+      ['Experiment with one-frame stack capture', 'datadog-ci sourcemaps inject ./dist --limit-stack-trace'],
       ['Preview injection without modifying files', 'datadog-ci sourcemaps inject ./dist --dry-run'],
     ],
   })
 
   private basePath = Option.String({required: true})
-  private experimentalLimitStackTrace = Option.Boolean('--experimental-limit-stack-trace', false, {
+  private limitStackTrace = Option.Boolean('--limit-stack-trace', false, {
     description: 'Limit debug ID registration stack capture to one frame (experimental).',
   })
   private dryRun = Option.Boolean('--dry-run', false)
@@ -79,7 +76,7 @@ export class SourcemapsInjectCommand extends BaseCommand {
 
     addDebugIdToPayloads(payloads)
     const result = injectMissingDebugIds(payloads, this.dryRun, this.context.stdout, {
-      experimentalLimitStackTrace: this.experimentalLimitStackTrace,
+      limitStackTrace: this.limitStackTrace,
     })
     result.failed += discoveryFailures
     this.context.stdout.write(renderInjectionSummary(result, this.dryRun))

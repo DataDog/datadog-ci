@@ -233,7 +233,7 @@ describe('injectDebugIdSnippet', () => {
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
       DEBUG_ID_2,
-      {experimentalLimitStackTrace: true}
+      {limitStackTrace: true}
     )
     const context = vm.createContext({window: {}, originalLimit: limit})
     vm.runInContext(
@@ -280,7 +280,7 @@ describe('injectDebugIdSnippet', () => {
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
       DEBUG_ID_2,
-      {experimentalLimitStackTrace: true}
+      {limitStackTrace: true}
     )
     const context = vm.createContext({window: {}})
     vm.runInContext(setup + ';globalThis.before = Object.getOwnPropertyDescriptor(Error, "stackTraceLimit");', context)
@@ -313,7 +313,7 @@ describe('injectDebugIdSnippet', () => {
       'globalThis.finished = true;',
       buildIdentitySourcemap('globalThis.finished = true;'),
       DEBUG_ID_2,
-      {experimentalLimitStackTrace: true}
+      {limitStackTrace: true}
     )
     const context = vm.createContext({window: {}})
     vm.runInContext(
@@ -328,7 +328,7 @@ describe('injectDebugIdSnippet', () => {
 
   test('preserves mappings with experimental capture', async () => {
     const js = 'var x = 1;\nconsole.log(x);'
-    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2, {experimentalLimitStackTrace: true})
+    const result = injectDebugIdSnippet(js, buildIdentitySourcemap(js), DEBUG_ID_2, {limitStackTrace: true})
     expect(await originalPositionFor(result.sourcemap, 3, 0)).toMatchObject({
       source: ORIGINAL_SOURCE_NAME,
       line: 2,
