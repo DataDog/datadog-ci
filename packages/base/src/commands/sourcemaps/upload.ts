@@ -31,8 +31,7 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {checkExistingDebugIds} from './checkExists'
-import {addDebugIdToPayloads, extractDebugId} from './debugId'
+import {addDebugIdToPayloads, extractDebugId, filterExistingDebugIds} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
@@ -160,7 +159,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
       }
     }
 
-    const [payloadsToUpload, skippedExisting] = await this.filterExistingDebugIds(payloads, metricsLogger)
+    const [payloadsToUpload, skippedExisting] = await this.maybeFilterExistingDebugIds(payloads, metricsLogger)
 
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
@@ -328,11 +327,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
     }
   }
 
-  // When --experimental-duplicate-check is enabled, queries check_exists for payload debug IDs
-  // that already exist in Datadog and returns the payloads that still need uploading plus the
-  // number of skipped payloads. Only runs in --debug-id mode (not on dry-run). Best-effort: on
-  // any failure (endpoint not deployed yet, network error, ...) it warns and uploads everything.
-  private filterExistingDebugIds = async (
+  // Applies the opt-in duplicate check before upload; failures fall back to uploading everything.
+  private maybeFilterExistingDebugIds = async (
     payloads: Sourcemap[],
     metricsLogger: MetricsLogger
   ): Promise<[Sourcemap[], number]> => {
@@ -346,30 +342,20 @@ export class SourcemapsUploadCommand extends BaseCommand {
       return [payloads, 0]
     }
     try {
-      const debugIds = payloads
-        .map((payload) => payload.debugId)
-        .filter((debugId): debugId is string => debugId !== undefined)
-      const existing = await checkExistingDebugIds(
+      const [payloadsToUpload, existingPayloads] = await filterExistingDebugIds(
+        payloads,
         this.config.apiKey,
         this.config.datadogSite,
-        this.cliVersion,
-        debugIds
+        this.cliVersion
       )
-      const payloadsToUpload: Sourcemap[] = []
-      let skippedExisting = 0
-      for (const payload of payloads) {
-        if (payload.debugId !== undefined && existing[payload.debugId]) {
-          skippedExisting += 1
-          metricsLogger.logger.increment('skipped_existing', 1)
-          if (!this.quiet) {
-            this.context.stdout.write(renderSkippedExisting(payload))
-          }
-        } else {
-          payloadsToUpload.push(payload)
+      for (const payload of existingPayloads) {
+        metricsLogger.logger.increment('skipped_existing', 1)
+        if (!this.quiet) {
+          this.context.stdout.write(renderSkippedExisting(payload))
         }
       }
 
-      return [payloadsToUpload, skippedExisting]
+      return [payloadsToUpload, existingPayloads.length]
     } catch (error) {
       this.context.stdout.write(renderCheckExistsWarning((error as Error).message))
 

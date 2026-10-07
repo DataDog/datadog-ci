@@ -597,7 +597,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   }
 }
 
-describe('filterExistingDebugIds', () => {
+describe('maybeFilterExistingDebugIds', () => {
   const mockedCheckExistingDebugIds = jest.mocked(checkExistingDebugIds)
 
   const stubMetricsLogger = (): MetricsLogger =>
@@ -628,7 +628,10 @@ describe('filterExistingDebugIds', () => {
     const command = createDebugIdCommand()
     const [existing, missing, noId] = [makePayload('id-a'), makePayload('id-b'), makePayload()]
 
-    const [toUpload, skipped] = await command['filterExistingDebugIds']([existing, missing, noId], stubMetricsLogger())
+    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds'](
+      [existing, missing, noId],
+      stubMetricsLogger()
+    )
 
     expect(toUpload).toStrictEqual([missing, noId])
     expect(skipped).toBe(1)
@@ -646,7 +649,7 @@ describe('filterExistingDebugIds', () => {
     const command = createDebugIdCommand()
     const metricsLogger = stubMetricsLogger()
 
-    const [, skipped] = await command['filterExistingDebugIds'](
+    const [, skipped] = await command['maybeFilterExistingDebugIds'](
       [makePayload('id-a'), makePayload('id-b')],
       metricsLogger
     )
@@ -661,7 +664,7 @@ describe('filterExistingDebugIds', () => {
     const command = createDebugIdCommand()
     const payloads = [makePayload('id-a'), makePayload('id-b')]
 
-    const [toUpload, skipped] = await command['filterExistingDebugIds'](payloads, stubMetricsLogger())
+    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds'](payloads, stubMetricsLogger())
 
     expect(toUpload).toStrictEqual(payloads)
     expect(skipped).toBe(0)
@@ -673,7 +676,7 @@ describe('filterExistingDebugIds', () => {
     const command = createDebugIdCommand()
     command['dryRun'] = true
 
-    const [toUpload, skipped] = await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
 
     expect(toUpload).toHaveLength(1)
     expect(skipped).toBe(0)
@@ -684,7 +687,7 @@ describe('filterExistingDebugIds', () => {
     const command = createDebugIdCommand()
     command['config'].apiKey = undefined
 
-    await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+    await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
 
     expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
   })
@@ -695,7 +698,7 @@ describe('filterExistingDebugIds', () => {
     command['experimentalDuplicateCheck'] = true
     command['config'].apiKey = 'test-api-key'
 
-    await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+    await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
 
     expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
   })
@@ -705,7 +708,7 @@ describe('filterExistingDebugIds', () => {
     command['experimentalDuplicateCheck'] = false
     const payloads = [makePayload('id-a')]
 
-    const [toUpload, skipped] = await command['filterExistingDebugIds'](payloads, stubMetricsLogger())
+    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds'](payloads, stubMetricsLogger())
 
     expect(toUpload).toStrictEqual(payloads)
     expect(skipped).toBe(0)
@@ -717,7 +720,7 @@ describe('filterExistingDebugIds', () => {
     const command = createDebugIdCommand()
     command['quiet'] = true
 
-    const [, skipped] = await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
+    const [, skipped] = await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
 
     expect(skipped).toBe(1)
     expect(command.context.stdout.toString()).not.toContain('already exists in Datadog')

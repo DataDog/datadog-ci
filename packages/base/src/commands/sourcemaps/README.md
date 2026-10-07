@@ -100,7 +100,7 @@ In addition, some optional parameters are available:
 * `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--disable-git` (default: false): prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the sourcemap).
 * `--quiet` (default: false): suppresses individual line output for each upload. Success and error logs are never suppressed.
-* `--experimental-duplicate-check` (default: `false`): in `--debug-id` mode, query the `check_exists` endpoint before upload and skip sourcemaps whose debug IDs already exist. If the check fails, upload proceeds as usual.
+* `--experimental-duplicate-check` (default: `false`): in `--debug-id` mode, query the `check_exists` endpoint before upload and skip sourcemaps whose debug IDs already exist. If the check fails, upload proceeds as usual. The duplicate check is expected to be enabled by default in an upcoming version.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths. See details in the [dedicated section](#setting-the-project-path).
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL, for example, https://github.com/my-company/my-project. Can also be set via the `DD_GIT_REPOSITORY_URL` environment variable.

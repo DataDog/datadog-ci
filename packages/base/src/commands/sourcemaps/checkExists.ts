@@ -14,7 +14,7 @@ interface CheckExistsResponse {
 }
 
 /**
- * Query the sourcemap-admin check_exists endpoint for the debug IDs that already
+ * Query the check_exists endpoint for the debug IDs that already
  * exist in Datadog. Returns a map of debug ID to existence. Throws on request
  * failure or malformed response — callers should fail open and upload everything.
  */
@@ -45,7 +45,7 @@ export const checkExistingDebugIds = async (
     const response = await requestBuilder({
       method: 'POST',
       url: datadogRoute('/api/unstable/sourcemaps/check_exists'),
-      // The endpoint (sourcemap-admin, Rapid) speaks JSON:API on the wire.
+      // The endpoint speaks JSON:API on the wire.
       data: {data: {type: 'check_exists', attributes: {debug_ids: chunk}}},
     })
     const chunkResults = (response.data as CheckExistsResponse).data?.attributes?.results
