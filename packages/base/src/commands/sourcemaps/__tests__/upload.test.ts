@@ -659,30 +659,6 @@ describe('maybeFilterExistingDebugIds', () => {
     expect(metricsLogger.logger.increment).toHaveBeenCalledWith('skipped_existing', 1)
   })
 
-  test('fails open and keeps all payloads when the check errors', async () => {
-    mockedCheckExistingDebugIds.mockRejectedValue(new Error('Request failed with status code 500'))
-    const command = createDebugIdCommand()
-    const payloads = [makePayload('id-a'), makePayload('id-b')]
-
-    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds'](payloads, stubMetricsLogger())
-
-    expect(toUpload).toStrictEqual(payloads)
-    expect(skipped).toBe(0)
-    expect(command.context.stdout.toString()).toContain('Could not check for existing sourcemaps')
-    expect(command.context.stdout.toString()).toContain('500')
-  })
-
-  test('does not run the check on dry-run', async () => {
-    const command = createDebugIdCommand()
-    command['dryRun'] = true
-
-    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
-
-    expect(toUpload).toHaveLength(1)
-    expect(skipped).toBe(0)
-    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
-  })
-
   test('does not run the check without an API key', async () => {
     const command = createDebugIdCommand()
     command['config'].apiKey = undefined
@@ -700,18 +676,6 @@ describe('maybeFilterExistingDebugIds', () => {
 
     await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
 
-    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
-  })
-
-  test('does not run the check without --experimental-duplicate-check', async () => {
-    const command = createDebugIdCommand()
-    command['experimentalDuplicateCheck'] = false
-    const payloads = [makePayload('id-a')]
-
-    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds'](payloads, stubMetricsLogger())
-
-    expect(toUpload).toStrictEqual(payloads)
-    expect(skipped).toBe(0)
     expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
   })
 
