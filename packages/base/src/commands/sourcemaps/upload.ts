@@ -88,6 +88,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private repositoryURL = Option.String('--repository-url')
   private commitSha = Option.String('--commit-sha')
   private debugId = Option.Boolean('--debug-id', false)
+  private experimentalDuplicateCheck = Option.Boolean('--experimental-duplicate-check', false)
   private service = Option.String('--service')
 
   private cliVersion = cliVersion
@@ -327,15 +328,21 @@ export class SourcemapsUploadCommand extends BaseCommand {
     }
   }
 
-  // Queries the check_exists endpoint for payload debug IDs that already exist in Datadog and
-  // returns the payloads that still need uploading plus the number of skipped payloads. Only
-  // runs in --debug-id mode (not on dry-run). Best-effort: on any failure (endpoint not
-  // deployed yet, network error, ...) it warns and falls back to uploading everything.
+  // When --experimental-duplicate-check is enabled, queries check_exists for payload debug IDs
+  // that already exist in Datadog and returns the payloads that still need uploading plus the
+  // number of skipped payloads. Only runs in --debug-id mode (not on dry-run). Best-effort: on
+  // any failure (endpoint not deployed yet, network error, ...) it warns and uploads everything.
   private filterExistingDebugIds = async (
     payloads: Sourcemap[],
     metricsLogger: MetricsLogger
   ): Promise<[Sourcemap[], number]> => {
-    if (!this.debugId || this.dryRun || payloads.length === 0 || !this.config.apiKey) {
+    if (
+      !this.experimentalDuplicateCheck ||
+      !this.debugId ||
+      this.dryRun ||
+      payloads.length === 0 ||
+      !this.config.apiKey
+    ) {
       return [payloads, 0]
     }
     try {

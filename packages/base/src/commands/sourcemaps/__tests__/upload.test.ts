@@ -613,6 +613,7 @@ describe('filterExistingDebugIds', () => {
   const createDebugIdCommand = () => {
     const command = createCommand(SourcemapsUploadCommand)
     command['debugId'] = true
+    command['experimentalDuplicateCheck'] = true
     command['config'].apiKey = 'test-api-key'
 
     return command
@@ -691,10 +692,23 @@ describe('filterExistingDebugIds', () => {
   test('does not run the check without --debug-id', async () => {
     const command = createCommand(SourcemapsUploadCommand)
     command['debugId'] = false
+    command['experimentalDuplicateCheck'] = true
     command['config'].apiKey = 'test-api-key'
 
     await command['filterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
 
+    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+  })
+
+  test('does not run the check without --experimental-duplicate-check', async () => {
+    const command = createDebugIdCommand()
+    command['experimentalDuplicateCheck'] = false
+    const payloads = [makePayload('id-a')]
+
+    const [toUpload, skipped] = await command['filterExistingDebugIds'](payloads, stubMetricsLogger())
+
+    expect(toUpload).toStrictEqual(payloads)
+    expect(skipped).toBe(0)
     expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
   })
 
@@ -718,6 +732,14 @@ describe('execute with check_exists', () => {
     'sourcemaps',
     'upload',
     '--debug-id',
+    '--experimental-duplicate-check',
+    '--disable-git',
+  ])
+
+  const runCLIWithDebugIdNoDuplicateCheck = makeRunCLI(SourcemapsUploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--debug-id',
     '--disable-git',
   ])
 
@@ -725,6 +747,7 @@ describe('execute with check_exists', () => {
     'sourcemaps',
     'upload',
     '--debug-id',
+    '--experimental-duplicate-check',
     '--dry-run',
     '--disable-git',
   ])
@@ -736,6 +759,15 @@ describe('execute with check_exists', () => {
     mockedCheckExistingDebugIds.mockReset()
     mockedHttpRequest.mockReset()
     mockedHttpRequest.mockResolvedValue({config: {}, data: {}, headers: {}, status: 200, statusText: 'OK'})
+  })
+
+  test('does not query for duplicates without --experimental-duplicate-check', async () => {
+    const {context, code} = await runCLIWithDebugIdNoDuplicateCheck([debugIdFixture])
+
+    expect(code).toBe(0)
+    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+    expect(mockedHttpRequest).toHaveBeenCalledTimes(1)
+    expect(context.stdout.toString()).toContain('Uploading sourcemap')
   })
 
   test('skips the upload when the debug ID already exists in Datadog', async () => {
