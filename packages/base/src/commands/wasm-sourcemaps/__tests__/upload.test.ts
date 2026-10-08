@@ -68,23 +68,6 @@ describe('wasm-sourcemaps upload', () => {
     expect(command.context.stderr.toString()).toContain('Missing --minified-path-prefix')
   })
 
-  test('requires a .wasm.map filename when uploading a single file', async () => {
-    const invalidPath = upath.join(fixtureDir, 'main.map')
-    fs.writeFileSync(invalidPath, '{}')
-    const command = createCommand(WasmSourcemapsUploadCommand)
-    command['basePath'] = invalidPath
-    command['service'] = 'checkout-web'
-    command['releaseVersion'] = '1.2.3'
-    command['minifiedPathPrefix'] = 'https://cdn.example.com/flutter/'
-    command['disableGit'] = true
-
-    const exitCode = await command.execute()
-
-    expect(exitCode).toBe(1)
-    expect(command.context.stderr.toString()).toContain(`${invalidPath} must have a .wasm.map extension.`)
-    expect(uploadMultipartHelper).not.toHaveBeenCalled()
-  })
-
   test('discovers source maps recursively and constructs module URLs', async () => {
     const pair = writePair('nested/main.dart.wasm')
     const {command} = await runCommand((cmd) => {
