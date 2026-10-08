@@ -14,6 +14,6 @@ export interface WasmSourcemapMetadata {
   cli_version: string
   minified_url: string
   service: string
-  type: string
+  type: typeof TYPE_WASM_SOURCEMAP
   version: string
 }

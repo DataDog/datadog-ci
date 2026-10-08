@@ -54,6 +54,9 @@ To ignore this warning use the --disable-git flag.\n`)
 export const renderInvalidLocation = (location: string) =>
   chalk.red(`${ICONS.FAILED} ${location} is not an existing file or directory.\n`)
 
+export const renderInvalidSourcemapFilename = (location: string) =>
+  chalk.red(`${ICONS.FAILED} ${location} must have a .wasm.map extension.\n`)
+
 export const renderInvalidPrefix = () =>
   chalk.red(`${ICONS.FAILED} --minified-path-prefix must be an absolute URL or an absolute path.\n`)
 

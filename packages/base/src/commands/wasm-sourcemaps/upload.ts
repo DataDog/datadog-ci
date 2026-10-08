@@ -39,6 +39,7 @@ import {
   renderGitWarning,
   renderInvalidLocation,
   renderInvalidPrefix,
+  renderInvalidSourcemapFilename,
   renderMissingModule,
   renderMissingOption,
   renderRetriedUpload,
@@ -143,6 +144,9 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
       const stat = fs.statSync(this.basePath)
       if (!stat.isDirectory() && !stat.isFile()) {
         this.context.stderr.write(renderInvalidLocation(this.basePath))
+        valid = false
+      } else if (stat.isFile() && !this.basePath.endsWith('.wasm.map')) {
+        this.context.stderr.write(renderInvalidSourcemapFilename(this.basePath))
         valid = false
       }
     }
