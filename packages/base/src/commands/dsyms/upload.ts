@@ -35,6 +35,7 @@ import {
   renderConfigurationError,
   renderDSYMSlimmingFailure,
   renderFailedUpload,
+  renderGitWarning,
   renderInvalidDsymWarning,
   renderRetriedUpload,
   renderSuccessfulCommand,
@@ -340,8 +341,7 @@ export class DsymsUploadCommand extends BaseCommand {
         }
       })
     } catch (error) {
-      // Log warning but don't fail the upload
-      this.context.stdout.write(`Warning: Failed to collect git information: ${error}\n`)
+      this.context.stdout.write(renderGitWarning(error))
     }
   }
 

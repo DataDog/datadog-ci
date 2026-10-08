@@ -8,12 +8,20 @@ import upath from 'upath'
 
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '@datadog/datadog-ci-base/helpers/apikey'
+import {getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {CompressedDsym} from '../interfaces'
 import {DsymsUploadCommand} from '../upload'
 import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
+
+jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'),
+  getRepositoryData: jest.fn(
+    jest.requireActual('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data').getRepositoryData
+  ),
+}))
 
 /**
  * `dwarfdump` and `lipo` are only available in macOS, so we mock their behaviour when running tests on other platforms.
@@ -561,6 +569,32 @@ describe('git data', () => {
       const metadata = JSON.parse((eventContent as any).value)
       expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
       expect(metadata.git_commit_sha).toBe('abc123def456789')
+    })
+  })
+
+  describe('addRepositoryDataToPayloads', () => {
+    test('Should warn and keep payloads without git data when git is unavailable', async () => {
+      ;(getRepositoryData as jest.Mock).mockRejectedValueOnce(new Error('not a git repository'))
+
+      const cli = new Cli()
+      cli.register(DsymsUploadCommand)
+      const command = cli.process(['dsyms', 'upload', 'path']) as DsymsUploadCommand
+      const context = createMockContext()
+      command.context = context as any
+
+      const dsym: Dsym = {
+        bundle: '/path/to/test.dSYM',
+        dwarf: [
+          {object: '/path/to/test.dSYM/Contents/Resources/DWARF/test', uuid: 'ABC123-DEF456-789012', arch: 'arm64'},
+        ],
+      }
+      const payload = new CompressedDsym('/tmp/test.zip', dsym)
+      await (command as any).addRepositoryDataToPayloads([payload])
+
+      expect(payload.gitData).toBeUndefined()
+      const output = context.stdout.toString()
+      expect(output).toContain('An error occurred while invoking git: Error: not a git repository')
+      expect(output).toContain('To ignore this warning use the --disable-git flag.')
     })
   })
 })

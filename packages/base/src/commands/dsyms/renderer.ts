@@ -13,6 +13,11 @@ export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAI
 export const renderInvalidDsymWarning = (dSYMPath: string) =>
   chalk.yellow(`${ICONS.WARNING} Invalid dSYM file, will be skipped: ${dSYMPath}\n`)
 
+export const renderGitWarning = (errorMessage: string) =>
+  chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}
+Make sure the command is running within your git repository to fully leverage Datadog's git integration.
+To ignore this warning use the --disable-git flag.\n`)
+
 export const renderDSYMSlimmingFailure = (dSYM: Dsym, dwarf: DWARF, error: Error) =>
   chalk.yellow(`${ICONS.WARNING} Failed to export '${dwarf.arch}' arch (${dwarf.uuid}) from ${dSYM.bundle}: ${error}\n`)
 
