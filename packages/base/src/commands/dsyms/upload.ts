@@ -75,7 +75,6 @@ export class DsymsUploadCommand extends BaseCommand {
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryURL = Option.String('--repository-url', {required: false})
-  private commitSHA = Option.String('--commit', {required: false})
   private disableGit = Option.Boolean('--disable-git', false)
 
   private cliVersion = cliVersion
@@ -335,9 +334,9 @@ export class DsymsUploadCommand extends BaseCommand {
 
       payloads.forEach((payload) => {
         payload.gitData = {
-          gitCommitSha: this.commitSHA || repositoryData.hash,
+          gitCommitSha: repositoryData.hash,
           gitRepositoryPayload: repositoryPayload,
-          gitRepositoryURL: this.repositoryURL || repositoryData.remote,
+          gitRepositoryURL: repositoryData.remote,
         }
       })
     } catch (error) {
