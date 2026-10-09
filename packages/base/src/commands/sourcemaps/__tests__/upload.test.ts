@@ -4,6 +4,7 @@ import chalk from 'chalk'
 import upath from 'upath'
 
 import {createCommand, makeRunCLI, withTempDirectory} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 
 import {Sourcemap} from '../interfaces'
 import {SourcemapsUploadCommand} from '../upload'
@@ -262,6 +263,53 @@ describe('upload', () => {
       expect(payload.data[0].hash).toBe('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
       expect(payload.data[0].repository_url).toBe('https://github.com/my-org/my-repo')
       expect(payload.data[0].files).toContain('src/commands/sourcemaps/__tests__/git.test.ts')
+    })
+
+    const parentRepositoryData = {
+      hash: 'cccccccccccccccccccccccccccccccccccccccc',
+      remote: 'https://github.com/my-org/parent-repo',
+      trackedFilesMatcher: new TrackedFilesMatcher(['packages/base/src/commands/sourcemaps/__tests__/git.test.ts']),
+    }
+
+    test('uses git data provided by a parent command instead of invoking git', async () => {
+      const write = jest.fn()
+      const command = createCommand(SourcemapsUploadCommand, {stdout: {write}})
+      command.context = {...command.context, repositoryData: parentRepositoryData}
+      const sourcemaps = new Array<Sourcemap>(
+        new Sourcemap(
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
+          'http://example/common.min.js',
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          '',
+          ''
+        )
+      )
+      await command['addRepositoryDataToPayloads'](sourcemaps)
+      expect(sourcemaps[0].gitData!.gitRepositoryURL).toBe('https://github.com/my-org/parent-repo')
+      expect(sourcemaps[0].gitData!.gitCommitSha).toBe('cccccccccccccccccccccccccccccccccccccccc')
+      const payload = JSON.parse(sourcemaps[0].gitData!.gitRepositoryPayload!)
+      expect(payload.data[0].hash).toBe('cccccccccccccccccccccccccccccccccccccccc')
+      expect(payload.data[0].files).toEqual(['packages/base/src/commands/sourcemaps/__tests__/git.test.ts'])
+    })
+
+    test('git data provided by a parent command takes precedence over --repository-url and --commit-sha', async () => {
+      const write = jest.fn()
+      const command = createCommand(SourcemapsUploadCommand, {stdout: {write}})
+      command.context = {...command.context, repositoryData: parentRepositoryData}
+      command['repositoryURL'] = 'https://github.com/my-org/my-repo'
+      command['commitSha'] = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      const sourcemaps = new Array<Sourcemap>(
+        new Sourcemap(
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
+          'http://example/common.min.js',
+          'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
+          '',
+          ''
+        )
+      )
+      await command['addRepositoryDataToPayloads'](sourcemaps)
+      expect(sourcemaps[0].gitData!.gitRepositoryURL).toBe('https://github.com/my-org/parent-repo')
+      expect(sourcemaps[0].gitData!.gitCommitSha).toBe('cccccccccccccccccccccccccccccccccccccccc')
     })
 
     test('reads repository-url and commit-sha from env vars', async () => {

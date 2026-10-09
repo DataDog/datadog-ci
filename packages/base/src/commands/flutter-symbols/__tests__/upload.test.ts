@@ -519,8 +519,39 @@ describe('flutter-symbol upload', () => {
           '--service=fake.service',
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
+          '--disable-git',
         ],
         expect.anything()
+      )
+    })
+
+    test('passes collected git data to sourcemap sub-command', async () => {
+      const repositoryData = {
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher(['./lib/main.dart']),
+      }
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce(repositoryData)
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.2.3'
+        cmd['webSourceMaps'] = true
+        cmd['minifiedPathPrefix'] = 'https://localhost'
+      })
+
+      expect(exitCode).toBe(0)
+      expect(performSubCommand).toHaveBeenCalledWith(
+        SourcemapsUploadCommand,
+        [
+          'sourcemaps',
+          'upload',
+          './build/web',
+          '--service=fake.service',
+          '--release-version=1.2.3',
+          '--minified-path-prefix=https://localhost',
+        ],
+        expect.objectContaining({repositoryData})
       )
     })
 
@@ -543,6 +574,7 @@ describe('flutter-symbol upload', () => {
           '--service=fake.service',
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
+          '--disable-git',
         ],
         expect.anything()
       )
@@ -566,6 +598,7 @@ describe('flutter-symbol upload', () => {
           '--service=fake.service',
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
+          '--disable-git',
         ],
         expect.anything()
       )
@@ -591,6 +624,7 @@ describe('flutter-symbol upload', () => {
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
           '--dry-run',
+          '--disable-git',
         ],
         expect.anything()
       )
