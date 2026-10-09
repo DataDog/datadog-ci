@@ -1,7 +1,6 @@
 import fs from 'fs'
 
 import type {MappingMetadata} from './interfaces'
-import type {DsymsUploadContext} from '@datadog/datadog-ci-base/commands/dsyms/interfaces'
 import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
@@ -225,8 +224,10 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
       dsymUploadCommand.push('--disable-git')
     }
 
-    const dsymsContext: DsymsUploadContext = {...this.context, repositoryData: this.gitData}
-    const exitCode = await performSubCommand(DsymsUploadCommand, dsymUploadCommand, dsymsContext)
+    const exitCode = await performSubCommand(DsymsUploadCommand, dsymUploadCommand, {
+      ...this.context,
+      repositoryData: this.gitData,
+    })
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }
