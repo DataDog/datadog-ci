@@ -52,7 +52,7 @@ import {
   zipDirectoryToArchive,
 } from './utils'
 
-export class DsymsUploadCommand extends BaseCommand {
+export class DsymsUploadCommand extends BaseCommand<DsymsUploadContext> {
   public static paths = [['dsyms', 'upload']]
 
   public static usage = Command.Usage({
@@ -331,8 +331,7 @@ export class DsymsUploadCommand extends BaseCommand {
   private async addRepositoryDataToPayloads(payloads: CompressedDsym[]) {
     try {
       const repositoryData =
-        (this.context as DsymsUploadContext).repositoryData ??
-        (await getRepositoryData(await newSimpleGit(), this.repositoryURL))
+        this.context.repositoryData ?? (await getRepositoryData(await newSimpleGit(), this.repositoryURL))
       const repositoryPayload = this.getRepositoryPayload(repositoryData)
 
       payloads.forEach((payload) => {
