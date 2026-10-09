@@ -1,6 +1,6 @@
 import {promises} from 'fs'
 
-import type {Dsym, DWARF} from './interfaces'
+import type {Dsym, DsymsUploadContext, DWARF} from './interfaces'
 import type {ApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -52,7 +52,7 @@ import {
   zipDirectoryToArchive,
 } from './utils'
 
-export class DsymsUploadCommand extends BaseCommand {
+export class DsymsUploadCommand extends BaseCommand<DsymsUploadContext> {
   public static paths = [['dsyms', 'upload']]
 
   public static usage = Command.Usage({
@@ -330,7 +330,8 @@ export class DsymsUploadCommand extends BaseCommand {
 
   private async addRepositoryDataToPayloads(payloads: CompressedDsym[]) {
     try {
-      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
+      const repositoryData =
+        this.context.repositoryData ?? (await getRepositoryData(await newSimpleGit(), this.repositoryURL))
       const repositoryPayload = this.getRepositoryPayload(repositoryData)
 
       payloads.forEach((payload) => {
