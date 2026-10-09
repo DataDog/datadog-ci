@@ -55,6 +55,15 @@ export const renderFailedUpload = (sourcemap: Sourcemap, errorMessage: string) =
 
 export const renderNoDebugIdFound = () => 'No debug ID found in any minified file. Aborting upload.\n'
 
+export const renderSkippedExisting = (sourcemap: Sourcemap) => {
+  const sourcemapPathBold = `[${chalk.bold.dim(sourcemap.sourcemapPath)}]`
+
+  return `Skipping sourcemap ${sourcemapPathBold}: debug ID ${sourcemap.debugId} already exists in Datadog\n`
+}
+
+export const renderCheckExistsWarning = (errorMessage: string) =>
+  chalk.yellow(`${ICONS.WARNING} Could not check for existing sourcemaps, uploading all of them: ${errorMessage}\n`)
+
 export const renderSourceCodeContextFoundWithoutDebugIdFlag = () =>
   'A Datadog debug ID injection was found in at least one minified file, but --debug-id was not set. Debug-ID uploads and service/version uploads are mutually exclusive. Re-run with --debug-id or rebuild the bundles without the Datadog debug ID injection. Aborting upload.\n'
 
@@ -64,7 +73,12 @@ export const renderRetriedUpload = (payload: Sourcemap, errorMessage: string, at
   return chalk.yellow(`[attempt ${attempt}] Retrying sourcemap upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
+export const renderSuccessfulCommand = (
+  statuses: UploadStatus[],
+  duration: number,
+  dryRun: boolean,
+  skippedExisting = 0
+) => {
   const results = new Map<UploadStatus, number>()
   statuses.forEach((status) => {
     if (!results.has(status)) {
@@ -100,15 +114,34 @@ export const renderSuccessfulCommand = (statuses: UploadStatus[], duration: numb
         )
       )
     }
+  } else if (skippedExisting > 0) {
+    output.push(
+      chalk.green(
+        `${ICONS.SUCCESS} ${pluralize(
+          skippedExisting,
+          'sourcemap already exists',
+          'sourcemaps already exist'
+        )} in Datadog, nothing to upload.`
+      )
+    )
   } else {
     output.push(chalk.yellow(`${ICONS.WARNING} No sourcemaps detected. Did you specify the correct directory?`))
   }
 
-  if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped)) {
-    output.push(`Details about the ${pluralize(statuses.length, 'found sourcemap', 'found sourcemaps')}:`)
+  if (results.get(UploadStatus.Failure) || results.get(UploadStatus.Skipped) || skippedExisting > 0) {
+    output.push(
+      `Details about the ${pluralize(statuses.length + skippedExisting, 'found sourcemap', 'found sourcemaps')}:`
+    )
     if (results.get(UploadStatus.Success)) {
       output.push(
         `  * ${pluralize(results.get(UploadStatus.Success)!, 'sourcemap', 'sourcemaps')} successfully uploaded`
+      )
+    }
+    if (skippedExisting > 0) {
+      output.push(
+        chalk.green(
+          `  * ${pluralize(skippedExisting, 'sourcemap already exists', 'sourcemaps already exist')} in Datadog (skipped)`
+        )
       )
     }
     if (results.get(UploadStatus.Skipped)) {

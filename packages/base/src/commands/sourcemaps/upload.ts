@@ -31,12 +31,13 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {addDebugIdToPayloads, extractDebugId} from './debugId'
+import {addDebugIdToPayloads, extractDebugId, filterExistingDebugIds} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
 import {
   renderCommandInfo,
   renderAbsolutePathWarning,
+  renderCheckExistsWarning,
   renderConfigurationError,
   renderDiscoveryWarning,
   renderFailedUpload,
@@ -46,6 +47,7 @@ import {
   renderInvalidPrefix,
   renderNoDebugIdFound,
   renderRetriedUpload,
+  renderSkippedExisting,
   renderSourcesNotFoundWarning,
   renderSuccessfulCommand,
   renderUpload,
@@ -85,6 +87,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
   private repositoryURL = Option.String('--repository-url')
   private commitSha = Option.String('--commit-sha')
   private debugId = Option.Boolean('--debug-id', false)
+  private experimentalDuplicateCheck = Option.Boolean('--experimental-duplicate-check', false)
   private service = Option.String('--service')
 
   private cliVersion = cliVersion
@@ -156,12 +159,14 @@ export class SourcemapsUploadCommand extends BaseCommand {
       }
     }
 
+    const [payloadsToUpload, skippedExisting] = await this.maybeFilterExistingDebugIds(payloads, metricsLogger)
+
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await doWithMaxConcurrency(this.maxConcurrency, payloads, uploadMultipart)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, payloadsToUpload, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
-      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun, skippedExisting))
       metricsLogger.logger.gauge('duration', totalTime)
 
       return 0
@@ -319,6 +324,42 @@ export class SourcemapsUploadCommand extends BaseCommand {
       this.context.stdout.write(renderGitDataNotAttachedWarning(sourcemapPath, error.message))
 
       return undefined
+    }
+  }
+
+  // Applies the opt-in duplicate check before upload; failures fall back to uploading everything.
+  private maybeFilterExistingDebugIds = async (
+    payloads: Sourcemap[],
+    metricsLogger: MetricsLogger
+  ): Promise<[Sourcemap[], number]> => {
+    if (
+      !this.experimentalDuplicateCheck ||
+      !this.debugId ||
+      this.dryRun ||
+      payloads.length === 0 ||
+      !this.config.apiKey
+    ) {
+      return [payloads, 0]
+    }
+    try {
+      const [payloadsToUpload, existingPayloads] = await filterExistingDebugIds(
+        payloads,
+        this.config.apiKey,
+        this.config.datadogSite,
+        this.cliVersion
+      )
+      for (const payload of existingPayloads) {
+        metricsLogger.logger.increment('skipped_existing', 1)
+        if (!this.quiet) {
+          this.context.stdout.write(renderSkippedExisting(payload))
+        }
+      }
+
+      return [payloadsToUpload, existingPayloads.length]
+    } catch (error) {
+      this.context.stdout.write(renderCheckExistsWarning((error as Error).message))
+
+      return [payloads, 0]
     }
   }
 

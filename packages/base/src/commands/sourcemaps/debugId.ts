@@ -8,6 +8,8 @@ import type {RawSourceMap} from 'webpack-sources'
 import {parse} from '@babel/parser'
 import {ReplaceSource, SourceMapSource} from 'webpack-sources'
 
+import {checkExistingDebugIds} from './checkExists'
+
 // Bundle scanner: keep this progressive scanner in sync with build-plugins PR #489:
 // https://github.com/DataDog/build-plugins/pull/489
 // The key is quoted in source (`JSON.stringify(context)`) but minifiers like terser strip quotes
@@ -103,6 +105,31 @@ export const addDebugIdToPayloads = (payloads: Sourcemap[]): boolean => {
   }
 
   return hasAnyDebugId
+}
+
+/** Queries for existing debug IDs and separates those payloads from uploads. */
+export const filterExistingDebugIds = async (
+  payloads: Sourcemap[],
+  apiKey: string,
+  datadogSite: string,
+  cliVersion: string
+): Promise<[Sourcemap[], Sourcemap[]]> => {
+  const debugIds = payloads
+    .map((payload) => payload.debugId)
+    .filter((debugId): debugId is string => debugId !== undefined)
+  const existing = await checkExistingDebugIds(apiKey, datadogSite, cliVersion, debugIds)
+  const payloadsToUpload: Sourcemap[] = []
+  const existingPayloads: Sourcemap[] = []
+
+  for (const payload of payloads) {
+    if (payload.debugId !== undefined && existing[payload.debugId]) {
+      existingPayloads.push(payload)
+    } else {
+      payloadsToUpload.push(payload)
+    }
+  }
+
+  return [payloadsToUpload, existingPayloads]
 }
 
 // Keep this runtime snippet in sync with build-plugins:
