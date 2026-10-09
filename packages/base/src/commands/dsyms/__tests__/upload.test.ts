@@ -12,7 +12,7 @@ import {
   expectRepositoryPartBuiltOnce,
   makeFakeRepositoryData,
 } from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
-import {getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -622,6 +622,34 @@ describe('git data', () => {
       const output = context.stdout.toString()
       expect(output).toContain('An error occurred while invoking git: Error: not a git repository')
       expect(output).toContain('To ignore this warning use the --disable-git flag.')
+    })
+
+    test('Should use git data provided by a parent command instead of invoking git', async () => {
+      const repositoryData = {
+        hash: 'abc123',
+        remote: 'https://github.com/DataDog/dd-sdk-ios',
+        trackedFilesMatcher: new TrackedFilesMatcher(['Sources/App.swift']),
+      }
+
+      const cli = new Cli()
+      cli.register(DsymsUploadCommand)
+      const command = cli.process(['dsyms', 'upload', 'path']) as DsymsUploadCommand
+      command.context = {...createMockContext(), repositoryData} as any
+
+      const dsym: Dsym = {
+        bundle: '/path/to/test.dSYM',
+        dwarf: [
+          {object: '/path/to/test.dSYM/Contents/Resources/DWARF/test', uuid: 'ABC123-DEF456-789012', arch: 'arm64'},
+        ],
+      }
+      const payload = new CompressedDsym('/tmp/test.zip', dsym)
+      ;(getRepositoryData as jest.Mock).mockClear()
+      await (command as any).addRepositoryDataToPayloads([payload])
+
+      expect(getRepositoryData).not.toHaveBeenCalled()
+      expect(payload.gitData?.gitCommitSha).toBe('abc123')
+      expect(payload.gitData?.gitRepositoryURL).toBe('https://github.com/DataDog/dd-sdk-ios')
+      expect(JSON.parse(payload.gitData!.gitRepositoryPayload!).data[0].files).toEqual(['Sources/App.swift'])
     })
   })
 })
