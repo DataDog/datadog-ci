@@ -2,6 +2,7 @@ import fs from 'fs'
 
 import type {MappingMetadata} from './interfaces'
 import type {UploadInfo} from './renderer'
+import type {DsymsUploadContext} from '@datadog/datadog-ci-base/commands/dsyms/interfaces'
 import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
@@ -469,8 +470,13 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     if (this.dryRun) {
       dsymUploadCommand.push('--dry-run')
     }
+    // Git is disabled, or it already failed and was reported: don't invoke it again
+    if (this.gitData === undefined) {
+      dsymUploadCommand.push('--disable-git')
+    }
 
-    const exitCode = await performSubCommand(DsymsUploadCommand, dsymUploadCommand, this.context)
+    const dsymsContext: DsymsUploadContext = {...this.context, repositoryData: this.gitData}
+    const exitCode = await performSubCommand(DsymsUploadCommand, dsymUploadCommand, dsymsContext)
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }
