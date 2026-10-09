@@ -41,6 +41,8 @@ In addition, some optional parameters are available:
 
 * `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
+* `--disable-git` (default: `false`): prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository).
+* `--repository-url`: overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.
 
 #### Bitcode
 
