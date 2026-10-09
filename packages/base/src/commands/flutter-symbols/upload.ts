@@ -497,8 +497,15 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     if (this.dryRun) {
       sourceMapUploadCommand.push('--dry-run')
     }
+    // Git is disabled, or it already failed and was reported: don't invoke it again
+    if (this.gitData === undefined) {
+      sourceMapUploadCommand.push('--disable-git')
+    }
 
-    const exitCode = await performSubCommand(SourcemapsUploadCommand, sourceMapUploadCommand, this.context)
+    const exitCode = await performSubCommand(SourcemapsUploadCommand, sourceMapUploadCommand, {
+      ...this.context,
+      repositoryData: this.gitData,
+    })
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }
