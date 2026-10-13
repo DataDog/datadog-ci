@@ -32,6 +32,18 @@ type ScalarEnvFragment = EnvFragmentBase & {
 export type EnvFragment = PositionedEnvFragment | ScalarEnvFragment
 
 /**
+ * The fragments of one injection variant, split by what removing them can be justified from.
+ *
+ * An `identifying` value names the tracer directory, so only instrumentation could have written it.
+ * A `shared` value, such as `CORECLR_ENABLE_PROFILING=1`, is what any manual tracer install sets, so
+ * removing it is only safe next to an identifying fragment of the same variant.
+ */
+export type EnvFragmentGroup = {
+  readonly identifying: readonly EnvFragment[]
+  readonly shared: readonly EnvFragment[]
+}
+
+/**
  * Checks whether an environment variable contains the exact owned fragment.
  *
  * @example

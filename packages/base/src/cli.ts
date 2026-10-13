@@ -11,6 +11,7 @@ import {commands as coverageCommands} from './commands/coverage/cli'
 import {commands as deploymentCommands} from './commands/deployment/cli'
 import {commands as doraCommands} from './commands/dora/cli'
 import {commands as dsymsCommands} from './commands/dsyms/cli'
+import {commands as ecsFargateCommands} from './commands/ecs-fargate/cli'
 import {commands as elfSymbolsCommands} from './commands/elf-symbols/cli'
 import {commands as flutterSymbolsCommands} from './commands/flutter-symbols/cli'
 import {commands as gateCommands} from './commands/gate/cli'
@@ -20,6 +21,7 @@ import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as measureCommands} from './commands/measure/cli'
 import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
+import {commands as ppdbSymbolsCommands} from './commands/ppdb-symbols/cli'
 import {commands as reactNativeCommands} from './commands/react-native/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
@@ -46,6 +48,7 @@ export const commands = {
   'deployment': deploymentCommands,
   'dora': doraCommands,
   'dsyms': dsymsCommands,
+  'ecs-fargate': ecsFargateCommands,
   'elf-symbols': elfSymbolsCommands,
   'flutter-symbols': flutterSymbolsCommands,
   'gate': gateCommands,
@@ -55,6 +58,7 @@ export const commands = {
   'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,
   'plugin': pluginCommands,
+  'ppdb-symbols': ppdbSymbolsCommands,
   'react-native': reactNativeCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
@@ -84,6 +88,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'measure',
   'pe-symbols',
   'plugin',
+  'ppdb-symbols',
   'react-native',
   'sourcemaps',
   'span',

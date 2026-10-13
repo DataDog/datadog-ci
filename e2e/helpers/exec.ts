@@ -49,6 +49,9 @@ const RETRYABLE_PATTERNS = [
   'temporarily unavailable',
   // The Kudu/SCM site returns a 502 gateway error on the first deploy while it is still cold
   'acting as a gateway or proxy',
+  // AWS rate limits, which suites registering resources concurrently reach in bursts
+  'ThrottlingException',
+  'Rate exceeded',
 ]
 
 const isRetryable = (result: ExecResult): boolean => {

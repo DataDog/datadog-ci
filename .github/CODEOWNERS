@@ -25,6 +25,7 @@ packages/base/src/commands/sbom          @DataDog/datadog-ci-admins @DataDog/k9-
 ## RUM (label: rum)
 packages/base/src/commands/dsyms            @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/flutter-symbols  @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
+packages/base/src/commands/ppdb-symbols     @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/react-native     @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
 packages/base/src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser @DataDog/rum-backend
 packages/base/src/commands/unity-symbols    @DataDog/datadog-ci-admins @DataDog/rum-mobile @DataDog/rum-backend
@@ -37,6 +38,8 @@ packages/plugin-cloud-run                            @DataDog/datadog-ci-admins 
 packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-container-app                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/commands/container-app             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/plugin-ecs-fargate                          @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/ecs-fargate               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-lambda                               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement

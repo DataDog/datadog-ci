@@ -63,6 +63,9 @@ export class AasInstrumentCommand extends AasCommand {
   private sidecarImage = Option.String('--sidecar-image', SIDECAR_IMAGE, {
     description: `Override to pin a specific version tag or to use a mirrored image from a custom registry (e.g., ACR) to avoid pull rate limits. Only applies to Linux web apps. Defaults to '${SIDECAR_IMAGE}'`,
   })
+  private apmEnabled = Option.Boolean('--apm-enabled', false, {
+    description: 'Add the tracer for supported code-based Linux Web Apps.',
+  })
 
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
@@ -79,6 +82,7 @@ export class AasInstrumentCommand extends AasCommand {
       extraTags: this.extraTags,
       windowsRuntime: this.windowsRuntime as WindowsRuntime | undefined,
       sidecarImage: this.sidecarImage,
+      ...(this.apmEnabled ? {apmEnabled: true} : {}),
     }
   }
 

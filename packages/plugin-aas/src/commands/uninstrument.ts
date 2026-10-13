@@ -1,4 +1,4 @@
-import type {StringDictionary} from '@azure/arm-appservice'
+import type {Site, StringDictionary} from '@azure/arm-appservice'
 import type {AasConfigOptions, WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
 import {WebSiteManagementClient} from '@azure/arm-appservice'
@@ -6,17 +6,18 @@ import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {getExtensionId, renderWebApp, resourceIdSegment} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
-import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {LANGUAGE_INJECTION_ENV_NAMES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
 import {
   AAS_DD_SETTING_NAMES,
   aggregateStickyBySite,
-  isDotnet,
+  isLinuxContainer,
   isWindows,
   isWindowsFunctionApp,
   mutateStickySlotSettings,
@@ -24,6 +25,8 @@ import {
   WEBSITE_PRIVATE_EXTENSIONS,
   type ProcessResult,
 } from '../common'
+import {getKuduClient} from '../kudu'
+import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, removeAasSsiEnv} from '../ssi-env'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -127,20 +130,19 @@ export class PluginCommand extends AasUninstrumentCommand {
         )
       } else {
         // Linux uninstrumentation via sidecar
-        await this.uninstrumentSidecar(
-          client,
-          {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? webApp.name},
-          resourceGroup,
-          webApp
-        )
+        await this.uninstrumentSidecar(config, client, resourceGroup, webApp, site)
       }
       await this.removeTags(client.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
+      // Unregister the sticky injection settings instrument pinned on code-based Linux slots.
+      const stickyNamesToRemove = [
+        ...(removePrivateExtensions ? [WEBSITE_PRIVATE_EXTENSIONS] : []),
+        ...(!isWindows(site) && !isLinuxContainer(site) ? LANGUAGE_INJECTION_ENV_NAMES : []),
+      ]
+
       return {
         success: true,
-        sticky: removePrivateExtensions
-          ? stickySlotSettings(resourceGroup, webApp, [WEBSITE_PRIVATE_EXTENSIONS])
-          : undefined,
+        sticky: stickySlotSettings(resourceGroup, webApp, stickyNamesToRemove),
       }
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(webApp)}: ${formatError(error)}`))
@@ -200,10 +202,11 @@ export class PluginCommand extends AasUninstrumentCommand {
   }
 
   public async uninstrumentSidecar(
-    client: WebSiteManagementClient,
     config: AasConfigOptions,
+    client: WebSiteManagementClient,
     resourceGroup: string,
-    webApp: WebApp
+    webApp: WebApp,
+    site: Site
   ) {
     this.context.stdout.write(
       `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${renderWebApp(webApp)} (if it exists)\n`
@@ -213,7 +216,58 @@ export class PluginCommand extends AasUninstrumentCommand {
         ? client.webApps.deleteSiteContainerSlot(resourceGroup, webApp.name, webApp.slot, SIDECAR_CONTAINER_NAME)
         : client.webApps.deleteSiteContainer(resourceGroup, webApp.name, SIDECAR_CONTAINER_NAME))
     }
-    await this.removeEnvVars(config, webApp, client, resourceGroup)
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${renderWebApp(webApp)}\n`)
+    const settings =
+      (
+        await (webApp.slot
+          ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
+          : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
+      ).properties ?? {}
+    await this.removeAasSsiEnvVars(config, webApp, client, resourceGroup, settings)
+    // Containerized apps never use tracer staging, so do not require SCM access for them.
+    if (isLinuxContainer(site)) {
+      return
+    }
+    // Delete unconditionally rather than gating on env markers: `rm -rf` is idempotent, and stale
+    // markers would otherwise orphan the staged tree.
+    this.context.stdout.write(`${this.dryRunPrefix}Removing any staged tracer files from ${renderWebApp(webApp)}\n`)
+    if (!this.dryRun) {
+      try {
+        await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+      } catch (error) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Could not remove staged tracer files from ${renderWebApp(webApp)}: ${formatError(error)}\n` +
+              'There may be inactive tracer files left behind if you previously instrumented with `--apm-enabled`; re-run `aas uninstrument` to retry.'
+          )
+        )
+      }
+    }
+  }
+
+  public async removeAasSsiEnvVars(
+    config: AasConfigOptions,
+    webApp: WebApp,
+    client: WebSiteManagementClient,
+    resourceGroup: string,
+    currentEnvVars: Record<string, string>
+  ): Promise<void> {
+    const ssiCleaned = removeAasSsiEnv(currentEnvVars)
+    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
+    const settings = Object.fromEntries(Object.entries(ssiCleaned).filter(([key]) => !configuredSettings.has(key)))
+    if (!sortedEqual(currentEnvVars, settings)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
+      if (!this.dryRun) {
+        const update: StringDictionary = {properties: settings}
+        await (webApp.slot
+          ? client.webApps.updateApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot, update)
+          : client.webApps.updateApplicationSettings(resourceGroup, webApp.name, update))
+      }
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${renderWebApp(webApp)}.\n`
+      )
+    }
   }
 
   public async removeEnvVars(
@@ -259,6 +313,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     delete updatedTags.env
     delete updatedTags.version
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
+    delete updatedTags[AAS_SSI_TAG]
     if (!sortedEqual(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {

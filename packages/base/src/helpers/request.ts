@@ -19,6 +19,7 @@ export interface RequestConfig {
   paramsSerializer?:
     | ((params: Record<string, unknown>) => string)
     | {serialize: (params: Record<string, unknown>) => string}
+  responseType?: 'arraybuffer'
   timeout?: number
   url?: DatadogRoute | ThirdParty
 }
@@ -174,9 +175,14 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
 
   const responseHeaders = parseResponseHeaders(response.headers)
   const mediaType = (responseHeaders['content-type'] ?? '').split(';')[0].trim()
-  const rawBody = await response.text()
+  const rawBody =
+    config.responseType === 'arraybuffer' ? Buffer.from(await response.arrayBuffer()) : await response.text()
   let data: any = rawBody
-  if (rawBody.length > 0 && (mediaType === 'application/json' || mediaType === 'application/vnd.api+json')) {
+  if (
+    typeof rawBody === 'string' &&
+    rawBody.length > 0 &&
+    (mediaType === 'application/json' || mediaType === 'application/vnd.api+json')
+  ) {
     try {
       data = JSON.parse(rawBody)
     } catch {

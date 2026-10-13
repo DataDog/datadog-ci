@@ -128,6 +128,11 @@ const restrictedImports = [
       'Please use our glob helpers (`globSync` or `globAsync`) which support Windows out-of-the-box instead of using the `glob` package directly.',
   },
   {
+    name: 'glob/raw',
+    message:
+      'Please use our glob helpers (`globSync` or `globAsync`) which support Windows out-of-the-box instead of using the `glob` package directly.',
+  },
+  {
     // imported as `import { EOL } from 'os'`
     name: 'os',
     importNames: ['EOL'],

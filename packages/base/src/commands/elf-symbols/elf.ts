@@ -12,6 +12,7 @@ import {
   ElfFileType,
   MachineType,
   SectionHeaderType,
+  SectionHeaderFlag,
   ElfClass,
   NoteType,
 } from './elf-constants'
@@ -30,6 +31,8 @@ export type ElfFileMetadata = {
   hasDynamicSymbolTable: boolean
   hasSymbolTable: boolean
   hasCode: boolean
+  hasEhFrame: boolean
+  sectionHeaders: SectionHeader[]
   error?: Error
 }
 
@@ -397,15 +400,22 @@ export const hasNonEmptySection = (sectionHeaders: SectionHeader[], name: string
 
 export const getSectionInfo = (
   sections: SectionHeader[]
-): {hasDebugInfo: boolean; hasSymbolTable: boolean; hasDynamicSymbolTable: boolean; hasCode: boolean} => {
+): {
+  hasDebugInfo: boolean
+  hasSymbolTable: boolean
+  hasDynamicSymbolTable: boolean
+  hasCode: boolean
+  hasEhFrame: boolean
+} => {
   const hasDebugInfo = hasNonEmptySection(sections, '.debug_info') || hasNonEmptySection(sections, '.zdebug_info')
   const hasSymbolTable = hasNonEmptySection(sections, '.symtab')
   const hasDynamicSymbolTable = hasNonEmptySection(sections, '.dynsym')
   const hasCode = sections.some(
     (section) => section.name === '.text' && section.sh_type === SectionHeaderType.SHT_PROGBITS
   )
+  const hasEhFrame = hasNonEmptySection(sections, '.eh_frame')
 
-  return {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode}
+  return {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode, hasEhFrame}
 }
 
 export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetadata> => {
@@ -423,6 +433,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     hasSymbolTable: false,
     hasDynamicSymbolTable: false,
     hasCode: false,
+    hasEhFrame: false,
+    sectionHeaders: [],
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
@@ -445,8 +457,9 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     }
 
     const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
+    metadata.sectionHeaders = sectionHeaders
     const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
-    const {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode} = getSectionInfo(sectionHeaders)
+    const {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode, hasEhFrame} = getSectionInfo(sectionHeaders)
     let fileHash = ''
     if (hasCode) {
       // Only compute file hash if the file has code:
@@ -461,6 +474,7 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
       hasSymbolTable,
       hasDynamicSymbolTable,
       hasCode,
+      hasEhFrame,
     })
   } catch (error) {
     metadata.error = error
@@ -536,11 +550,40 @@ const replaceElfHeader = async (targetFilename: string, sourceFilename: string):
   await fd2.close()
 }
 
+export const getObjcopySectionFlags = (flags: bigint): string => {
+  // Match the flags BFD derives from the input section header. Otherwise binutils < 2.35
+  // changes the section type to SHT_PROGBITS and clears sh_link, making .dynsym unreadable.
+  // The sections handled here have contents; SHT_NOBITS is not supported.
+  // eslint-disable-next-line no-bitwise
+  const hasFlag = (flag: bigint): boolean => (flags & flag) !== BigInt(0)
+  const stringFlags = ['contents']
+  if (hasFlag(SectionHeaderFlag.SHF_ALLOC)) {
+    stringFlags.push('alloc', 'load')
+  }
+  if (!hasFlag(SectionHeaderFlag.SHF_WRITE)) {
+    stringFlags.push('readonly')
+  }
+  if (hasFlag(SectionHeaderFlag.SHF_EXECINSTR)) {
+    stringFlags.push('code')
+  } else if (hasFlag(SectionHeaderFlag.SHF_ALLOC)) {
+    stringFlags.push('data')
+  }
+  if (hasFlag(SectionHeaderFlag.SHF_MERGE)) {
+    stringFlags.push('merge')
+  }
+  if (hasFlag(SectionHeaderFlag.SHF_STRINGS)) {
+    stringFlags.push('strings')
+  }
+
+  return stringFlags.join(',')
+}
+
 export const copyElfDebugInfo = async (
   filename: string,
   outputFile: string,
   elfFileMetadata: ElfFileMetadata,
-  compressDebugSections: boolean
+  compressDebugSections: boolean,
+  includeUnwindInfo = false
 ): Promise<void> => {
   // Initialize cached values
   const supportedTargets = await getSupportedBfdTargetsCached()
@@ -574,10 +617,25 @@ export const copyElfDebugInfo = async (
   // Remove .gdb_index section as it is not needed and can be quite big
   let options = `${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index`
 
+  if (includeUnwindInfo && elfFileMetadata.hasEhFrame) {
+    // --only-keep-debug turns allocated unwind sections into NOBITS sections. Preserve the contents so downstream
+    // processors can generate call frame information used to unwind optimized crash stacks.
+    options +=
+      ' ' +
+      elfFileMetadata.sectionHeaders
+        .filter((section) => section.name === '.eh_frame' && section.sh_type !== SectionHeaderType.SHT_NOBITS)
+        .map((section) => `--set-section-flags ${section.name}=${getObjcopySectionFlags(section.sh_flags)}`)
+        .join(' ')
+  }
+
   if (keepDynamicSymbolTable) {
     // If the file has only a dynamic symbol table, preserve the sections needed by symbolic to create a symcache
-    const sectionsToKeep = ['.dynsym', '.dynstr', '.dynamic', '.hash', '.gnu.hash', '.gnu.version*', '.rel*']
-    options += ' ' + sectionsToKeep.map((section) => `--set-section-flags ${section}=alloc,readonly,contents`).join(' ')
+    options +=
+      ' ' +
+      elfFileMetadata.sectionHeaders
+        .filter((section) => ['.dynsym', '.dynstr'].includes(section.name))
+        .map((section) => `--set-section-flags ${section.name}=${getObjcopySectionFlags(section.sh_flags)}`)
+        .join(' ')
   }
 
   try {

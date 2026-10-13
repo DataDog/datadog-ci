@@ -10,9 +10,16 @@ export interface DWARF {
   arch: string
 }
 
+export interface GitData {
+  gitCommitSha: string
+  gitRepositoryPayload?: string
+  gitRepositoryURL: string
+}
+
 export class CompressedDsym {
   public archivePath: string
   public dsym: Dsym
+  public gitData?: GitData
 
   constructor(archivePath: string, dsym: Dsym) {
     this.archivePath = archivePath
@@ -25,6 +32,17 @@ export class CompressedDsym {
       ['event', this.getMetadataPayload()],
     ])
 
+    if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
+      content.set('repository', {
+        type: 'string',
+        options: {
+          contentType: 'application/json',
+          filename: 'repository',
+        },
+        value: this.gitData.gitRepositoryPayload,
+      })
+    }
+
     return {
       content,
     }
@@ -33,16 +51,23 @@ export class CompressedDsym {
   private getMetadataPayload(): MultipartValue {
     const concatUUIDs = this.dsym.dwarf.map((d) => d.uuid).join()
 
+    const metadata: {[k: string]: any} = {
+      type: 'ios_symbols',
+      uuids: concatUUIDs,
+    }
+
+    if (this.gitData) {
+      metadata.git_repository_url = this.gitData.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData.gitCommitSha
+    }
+
     return {
       type: 'string',
       options: {
         contentType: 'application/json',
         filename: 'event',
       },
-      value: JSON.stringify({
-        type: 'ios_symbols',
-        uuids: concatUUIDs,
-      }),
+      value: JSON.stringify(metadata),
     }
   }
 }

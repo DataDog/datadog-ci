@@ -22,4 +22,5 @@ export interface MappingMetadata {
   filename: string
   type: string
   overwrite: boolean
+  generate_cfi_cache: boolean
 }

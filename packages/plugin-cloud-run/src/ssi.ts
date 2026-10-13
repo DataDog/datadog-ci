@@ -131,11 +131,10 @@ export const resolveSsiConfig = (options: SsiOptions): SsiConfigResult => {
   const tracerVersion = options.tracerVersion ?? DEFAULT_TRACER_VERSION
   const tracerLibc = options.tracerLibc ?? DEFAULT_TRACER_LIBC
   const tracerVolumeMedium = options.tracerVolumeMedium ?? 'memory'
-  const errors = getLanguageCompatibilityErrors({
-    language: options.language,
-    libc: tracerLibc,
-    version: tracerVersion,
-  })
+  const errors = getLanguageCompatibilityErrors(
+    {language: options.language, libc: tracerLibc, version: tracerVersion},
+    {probeServer: true}
+  )
   if (errors.length > 0) {
     return {kind: 'errors', errors, warnings: []}
   }

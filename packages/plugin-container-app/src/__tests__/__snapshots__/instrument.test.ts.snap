@@ -21,48 +21,48 @@ Updating configuration for my-container-app:
         {
           "env": [
 +           {
-+             "name": "DD_API_KEY",
-+             "secretRef": "dd-api-key"
-+           },
-+           {
-+             "name": "DD_APM_ENABLED",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_AZURE_RESOURCE_GROUP",
-+             "value": "my-resource-group"
-+           },
-            {
-+             "name": "DD_AZURE_SUBSCRIPTION_ID",
-+             "value": "00000000-0000-0000-0000-000000000000"
-+           },
-+           {
-+             "name": "DD_HEALTH_PORT",
-+             "value": "5555"
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
 +           },
 +           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
+            {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
+              "name": "PORT",
+              "value": "8080"
++           },
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
 +           },
 +           {
 +             "name": "DD_SERVICE",
 +             "value": "my-container-app"
 +           },
 +           {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
 +           },
 +           {
-+             "name": "DD_TRACE_ENABLED",
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_APM_ENABLED",
 +             "value": "true"
-+           },
-+           {
-              "name": "PORT",
-              "value": "8080"
             }
           ],
           "image": "myregistry.azurecr.io/myapp:latest",
@@ -82,43 +82,43 @@ Updating configuration for my-container-app:
 +       {
 +         "env": [
 +           {
-+             "name": "DD_API_KEY",
-+             "secretRef": "dd-api-key"
-+           },
-+           {
-+             "name": "DD_APM_ENABLED",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_AZURE_RESOURCE_GROUP",
-+             "value": "my-resource-group"
-+           },
-+           {
-+             "name": "DD_AZURE_SUBSCRIPTION_ID",
-+             "value": "00000000-0000-0000-0000-000000000000"
-+           },
-+           {
-+             "name": "DD_HEALTH_PORT",
-+             "value": "5555"
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
 +           },
 +           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
 +           },
 +           {
 +             "name": "DD_SERVICE",
 +             "value": "my-container-app"
 +           },
 +           {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
 +           },
 +           {
-+             "name": "DD_TRACE_ENABLED",
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_APM_ENABLED",
 +             "value": "true"
 +           }
 +         ],
@@ -188,60 +188,60 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
         {
           "env": [
 +           {
-+             "name": "DD_API_KEY",
-+             "secretRef": "dd-api-key"
-+           },
-+           {
-+             "name": "DD_APM_ENABLED",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_AZURE_RESOURCE_GROUP",
-+             "value": "my-resource-group"
-+           },
-+           {
-+             "name": "DD_AZURE_SUBSCRIPTION_ID",
-+             "value": "00000000-0000-0000-0000-000000000000"
-+           },
-+           {
-+             "name": "DD_ENV",
-+             "value": "staging"
-+           },
-+           {
-+             "name": "DD_HEALTH_PORT",
-+             "value": "5555"
-+           },
-+           {
-+             "name": "DD_LOGS_INJECTION",
-+             "value": "true"
-+           },
-            {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
-+           },
-+           {
-+             "name": "DD_SERVICE",
-+             "value": "my-service"
-+           },
-+           {
 +             "name": "DD_SITE",
 +             "value": "datadoghq.com"
 +           },
 +           {
-+             "name": "DD_TAGS",
-+             "value": "team:backend,service:api"
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
 +           },
 +           {
 +             "name": "DD_TRACE_ENABLED",
 +             "value": "true"
 +           },
 +           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
+            {
+              "name": "PORT",
+              "value": "8080"
++           },
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "my-service"
++           },
++           {
++             "name": "DD_ENV",
++             "value": "staging"
++           },
++           {
 +             "name": "DD_VERSION",
 +             "value": "1.0.0"
 +           },
 +           {
-              "name": "PORT",
-              "value": "8080"
++             "name": "DD_TAGS",
++             "value": "team:backend,service:api"
++           },
++           {
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
++           },
++           {
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_APM_ENABLED",
++             "value": "true"
             }
           ],
           "image": "myregistry.azurecr.io/myapp:latest",
@@ -261,56 +261,56 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +       {
 +         "env": [
 +           {
-+             "name": "DD_API_KEY",
-+             "secretRef": "dd-api-key"
-+           },
-+           {
-+             "name": "DD_APM_ENABLED",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_AZURE_RESOURCE_GROUP",
-+             "value": "my-resource-group"
-+           },
-+           {
-+             "name": "DD_AZURE_SUBSCRIPTION_ID",
-+             "value": "00000000-0000-0000-0000-000000000000"
-+           },
-+           {
-+             "name": "DD_ENV",
-+             "value": "staging"
-+           },
-+           {
-+             "name": "DD_HEALTH_PORT",
-+             "value": "5555"
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
 +           },
 +           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
 +           },
 +           {
 +             "name": "DD_SERVICE",
 +             "value": "my-service"
 +           },
 +           {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
++             "name": "DD_ENV",
++             "value": "staging"
++           },
++           {
++             "name": "DD_VERSION",
++             "value": "1.0.0"
 +           },
 +           {
 +             "name": "DD_TAGS",
 +             "value": "team:backend,service:api"
 +           },
 +           {
-+             "name": "DD_TRACE_ENABLED",
-+             "value": "true"
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
 +           },
 +           {
-+             "name": "DD_VERSION",
-+             "value": "1.0.0"
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_APM_ENABLED",
++             "value": "true"
 +           }
 +         ],
 +         "image": "index.docker.io/datadog/serverless-init:latest",

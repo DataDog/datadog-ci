@@ -101,6 +101,20 @@ describe('resolveSsiConfig', () => {
     )
   })
 
+  // The sidecar stays alive to serve the readiness probe, so a tracer image without the probe
+  // server would never report ready.
+  test('rejects a pinned tracer older than the probe-server baseline', () => {
+    expect(getErrors({tracing: 'inject', language: 'python', tracerVersion: '4.12.9'})).toContain(
+      'requires tracer version later than 4.13.0'
+    )
+  })
+
+  test('accepts a pinned tracer newer than the probe-server baseline', () => {
+    expect(
+      resolveSsiConfig({...defaultOptions, tracing: 'inject', language: 'python', tracerVersion: '4.14.0'}).kind
+    ).toBe('single-language')
+  })
+
   test.each([
     ['nodejs', 'single-language'],
     [undefined, 'multi-language'],

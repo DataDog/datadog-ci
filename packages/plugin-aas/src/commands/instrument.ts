@@ -22,6 +22,7 @@ import {
   SIDECAR_PORT,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {LANGUAGE_INJECTION_ENV_NAMES} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
@@ -42,6 +43,10 @@ import {
   AZURE_FUNCTIONS_DOCS_URL,
   AZURE_WINDOWS_FUNCTIONS_DOCS_URL,
 } from '../common'
+import {getKuduClient} from '../kudu'
+import {parseLinuxFxVersion} from '../ssi'
+import {AAS_SSI_TAG, AAS_SSI_TAG_VALUE, hasStagedAasTracer, mergeAasSsiEnv, removeAasSsiEnv} from '../ssi-env'
+import {resolveAasTracerStaging} from '../ssi-stage'
 
 // Pin DD_ENV (set via --env) plus any extra names sticky to the slot.
 const stickyNames = (config: AasConfigOptions, additional: string[] = []): string[] => [
@@ -162,7 +167,7 @@ export class PluginCommand extends AasInstrumentCommand {
   ): Promise<ProcessResult> {
     // make config a copy with the default service added
     config = {...config, service: config.service ?? webApp.name}
-    const sticky = stickySlotSettings(resourceGroup, webApp, stickyNames(config))
+    let sticky = stickySlotSettings(resourceGroup, webApp, stickyNames(config))
     try {
       const [site, envVarDictionary] = await Promise.all(
         webApp.slot
@@ -188,6 +193,13 @@ export class PluginCommand extends AasInstrumentCommand {
 
       if (isWindows(site)) {
         // Windows instrumentation via extension
+        if (config.apmEnabled) {
+          this.context.stdout.write(
+            renderSoftWarning(
+              'Automatic tracer injection applies only to code-based Linux Web Apps. Continuing with standard Datadog instrumentation.'
+            )
+          )
+        }
         const runtime = config.windowsRuntime ?? getWindowsRuntime(site, existingEnvVars)
 
         if (isFunctionApp(site)) {
@@ -237,7 +249,62 @@ export class PluginCommand extends AasInstrumentCommand {
       }
 
       // Linux instrumentation via sidecar
-      const isContainer = isLinuxContainer(site)
+      const linuxSite = {
+        ...site,
+        siteConfig: await (webApp.slot
+          ? aasClient.webApps.getConfigurationSlot(resourceGroup, webApp.name, webApp.slot)
+          : aasClient.webApps.getConfiguration(resourceGroup, webApp.name)),
+      }
+      const isContainer = isLinuxContainer(linuxSite)
+      const injectApm = config.apmEnabled && !isContainer
+      const hasStagedTracer = hasStagedAasTracer(existingEnvVars)
+      const withoutSsiEnvVars = removeAasSsiEnv(existingEnvVars)
+      const removesSsi = !injectApm && !isContainer && !sortedEqual(existingEnvVars, withoutSsiEnvVars)
+      const usesSsiEnv = hasStagedTracer || injectApm || removesSsi
+      // Tracer injection replaces the legacy sidecar .NET settings, so force them off while SSI
+      // owns the environment. An explicit --dotnet request is still honored when not injecting:
+      // the desired state comes from the requested config, not from previously staged state.
+      const webAppConfig = usesSsiEnv && (injectApm || !config.isDotnet) ? {...config, isDotnet: false} : {...config}
+      let ssiEnvVars: Record<string, string> | undefined
+      if (config.apmEnabled && isContainer) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Automatic tracer injection applies only to code-based Linux Web Apps. Continuing with standard Datadog instrumentation for ${renderWebApp(webApp)}.`
+          )
+        )
+      } else if (injectApm) {
+        const runtime = parseLinuxFxVersion(linuxSite.siteConfig?.linuxFxVersion)
+        const staging = await resolveAasTracerStaging(runtime)
+        const baseEnvVars = getEnvVars({...config, isDotnet: false}, linuxSite, webApp)
+        const preMergeEnvVars = {...existingEnvVars, ...baseEnvVars}
+        // Merge before publishing so environment conflicts abort before any app mutation.
+        ssiEnvVars = mergeAasSsiEnv(preMergeEnvVars, runtime, staging.root)
+        if (this.dryRun) {
+          this.context.stdout.write(
+            `${this.dryRunPrefix}Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
+          )
+          for (const [name, value] of Object.entries(ssiEnvVars)) {
+            if (preMergeEnvVars[name] !== value) {
+              this.context.stdout.write(`${this.dryRunPrefix}  ${name}=${value}\n`)
+            }
+          }
+        } else {
+          this.context.stdout.write(`Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`)
+          const staged = await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp))
+          this.context.stdout.write(
+            staged
+              ? `Staged the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`
+              : `The ${runtime.language} tracer is already staged for ${renderWebApp(webApp)}\n`
+          )
+        }
+      } else if (removesSsi) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `Removing automatic tracer injection from ${renderWebApp(webApp)}. Use --apm-enabled to keep it.`
+          )
+        )
+        ssiEnvVars = {...withoutSsiEnvVars, ...getEnvVars(webAppConfig, linuxSite, webApp)}
+      }
       if (config.isMusl && !isContainer) {
         this.context.stdout.write(
           renderSoftWarning(
@@ -246,11 +313,35 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           )
         )
       }
-      config.isDotnet ||= isDotnet(site)
-      config.isMusl &&= config.isDotnet && isContainer
-      await this.instrumentSidecar(aasClient, config, resourceGroup, webApp, existingEnvVars, site)
+      if (!usesSsiEnv) {
+        webAppConfig.isDotnet ||= isDotnet(linuxSite)
+      }
+      webAppConfig.isMusl &&= webAppConfig.isDotnet && isContainer
+      await this.instrumentSidecar(
+        aasClient,
+        webAppConfig,
+        resourceGroup,
+        webApp,
+        existingEnvVars,
+        linuxSite,
+        ssiEnvVars,
+        removesSsi
+      )
       // tag only after instrumentation succeeds (avoids false telemetry)
-      await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
+      await this.addTags(
+        webAppConfig,
+        aasClient.subscriptionId!,
+        resourceGroup,
+        webApp,
+        linuxSite.tags ?? {},
+        injectApm,
+        !isContainer && !injectApm
+      )
+      if (injectApm) {
+        // Pin the injection settings sticky so a slot swap cannot move them to production without
+        // the staged tracer files they point at (settings swap, filesystems do not).
+        sticky = stickySlotSettings(resourceGroup, webApp, [...stickyNames(config), ...LANGUAGE_INJECTION_ENV_NAMES])
+      }
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
 
@@ -280,12 +371,18 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     subscriptionId: string,
     resourceGroup: string,
     webApp: WebApp,
-    tags: Record<string, string>
+    tags: Record<string, string>,
+    apmEnabled = false,
+    removeSsiTag = false
   ): Promise<void> {
     const updatedTags: Record<string, string> = {
       ...tags,
       service: config.service!,
       [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE,
+      ...(apmEnabled ? {[AAS_SSI_TAG]: AAS_SSI_TAG_VALUE} : {}),
+    }
+    if (removeSsiTag) {
+      delete updatedTags[AAS_SSI_TAG]
     }
     if (config.environment) {
       updatedTags.env = config.environment
@@ -377,7 +474,9 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     resourceGroup: string,
     webApp: WebApp,
     existingEnvVars: Record<string, string>,
-    site: Site
+    site: Site,
+    additionalEnvVars?: Record<string, string>,
+    replaceExistingEnvVars = false
   ) {
     const siteContainers = await collectAsyncIterator(
       webApp.slot
@@ -385,7 +484,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         : client.webApps.listSiteContainers(resourceGroup, webApp.name)
     )
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = getEnvVars(config, site, webApp)
+    const agentEnvVars = getEnvVars(config, site, webApp)
+    const envVars = {...agentEnvVars, ...additionalEnvVars}
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)
@@ -394,7 +494,10 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       sidecarContainer.image !== (config.sidecarImage ?? SIDECAR_IMAGE) ||
       sidecarContainer.targetPort !== String(SIDECAR_PORT) ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
-      !sortedEqual(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
+      !sortedEqual(
+        [...new Set(sidecarContainer.environmentVariables.map(({name}) => name))],
+        [...new Set(Object.keys(agentEnvVars))]
+      )
     ) {
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
@@ -406,9 +509,9 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           image: config.sidecarImage ?? SIDECAR_IMAGE,
           targetPort: String(SIDECAR_PORT),
           isMain: false,
-          // We're allowing access to all env vars since it is simpler
-          // and doesn't cause problems, but not all env vars are needed for the sidecar.
-          environmentVariables: Object.keys(envVars).map((name) => ({name, value: name})),
+          // Forward only the Datadog-owned settings: the sidecar must not receive customer app
+          // settings or tracer injection values (LD_PRELOAD, NODE_OPTIONS, ...).
+          environmentVariables: Object.keys(agentEnvVars).map((name) => ({name, value: name})),
         }
         await (webApp.slot
           ? client.webApps.createOrUpdateSiteContainerSlot(
@@ -427,7 +530,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         )} already exists with correct configuration.\n`
       )
     }
-    await this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars)
+    await this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars, replaceExistingEnvVars)
   }
 
   private async updateEnvVars(
@@ -435,9 +538,12 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     resourceGroup: string,
     webApp: WebApp,
     existingEnvVars: Record<string, string>,
-    envVars: Record<string, string>
+    envVars: Record<string, string>,
+    replaceExistingEnvVars = false
   ) {
-    const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars, ...envVars}}
+    const updatedEnvVars: StringDictionary = {
+      properties: replaceExistingEnvVars ? envVars : {...existingEnvVars, ...envVars},
+    }
     if (!sortedEqual(existingEnvVars, updatedEnvVars.properties)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
