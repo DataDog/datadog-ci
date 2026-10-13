@@ -644,6 +644,17 @@ describe('maybeFilterExistingDebugIds', () => {
     expect(command.context.stdout.toString()).toContain('already exists in Datadog')
   })
 
+  test('only skips payloads whose debug ID is reported as true', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({'id-a': 'false'})
+    const command = createDebugIdCommand()
+    const payload = makePayload('id-a')
+
+    const [toUpload, skipped] = await command['maybeFilterExistingDebugIds']([payload], stubMetricsLogger())
+
+    expect(toUpload).toStrictEqual([payload])
+    expect(skipped).toBe(0)
+  })
+
   test('increments the skipped_existing metric per skipped payload', async () => {
     mockedCheckExistingDebugIds.mockResolvedValue({'id-a': true, 'id-b': true})
     const command = createDebugIdCommand()
@@ -775,12 +786,16 @@ describe('execute with check_exists', () => {
     expect(stdout).toContain('Uploading sourcemap')
   })
 
-  test('does not run the check on dry-run', async () => {
+  test('runs the check on dry-run', async () => {
+    mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: true})
+
     const {context, code} = await runCLIWithDebugIdDryRun([debugIdFixture])
 
     expect(code).toBe(0)
-    expect(mockedCheckExistingDebugIds).not.toHaveBeenCalled()
+    expect(mockedCheckExistingDebugIds).toHaveBeenCalledTimes(1)
     expect(mockedHttpRequest).not.toHaveBeenCalled()
-    expect(context.stdout.toString()).toContain('[DRYRUN] Uploading sourcemap')
+    const stdout = context.stdout.toString()
+    expect(stdout).toContain('Skipping sourcemap')
+    expect(stdout).not.toContain('[DRYRUN] Uploading sourcemap')
   })
 })

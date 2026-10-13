@@ -332,13 +332,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
     payloads: Sourcemap[],
     metricsLogger: MetricsLogger
   ): Promise<[Sourcemap[], number]> => {
-    if (
-      !this.experimentalDuplicateCheck ||
-      !this.debugId ||
-      this.dryRun ||
-      payloads.length === 0 ||
-      !this.config.apiKey
-    ) {
+    if (!this.experimentalDuplicateCheck || !this.debugId || payloads.length === 0 || !this.config.apiKey) {
       return [payloads, 0]
     }
     try {

@@ -8,7 +8,8 @@ const MAX_DEBUG_IDS_PER_REQUEST = 1000
 interface CheckExistsResponse {
   data?: {
     attributes?: {
-      results?: Record<string, boolean>
+      // Untrusted wire values: callers only treat an explicit `true` as existing.
+      results?: Record<string, unknown>
     }
   }
 }
@@ -23,9 +24,9 @@ export const checkExistingDebugIds = async (
   datadogSite: string,
   cliVersion: string,
   debugIds: string[]
-): Promise<Record<string, boolean>> => {
+): Promise<Record<string, unknown>> => {
   const uniqueIds = [...new Set(debugIds)]
-  const results: Record<string, boolean> = {}
+  const results: Record<string, unknown> = {}
   if (uniqueIds.length === 0) {
     return results
   }

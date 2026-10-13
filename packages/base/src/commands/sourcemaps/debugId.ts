@@ -122,7 +122,7 @@ export const filterExistingDebugIds = async (
   const existingPayloads: Sourcemap[] = []
 
   for (const payload of payloads) {
-    if (payload.debugId !== undefined && existing[payload.debugId]) {
+    if (payload.debugId !== undefined && existing[payload.debugId] === true) {
       existingPayloads.push(payload)
     } else {
       payloadsToUpload.push(payload)
