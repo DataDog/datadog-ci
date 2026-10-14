@@ -152,7 +152,8 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
 
 /**
  * Installs a plugin as a dev dependency in the current project with the right package manager.
- * Plugin bundles are self-contained (all deps vendored), so only the plugin itself is needed.
+ * Plugin bundles are normally self-contained. Plugins may keep native runtime dependencies external so the package
+ * manager can install the platform-specific binding beside them.
  */
 export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
   if (!isValidScope(packageOrScope)) {
