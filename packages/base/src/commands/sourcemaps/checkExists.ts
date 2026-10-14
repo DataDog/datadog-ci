@@ -5,6 +5,9 @@ import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 // The check_exists endpoint accepts at most 1000 debug IDs per request.
 const MAX_DEBUG_IDS_PER_REQUEST = 1000
 
+// Best effort: a failed or slow check uploads everything anyway, so fail fast.
+const CHECK_EXISTS_TIMEOUT_MS = 1000
+
 interface CheckExistsResponse {
   data?: {
     attributes?: {
@@ -48,6 +51,7 @@ export const checkExistingDebugIds = async (
       url: datadogRoute('/api/unstable/sourcemaps/check_exists'),
       // The endpoint speaks JSON:API on the wire.
       data: {data: {type: 'check_exists', attributes: {debug_ids: chunk}}},
+      timeout: CHECK_EXISTS_TIMEOUT_MS,
     })
     const chunkResults = (response.data as CheckExistsResponse).data?.attributes?.results
     if (chunkResults === undefined) {
