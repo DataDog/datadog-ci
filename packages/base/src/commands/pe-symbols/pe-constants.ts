@@ -171,3 +171,92 @@ export const CV_INFO_SIGNATURE_OFFSET = 0
 export const CV_INFO_GUID_OFFSET = 4
 export const CV_INFO_AGE_OFFSET = 20
 export const CV_INFO_PDB_FILENAME_OFFSET = 24
+
+// Fields used to rebuild a reduced PE for unwind uploads (see pe-unwind.ts).
+// Offsets below are relative to the "PE\0\0" signature unless stated otherwise.
+export const IMAGE_NT_SIGNATURE = 0x4550 // "PE\0\0"
+export const IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET = 20
+export const IMAGE_FILE_HEADER_CHARACTERISTICS_OFFSET = 22
+export const IMAGE_FILE_EXECUTABLE_IMAGE = 0x0002
+export const IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x0020
+export const IMAGE_OPTIONAL_HEADER_OFFSET = 24
+export const IMAGE_SIZEOF_OPTIONAL_HEADER32 = 224
+export const IMAGE_SIZEOF_OPTIONAL_HEADER64 = 240
+
+// Offsets relative to the start of the optional header.
+export const IMAGE_OPTIONAL_HEADER32_IMAGEBASE_OFFSET = 28
+export const IMAGE_OPTIONAL_HEADER64_IMAGEBASE_OFFSET = 24
+export const IMAGE_OPTIONAL_HEADER_SECTIONALIGNMENT_OFFSET = 32
+export const IMAGE_OPTIONAL_HEADER_FILEALIGNMENT_OFFSET = 36
+export const IMAGE_OPTIONAL_HEADER_SIZEOFIMAGE_OFFSET = 56
+export const IMAGE_OPTIONAL_HEADER_SIZEOFHEADERS_OFFSET = 60
+export const IMAGE_OPTIONAL_HEADER_SUBSYSTEM_OFFSET = 68
+export const IMAGE_SUBSYSTEM_WINDOWS_CUI = 3
+
+export const IMAGE_DIRECTORY_ENTRY_EXCEPTION = 3
+export const IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG = 10
+
+export const IMAGE_SECTION_HEADER_SIZEOFRAWDATA_OFFSET = 16
+export const IMAGE_SECTION_HEADER_CHARACTERISTICS_OFFSET = 36
+export const IMAGE_SCN_CNT_CODE = 0x00000020
+export const IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040
+export const IMAGE_SCN_MEM_EXECUTE = 0x20000000
+export const IMAGE_SCN_MEM_READ = 0x40000000
+
+// Offset of CHPEMetadataPointer in IMAGE_LOAD_CONFIG_DIRECTORY; non-zero on ARM64EC/ARM64X hybrid images.
+export const IMAGE_LOAD_CONFIG32_CHPE_METADATA_OFFSET = 0x7c
+export const IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET = 0xc8
+
+// x64 exception data, see https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64
+/*
+typedef struct _RUNTIME_FUNCTION {
+   0    ULONG BeginAddress;
+   4    ULONG EndAddress;
+   8    ULONG UnwindData;   // RVA of UNWIND_INFO, or of another RUNTIME_FUNCTION when the low bit is set
+} RUNTIME_FUNCTION;
+*/
+export const RUNTIME_FUNCTION_SIZE = 12
+export const RUNTIME_FUNCTION_BEGIN_OFFSET = 0
+export const RUNTIME_FUNCTION_END_OFFSET = 4
+export const RUNTIME_FUNCTION_UNWIND_OFFSET = 8
+export const RUNTIME_FUNCTION_INDIRECT = 1
+
+/*
+typedef struct _UNWIND_INFO {
+   0    UBYTE Version : 3;
+        UBYTE Flags   : 5;
+   1    UBYTE SizeOfProlog;
+   2    UBYTE CountOfCodes;
+   3    UBYTE FrameRegister : 4;
+        UBYTE FrameOffset   : 4;
+   4    UNWIND_CODE UnwindCode[CountOfCodes];   // 2 bytes each, padded to 4 bytes
+        // followed by an exception handler RVA and handler data, or by a chained RUNTIME_FUNCTION
+} UNWIND_INFO;
+
+typedef union _UNWIND_CODE {
+   0    UBYTE CodeOffset;
+   1    UBYTE UnwindOp : 4;
+        UBYTE OpInfo   : 4;
+} UNWIND_CODE;
+*/
+export const UNWIND_INFO_VERSION_FLAGS_OFFSET = 0
+export const UNWIND_INFO_SIZE_OF_PROLOG_OFFSET = 1
+export const UNWIND_INFO_COUNT_OF_CODES_OFFSET = 2
+export const UNWIND_INFO_HEADER_SIZE = 4
+export const UNWIND_CODE_SIZE = 2
+export const UNWIND_CODE_OP_OFFSET = 1
+export const UNW_FLAG_EHANDLER = 0x1
+export const UNW_FLAG_UHANDLER = 0x2
+export const UNW_FLAG_CHAININFO = 0x4
+
+export const UWOP_PUSH_NONVOL = 0
+export const UWOP_ALLOC_LARGE = 1
+export const UWOP_ALLOC_SMALL = 2
+export const UWOP_SET_FPREG = 3
+export const UWOP_SAVE_NONVOL = 4
+export const UWOP_SAVE_NONVOL_FAR = 5
+export const UWOP_EPILOG = 6 // UWOP_SAVE_XMM in version 1
+export const UWOP_SPARE_CODE = 7 // UWOP_SAVE_XMM_FAR in version 1
+export const UWOP_SAVE_XMM128 = 8
+export const UWOP_SAVE_XMM128_FAR = 9
+export const UWOP_PUSH_MACHFRAME = 10
