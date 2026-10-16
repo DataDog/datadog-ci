@@ -140,6 +140,7 @@ describe('cli', () => {
       'sourcemaps upload': [NONEXISTENT_FILE],
       'terraform upload': ['plan', NONEXISTENT_FILE],
       trace: ['id'],
+      'wasm-sourcemaps upload': [NONEXISTENT_FILE],
       'wasm-symbols upload': [NONEXISTENT_FILE],
     }
 
