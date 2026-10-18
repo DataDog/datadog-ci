@@ -1,6 +1,7 @@
 export const TYPE_PE_DEBUG_INFOS = 'pe_symbol_file'
 export const VALUE_NAME_PE_DEBUG_INFOS = 'pe_symbol_file'
 export const PE_DEBUG_INFOS_FILENAME = 'pe_symbol_file'
+export const VALUE_NAME_PE_BINARY = 'pe_binary_file'
 
 export interface MappingMetadata {
   // both cli_version and origin_version are set to `cliVersion`
@@ -18,6 +19,7 @@ export interface MappingMetadata {
   origin: string // will contain 'datadog-ci'
   type: string
   overwrite: boolean
+  generate_cfi_cache: boolean
 
   // origin: string
   git_commit_sha?: string
