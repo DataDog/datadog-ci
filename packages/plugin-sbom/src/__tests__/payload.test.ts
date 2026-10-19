@@ -10,7 +10,7 @@ import {
   SBOM_TOOL_GENERATOR_NAME,
   SBOM_TOOL_GENERATOR_VERSION,
 } from '@datadog/datadog-ci-base/helpers/tags'
-import simpleGit from 'simple-git'
+import {simpleGit} from 'simple-git'
 import upath from 'upath'
 
 import {generatePayload} from '../payload'

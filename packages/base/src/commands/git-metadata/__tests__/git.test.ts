@@ -5,6 +5,11 @@ import path from 'upath'
 
 import {getCommitInfo, getGitFileHash, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
+jest.mock('simple-git', () => ({
+  ...jest.requireActual('simple-git'),
+  simpleGit: jest.fn(),
+}))
+
 interface MockConfig {
   hash?: string
   remotes?: any[]
@@ -120,7 +125,7 @@ describe('git', () => {
 
   describe('newSimpleGit', () => {
     test('should throw an error if git is not installed', async () => {
-      jest.spyOn(simpleGit, 'simpleGit').mockImplementation(() => {
+      jest.mocked(simpleGit.simpleGit).mockImplementation(() => {
         throw Error('gitp error')
       })
       await expect(newSimpleGit()).rejects.toThrow('gitp error')
@@ -128,7 +133,7 @@ describe('git', () => {
 
     test('should throw an error if revparse throws an error', async () => {
       const mock = createMockSimpleGit({}) as any
-      jest.spyOn(simpleGit, 'simpleGit').mockReturnValue(mock)
+      jest.mocked(simpleGit.simpleGit).mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockImplementation(async () => {
         throw Error('revparse error')
       })
@@ -138,7 +143,7 @@ describe('git', () => {
 
     test('should not throw any errors', async () => {
       const mock = createMockSimpleGit({}) as any
-      jest.spyOn(simpleGit, 'simpleGit').mockReturnValue(mock)
+      jest.mocked(simpleGit.simpleGit).mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockResolvedValue('1234')
 
       await expect(newSimpleGit()).resolves.not.toThrow()
