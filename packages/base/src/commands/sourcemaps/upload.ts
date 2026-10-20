@@ -192,11 +192,10 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
   private addRepositoryDataToPayloads = async (payloads: Sourcemap[]) => {
     const userProvidedRepoUrl = this.repositoryURL ?? this.config.repositoryURL
     const userProvidedCommitSha = this.commitSha ?? this.config.commitSha
-    // Git data collected by a parent command takes precedence, so all of its uploads share the same git data
-    const parentRepositoryData = this.context.repositoryData
 
     // If both user-provided repository URL and commit SHA are provided, use alternative approach without git.
-    if (!parentRepositoryData && userProvidedRepoUrl && userProvidedCommitSha) {
+    // Git data collected by a parent command takes precedence, so all of its uploads share the same git data.
+    if (!this.context.repositoryData && userProvidedRepoUrl && userProvidedCommitSha) {
       payloads.forEach((payload) => {
         const repoPayload = this.getRepositoryPayloadWithoutGit(
           userProvidedCommitSha,
@@ -215,7 +214,7 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
 
     try {
       const repositoryData =
-        parentRepositoryData ??
+        this.context.repositoryData ??
         (await getRepositoryData(await newSimpleGit(), userProvidedRepoUrl, userProvidedCommitSha))
       await Promise.all(
         payloads.map(async (payload) => {
