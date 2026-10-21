@@ -1,6 +1,6 @@
 import type {SpanTags} from '../interfaces'
 
-import simpleGit from 'simple-git'
+import {simpleGit} from 'simple-git'
 
 import {
   GIT_BRANCH,

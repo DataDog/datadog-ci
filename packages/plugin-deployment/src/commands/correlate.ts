@@ -11,7 +11,7 @@ import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import simpleGit from 'simple-git'
+import {simpleGit} from 'simple-git'
 
 export class PluginCommand extends DeploymentCorrelateCommand {
   private config = {

@@ -9,7 +9,7 @@ import {gitRepositoryURL, gitHash} from '@datadog/datadog-ci-base/helpers/git/ge
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import chalk from 'chalk'
-import simpleGit from 'simple-git'
+import {simpleGit} from 'simple-git'
 
 import {apiConstructor} from '../api'
 import {
