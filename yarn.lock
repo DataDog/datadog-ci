@@ -1328,7 +1328,7 @@ __metadata:
   dependencies:
     "@antfu/install-pkg": "npm:^1.1.0"
     "@babel/parser": "npm:^7.29.0"
-    "@simple-git/argv-parser": "npm:2.0.1"
+    "@simple-git/argv-parser": "npm:^2.0.1"
     "@types/async-retry": "npm:^1.4.8"
     "@types/datadog-metrics": "npm:^0.6.1"
     "@types/debug": "npm:^4.1.12"
@@ -3698,7 +3698,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@simple-git/argv-parser@npm:2.0.1":
+"@simple-git/argv-parser@npm:2.0.1, @simple-git/argv-parser@npm:^2.0.1":
   version: 2.0.1
   resolution: "@simple-git/argv-parser@npm:2.0.1"
   dependencies:
