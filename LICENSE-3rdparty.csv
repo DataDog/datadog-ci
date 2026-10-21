@@ -13,6 +13,7 @@ Component,Origin,Licence,Copyright
 @azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-resources,import,MIT,Copyright (c) Microsoft Corporation
 @babel/parser,import,MIT,Copyright (C) 2012-2014 by various contributors (see AUTHORS)
+@simple-git/argv-parser,import,MIT,Copyright (c) 2025 Steve King
 @smithy/property-provider,import,Apache-2.0,"Copyright 2018-2020 Amazon.com, Inc. or its affiliates."
 @smithy/util-retry,import,Apache-2.0,"Copyright 2019 Amazon.com, Inc. or its affiliates."
 @types/async-retry,dev,MIT,Copyright (c) Microsoft Corporation

@@ -3,27 +3,30 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
+import {DEFAULT_GIT_OPTIONS} from './default-options'
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
+import {withGitRepositoryEnvironment} from './repository-environment'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
+  const currentDir = process.cwd()
   const options = {
-    baseDir: process.cwd(),
-    binary: 'git',
+    ...DEFAULT_GIT_OPTIONS,
+    baseDir: currentDir,
     // We are invoking at most 3 git commands at the same time.
     maxConcurrentProcesses: 3,
   }
   try {
     // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command
     // returns the tracked files paths relative to the root of the repository.
-    const git = simpleGit.simpleGit(options)
+    const git = withGitRepositoryEnvironment(simpleGit.simpleGit(options), currentDir)
     const root = await git.revparse('--show-toplevel')
     options.baseDir = root
   } catch {
     // Ignore exception as it will fail if we are not inside a git repository.
   }
 
-  return simpleGit.simpleGit(options)
+  return withGitRepositoryEnvironment(simpleGit.simpleGit(options), currentDir)
 }
 
 export interface RepositoryData {
