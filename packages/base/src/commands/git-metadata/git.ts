@@ -4,6 +4,7 @@ import * as simpleGit from 'simple-git'
 import {GitConfigScope} from 'simple-git'
 
 import {isCI} from '../../helpers/ci'
+import {DEFAULT_GIT_OPTIONS} from '../../helpers/git/default-options'
 import {gitRemote} from '../../helpers/git/get-git-data'
 
 import {CommitInfo} from './interfaces'
@@ -12,10 +13,8 @@ import {CommitInfo} from './interfaces'
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   const currentDir = process.cwd()
   const options = {
+    ...DEFAULT_GIT_OPTIONS,
     baseDir: currentDir,
-    binary: 'git',
-    // Preserve repository selection for checkouts with an external Git directory.
-    allowEnvironment: ['GIT_DIR', 'GIT_WORK_TREE'],
     maxConcurrentProcesses: 1,
   }
 

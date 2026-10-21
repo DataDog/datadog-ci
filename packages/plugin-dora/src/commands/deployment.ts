@@ -5,6 +5,7 @@ import {DoraDeploymentCommand} from '@datadog/datadog-ci-base/commands/dora/depl
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {DEFAULT_GIT_OPTIONS} from '@datadog/datadog-ci-base/helpers/git/default-options'
 import {gitRepositoryURL, gitHash} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -72,10 +73,8 @@ export class PluginCommand extends DoraDeploymentCommand {
 
   private async getGitInfo(): Promise<GitInfo> {
     const git = simpleGit({
+      ...DEFAULT_GIT_OPTIONS,
       baseDir: process.cwd(),
-      binary: 'git',
-      // Preserve repository selection for checkouts with an external Git directory.
-      allowEnvironment: ['GIT_DIR', 'GIT_WORK_TREE'],
       // We are invoking at most 5 git commands at the same time.
       maxConcurrentProcesses: 5,
     })

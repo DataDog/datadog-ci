@@ -3,15 +3,14 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
+import {DEFAULT_GIT_OPTIONS} from './default-options'
 import {gitHash, gitRemote, gitTrackedFiles} from './get-git-data'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   const options = {
+    ...DEFAULT_GIT_OPTIONS,
     baseDir: process.cwd(),
-    binary: 'git',
-    // Preserve repository selection for checkouts with an external Git directory.
-    allowEnvironment: ['GIT_DIR', 'GIT_WORK_TREE'],
     // We are invoking at most 3 git commands at the same time.
     maxConcurrentProcesses: 3,
   }

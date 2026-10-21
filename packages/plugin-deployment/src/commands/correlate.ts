@@ -4,6 +4,7 @@ import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {DEFAULT_GIT_OPTIONS} from '@datadog/datadog-ci-base/helpers/git/default-options'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
@@ -55,10 +56,8 @@ export class PluginCommand extends DeploymentCorrelateCommand {
     }
 
     const git = simpleGit({
+      ...DEFAULT_GIT_OPTIONS,
       baseDir: process.cwd(),
-      binary: 'git',
-      // Preserve repository selection for checkouts with an external Git directory.
-      allowEnvironment: ['GIT_DIR', 'GIT_WORK_TREE'],
       maxConcurrentProcesses: 2, // max 2 git commands at the same time
     })
 
