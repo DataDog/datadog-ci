@@ -6,6 +6,7 @@ import {GitConfigScope} from 'simple-git'
 import {isCI} from '../../helpers/ci'
 import {DEFAULT_GIT_OPTIONS} from '../../helpers/git/default-options'
 import {gitRemote} from '../../helpers/git/get-git-data'
+import {withGitRepositoryEnvironment} from '../../helpers/git/repository-environment'
 
 import {CommitInfo} from './interfaces'
 
@@ -18,7 +19,7 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
     maxConcurrentProcesses: 1,
   }
 
-  const git = simpleGit.simpleGit(options)
+  const git = withGitRepositoryEnvironment(simpleGit.simpleGit(options), currentDir)
 
   const isDocker = (await import('is-docker')).default
 
@@ -37,7 +38,7 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   const root = await git.revparse('--show-toplevel')
   options.baseDir = root
 
-  return simpleGit.simpleGit(options)
+  return withGitRepositoryEnvironment(simpleGit.simpleGit(options), currentDir)
 }
 
 // StripCredentials removes credentials from a remote HTTP url.

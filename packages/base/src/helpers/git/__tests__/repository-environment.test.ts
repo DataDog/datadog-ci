@@ -13,14 +13,17 @@ import {getGitMetadata} from '../format-git-span-data'
 
 describe('Git repository environment', () => {
   test.each([
-    ['sourcemaps', newSimpleGit],
-    ['git-metadata', newGitMetadataSimpleGit],
+    ['sourcemaps (absolute paths)', newSimpleGit, false],
+    ['sourcemaps (relative paths)', newSimpleGit, true],
+    ['git-metadata (absolute paths)', newGitMetadataSimpleGit, false],
+    ['git-metadata (relative paths)', newGitMetadataSimpleGit, true],
   ])(
     '%s discovers the repository and tracked files through inherited GIT_DIR and GIT_WORK_TREE',
-    async (_, createGit) => {
+    async (_, createGit, relativePaths) => {
       const directory = fs.mkdtempSync(upath.join(os.tmpdir(), 'datadog-ci-git-environment-'))
       const workTree = upath.join(directory, 'work-tree')
       const gitDir = upath.join(directory, 'git-dir')
+      const cwd = upath.join(workTree, 'nested')
       const originalEnv = process.env
 
       try {
@@ -28,6 +31,7 @@ describe('Git repository environment', () => {
         const env = Object.fromEntries(Object.entries(originalEnv).filter(([key]) => !key.startsWith('GIT_')))
         childProcess.execFileSync('git', ['init', '--quiet', workTree], {env})
         fs.renameSync(upath.join(workTree, '.git'), gitDir)
+        fs.mkdirSync(cwd)
         fs.writeFileSync(upath.join(workTree, 'tracked.txt'), 'tracked file\n')
 
         const repositoryEnv = {...env, HOME: directory, GIT_DIR: gitDir, GIT_WORK_TREE: workTree}
@@ -53,7 +57,18 @@ describe('Git repository environment', () => {
             encoding: 'utf8',
           })
           .trim()
-        jest.spyOn(process, 'cwd').mockReturnValue(workTree)
+        const gitEnvironment = {
+          GIT_DIR: relativePaths ? upath.relative(cwd, gitDir) : gitDir,
+          GIT_WORK_TREE: relativePaths ? '..' : workTree,
+        }
+        process.env = {
+          ...repositoryEnv,
+          ...gitEnvironment,
+          // Other guarded variables must still be stripped, including non-GIT_ keys.
+          GIT_CONFIG_COUNT: 'invalid',
+          EDITOR: 'unused-editor',
+        }
+        jest.spyOn(process, 'cwd').mockReturnValue(cwd)
 
         // Native spawning otherwise inherits Node's environment rather than Jest's isolated process.env.
         const spawn = childProcess.spawn
@@ -72,6 +87,8 @@ describe('Git repository environment', () => {
           [GIT_REPOSITORY_URL]: repositoryURL,
           [GIT_COMMIT_MESSAGE]: 'Test commit',
         })
+        expect(process.env.GIT_DIR).toBe(gitEnvironment.GIT_DIR)
+        expect(process.env.GIT_WORK_TREE).toBe(gitEnvironment.GIT_WORK_TREE)
       } finally {
         process.env = originalEnv
         jest.restoreAllMocks()
