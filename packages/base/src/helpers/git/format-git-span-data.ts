@@ -23,6 +23,8 @@ export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags>
     const git = simpleGit({
       baseDir: repositoryPath || process.cwd(),
       binary: 'git',
+      // Preserve repository selection for checkouts with an external Git directory.
+      allowEnvironment: ['GIT_DIR', 'GIT_WORK_TREE'],
       // We are invoking at most 5 git commands at the same time.
       maxConcurrentProcesses: 5,
     })

@@ -57,6 +57,8 @@ export class PluginCommand extends DeploymentCorrelateCommand {
     const git = simpleGit({
       baseDir: process.cwd(),
       binary: 'git',
+      // Preserve repository selection for checkouts with an external Git directory.
+      allowEnvironment: ['GIT_DIR', 'GIT_WORK_TREE'],
       maxConcurrentProcesses: 2, // max 2 git commands at the same time
     })
 
