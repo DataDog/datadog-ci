@@ -99,5 +99,8 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "resolutions": {
+    "sprintf-js@npm:~1.0.2": "npm:^1.1.3"
+  }
 }
