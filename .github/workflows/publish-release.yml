@@ -153,7 +153,8 @@ jobs:
           policy: self.create-release
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup Alpine
-        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
+        # Same action with a checksum-verified GitHub mirror for the x86_64 bootstrap binary.
+        uses: quickjs-ng/setup-alpine@321a02c8d4aac03d76783d521d24a9ff92cfda45
         with:
           shell-name: alpine.sh
       - name: Install project dependencies (root)
