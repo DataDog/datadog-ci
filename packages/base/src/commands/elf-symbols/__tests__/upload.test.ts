@@ -7,7 +7,11 @@ import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@
 import upath from 'upath'
 
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {
+  expectRepositoryPartBuiltOnce,
+  makeFakeRepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
+import {getRepositoryData, TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
@@ -293,6 +297,23 @@ describe('elf-symbols upload', () => {
       expectedMetadata.sort((a, b) => getId(a).localeCompare(getId(b)))
       expect(metadata).toEqual(expectedMetadata)
       expect(exitCode).toBe(0)
+    })
+
+    test('builds the repository part once and attaches it to every upload', async () => {
+      requireObjcopy()
+      const repositoryData = makeFakeRepositoryData()
+      jest.mocked(getRepositoryData).mockResolvedValueOnce(repositoryData)
+      const spy = jest.spyOn(repositoryData.trackedFilesMatcher, 'rawTrackedFilesList')
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`, `${fixtureDir}/exec_aarch64`]
+      })
+
+      expect(exitCode).toBe(0)
+      expectRepositoryPartBuiltOnce(
+        jest.mocked(uploadMultipartHelper).mock.calls.map((call) => call[1]),
+        spy
+      )
     })
 
     test('uploads correct multipart payload without repository', async () => {

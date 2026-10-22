@@ -2,6 +2,10 @@ import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@
 
 import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  expectRepositoryPartBuiltOnce,
+  makeFakeRepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
@@ -685,6 +689,24 @@ describe('flutter-symbol upload', () => {
       type: 'flutter_symbol_file',
       variant: 'release',
       version: '1.0.0',
+    })
+
+    test('builds the repository part once and attaches it to every upload', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+      const repositoryData = makeFakeRepositoryData()
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce(repositoryData)
+      const spy = jest.spyOn(repositoryData.trackedFilesMatcher, 'rawTrackedFilesList')
+
+      const {exitCode} = await runCommand((cmd) => {
+        addDefaultCommandParameters(cmd)
+        cmd['dartSymbolsLocation'] = `${fixtureDir}/dart-symbols`
+      })
+
+      expect(exitCode).toBe(0)
+      expectRepositoryPartBuiltOnce(
+        (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => call[1]),
+        spy
+      )
     })
 
     test('uploads correct multipart payloads without repository', async () => {

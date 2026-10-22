@@ -1,5 +1,6 @@
-import type {MultipartPayload, MultipartStringValue} from '../../upload'
 import type {RepositoryData} from '../format-git-sourcemaps-data'
+
+import type {MultipartPayload, MultipartStringValue} from '../../upload'
 
 import {TrackedFilesMatcher} from '../format-git-sourcemaps-data'
 
