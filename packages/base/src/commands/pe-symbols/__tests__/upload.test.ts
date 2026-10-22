@@ -6,6 +6,11 @@ import type {MultipartFileValue, MultipartStringValue} from '@datadog/datadog-ci
 import path from 'upath'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  expectRepositoryPartBuiltOnce,
+  makeFakeRepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
+import {getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {uploadMultipartHelper} from '../helpers'
@@ -31,6 +36,11 @@ const makeMalformedPE = () => {
 }
 
 jest.unmock('chalk')
+
+jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'),
+  getRepositoryData: jest.fn(),
+}))
 
 jest.mock('../helpers', () => ({
   ...jest.requireActual('../helpers'),
@@ -167,6 +177,20 @@ describe('pe-symbols upload with unwind information', () => {
     expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Success])
     expect((lastPayload().content.get('pe_symbol_file') as MultipartFileValue).path).toBe(sym)
     expect(lastPayload().content.has('pe_binary_file')).toBe(false)
+  })
+
+  test('builds the repository part once and attaches it to every upload', async () => {
+    const {command} = prepare(makePE(), false)
+    command['symbolsLocations'] = [...command['symbolsLocations'], path.join(fixtureDir, 'breakpad_example.sym')]
+    const repositoryData = makeFakeRepositoryData()
+    jest.mocked(getRepositoryData).mockResolvedValueOnce(repositoryData)
+    const spy = jest.spyOn(repositoryData.trackedFilesMatcher, 'rawTrackedFilesList')
+
+    expect(await command.execute()).toBe(0)
+    expectRepositoryPartBuiltOnce(
+      jest.mocked(uploadMultipartHelper).mock.calls.map((call) => call[1]),
+      spy
+    )
   })
 
   test('dry run extracts and validates unwind information without uploading', async () => {

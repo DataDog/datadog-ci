@@ -6,6 +6,41 @@ import {
 
 describe('git', () => {
   describe('TrackedFilesMatcher', () => {
+    describe('rawTrackedFilesList', () => {
+      test('groups files by file name in first-seen order', () => {
+        const matcher = new TrackedFilesMatcher([
+          'src/a/main.c',
+          'lib/util.c',
+          'src/b/main.c',
+          'README.md',
+          'test/main.c',
+          'docs/util.c',
+        ])
+        expect(matcher.rawTrackedFilesList()).toStrictEqual([
+          'src/a/main.c',
+          'src/b/main.c',
+          'test/main.c',
+          'lib/util.c',
+          'docs/util.c',
+          'README.md',
+        ])
+      })
+
+      test('scales linearly with the number of unique file names', () => {
+        const trackedFiles: string[] = []
+        for (let i = 0; i < 200_000; i++) {
+          trackedFiles.push(`dir${i % 100}/file${i}.ts`)
+        }
+        const matcher = new TrackedFilesMatcher(trackedFiles)
+
+        const start = Date.now()
+        const rawList = matcher.rawTrackedFilesList()
+        // Generous guard: the previous quadratic implementation took minutes on this input.
+        expect(Date.now() - start).toBeLessThan(2000)
+        expect(rawList).toStrictEqual(trackedFiles)
+      })
+    })
+
     describe('related cases', () => {
       test('related path', () => {
         const sources = ['webpack:///./src/file.ts']

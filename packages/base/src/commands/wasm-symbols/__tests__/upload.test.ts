@@ -6,7 +6,11 @@ import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@
 import upath from 'upath'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {
+  expectRepositoryPartBuiltOnce,
+  makeFakeRepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
+import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
@@ -218,6 +222,24 @@ describe('wasm-symbols upload', () => {
           filename: 'b.wasm',
         },
       ])
+    })
+
+    test('builds the repository part once and attaches it to every upload', async () => {
+      writeWasmFile('a.wasm', withDebugInfo('aabbcc', Buffer.from([0x01, 0x02])))
+      writeWasmFile('b.wasm', withDebugInfo('ddeeff', Buffer.from([0x03, 0x04])))
+      const repositoryData = makeFakeRepositoryData()
+      jest.mocked(getRepositoryData).mockResolvedValueOnce(repositoryData)
+      const spy = jest.spyOn(repositoryData.trackedFilesMatcher, 'rawTrackedFilesList')
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['symbolsLocations'] = [fixtureDir]
+      })
+
+      expect(exitCode).toBe(0)
+      expectRepositoryPartBuiltOnce(
+        jest.mocked(uploadMultipartHelper).mock.calls.map((call) => call[1]),
+        spy
+      )
     })
 
     test('skips upload on dry run', async () => {

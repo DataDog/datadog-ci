@@ -9,6 +9,10 @@ import type {
 
 import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  expectRepositoryPartBuiltOnce,
+  makeFakeRepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
@@ -280,6 +284,24 @@ describe('unity-symbols upload', () => {
 
         expect(possibleMetadata).toContain((content.get('event') as MultipartStringValue).value)
       })
+    })
+
+    test('builds the repository part once and attaches it to every upload', async () => {
+      requireObjcopy()
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
+      const repositoryData = makeFakeRepositoryData()
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce(repositoryData)
+      const spy = jest.spyOn(repositoryData.trackedFilesMatcher, 'rawTrackedFilesList')
+
+      await runCommand((cmd) => {
+        cmd['android'] = true
+        cmd['symbolsLocation'] = `${fixtureDir}/androidSymbols`
+      })
+
+      expectRepositoryPartBuiltOnce(
+        (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => call[1]),
+        spy
+      )
     })
 
     test('uploads correct multipart payloads with repository', async () => {
