@@ -18,6 +18,7 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getRepositoryData, newSimpleGit} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {getRepositoryMultipartValue} from '@datadog/datadog-ci-base/helpers/git/repository-payload'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
@@ -86,6 +87,7 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
     datadogSite: 'datadoghq.com',
   }
   private gitData?: RepositoryData
+  private gitRepositoryPayload?: MultipartValue
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -126,6 +128,9 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
 
     if (!this.disableGit) {
       this.gitData = await this.getGitMetadata()
+      if (this.gitData !== undefined) {
+        this.gitRepositoryPayload = getRepositoryMultipartValue(this.gitData)
+      }
     }
 
     const callResults: UploadStatus[] = []
@@ -158,26 +163,6 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
       datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
-  }
-
-  private getGitDataPayload(gitData: RepositoryData): MultipartValue {
-    const files = gitData.trackedFilesMatcher.rawTrackedFilesList()
-    const repoPayload = {
-      data: [
-        {
-          files,
-          hash: gitData.hash,
-          repository_url: gitData.remote,
-        },
-      ],
-      version: 1,
-    }
-
-    return {
-      type: 'string',
-      options: {filename: 'repository', contentType: 'application/json'},
-      value: JSON.stringify(repoPayload),
-    }
   }
 
   private async getGitMetadata(): Promise<RepositoryData | undefined> {
@@ -291,8 +276,8 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
             [VALUE_NAME_NDK_SYMBOL_FILE, {type: 'file', path: tempFilePath, options: {filename: baseFilename}}],
           ]),
         }
-        if (this.gitData !== undefined) {
-          payload.content.set('repository', this.getGitDataPayload(this.gitData))
+        if (this.gitRepositoryPayload !== undefined) {
+          payload.content.set('repository', this.gitRepositoryPayload)
         }
 
         return uploadMultipartHelper(requestBuilder, payload, {
@@ -364,8 +349,8 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
         ],
       ]),
     }
-    if (this.gitData !== undefined) {
-      payload.content.set('repository', this.getGitDataPayload(this.gitData))
+    if (this.gitRepositoryPayload !== undefined) {
+      payload.content.set('repository', this.gitRepositoryPayload)
     }
 
     const status = await uploadMultipartHelper(requestBuilder, payload, {

@@ -13,6 +13,7 @@ import semver from 'semver'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import {getRepositoryMultipartValue} from '@datadog/datadog-ci-base/helpers/git/repository-payload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -106,6 +107,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     datadogSite: 'datadoghq.com',
   }
   private gitData?: RepositoryData
+  private gitRepositoryPayload?: MultipartValue
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -174,6 +176,9 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
 
     if (!this.disableGit) {
       this.gitData = await this.getGitMetadata()
+      if (this.gitData !== undefined) {
+        this.gitRepositoryPayload = getRepositoryMultipartValue(this.gitData)
+      }
     }
 
     const initialTime = Date.now()
@@ -224,26 +229,6 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     const symbolPaths = globSync(buildPath(dartSymbolLocation, '*.symbols'), {dotRelative: true})
 
     return symbolPaths
-  }
-
-  private getGitDataPayload(gitData: RepositoryData): MultipartValue {
-    const files = gitData.trackedFilesMatcher.rawTrackedFilesList()
-    const repoPayload = {
-      data: [
-        {
-          files,
-          hash: gitData.hash,
-          repository_url: gitData.remote,
-        },
-      ],
-      version: 1,
-    }
-
-    return {
-      type: 'string',
-      options: {filename: 'repository', contentType: 'application/json'},
-      value: JSON.stringify(repoPayload),
-    }
   }
 
   private async getGitMetadata(): Promise<RepositoryData | undefined> {
@@ -355,8 +340,8 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
         ],
       ]),
     }
-    if (this.gitData !== undefined) {
-      payload.content.set('repository', this.getGitDataPayload(this.gitData))
+    if (this.gitRepositoryPayload !== undefined) {
+      payload.content.set('repository', this.gitRepositoryPayload)
     }
 
     const status = await uploadMultipartHelper(requestBuilder, payload, {
@@ -432,8 +417,8 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
             ],
           ]),
         }
-        if (this.gitData !== undefined) {
-          payload.content.set('repository', this.getGitDataPayload(this.gitData))
+        if (this.gitRepositoryPayload !== undefined) {
+          payload.content.set('repository', this.gitRepositoryPayload)
         }
 
         return uploadMultipartHelper(requestBuilder, payload, {
