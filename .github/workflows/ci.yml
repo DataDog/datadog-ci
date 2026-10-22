@@ -737,7 +737,7 @@ jobs:
         run: |
           curl -4 -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 180 \
             -o "$RUNNER_TEMP/apk" \
-            https://raw.githubusercontent.com/quickjs-ng/apk-for-ci/refs/heads/master/apk.static
+            https://raw.githubusercontent.com/quickjs-ng/apk-for-ci/ad4912db43383941249b342f23d6232b2046ffd5/apk.static
       - name: Verify x86_64 apk.static
         run: echo "34bb1a96f0258982377a289392d4ea9f3f4b767a4bb5806b1b87179b79ad8a1c  $RUNNER_TEMP/apk" | sha256sum -c
       - name: Cache x86_64 apk.static
@@ -747,10 +747,10 @@ jobs:
           path: ${{ runner.temp }}/apk
           key: ${{ steps.apk-static-cache.outputs.cache-primary-key }}
       - name: Setup Alpine
-        # Same action with a checksum-verified GitHub mirror for the x86_64 bootstrap binary.
-        uses: quickjs-ng/setup-alpine@321a02c8d4aac03d76783d521d24a9ff92cfda45
+        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
         with:
           shell-name: alpine.sh
+          apk-tools-url: https://raw.githubusercontent.com/quickjs-ng/apk-for-ci/ad4912db43383941249b342f23d6232b2046ffd5/apk.static#!sha256!34bb1a96f0258982377a289392d4ea9f3f4b767a4bb5806b1b87179b79ad8a1c
       - name: Install project dependencies (root)
         run: |
           apk add npm git
