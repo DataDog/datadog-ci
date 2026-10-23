@@ -296,8 +296,12 @@ export const pluralize = (nb: number, singular: string, plural: string) => {
   return `${nb} ${singular}`
 }
 
-export const performSubCommand = (command: CommandClass<BaseContext>, commandArgs: string[], context: BaseContext) => {
-  const cli = new Cli()
+export const performSubCommand = <Context extends BaseContext>(
+  command: CommandClass<Context>,
+  commandArgs: string[],
+  context: Context
+) => {
+  const cli = new Cli<Context>()
   cli.register(command)
 
   return cli.run(commandArgs, context)

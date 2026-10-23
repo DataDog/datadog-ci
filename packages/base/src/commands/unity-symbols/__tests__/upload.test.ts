@@ -195,8 +195,29 @@ describe('unity-symbols upload', () => {
 
       expect(performSubCommand).toHaveBeenCalledWith(
         DsymsUploadCommand,
-        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20'],
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20', '--disable-git'],
         expect.anything()
+      )
+    })
+
+    test('passes collected git data to dsyms sub-command', async () => {
+      const repositoryData = {
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher(['Assets/Scripts/Main.cs']),
+      }
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce(repositoryData)
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['ios'] = true
+        cmd['symbolsLocation'] = symbolsLocation
+      })
+
+      expect(exitCode).toBe(0)
+      expect(performSubCommand).toHaveBeenCalledWith(
+        DsymsUploadCommand,
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20'],
+        expect.objectContaining({repositoryData})
       )
     })
 
@@ -210,7 +231,7 @@ describe('unity-symbols upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         DsymsUploadCommand,
-        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20', '--dry-run'],
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20', '--dry-run', '--disable-git'],
         expect.anything()
       )
     })
@@ -225,7 +246,7 @@ describe('unity-symbols upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         DsymsUploadCommand,
-        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '12'],
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '12', '--disable-git'],
         expect.anything()
       )
     })

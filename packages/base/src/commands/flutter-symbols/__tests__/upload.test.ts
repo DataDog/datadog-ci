@@ -267,8 +267,30 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         DsymsUploadCommand,
-        ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs'],
+        ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs', '--disable-git'],
         expect.anything()
+      )
+    })
+
+    test('passes collected git data to dsyms sub-command', async () => {
+      const repositoryData = {
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher(['./ios/Runner/AppDelegate.swift']),
+      }
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce(repositoryData)
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.0.0'
+        cmd['iosDsyms'] = true
+      })
+
+      expect(exitCode).toBe(0)
+      expect(performSubCommand).toHaveBeenCalledWith(
+        DsymsUploadCommand,
+        ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs'],
+        expect.objectContaining({repositoryData})
       )
     })
 
@@ -283,7 +305,7 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         DsymsUploadCommand,
-        ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs', '--dry-run'],
+        ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs', '--dry-run', '--disable-git'],
         expect.anything()
       )
     })
@@ -300,7 +322,7 @@ describe('flutter-symbol upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         DsymsUploadCommand,
-        ['dsyms', 'upload', './dsym-location'],
+        ['dsyms', 'upload', './dsym-location', '--disable-git'],
         expect.anything()
       )
       expect(errorOutput).toBe('')
@@ -497,8 +519,39 @@ describe('flutter-symbol upload', () => {
           '--service=fake.service',
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
+          '--disable-git',
         ],
         expect.anything()
+      )
+    })
+
+    test('passes collected git data to sourcemap sub-command', async () => {
+      const repositoryData = {
+        hash: 'fake-git-hash',
+        remote: 'fake-git-remote',
+        trackedFilesMatcher: new TrackedFilesMatcher(['./lib/main.dart']),
+      }
+      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce(repositoryData)
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '1.2.3'
+        cmd['webSourceMaps'] = true
+        cmd['minifiedPathPrefix'] = 'https://localhost'
+      })
+
+      expect(exitCode).toBe(0)
+      expect(performSubCommand).toHaveBeenCalledWith(
+        SourcemapsUploadCommand,
+        [
+          'sourcemaps',
+          'upload',
+          './build/web',
+          '--service=fake.service',
+          '--release-version=1.2.3',
+          '--minified-path-prefix=https://localhost',
+        ],
+        expect.objectContaining({repositoryData})
       )
     })
 
@@ -521,6 +574,7 @@ describe('flutter-symbol upload', () => {
           '--service=fake.service',
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
+          '--disable-git',
         ],
         expect.anything()
       )
@@ -544,6 +598,7 @@ describe('flutter-symbol upload', () => {
           '--service=fake.service',
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
+          '--disable-git',
         ],
         expect.anything()
       )
@@ -569,6 +624,7 @@ describe('flutter-symbol upload', () => {
           '--release-version=1.2.3',
           '--minified-path-prefix=https://localhost',
           '--dry-run',
+          '--disable-git',
         ],
         expect.anything()
       )

@@ -1,6 +1,7 @@
 import fs from 'fs'
 import {URL} from 'url'
 
+import type {SourcemapsUploadContext} from './interfaces'
 import type {ApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -54,7 +55,7 @@ import {
 } from './renderer'
 import {InvalidPayload, validatePayload} from './validation'
 
-export class SourcemapsUploadCommand extends BaseCommand {
+export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext> {
   public static paths = [['sourcemaps', 'upload']]
 
   public static usage = Command.Usage({
@@ -193,7 +194,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const userProvidedCommitSha = this.commitSha ?? this.config.commitSha
 
     // If both user-provided repository URL and commit SHA are provided, use alternative approach without git.
-    if (userProvidedRepoUrl && userProvidedCommitSha) {
+    // Git data collected by a parent command takes precedence, so all of its uploads share the same git data.
+    if (!this.context.repositoryData && userProvidedRepoUrl && userProvidedCommitSha) {
       payloads.forEach((payload) => {
         const repoPayload = this.getRepositoryPayloadWithoutGit(
           userProvidedCommitSha,
@@ -211,7 +213,9 @@ export class SourcemapsUploadCommand extends BaseCommand {
     }
 
     try {
-      const repositoryData = await getRepositoryData(await newSimpleGit(), userProvidedRepoUrl, userProvidedCommitSha)
+      const repositoryData =
+        this.context.repositoryData ??
+        (await getRepositoryData(await newSimpleGit(), userProvidedRepoUrl, userProvidedCommitSha))
       await Promise.all(
         payloads.map(async (payload) => {
           const repositoryPayload = this.getRepositoryPayload(repositoryData, payload.sourcemapPath)
