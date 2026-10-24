@@ -151,7 +151,7 @@
     "terminal-link": "^2.1.1",
     "tiny-async-pool": "^2.1.0",
     "typanion": "^3.14.0",
-    "undici": "^7.29.1",
+    "undici": "^7.30.1",
     "upath": "^2.0.1",
     "webpack-sources": "^3.5.1"
   },
