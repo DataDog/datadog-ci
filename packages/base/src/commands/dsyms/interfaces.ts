@@ -1,4 +1,11 @@
+import type {CommandContext} from '@datadog/datadog-ci-base'
+import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
+
+export type DsymsUploadContext = CommandContext & {
+  // Git data already collected by a parent command (e.g. flutter-symbols), used instead of invoking git again
+  repositoryData?: RepositoryData
+}
 
 export interface Dsym {
   bundle: string
