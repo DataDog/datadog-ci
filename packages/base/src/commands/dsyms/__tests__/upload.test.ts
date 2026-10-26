@@ -8,6 +8,10 @@ import upath from 'upath'
 
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '@datadog/datadog-ci-base/helpers/apikey'
+import {
+  expectRepositoryPartBuiltOnce,
+  makeFakeRepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/__tests__/repository-payload-testing-tools'
 import {getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
@@ -420,6 +424,29 @@ describe('execute', () => {
 })
 
 describe('git data', () => {
+  test('builds the repository part once and attaches it to every dSYM', async () => {
+    const repositoryData = makeFakeRepositoryData()
+    jest.mocked(getRepositoryData).mockResolvedValueOnce(repositoryData)
+    const spy = jest.spyOn(repositoryData.trackedFilesMatcher, 'rawTrackedFilesList')
+    const makeDsym = (uuid: string): Dsym => ({
+      bundle: `/path/to/${uuid}.dSYM`,
+      dwarf: [{object: `/path/to/${uuid}.dSYM/Contents/Resources/DWARF/test`, uuid, arch: 'arm64'}],
+    })
+    const compressedDsyms = [
+      new CompressedDsym('/tmp/a.zip', makeDsym('AAA')),
+      new CompressedDsym('/tmp/b.zip', makeDsym('BBB')),
+    ]
+
+    const command = new DsymsUploadCommand()
+    command.context = createMockContext() as any
+    await command['addRepositoryDataToPayloads'](compressedDsyms)
+
+    expectRepositoryPartBuiltOnce(
+      compressedDsyms.map((dsym) => dsym.asMultipartPayload()),
+      spy
+    )
+  })
+
   describe('CompressedDsym with git data', () => {
     test('Should include git information in metadata payload when gitData is provided', () => {
       const dsym: Dsym = {

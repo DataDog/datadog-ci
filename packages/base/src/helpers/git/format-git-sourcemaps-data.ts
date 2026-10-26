@@ -190,10 +190,13 @@ export class TrackedFilesMatcher {
 
   // Return a list of all tracked files
   public rawTrackedFilesList() {
-    let rawList: string[] = []
-    this.trackedFilenames.forEach((value) => {
-      rawList = rawList.concat(value)
-    })
+    // Single pass: concatenating inside the loop is quadratic and takes minutes on large repositories.
+    const rawList: string[] = []
+    for (const files of this.trackedFilenames.values()) {
+      for (const file of files) {
+        rawList.push(file)
+      }
+    }
 
     return rawList
   }
