@@ -46,11 +46,11 @@ Files without a matching PDB are skipped.
 
 Add `--include-unwind-info` to also upload the information Datadog needs to unwind minidump stack traces:
 
-- **x64:** a reduced copy of the EXE/DLL is uploaded alongside the PDB. Only the regions the PE format defines as module identity and unwind metadata are copied: headers, section table, exception table, the unwind records it references, and the CodeView identity with the PDB path replaced. All other bytes (code, data, resources, strings) are zeroed. The original binary is never uploaded.
+- **x64 and ARM64:** a reduced copy of the EXE/DLL is uploaded alongside the PDB. Only the regions the PE format defines as module identity and unwind metadata are copied: headers, section table, exception table, the unwind records it references (without exception handlers or their data), and the CodeView identity with the PDB path replaced. All other bytes (code, data, resources, strings) are zeroed. The original binary is never uploaded.
 - **x86:** only the PDB is uploaded, and its frame data is used for unwinding.
-- **ARM and ARM64EC:** not supported. These modules fail, and nothing is uploaded for them.
+- **ARM32, ARM64EC and ARM64X:** not supported. These modules fail, and nothing is uploaded for them.
 
-The binary's headers and unwind records are validated before extraction. If anything is malformed or uses an unsupported layout, the module is reported as failed and nothing is uploaded for it, even if the binary still runs on Windows. The command never falls back to uploading the complete binary. The PDB is uploaded unchanged.
+The binary's headers and the layout of its unwind records are validated before extraction. If anything is malformed or uses an unsupported layout, the module is reported as failed and nothing is uploaded for it, even if the binary still runs on Windows. The command never falls back to uploading the complete binary. The PDB is uploaded unchanged.
 
 Breakpad `.sym` files already contain unwind records and are uploaded unchanged.
 
@@ -63,7 +63,7 @@ If the symbols were already uploaded without unwind information, also pass `--re
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|
 | `--dry-run` | Optional | Run the command without the final step of uploading. All other checks are performed. |
-| `--include-unwind-info` | Optional | Upload unwind information for minidump stack walking: a reduced copy of x64 EXE/DLL files without code or data, or the PDB frame data for x86. Disabled by default. |
+| `--include-unwind-info` | Optional | Upload unwind information for minidump stack walking: a reduced copy of x64 and ARM64 EXE/DLL files without code or data, or the PDB frame data for x86. ARM32, ARM64EC and ARM64X binaries are not supported. Disabled by default. |
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |

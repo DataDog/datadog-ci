@@ -1,5 +1,6 @@
 /* eslint-disable no-bitwise -- unwind codes pack the opcode and its info into one byte. */
 import {
+  ARM64_RUNTIME_FUNCTION_SIZE,
   CV_INFO_AGE_OFFSET,
   CV_INFO_GUID_OFFSET,
   CV_INFO_PDB_FILENAME_OFFSET,
@@ -16,8 +17,10 @@ import {
   IMAGE_DEBUG_TYPE_CODEVIEW,
   IMAGE_DIRECTORY_ENTRY_DEBUG,
   IMAGE_DIRECTORY_ENTRY_EXCEPTION,
+  IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
   IMAGE_DOS_SIGNATURE,
   IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET,
+  IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
   IMAGE_NT_HEADERS32_SIZE,
   IMAGE_NT_HEADERS64_SIZE,
   IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET,
@@ -264,4 +267,84 @@ export const makePE = (machine = MACHINE.x64): Buffer => {
   pe.writeUInt16BE(0xdead, fileOffset(trailer) - UNWIND_CODE_SIZE)
 
   return pe
+}
+
+/** ARM64 .pdata entry: BeginAddress and UnwindData (an .xdata RVA, packed unwind data, or a link). */
+export const setArm64RuntimeFunction = (pe: Buffer, index: number, begin: number, unwind: number) => {
+  const offset = fileOffset(RVA.exceptionTable + index * ARM64_RUNTIME_FUNCTION_SIZE)
+  pe.writeUInt32LE(begin, offset)
+  pe.writeUInt32LE(unwind, offset + 4)
+}
+
+/** ARM64 unwind codes: `stp x29, x30, [sp, #-32]!` then `end`, padded with `nop`. */
+export const ARM64_PROLOG = [0x83, 0xe4, 0xe3, 0xe3]
+
+export interface Arm64Xdata {
+  codes?: number[]
+  /** Start indices of the epilog scopes. */
+  epilogs?: number[]
+  /** Start index of a single epilog packed into the header (E bit). */
+  singleEpilog?: number
+  handler?: boolean
+  extended?: boolean
+  version?: number
+  functionWords?: number
+}
+
+/** Writes an ARM64 .xdata record and returns the RVA right after its unwind codes. */
+export const writeArm64Xdata = (
+  pe: Buffer,
+  rva: number,
+  {
+    codes = ARM64_PROLOG,
+    epilogs = [],
+    singleEpilog,
+    handler = false,
+    extended = false,
+    version = 0,
+    functionWords = 8,
+  }: Arm64Xdata = {}
+): number => {
+  const codeWords = Math.ceil(codes.length / 4)
+  const epilogCount = singleEpilog ?? epilogs.length
+  const header =
+    functionWords |
+    (version << 18) |
+    (handler ? 1 << 20 : 0) |
+    (singleEpilog === undefined ? 0 : 1 << 21) |
+    (extended ? 0 : (epilogCount << 22) | (codeWords << 27))
+  const words = [header >>> 0]
+  if (extended) {
+    words.push(epilogCount | (codeWords << 16))
+  }
+  // Each epilog scope: start index in bits 22-31; the start offset is not used by the extractor.
+  epilogs.forEach((index) => words.push((index << 22) >>> 0))
+  const offset = fileOffset(rva)
+  words.forEach((word, i) => pe.writeUInt32LE(word, offset + 4 * i))
+  const codesOffset = offset + 4 * words.length
+  pe.fill(0, codesOffset, codesOffset + 4 * codeWords)
+  pe.set(codes, codesOffset)
+
+  return rva + 4 * words.length + 4 * codeWords
+}
+
+/** ARM64 version of makePE: two .pdata entries, one with .xdata at RVA.unwindInfo and one packed. */
+export const makeArm64PE = (): Buffer => {
+  // The x64 records written by makePE are overwritten below.
+  const pe = makePE(MACHINE.arm64)
+  setDataDirectory(pe, IMAGE_DIRECTORY_ENTRY_EXCEPTION, RVA.exceptionTable, 2 * ARM64_RUNTIME_FUNCTION_SIZE)
+  setArm64RuntimeFunction(pe, 0, FUNCTION.begin, RVA.unwindInfo)
+  // Packed (Flag 1): FunctionLength 4 instructions, RegI 2, CR 3 (chained frame), FrameSize 2 (32 bytes).
+  setArm64RuntimeFunction(pe, 1, FUNCTION.end, (1 | (4 << 2) | (2 << 16) | (3 << 21) | (2 << 23)) >>> 0)
+  writeArm64Xdata(pe, RVA.unwindInfo)
+
+  return pe
+}
+
+/** Adds a load config whose CHPE metadata pointer marks the image as ARM64EC or ARM64X. */
+export const setChpeMetadata = (pe: Buffer) => {
+  const loadConfigSize = IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET + 8
+  setDataDirectory(pe, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, RVA.spare, loadConfigSize)
+  bytesAt(pe, RVA.spare, 4).writeUInt32LE(loadConfigSize)
+  bytesAt(pe, RVA.spare + IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET, 4).writeUInt32LE(0x1234)
 }

@@ -2,6 +2,12 @@
 import fs from 'fs'
 
 import {
+  ARM64_PDATA_FLAG_LINK,
+  ARM64_PDATA_FLAG_XDATA,
+  ARM64_RUNTIME_FUNCTION_SIZE,
+  ARM64_RUNTIME_FUNCTION_UNWIND_OFFSET,
+  ARM64_XDATA_EXCEPTION_BIT,
+  ARM64_XDATA_SINGLE_EPILOG_BIT,
   CV_INFO_PDB_FILENAME_OFFSET,
   DOS_HEADER_LFANEW_OFFSET,
   DOS_HEADER_SIZE,
@@ -25,6 +31,7 @@ import {
   IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET,
   IMAGE_FILE_LARGE_ADDRESS_AWARE,
   IMAGE_FILE_MACHINE_AMD64,
+  IMAGE_FILE_MACHINE_ARM64,
   IMAGE_FILE_MACHINE_I386,
   IMAGE_LOAD_CONFIG32_CHPE_METADATA_OFFSET,
   IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
@@ -83,7 +90,7 @@ import {
 } from './pe-constants'
 
 /**
- * A "reduced PE" is a copy of an x64 EXE/DLL that keeps only what a stack walker needs:
+ * A "reduced PE" is a copy of an x64 or ARM64 EXE/DLL that keeps only what a stack walker needs:
  * module identity, section addresses, the exception table and the unwind records it references.
  * Everything else (code, data, resources, the PDB path...) is left zeroed. Section addresses and
  * file offsets are unchanged, so every RVA inside the kept records stays valid.
@@ -91,7 +98,7 @@ import {
  * x86 images have no exception table; their unwind data lives in the PDB, so no reduced PE is built.
  */
 export interface ReducedPE {
-  architecture: 'x86' | 'x64'
+  architecture: 'x86' | 'x64' | 'arm64'
   /** Undefined for x86, where the PDB alone carries the unwind data. */
   data?: Buffer
   functions: number
@@ -174,10 +181,10 @@ const parseLayout = (reader: PeReader): PeLayout => {
 
   const machine = reader.u16(peOffset + IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET)
   requireValid(
-    machine === IMAGE_FILE_MACHINE_AMD64 || machine === IMAGE_FILE_MACHINE_I386,
-    `unsupported machine 0x${machine.toString(16)} (only x64 and x86 are supported)`
+    machine === IMAGE_FILE_MACHINE_AMD64 || machine === IMAGE_FILE_MACHINE_ARM64 || machine === IMAGE_FILE_MACHINE_I386,
+    `unsupported machine 0x${machine.toString(16)} (only x64, ARM64 and x86 are supported)`
   )
-  const is64 = machine === IMAGE_FILE_MACHINE_AMD64
+  const is64 = machine !== IMAGE_FILE_MACHINE_I386
 
   const optionalHeader = peOffset + IMAGE_OPTIONAL_HEADER_OFFSET
   requireValid(
@@ -279,7 +286,10 @@ const writeDataDirectory = (output: Buffer, layout: PeLayout, index: number, rva
   output.writeUInt32LE(size, entry + IMAGE_DATA_DIRECTORY_SIZE_OFFSET)
 }
 
-/** ARM64EC images use the x64 machine type but describe their ARM64 code through CHPE metadata. */
+/**
+ * ARM64EC images use the x64 machine type and ARM64X images the ARM64 one, but both describe their
+ * mixed code through CHPE metadata.
+ */
 const rejectHybridImage = (reader: PeReader, layout: PeLayout) => {
   const loadConfig = readDataDirectory(reader, layout, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG)
   const chpeOffset = layout.is64 ? IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET : IMAGE_LOAD_CONFIG32_CHPE_METADATA_OFFSET
@@ -294,7 +304,7 @@ const rejectHybridImage = (reader: PeReader, layout: PeLayout) => {
   }
   requireValid(
     reader.u32(offset + chpeOffset) === 0 && (!layout.is64 || reader.u32(offset + chpeOffset + 4) === 0),
-    'hybrid CHPE/ARM64EC metadata is unsupported'
+    'hybrid CHPE (ARM64EC/ARM64X) metadata is unsupported'
   )
 }
 
@@ -558,6 +568,94 @@ const copyExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layout: P
   return functions
 }
 
+/**
+ * Copies the ARM64 exception table and the .xdata records it references. Packed entries carry their
+ * unwind data in the table itself. Exception handlers and their data are dropped.
+ */
+const copyArm64ExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layout: PeLayout): number => {
+  const table = readDataDirectory(reader, layout, IMAGE_DIRECTORY_ENTRY_EXCEPTION)
+  requireValid(
+    table.rva > 0 && table.size > 0 && table.size % ARM64_RUNTIME_FUNCTION_SIZE === 0,
+    'missing or invalid exception table'
+  )
+  const tableStart = fileOffsetOf(layout, table.rva, table.size)
+  writer.copy(tableStart, table.size)
+  writeDataDirectory(writer.output, layout, IMAGE_DIRECTORY_ENTRY_EXCEPTION, table.rva, table.size)
+
+  /** Function length in bytes of each copied .xdata record, by RVA. */
+  const visited = new Map<number, number>()
+  /** Copies the .xdata record at `rva` and returns the function length it declares. */
+  const copyXdata = (rva: number): number => {
+    const known = visited.get(rva)
+    if (known !== undefined) {
+      return known
+    }
+    const xdata = fileOffsetOf(layout, rva, 4)
+    const header = reader.u32(xdata)
+    requireValid(((header >>> 18) & 0x3) === 0, 'unsupported ARM64 unwind version')
+    const functionLength = 4 * (header & 0x3ffff)
+    let epilogCount = (header >>> 22) & 0x1f
+    let codeWords = header >>> 27
+    let headerSize = 4
+    if (epilogCount === 0 && codeWords === 0) {
+      const extension = reader.u32(fileOffsetOf(layout, rva, 8) + 4)
+      epilogCount = extension & 0xffff
+      codeWords = (extension >>> 16) & 0xff
+      headerSize = 8
+    }
+    const singleEpilog = (header & ARM64_XDATA_SINGLE_EPILOG_BIT) !== 0
+    const epilogScopes = singleEpilog ? 0 : epilogCount
+    const codeBytes = 4 * codeWords
+    const size = headerSize + 4 * epilogScopes + codeBytes
+    fileOffsetOf(layout, rva, size)
+
+    // Epilogs start at an index into the unwind code bytes.
+    const startIndices = singleEpilog
+      ? [epilogCount]
+      : Array.from({length: epilogScopes}, (_, i) => reader.u32(xdata + headerSize + 4 * i) >>> 22)
+    requireValid(
+      codeBytes > 0 && startIndices.every((index) => index < codeBytes),
+      'ARM64 unwind code index out of range'
+    )
+
+    writer.copy(xdata, size)
+    // The exception handler RVA and its language-specific data follow the codes; they are not copied.
+    writer.output.writeUInt32LE((header & ~ARM64_XDATA_EXCEPTION_BIT) >>> 0, xdata)
+    visited.set(rva, functionLength)
+
+    return functionLength
+  }
+
+  let functions = 0
+  for (let entry = tableStart; entry < tableStart + table.size; entry += ARM64_RUNTIME_FUNCTION_SIZE) {
+    const begin = reader.u32(entry)
+    const unwind = reader.u32(entry + ARM64_RUNTIME_FUNCTION_UNWIND_OFFSET)
+    if (begin === 0 && unwind === 0) {
+      continue
+    }
+    requireValid(begin > 0 && begin < layout.imageSize && begin % 4 === 0, 'invalid function address')
+    const flag = unwind & 0x3
+    if (flag === ARM64_PDATA_FLAG_LINK) {
+      // Links point at another record of the exception table, which is already copied.
+      const parent = unwind - flag
+      requireValid(
+        parent >= table.rva &&
+          parent < table.rva + table.size &&
+          (parent - table.rva) % ARM64_RUNTIME_FUNCTION_SIZE === 0,
+        'invalid ARM64 .pdata link'
+      )
+    } else {
+      // Packed entries store the function length (in instructions) in bits 2-12.
+      const functionLength = flag === ARM64_PDATA_FLAG_XDATA ? copyXdata(unwind) : 4 * ((unwind >>> 2) & 0x7ff)
+      requireValid(functionLength > 0 && begin + functionLength <= layout.imageSize, 'invalid ARM64 function length')
+    }
+    functions++
+  }
+  requireValid(functions > 0, 'empty exception table')
+
+  return functions
+}
+
 export const extractPeUnwindInfo = (input: Buffer): ReducedPE => {
   const reader = new PeReader(input)
   const layout = parseLayout(reader)
@@ -573,10 +671,11 @@ export const extractPeUnwindInfo = (input: Buffer): ReducedPE => {
   const writer = new ReducedPeWriter(reader, outputSize)
   writeHeaders(writer, reader, layout)
   copyCodeViewIdentity(writer, reader, layout)
-  const functions = copyExceptionTable(writer, reader, layout)
+  const arm64 = layout.machine === IMAGE_FILE_MACHINE_ARM64
+  const functions = arm64 ? copyArm64ExceptionTable(writer, reader, layout) : copyExceptionTable(writer, reader, layout)
   writer.verifyNoOverlaps()
 
-  return {architecture: 'x64', data: writer.output, functions}
+  return {architecture: arm64 ? 'arm64' : 'x64', data: writer.output, functions}
 }
 
 export const copyPeUnwindInfo = async (filename: string, outputFile: string): Promise<ReducedPE> => {

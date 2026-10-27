@@ -260,3 +260,37 @@ export const UWOP_SPARE_CODE = 7 // UWOP_SAVE_XMM_FAR in version 1
 export const UWOP_SAVE_XMM128 = 8
 export const UWOP_SAVE_XMM128_FAR = 9
 export const UWOP_PUSH_MACHFRAME = 10
+
+// ARM64 exception data, see https://learn.microsoft.com/en-us/cpp/build/arm64-exception-handling
+/*
+typedef struct _IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY {
+   0    ULONG BeginAddress;
+   4    ULONG UnwindData;   // Flag (bits 0-1): 0 = RVA of .xdata, 1/2 = packed unwind data,
+                            // 3 = RVA of a parent .pdata record
+} IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY;
+
+.xdata header word:
+        FunctionLength : 18   (in 4-byte units)
+        Vers           : 2
+        X              : 1    (exception handler RVA + data follow the unwind codes)
+        E              : 1    (single epilog packed into the header)
+        EpilogCount    : 5    (or the epilog's code index when E is set)
+        CodeWords      : 5
+   When EpilogCount and CodeWords are both 0, an extension word follows:
+        ExtendedEpilogCount : 16
+        ExtendedCodeWords   : 8
+        Reserved            : 8
+   Then EpilogCount epilog scope words (none when E is set), CodeWords words of unwind codes,
+   and the optional exception handler RVA and language-specific data.
+
+Epilog scope word:
+        StartOffset : 18
+        Reserved    : 4
+        StartIndex  : 10   (index of the epilog's first unwind code byte)
+*/
+export const ARM64_RUNTIME_FUNCTION_SIZE = 8
+export const ARM64_RUNTIME_FUNCTION_UNWIND_OFFSET = 4
+export const ARM64_PDATA_FLAG_XDATA = 0
+export const ARM64_PDATA_FLAG_LINK = 3
+export const ARM64_XDATA_EXCEPTION_BIT = 0x100000
+export const ARM64_XDATA_SINGLE_EPILOG_BIT = 0x200000
