@@ -582,16 +582,18 @@ const copyArm64ExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layo
   writer.copy(tableStart, table.size)
   writeDataDirectory(writer.output, layout, IMAGE_DIRECTORY_ENTRY_EXCEPTION, table.rva, table.size)
 
-  const visited = new Set<number>()
-  const copyXdata = (rva: number) => {
-    if (visited.has(rva)) {
-      return
+  /** Function length in bytes of each copied .xdata record, by RVA. */
+  const visited = new Map<number, number>()
+  /** Copies the .xdata record at `rva` and returns the function length it declares. */
+  const copyXdata = (rva: number): number => {
+    const known = visited.get(rva)
+    if (known !== undefined) {
+      return known
     }
-    visited.add(rva)
     const xdata = fileOffsetOf(layout, rva, 4)
     const header = reader.u32(xdata)
     requireValid(((header >>> 18) & 0x3) === 0, 'unsupported ARM64 unwind version')
-    requireValid((header & 0x3ffff) > 0, 'invalid ARM64 function length')
+    const functionLength = 4 * (header & 0x3ffff)
     let epilogCount = (header >>> 22) & 0x1f
     let codeWords = header >>> 27
     let headerSize = 4
@@ -619,6 +621,9 @@ const copyArm64ExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layo
     writer.copy(xdata, size)
     // The exception handler RVA and its language-specific data follow the codes; they are not copied.
     writer.output.writeUInt32LE((header & ~ARM64_XDATA_EXCEPTION_BIT) >>> 0, xdata)
+    visited.set(rva, functionLength)
+
+    return functionLength
   }
 
   let functions = 0
@@ -630,9 +635,7 @@ const copyArm64ExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layo
     }
     requireValid(begin > 0 && begin < layout.imageSize && begin % 4 === 0, 'invalid function address')
     const flag = unwind & 0x3
-    if (flag === ARM64_PDATA_FLAG_XDATA) {
-      copyXdata(unwind)
-    } else if (flag === ARM64_PDATA_FLAG_LINK) {
+    if (flag === ARM64_PDATA_FLAG_LINK) {
       // Links point at another record of the exception table, which is already copied.
       const parent = unwind - flag
       requireValid(
@@ -641,6 +644,10 @@ const copyArm64ExceptionTable = (writer: ReducedPeWriter, reader: PeReader, layo
           (parent - table.rva) % ARM64_RUNTIME_FUNCTION_SIZE === 0,
         'invalid ARM64 .pdata link'
       )
+    } else {
+      // Packed entries store the function length (in instructions) in bits 2-12.
+      const functionLength = flag === ARM64_PDATA_FLAG_XDATA ? copyXdata(unwind) : 4 * ((unwind >>> 2) & 0x7ff)
+      requireValid(functionLength > 0 && begin + functionLength <= layout.imageSize, 'invalid ARM64 function length')
     }
     functions++
   }

@@ -4,12 +4,11 @@ import fs from 'fs'
 import {
   ARM64_RUNTIME_FUNCTION_SIZE,
   CV_INFO_GUID_OFFSET,
-  DOS_HEADER_LFANEW_OFFSET,
   CV_INFO_PDB_FILENAME_OFFSET,
+  DOS_HEADER_LFANEW_OFFSET,
   IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET,
   IMAGE_DIRECTORY_ENTRY_EXCEPTION,
   IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
-  IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
   IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET,
   IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET,
   RUNTIME_FUNCTION_SIZE,
@@ -28,19 +27,20 @@ import {
   ARM64_PROLOG,
   bytesAt,
   FUNCTION,
-  makeArm64PE,
   indirect,
   MACHINE,
+  makeArm64PE,
   makePE,
   RVA,
   SECRETS,
   SECTION_SIZE,
   SECTIONS,
   sectionHeaderOffset,
+  setArm64RuntimeFunction,
+  setChpeMetadata,
   setCodeViewFilename,
   setDataDirectory,
   setDataDirectoryCount,
-  setArm64RuntimeFunction,
   setRuntimeFunction,
   unwindCode,
   writeArm64Xdata,
@@ -250,10 +250,7 @@ describe('reduced PE extraction', () => {
     ['ARM64X', makeArm64PE],
   ])('rejects %s hybrid metadata', (_name, make) => {
     const input = make()
-    const loadConfigSize = IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET + 8
-    setDataDirectory(input, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, RVA.spare, loadConfigSize)
-    bytesAt(input, RVA.spare, 4).writeUInt32LE(loadConfigSize)
-    bytesAt(input, RVA.spare + IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET, 4).writeUInt32LE(0x1234)
+    setChpeMetadata(input)
     expect(() => extractPeUnwindInfo(input)).toThrow('hybrid CHPE')
   })
 
@@ -449,6 +446,11 @@ describe('reduced ARM64 PE extraction', () => {
       'invalid ARM64 .pdata link',
     ],
     [
+      'a packed function extending past the image',
+      (pe) => setArm64RuntimeFunction(pe, 1, 0x3ff0, 1 | (8 << 2)),
+      'invalid ARM64 function length',
+    ],
+    [
       'an unaligned function address',
       (pe) => setArm64RuntimeFunction(pe, 0, FUNCTION.begin + 2, RVA.unwindInfo),
       'invalid function address',
@@ -465,13 +467,14 @@ describe('reduced ARM64 PE extraction', () => {
   })
 
   test('reduces a real ARM64 DLL and drops its exception handler', () => {
-    // clang-cl + lld-link build with a `__try`/`__except` function (X bit set) and a large frame.
+    // Built from fixtures/exports_with_pdb_arm64.c; see the build command there.
     const input = fs.readFileSync(`${__dirname}/fixtures/exports_with_pdb_arm64.dll`)
     const {data: output, functions, architecture} = extract(input)
 
     expect(architecture).toBe('arm64')
     expect(functions).toBe(2)
-    // Second function: .xdata at file offset 0x6b0 with one epilog scope and one code word, then its handler.
+    // `guarded`: .xdata at RVA 0x20b0 (file offset 0x6b0) with the X bit, one epilog scope and one code
+    // word, followed by the handler RVA and its scope table (0x6bc-0x6d4).
     expect(input.readUInt32LE(0x6b0) & X_BIT).not.toBe(0)
     expect(output.readUInt32LE(0x6b0)).toBe((input.readUInt32LE(0x6b0) & ~X_BIT) >>> 0)
     expect(input.subarray(0x6bc, 0x6c0)).not.toEqual(Buffer.alloc(4))

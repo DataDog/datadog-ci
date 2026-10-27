@@ -17,8 +17,10 @@ import {
   IMAGE_DEBUG_TYPE_CODEVIEW,
   IMAGE_DIRECTORY_ENTRY_DEBUG,
   IMAGE_DIRECTORY_ENTRY_EXCEPTION,
+  IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
   IMAGE_DOS_SIGNATURE,
   IMAGE_FILE_HEADER_SIZEOFOPTIONALHEADER_OFFSET,
+  IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
   IMAGE_NT_HEADERS32_SIZE,
   IMAGE_NT_HEADERS64_SIZE,
   IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET,
@@ -337,4 +339,12 @@ export const makeArm64PE = (): Buffer => {
   writeArm64Xdata(pe, RVA.unwindInfo)
 
   return pe
+}
+
+/** Adds a load config whose CHPE metadata pointer marks the image as ARM64EC or ARM64X. */
+export const setChpeMetadata = (pe: Buffer) => {
+  const loadConfigSize = IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET + 8
+  setDataDirectory(pe, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, RVA.spare, loadConfigSize)
+  bytesAt(pe, RVA.spare, 4).writeUInt32LE(loadConfigSize)
+  bytesAt(pe, RVA.spare + IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET, 4).writeUInt32LE(0x1234)
 }
