@@ -1,12 +1,16 @@
+/* eslint-disable no-bitwise -- ARM64 .pdata and .xdata pack bit fields. */
 import fs from 'fs'
 
 import {
+  ARM64_RUNTIME_FUNCTION_SIZE,
   CV_INFO_GUID_OFFSET,
+  DOS_HEADER_LFANEW_OFFSET,
   CV_INFO_PDB_FILENAME_OFFSET,
   IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET,
   IMAGE_DIRECTORY_ENTRY_EXCEPTION,
   IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
   IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET,
+  IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET,
   IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET,
   RUNTIME_FUNCTION_SIZE,
   UNW_FLAG_CHAININFO,
@@ -21,8 +25,10 @@ import {
 import {extractPeUnwindInfo} from '../pe-unwind'
 
 import {
+  ARM64_PROLOG,
   bytesAt,
   FUNCTION,
+  makeArm64PE,
   indirect,
   MACHINE,
   makePE,
@@ -34,8 +40,10 @@ import {
   setCodeViewFilename,
   setDataDirectory,
   setDataDirectoryCount,
+  setArm64RuntimeFunction,
   setRuntimeFunction,
   unwindCode,
+  writeArm64Xdata,
   writeRuntimeFunction,
   writeUnwindInfo,
 } from './pe-fixture'
@@ -231,20 +239,22 @@ describe('reduced PE extraction', () => {
       (pe) => setDataDirectory(pe, IMAGE_DIRECTORY_ENTRY_EXCEPTION, 0, 0),
       'missing or invalid exception table',
     ],
-    [
-      'ARM64EC hybrid metadata',
-      (pe) => {
-        const loadConfigSize = IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET + 8
-        setDataDirectory(pe, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, RVA.spare, loadConfigSize)
-        bytesAt(pe, RVA.spare, 4).writeUInt32LE(loadConfigSize)
-        bytesAt(pe, RVA.spare + IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET, 4).writeUInt32LE(0x1234)
-      },
-      'hybrid CHPE',
-    ],
   ])('rejects %s without producing an artifact', (_name, mutate, message) => {
     const input = makePE()
     mutate(input)
     expect(() => extractPeUnwindInfo(input)).toThrow(message)
+  })
+
+  test.each([
+    ['ARM64EC', makePE],
+    ['ARM64X', makeArm64PE],
+  ])('rejects %s hybrid metadata', (_name, make) => {
+    const input = make()
+    const loadConfigSize = IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET + 8
+    setDataDirectory(input, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, RVA.spare, loadConfigSize)
+    bytesAt(input, RVA.spare, 4).writeUInt32LE(loadConfigSize)
+    bytesAt(input, RVA.spare + IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET, 4).writeUInt32LE(0x1234)
+    expect(() => extractPeUnwindInfo(input)).toThrow('hybrid CHPE')
   })
 
   test('keeps version 2 epilog codes whose offset exceeds the prolog size', () => {
@@ -271,7 +281,7 @@ describe('reduced PE extraction', () => {
     expect(extractPeUnwindInfo(makePE(MACHINE.x86))).toEqual({architecture: 'x86', functions: 0})
   })
 
-  test.each(Object.entries(MACHINE).filter(([name]) => name !== 'x64' && name !== 'x86'))(
+  test.each(Object.entries(MACHINE).filter(([name]) => !['x64', 'x86', 'arm64'].includes(name)))(
     'rejects unsupported machine %s',
     (_name, machine) => {
       expect(() => extractPeUnwindInfo(makePE(machine))).toThrow('unsupported machine')
@@ -325,5 +335,147 @@ describe('reduced PE extraction', () => {
     expect(expected.functions).toBeGreaterThan(0)
     setDataDirectoryCount(input, 15)
     expect(extract(input)).toEqual(expected)
+  })
+})
+
+describe('reduced ARM64 PE extraction', () => {
+  const ARM64_TABLE_SIZE = 2 * ARM64_RUNTIME_FUNCTION_SIZE
+  const X_BIT = 1 << 20
+
+  test('keeps identity, .pdata and referenced .xdata, and zeroes everything else', () => {
+    const input = makeArm64PE()
+    const original = Buffer.from(input)
+    const {data: output, functions, architecture} = extract(input)
+
+    expect(architecture).toBe('arm64')
+    expect(functions).toBe(2)
+    expect(input).toEqual(original)
+    const peOffset = output.readUInt32LE(DOS_HEADER_LFANEW_OFFSET)
+    expect(output.readUInt16LE(peOffset + IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET)).toBe(MACHINE.arm64)
+    expect(bytesAt(output, RVA.exceptionTable, ARM64_TABLE_SIZE)).toEqual(
+      bytesAt(input, RVA.exceptionTable, ARM64_TABLE_SIZE)
+    )
+    expect(bytesAt(output, RVA.unwindInfo, 8)).toEqual(bytesAt(input, RVA.unwindInfo, 8))
+    expect(bytesAt(output, RVA.code, SECTION_SIZE)).toEqual(Buffer.alloc(SECTION_SIZE))
+    for (const secret of SECRETS) {
+      expect(output.includes(Buffer.from(secret))).toBe(false)
+    }
+  })
+
+  test('does not follow packed entries into .xdata', () => {
+    const input = makeArm64PE()
+    // Flag 1 and 2 entries carry their unwind data in .pdata; the remaining bits are not an RVA.
+    setArm64RuntimeFunction(input, 0, FUNCTION.begin, RVA.privateData | 1)
+    setArm64RuntimeFunction(input, 1, FUNCTION.end, RVA.unwindInfo | 2)
+
+    const {data: output, functions} = extract(input)
+
+    expect(functions).toBe(2)
+    expect(bytesAt(output, RVA.unwindInfo, 8)).toEqual(Buffer.alloc(8))
+    expect(output.includes(Buffer.from('PRIVATE_DATA'))).toBe(false)
+  })
+
+  test('keeps links to a parent .pdata record', () => {
+    const input = makeArm64PE()
+    setArm64RuntimeFunction(input, 1, FUNCTION.end, RVA.exceptionTable | 3)
+
+    expect(extract(input).functions).toBe(2)
+  })
+
+  test('drops the exception handler and its data, and clears the X bit', () => {
+    const input = makeArm64PE()
+    const handler = writeArm64Xdata(input, RVA.unwindInfo, {handler: true})
+    bytesAt(input, handler, 4).writeUInt32LE(0x1100)
+    bytesAt(input, handler + 4, 14).write('HANDLER_SECRET')
+
+    const {data: output} = extract(input)
+    const header = bytesAt(input, RVA.unwindInfo, 4).readUInt32LE()
+
+    expect(header & X_BIT).not.toBe(0)
+    expect(bytesAt(output, RVA.unwindInfo, 4).readUInt32LE()).toBe((header & ~X_BIT) >>> 0)
+    expect(bytesAt(output, RVA.unwindInfo + 4, ARM64_PROLOG.length)).toEqual(Buffer.from(ARM64_PROLOG))
+    expect(bytesAt(output, handler, 18)).toEqual(Buffer.alloc(18))
+  })
+
+  test('copies epilog scopes and the extended header', () => {
+    const input = makeArm64PE()
+    // Prolog `stp x29, x30, [sp, #-32]!; end`, epilog `ldp x29, x30, [sp], #32; end` at index 2.
+    const codes = [0x83, 0xe4, 0x83, 0xe4]
+    const end = writeArm64Xdata(input, RVA.unwindInfo, {codes, epilogs: [2, 0], extended: true})
+    bytesAt(input, end, 12).write('AFTER_XDATA')
+
+    const {data: output} = extract(input)
+    const size = end - RVA.unwindInfo
+
+    expect(size).toBe(8 + 2 * 4 + 4)
+    expect(bytesAt(output, RVA.unwindInfo, size)).toEqual(bytesAt(input, RVA.unwindInfo, size))
+    expect(output.includes(Buffer.from('AFTER_XDATA'))).toBe(false)
+  })
+
+  test('accepts a single epilog packed into the header', () => {
+    const input = makeArm64PE()
+    writeArm64Xdata(input, RVA.unwindInfo, {codes: [0x83, 0xe4, 0x83, 0xe4], singleEpilog: 2})
+
+    expect(bytesAt(extract(input).data, RVA.unwindInfo, 8)).toEqual(bytesAt(input, RVA.unwindInfo, 8))
+  })
+
+  test('shares .xdata referenced by several entries', () => {
+    const input = makeArm64PE()
+    setArm64RuntimeFunction(input, 1, FUNCTION.end, RVA.unwindInfo)
+
+    expect(extract(input).functions).toBe(2)
+  })
+
+  test.each<[string, (pe: Buffer) => void, string]>([
+    ['an unsupported .xdata version', (pe) => writeArm64Xdata(pe, RVA.unwindInfo, {version: 1}), 'unwind version'],
+    [
+      'a zero function length',
+      (pe) => writeArm64Xdata(pe, RVA.unwindInfo, {functionWords: 0}),
+      'invalid ARM64 function length',
+    ],
+    [
+      'an epilog index outside the code bytes',
+      (pe) => writeArm64Xdata(pe, RVA.unwindInfo, {epilogs: [4]}),
+      'ARM64 unwind code index out of range',
+    ],
+    [
+      '.xdata inside the code section',
+      (pe) => setArm64RuntimeFunction(pe, 0, FUNCTION.begin, RVA.code),
+      'code/executable section',
+    ],
+    [
+      'a link outside the exception table',
+      (pe) => setArm64RuntimeFunction(pe, 1, FUNCTION.end, RVA.unwindInfo | 3),
+      'invalid ARM64 .pdata link',
+    ],
+    [
+      'an unaligned function address',
+      (pe) => setArm64RuntimeFunction(pe, 0, FUNCTION.begin + 2, RVA.unwindInfo),
+      'invalid function address',
+    ],
+    [
+      'an exception table not made of 8-byte entries',
+      (pe) => setDataDirectory(pe, IMAGE_DIRECTORY_ENTRY_EXCEPTION, RVA.exceptionTable, 12),
+      'missing or invalid exception table',
+    ],
+  ])('rejects %s without producing an artifact', (_name, mutate, message) => {
+    const input = makeArm64PE()
+    mutate(input)
+    expect(() => extractPeUnwindInfo(input)).toThrow(message)
+  })
+
+  test('reduces a real ARM64 DLL and drops its exception handler', () => {
+    // clang-cl + lld-link build with a `__try`/`__except` function (X bit set) and a large frame.
+    const input = fs.readFileSync(`${__dirname}/fixtures/exports_with_pdb_arm64.dll`)
+    const {data: output, functions, architecture} = extract(input)
+
+    expect(architecture).toBe('arm64')
+    expect(functions).toBe(2)
+    // Second function: .xdata at file offset 0x6b0 with one epilog scope and one code word, then its handler.
+    expect(input.readUInt32LE(0x6b0) & X_BIT).not.toBe(0)
+    expect(output.readUInt32LE(0x6b0)).toBe((input.readUInt32LE(0x6b0) & ~X_BIT) >>> 0)
+    expect(input.subarray(0x6bc, 0x6c0)).not.toEqual(Buffer.alloc(4))
+    expect(output.subarray(0x6bc, 0x6d4)).toEqual(Buffer.alloc(0x18))
+    expect(output.includes(Buffer.from('exports_with_pdb_arm64.pdb'))).toBe(false)
   })
 })

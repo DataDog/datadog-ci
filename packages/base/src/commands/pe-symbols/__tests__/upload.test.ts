@@ -15,16 +15,19 @@ import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {uploadMultipartHelper} from '../helpers'
 import {getPEFileMetadata} from '../pe'
+import {IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET} from '../pe-constants'
 import {PeSymbolsUploadCommand} from '../upload'
 
 import {
   bytesAt,
   FUNCTION,
   MACHINE,
+  makeArm64PE,
   makePE,
   RVA,
   SECTION_SIZE,
   setCodeViewFilename,
+  setDataDirectory,
   setRuntimeFunction,
 } from './pe-fixture'
 
@@ -141,7 +144,34 @@ describe('pe-symbols upload with unwind information', () => {
     expect(generatesCfi()).toBe(true)
   })
 
-  test.each([MACHINE.thumb2, MACHINE.arm64, MACHINE.arm64ec, MACHINE.arm64x])(
+  test('real ARM64 .dll uploads a reduced companion', async () => {
+    const {binary, command} = prepare(fs.readFileSync(path.join(fixtureDir, 'exports_with_pdb_arm64.dll')), true, 'dll')
+    let companion = ''
+    jest.mocked(uploadMultipartHelper).mockImplementation(async (_request, payload) => {
+      companion = (payload.content.get('pe_binary_file') as MultipartFileValue).path
+
+      return UploadStatus.Success
+    })
+
+    expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Success])
+    expect(companion).not.toBe('')
+    expect(companion).not.toBe(binary)
+    expect(generatesCfi()).toBe(true)
+  })
+
+  test('rejects ARM64X binaries without uploading', async () => {
+    const input = makeArm64PE()
+    const loadConfigSize = IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET + 8
+    setDataDirectory(input, IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, RVA.spare, loadConfigSize)
+    bytesAt(input, RVA.spare, 4).writeUInt32LE(loadConfigSize)
+    bytesAt(input, RVA.spare + IMAGE_LOAD_CONFIG64_CHPE_METADATA_OFFSET, 4).writeUInt32LE(0x1234)
+    const {command} = prepare(input)
+
+    expect(await command['performPESymbolsUpload']()).toEqual([UploadStatus.Failure])
+    expect(uploadMultipartHelper).not.toHaveBeenCalled()
+  })
+
+  test.each([MACHINE.thumb2, MACHINE.arm64ec, MACHINE.arm64x])(
     'rejects ARM/hybrid binaries without uploading: %s',
     async (machine) => {
       const {command} = prepare(makePE(machine))

@@ -77,7 +77,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private includeUnwindInfo = Option.Boolean('--include-unwind-info', false, {
     description:
-      'Upload unwind information for minidump stack walking: a reduced copy of x64 EXE/DLL files without code or data, or the PDB frame data for x86. ARM binaries are not supported.',
+      'Upload unwind information for minidump stack walking: a reduced copy of x64 and ARM64 EXE/DLL files without code or data, or the PDB frame data for x86. ARM32, ARM64EC and ARM64X binaries are not supported.',
   })
   private symbolsLocations = Option.Rest({required: 1})
 
