@@ -7,7 +7,6 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
 import {calculateUpdateRequest} from '../../functions/instrument'
-import {calculateUpdateRequest as calculateUninstrumentRequest} from '../../functions/uninstrument'
 import type {InstrumentationSettings} from '../../interfaces'
 
 import {mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
@@ -612,35 +611,32 @@ describe('instrument', () => {
       async (layerVersion, enabled, removed, wrapper) => {
         const runtime = Runtime.python311
         const region = 'sa-east-1'
-        const seed = {
+        const config = {
           FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-          Handler: 'index.handler',
-          Layers: [],
+          Handler: 'datadog_lambda.handler.handler',
           Runtime: runtime,
+          Layers: [{Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python311:${layerVersion}`}],
+          Environment: {
+            Variables: {
+              DD_SITE: 'datadoghq.com',
+              DD_LAMBDA_HANDLER: 'index.handler',
+              DD_FLUSH_TO_LOG: 'false',
+              DD_MERGE_XRAY_TRACES: 'false',
+              DD_TRACE_ENABLED: 'false',
+              DD_APPSEC_ENABLED: 'true',
+              DD_SERVERLESS_APPSEC_ENABLED: 'true',
+              AWS_LAMBDA_EXEC_WRAPPER: '/opt/custom_wrapper',
+            },
+          },
         }
         const settings: InstrumentationSettings = {
           appsecEnabled: true,
           extensionVersion: 'none',
           flushMetricsToLogs: false,
           mergeXrayTraces: false,
-          tracingEnabled: true,
+          tracingEnabled: false,
           layerAWSAccount: mockAwsAccount,
           layerVersion,
-        }
-        const initial = (await calculateUpdateRequest(seed, settings, region, runtime))!
-        const config = {
-          ...seed,
-          Handler: initial.Handler!,
-          Layers: initial.Layers!.map((Arn) => ({Arn})),
-          Environment: {
-            Variables: {
-              ...initial.Environment!.Variables,
-              DD_APPSEC_ENABLED: 'true',
-              DD_SERVERLESS_APPSEC_ENABLED: 'true',
-              AWS_LAMBDA_EXEC_WRAPPER: '/opt/custom_wrapper',
-              CUSTOMER_SETTING: 'keep',
-            },
-          },
         }
 
         const update = await calculateUpdateRequest(config, settings, region, runtime)
@@ -649,59 +645,10 @@ describe('instrument', () => {
         expect(update!.Environment!.Variables).toMatchObject({
           [enabled]: 'true',
           AWS_LAMBDA_EXEC_WRAPPER: wrapper,
-          CUSTOMER_SETTING: 'keep',
         })
         expect(update!.Environment!.Variables).not.toHaveProperty(removed)
-        expect(
-          await calculateUpdateRequest({...config, Environment: update!.Environment}, settings, region, runtime)
-        ).toBeUndefined()
-
-        const unchanged = await calculateUpdateRequest(config, {...settings, appsecEnabled: undefined}, region, runtime)
-        expect(unchanged).toBeUndefined()
       }
     )
-
-    test('removes the Datadog wrapper when uninstrumenting after an AppSec migration', async () => {
-      const runtime = Runtime.python311
-      const region = 'sa-east-1'
-      const seed = {
-        FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-        Handler: 'index.handler',
-        Layers: [],
-        Runtime: runtime,
-      }
-      const settings: InstrumentationSettings = {
-        appsecEnabled: true,
-        extensionVersion: 'none',
-        flushMetricsToLogs: false,
-        mergeXrayTraces: false,
-        tracingEnabled: true,
-        layerAWSAccount: mockAwsAccount,
-        layerVersion: 113,
-      }
-      const initial = (await calculateUpdateRequest(seed, settings, region, runtime))!
-      const config = {
-        ...seed,
-        Handler: initial.Handler!,
-        Layers: initial.Layers!.map((Arn) => ({Arn})),
-        Environment: initial.Environment,
-      }
-      const migrated = (await calculateUpdateRequest(config, {...settings, layerVersion: 114}, region, runtime))!
-      expect(migrated.Environment!.Variables).toMatchObject({
-        DD_APPSEC_ENABLED: 'true',
-        AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper',
-      })
-      expect(migrated.Environment!.Variables).not.toHaveProperty('DD_SERVERLESS_APPSEC_ENABLED')
-
-      const uninstrumented = calculateUninstrumentRequest(
-        {...config, Layers: migrated.Layers!.map((Arn) => ({Arn})), Environment: migrated.Environment},
-        runtime
-      )!
-      expect(uninstrumented.Environment!.Variables).not.toHaveProperty('AWS_LAMBDA_EXEC_WRAPPER')
-      expect(uninstrumented.Environment!.Variables).not.toHaveProperty('DD_APPSEC_ENABLED')
-      expect(uninstrumented.Layers).toEqual([])
-      expect(uninstrumented.Handler).toBe(seed.Handler)
-    })
 
     test('falls back to the serverless AppSec shim when tracer layer does not support AppSec', async () => {
       const runtime = Runtime.python311

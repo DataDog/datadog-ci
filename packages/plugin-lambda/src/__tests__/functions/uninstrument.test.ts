@@ -213,6 +213,17 @@ describe('uninstrument', () => {
         `)
       })
 
+      test('removes the Datadog wrapper without the old AppSec flag', () => {
+        const update = calculateUpdateRequest(
+          {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:python',
+            Environment: {Variables: {[AWS_LAMBDA_EXEC_WRAPPER_VAR]: AWS_LAMBDA_EXEC_WRAPPER}},
+          },
+          Runtime.python311
+        )
+        expect(update?.Environment?.Variables).toEqual({})
+      })
+
       test('removes lambda exec wrapper for Java', async () => {
         const config = {
           Environment: {
