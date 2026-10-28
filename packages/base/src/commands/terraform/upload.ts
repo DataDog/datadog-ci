@@ -43,7 +43,7 @@ export class TerraformUploadCommand extends BaseCommand {
   // Total number of plans the pipeline will upload for this commit
   protected expectedPlans = Option.String('--expected-plans', {
     description:
-      'Total number of plans the pipeline will upload for this commit (all jobs combined). Only valid for plan uploads',
+      'Total number of plans the pipeline will upload for this commit (all jobs combined). Defaults to the number of plan files provided. Only valid for plan uploads',
     validator: t.cascade(t.isNumber(), [t.isInteger(), t.isAtLeast(1)]),
   })
 

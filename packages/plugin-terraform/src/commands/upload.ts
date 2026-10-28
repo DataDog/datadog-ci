@@ -65,12 +65,17 @@ export class PluginCommand extends TerraformUploadCommand {
     }
     this.expectedPlanCount = this.expectedPlans
 
-    // The pipeline can't upload fewer plans than this invocation alone
-    if (this.expectedPlanCount !== undefined && this.expectedPlanCount < this.filePaths.length) {
-      this.logger.warn(
-        `Expected plan count (${this.expectedPlanCount}) is lower than the number of plan files provided (${this.filePaths.length}), using ${this.filePaths.length} instead`
-      )
-      this.expectedPlanCount = this.filePaths.length
+    if (this.artifactType === 'plan') {
+      if (this.expectedPlanCount === undefined) {
+        // Default to the plans of this invocation, so a single upload of every plan needs no flag
+        this.expectedPlanCount = this.filePaths.length
+      } else if (this.expectedPlanCount < this.filePaths.length) {
+        // The pipeline can't upload fewer plans than this invocation alone
+        this.logger.warn(
+          `Expected plan count (${this.expectedPlanCount}) is lower than the number of plan files provided (${this.filePaths.length}), using ${this.filePaths.length} instead`
+        )
+        this.expectedPlanCount = this.filePaths.length
+      }
     }
 
     // Initialize git if in a repository

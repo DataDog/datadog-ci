@@ -275,8 +275,19 @@ describe('upload', () => {
       expect(uploadMock.mock.calls[0][0].expectedPlanCount).toBe(2)
     })
 
-    test('should not set expectedPlanCount when the flag is not set', async () => {
-      const {code} = await runCLI(planArgs)
+    test('should default to the number of plan files when the flag is not set', async () => {
+      const {code, context} = await runCLI([...planArgs, 'src/__tests__/fixtures/valid-plan.json'])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('is lower than the number of plan files')
+      expect(uploadMock).toHaveBeenCalledTimes(2)
+      for (const [payload] of uploadMock.mock.calls) {
+        expect(payload.expectedPlanCount).toBe(2)
+      }
+    })
+
+    test('should not set expectedPlanCount for state uploads', async () => {
+      const {code} = await runCLI(['state', 'src/__tests__/fixtures/valid-state.json', '--skip-git-metadata-upload'])
 
       expect(code).toBe(0)
       expect(uploadMock.mock.calls[0][0].expectedPlanCount).toBeUndefined()
