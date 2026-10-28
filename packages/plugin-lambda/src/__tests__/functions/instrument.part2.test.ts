@@ -603,6 +603,63 @@ describe('instrument', () => {
       `)
     })
 
+    test.each<[number, string, string, string]>([
+      [114, 'DD_APPSEC_ENABLED', 'DD_SERVERLESS_APPSEC_ENABLED', '/opt/custom_wrapper'],
+      [113, 'DD_SERVERLESS_APPSEC_ENABLED', 'DD_APPSEC_ENABLED', '/opt/datadog_wrapper'],
+    ])(
+      'cleans up conflicting AppSec settings with layer %s without changing layers',
+      async (layerVersion, enabled, removed, wrapper) => {
+        const runtime = Runtime.python311
+        const region = 'sa-east-1'
+        const seed = {
+          FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+          Handler: 'index.handler',
+          Layers: [],
+          Runtime: runtime,
+        }
+        const settings: InstrumentationSettings = {
+          appsecEnabled: true,
+          extensionVersion: 'none',
+          flushMetricsToLogs: false,
+          mergeXrayTraces: false,
+          tracingEnabled: true,
+          layerAWSAccount: mockAwsAccount,
+          layerVersion,
+        }
+        const initial = (await calculateUpdateRequest(seed, settings, region, runtime))!
+        const config = {
+          ...seed,
+          Handler: initial.Handler!,
+          Layers: initial.Layers!.map((Arn) => ({Arn})),
+          Environment: {
+            Variables: {
+              ...initial.Environment!.Variables,
+              DD_APPSEC_ENABLED: 'true',
+              DD_SERVERLESS_APPSEC_ENABLED: 'true',
+              AWS_LAMBDA_EXEC_WRAPPER: '/opt/custom_wrapper',
+              CUSTOMER_SETTING: 'keep',
+            },
+          },
+        }
+
+        const update = await calculateUpdateRequest(config, settings, region, runtime)
+        expect(update).toBeDefined()
+        expect(update!.Layers).toBeUndefined()
+        expect(update!.Environment!.Variables).toMatchObject({
+          [enabled]: 'true',
+          AWS_LAMBDA_EXEC_WRAPPER: wrapper,
+          CUSTOMER_SETTING: 'keep',
+        })
+        expect(update!.Environment!.Variables).not.toHaveProperty(removed)
+        expect(
+          await calculateUpdateRequest({...config, Environment: update!.Environment}, settings, region, runtime)
+        ).toBeUndefined()
+
+        const unchanged = await calculateUpdateRequest(config, {...settings, appsecEnabled: undefined}, region, runtime)
+        expect(unchanged).toBeUndefined()
+      }
+    )
+
     test('falls back to the serverless AppSec shim when tracer layer does not support AppSec', async () => {
       const runtime = Runtime.python311
       const config = {
