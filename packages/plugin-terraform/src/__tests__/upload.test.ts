@@ -243,6 +243,38 @@ describe('upload', () => {
       }
     })
 
+    test('should raise the expected plan count to the number of plan files when lower', async () => {
+      const {code, context} = await runCLI([
+        ...planArgs,
+        'src/__tests__/fixtures/valid-plan.json',
+        'src/__tests__/fixtures/valid-plan.json',
+        '--expected-plans',
+        '2',
+      ])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain(
+        'Expected plan count (2) is lower than the number of plan files provided (3), using 3 instead'
+      )
+      expect(uploadMock).toHaveBeenCalledTimes(3)
+      for (const [payload] of uploadMock.mock.calls) {
+        expect(payload).toMatchObject({expectedPlanCount: 3})
+      }
+    })
+
+    test('should keep the expected plan count when it equals the number of plan files', async () => {
+      const {code, context} = await runCLI([
+        ...planArgs,
+        'src/__tests__/fixtures/valid-plan.json',
+        '--expected-plans',
+        '2',
+      ])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('is lower than the number of plan files')
+      expect(uploadMock.mock.calls[0][0].expectedPlanCount).toBe(2)
+    })
+
     test('should not set expectedPlanCount when the flag is not set', async () => {
       const {code} = await runCLI(planArgs)
 
