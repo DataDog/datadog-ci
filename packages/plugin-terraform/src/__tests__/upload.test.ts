@@ -1,5 +1,6 @@
-import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
+import * as api from '../api'
 import {PluginCommand as TerraformUploadCommand} from '../commands/upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
@@ -206,6 +207,68 @@ describe('upload', () => {
       const exitCode = await command.execute()
 
       expect(exitCode).toBe(0)
+    })
+  })
+
+  describe('expected plans', () => {
+    const runCLI = makeRunCLI(TerraformUploadCommand, ['terraform', 'upload'], {skipResetEnv: true})
+    const uploadMock = jest.fn().mockResolvedValue({status: 200})
+
+    beforeEach(() => {
+      uploadMock.mockClear()
+      jest.spyOn(api, 'apiConstructor').mockReturnValue({uploadTerraformArtifact: uploadMock})
+      process.env = {DD_API_KEY: 'test-key', DD_GIT_REPOSITORY_URL: 'https://github.com/test/repo'}
+    })
+
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    const planArgs = ['plan', 'src/__tests__/fixtures/valid-plan.json', '--skip-git-metadata-upload']
+
+    test('should send the --expected-plans flag value in the payload', async () => {
+      const {code} = await runCLI([...planArgs, '--expected-plans', '3'])
+
+      expect(code).toBe(0)
+      expect(uploadMock).toHaveBeenCalledWith(expect.objectContaining({expectedPlanCount: 3}))
+    })
+
+    test('should send the same value for every uploaded file', async () => {
+      const {code} = await runCLI([...planArgs, 'src/__tests__/fixtures/valid-plan.json', '--expected-plans', '2'])
+
+      expect(code).toBe(0)
+      expect(uploadMock).toHaveBeenCalledTimes(2)
+      for (const [payload] of uploadMock.mock.calls) {
+        expect(payload.expectedPlanCount).toBe(2)
+      }
+    })
+
+    test('should not set expectedPlanCount when the flag is not set', async () => {
+      const {code} = await runCLI(planArgs)
+
+      expect(code).toBe(0)
+      expect(uploadMock.mock.calls[0][0].expectedPlanCount).toBeUndefined()
+    })
+
+    test.each(['0', '-1', '1.5', 'abc'])('should reject invalid --expected-plans value %p', async (value) => {
+      const {code} = await runCLI([...planArgs, `--expected-plans=${value}`])
+
+      expect(code).toBe(1)
+      expect(uploadMock).not.toHaveBeenCalled()
+    })
+
+    test('should refuse --expected-plans for state uploads', async () => {
+      const {code, context} = await runCLI([
+        'state',
+        'src/__tests__/fixtures/valid-state.json',
+        '--skip-git-metadata-upload',
+        '--expected-plans',
+        '3',
+      ])
+
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toContain('--expected-plans can only be used with plan uploads')
+      expect(uploadMock).not.toHaveBeenCalled()
     })
   })
 })

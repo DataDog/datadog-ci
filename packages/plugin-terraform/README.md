@@ -16,6 +16,7 @@ datadog-ci terraform upload [plan|state] <path/to/terraform-file.json> [addition
 ### Optional arguments
 
 - `--repo-id` (optional): Repository identifier override (e.g., github.com/datadog/my-repo)
+- `--expected-plans` (optional): Total number of plans the pipeline uploads for this commit, across all jobs combined. Must be a positive integer. Only valid for `plan` uploads.
 - `--dry-run` (default: `false`): Run the command without uploading any data to Datadog
 - `--verbose` (default: `false`): Enable verbose logging
 - `--skip-git-metadata-upload` (default: `false`): Skip the upload of git metadata
@@ -49,6 +50,12 @@ datadog-ci terraform upload state ./terraform.tfstate
 
 # Upload with manual repo-id override
 datadog-ci terraform upload plan ./terraform-plan.json --repo-id "github.com/my-org/my-repo"
+
+# Declare that the pipeline uploads 3 plans in total for this commit (for example, one per job) using the flag
+datadog-ci terraform upload plan ./terraform-plan.json --expected-plans 3
+
+# In a shared CI template (sh/bash), forward an optional pipeline variable as the flag
+datadog-ci terraform upload plan ./terraform-plan.json ${EXPECTED_PLANS:+--expected-plans "$EXPECTED_PLANS"}
 
 # Dry run mode
 datadog-ci terraform upload plan ./terraform-plan.json --dry-run

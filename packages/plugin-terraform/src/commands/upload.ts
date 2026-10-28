@@ -40,6 +40,7 @@ export class PluginCommand extends TerraformUploadCommand {
   }
 
   private git: simpleGit.SimpleGit | undefined = undefined
+  private expectedPlanCount: number | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -55,6 +56,14 @@ export class PluginCommand extends TerraformUploadCommand {
 
       return 1
     }
+
+    // The expected plan count only applies to plan uploads
+    if (this.expectedPlans !== undefined && this.artifactType !== 'plan') {
+      this.logger.error('--expected-plans can only be used with plan uploads')
+
+      return 1
+    }
+    this.expectedPlanCount = this.expectedPlans
 
     // Initialize git if in a repository
     const isGitRepository = await isGitRepo()
@@ -144,6 +153,7 @@ export class PluginCommand extends TerraformUploadCommand {
       artifactSizeBytes,
       spanTags,
       repoId: resolveRepoId(this.repoId, spanTags),
+      expectedPlanCount: this.expectedPlanCount,
     }
 
     try {
