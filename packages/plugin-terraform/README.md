@@ -16,7 +16,7 @@ datadog-ci terraform upload [plan|state] <path/to/terraform-file.json> [addition
 ### Optional arguments
 
 - `--repo-id` (optional): Repository identifier override (e.g., github.com/datadog/my-repo)
-- `--expected-plans` (optional): Total number of plans the pipeline uploads for this commit, across all jobs combined. Must be a positive integer. Only valid for `plan` uploads. Defaults to the number of plan files passed to the command, which is correct when a single command uploads every plan of the commit. If the plans are uploaded by several commands (for example, one per job), pass the same total to every command. If the value is lower than the number of plan files passed to the command, the number of files is used instead (with a warning).
+- `--expected-plans` (optional): Total number of plans the pipeline uploads for this commit, across all jobs combined. Only valid for `plan` uploads. Defaults to the number of plan files passed to the command, which is correct when a single command uploads every plan of the commit. If the plans are uploaded by several commands (for example, one per job), pass the same total to every command. If the value is lower than the number of plan files passed to the command, the number of files is used instead (with a warning).
 - `--dry-run` (default: `false`): Run the command without uploading any data to Datadog
 - `--verbose` (default: `false`): Enable verbose logging
 - `--skip-git-metadata-upload` (default: `false`): Skip the upload of git metadata
