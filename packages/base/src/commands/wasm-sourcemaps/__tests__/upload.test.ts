@@ -125,7 +125,7 @@ describe('wasm-sourcemaps upload', () => {
     ['https://cdn.example.com/app/', 'https://cdn.example.com/app/nested/main.dart.wasm'],
     ['https://cdn.example.com/app', 'https://cdn.example.com/app/nested/main.dart.wasm'],
     ['/app/', '/app/nested/main.dart.wasm'],
-    // Like JS, a root-only prefix is normalized to a leading slash by sourcemap-processor.
+    // Like JS, a root-only prefix omits the leading slash in the upload metadata.
     ['/', 'nested/main.dart.wasm'],
   ])('uploads module paths relative to the build directory with prefix %s', async (prefix, expectedUrl) => {
     writeSourcemap('nested/main.dart.wasm')

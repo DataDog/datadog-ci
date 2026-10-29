@@ -1,4 +1,4 @@
-// Must match sourcemap-processor's WASM source map intake discriminator.
+// Identifies a WebAssembly source map upload.
 export const TYPE_WASM_SOURCEMAP = 'wasm_sourcemap'
 export const VALUE_NAME_SOURCE_MAP = 'source_map'
 export const SOURCE_MAP_FILE_NAME = 'source_map'
