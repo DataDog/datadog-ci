@@ -1306,9 +1306,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/datadog-api-client@npm:1.53.0":
-  version: 1.53.0
-  resolution: "@datadog/datadog-api-client@npm:1.53.0"
+"@datadog/datadog-api-client@npm:1.64.0":
+  version: 1.64.0
+  resolution: "@datadog/datadog-api-client@npm:1.64.0"
   dependencies:
     "@types/buffer-from": "npm:^1.1.0"
     "@types/node": "npm:*"
@@ -1318,7 +1318,7 @@ __metadata:
     form-data: "npm:^4.0.4"
     loglevel: "npm:^1.8.1"
     pako: "npm:^2.0.4"
-  checksum: 10/c9870ca3d49f465feb34e1fe98747b9fd42e34148bc8f0635210dec99707d184eacfa246ba6ec2b60dfe254bd20164a90c31955e4f6b087727dfe89ff0b94aaa
+  checksum: 10/8651ac228cbe6444abb22b9283322c3bf4c2981a5b7eb5b50ca0b5ae1f716124e10247e0ef3f0e3b3be0fd3ea12b33063c1d2d4e54becc431a67293a2bdcfd92
   languageName: node
   linkType: hard
 
@@ -5950,7 +5950,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "datadog-ci-monorepo@workspace:."
   dependencies:
-    "@datadog/datadog-api-client": "npm:1.53.0"
+    "@datadog/datadog-api-client": "npm:1.64.0"
     "@microsoft/eslint-formatter-sarif": "npm:3.1.0"
     "@stylistic/eslint-plugin": "npm:5.3.1"
     "@types/node": "npm:20.19.37"
