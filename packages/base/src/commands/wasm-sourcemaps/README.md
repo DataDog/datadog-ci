@@ -19,6 +19,10 @@ DD_BETA_COMMANDS_ENABLED=1 datadog-ci wasm-sourcemaps upload ./build/web \
 
 The command recursively finds `*.wasm.map` files. Each source map must be next to its corresponding `.wasm` module. The relative module path is appended to `--minified-path-prefix` to produce the URL used for symbolication.
 
+For example, `./build/web/nested/main.dart.wasm.map` with prefix `https://cdn.example.com/app/` is uploaded with `minified_url: https://cdn.example.com/app/nested/main.dart.wasm`. Sourcemap-processor extracts domain `cdn.example.com` and absolute path `/app/nested/main.dart.wasm` from that URL. An absolute-path-only prefix leaves the domain empty. These paths identify the generated `.wasm` module, not the `.wasm.map` file or the original source files.
+
+When uploading a single source map, the module path is relative to that file's parent directory. Include any deployed subdirectory in the prefix: uploading `./build/web/nested/main.dart.wasm.map` individually requires prefix `https://cdn.example.com/app/nested/` to produce the same URL as the directory upload above.
+
 | Parameter                | Condition | Description                                                         |
 | ------------------------ | --------- | ------------------------------------------------------------------- |
 | `<path>`                 | Required  | Build directory to scan recursively, or a single `*.wasm.map` file. |

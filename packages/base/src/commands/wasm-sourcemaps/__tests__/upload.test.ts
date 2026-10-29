@@ -107,13 +107,46 @@ describe('wasm-sourcemaps upload', () => {
       cli_version: cliVersion,
       minified_url: 'https://cdn.example.com/flutter/main.dart.wasm',
       service: 'checkout-web',
-      type: 'flutter_wasm_sourcemap',
+      type: 'wasm_sourcemap',
       version: '1.2.3',
     })
     const sourceMap = payload.content.get('source_map') as MultipartFileValue
     expect(sourceMap.path).toBe(pair.sourcemapPath)
     expect(sourceMap.options.filename).toBe('source_map')
     expect(payload.content.has('minified_file')).toBe(false)
+  })
+
+  test.each([
+    ['https://cdn.example.com/app/', 'https://cdn.example.com/app/nested/main.dart.wasm'],
+    ['https://cdn.example.com/app', 'https://cdn.example.com/app/nested/main.dart.wasm'],
+    ['/app/', '/app/nested/main.dart.wasm'],
+    // Like JS, a root-only prefix is normalized to a leading slash by sourcemap-processor.
+    ['/', 'nested/main.dart.wasm'],
+  ])('uploads module paths relative to the build directory with prefix %s', async (prefix, expectedUrl) => {
+    writePair('nested/main.dart.wasm')
+
+    const {exitCode} = await runCommand((cmd) => {
+      cmd['minifiedPathPrefix'] = prefix
+    })
+
+    expect(exitCode).toBe(0)
+    expect(uploadMultipartHelper).toHaveBeenCalledTimes(1)
+    const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+    expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value).minified_url).toBe(expectedUrl)
+  })
+
+  test('uses the module filename when uploading a single source map', async () => {
+    const pair = writePair('nested/main.dart.wasm')
+
+    const {exitCode} = await runCommand((cmd) => {
+      cmd['basePath'] = pair.sourcemapPath
+    })
+
+    expect(exitCode).toBe(0)
+    const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+    expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value).minified_url).toBe(
+      'https://cdn.example.com/flutter/main.dart.wasm'
+    )
   })
 
   test('does not upload during a dry run', async () => {

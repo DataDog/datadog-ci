@@ -1,6 +1,5 @@
-// This is the existing intake event discriminator. It describes the payload
-// contract and does not restrict the standalone command to Flutter projects.
-export const TYPE_WASM_SOURCEMAP = 'flutter_wasm_sourcemap'
+// Must match sourcemap-processor's WASM source map intake discriminator.
+export const TYPE_WASM_SOURCEMAP = 'wasm_sourcemap'
 export const VALUE_NAME_SOURCE_MAP = 'source_map'
 export const SOURCE_MAP_FILE_NAME = 'source_map'
 
