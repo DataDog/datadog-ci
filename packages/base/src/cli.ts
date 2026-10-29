@@ -34,6 +34,7 @@ import {commands as terraformCommands} from './commands/terraform/cli'
 import {commands as traceCommands} from './commands/trace/cli'
 import {commands as unitySymbolsCommands} from './commands/unity-symbols/cli'
 import {commands as versionCommands} from './commands/version/cli'
+import {commands as wasmSourcemapsCommands} from './commands/wasm-sourcemaps/cli'
 import {commands as wasmSymbolsCommands} from './commands/wasm-symbols/cli'
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
@@ -71,6 +72,7 @@ export const commands = {
   'trace': traceCommands,
   'unity-symbols': unitySymbolsCommands,
   'version': versionCommands,
+  'wasm-sourcemaps': wasmSourcemapsCommands,
   'wasm-symbols': wasmSymbolsCommands,
 } satisfies RecordWithKebabCaseKeys
 
@@ -96,5 +98,6 @@ export const noPluginExceptions: Set<string> = new Set([
   'trace',
   'unity-symbols',
   'version',
+  'wasm-sourcemaps',
   'wasm-symbols',
 ]) satisfies Set<keyof typeof commands>

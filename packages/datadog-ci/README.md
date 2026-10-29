@@ -278,6 +278,12 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 - `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
 
+#### `wasm-sourcemaps`
+
+<sub>**README:** [📚](/packages/base/src/commands/wasm-sourcemaps)</sub>
+
+- `upload`: Upload WebAssembly source maps (`*.wasm.map`) for Error Tracking, identified by service, version, and module URL.
+
 ### FIPS support
 
 The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provider if the OpenSSL library installed on the host system provides it.
