@@ -1688,36 +1688,36 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/libdatadog-extras@npm:^0.20.0":
-  version: 0.20.0
-  resolution: "@datadog/libdatadog-extras@npm:0.20.0"
-  checksum: 10/a18acf46fd120932bd54f34accd420e03e8b2bb57a0527bd45cde0c74cb0cb11771cf52d9ed73ac6ad976f7a69068f4d2915182c4a0c1c918ad2dde596f43bfe
+"@datadog/libdatadog-extras@npm:^0.21.0":
+  version: 0.21.0
+  resolution: "@datadog/libdatadog-extras@npm:0.21.0"
+  checksum: 10/1d0167253ff4854289bf17a8bea9e37a14daf3cffda57816fe368bb04318369001eb23dd497559a1112cbff4f15fcfed2867eb85027172ea3b7f03d5fdf88268
   languageName: node
   linkType: hard
 
-"@datadog/libdatadog-wasm@npm:0.20.0":
-  version: 0.20.0
-  resolution: "@datadog/libdatadog-wasm@npm:0.20.0"
-  checksum: 10/cfb731f295fe2622459e7e2606374b1028c2d0bcb10d577bb33861f312286e2370c5887e15c0c316d430706325a10901b7e221c1c555ec8c0a7fc850060bac7d
+"@datadog/libdatadog-wasm@npm:0.21.0":
+  version: 0.21.0
+  resolution: "@datadog/libdatadog-wasm@npm:0.21.0"
+  checksum: 10/5553b30dfd05e2c34f7752b598d5efa9b0b414331c33835c529e4429ea396f07b84c9e56f595cc901c39239787a50e6a12d2ac7020a221a67325926022f209bf
   languageName: node
   linkType: hard
 
-"@datadog/libdatadog@npm:^0.20.0":
-  version: 0.20.0
-  resolution: "@datadog/libdatadog@npm:0.20.0"
+"@datadog/libdatadog@npm:^0.21.0":
+  version: 0.21.0
+  resolution: "@datadog/libdatadog@npm:0.21.0"
   dependencies:
-    "@datadog/libdatadog-wasm": "npm:0.20.0"
-  checksum: 10/7f97ffd3cf47cc326d9f4d31a732e8d174cff6a73db80c21fbebcfd5e6eea225b3a706aa633714c5f40b33d663359d4f23253d14fdc0fecf18d4439aba2dab4c
+    "@datadog/libdatadog-wasm": "npm:0.21.0"
+  checksum: 10/07992744ea9da67c265a9bbe1e21d6d31f7aa1cbd21d70b3cc195eac22c6c47f08ac5207de79d7b904664497431c4b17761a08ad1876f2f21c654a15b440086b
   languageName: node
   linkType: hard
 
-"@datadog/native-appsec@npm:11.0.2":
-  version: 11.0.2
-  resolution: "@datadog/native-appsec@npm:11.0.2"
+"@datadog/native-appsec@npm:11.0.3":
+  version: 11.0.3
+  resolution: "@datadog/native-appsec@npm:11.0.3"
   dependencies:
     node-gyp: "npm:latest"
     node-gyp-build: "npm:^3.9.0"
-  checksum: 10/717bbd384d9717cb6f4ba94bbcdd63a7b38ed24d2524ae2c1eb316a70f64ecda7724be1c2e295783d032f53ca36b0b1989dda8c11723f6f2e7d57800475a174a
+  checksum: 10/a542c75028559f7dbc1b5d65118e9728bb02a70784833076b6fad63deb364d4ae8fde7ea1896cf4bee10cbaaa83ebabc766b4213d95858e8ec04ab821f7d2b2c
   languageName: node
   linkType: hard
 
@@ -1742,15 +1742,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/pprof@npm:5.18.1":
-  version: 5.18.1
-  resolution: "@datadog/pprof@npm:5.18.1"
+"@datadog/pprof@npm:5.20.0":
+  version: 5.20.0
+  resolution: "@datadog/pprof@npm:5.20.0"
   dependencies:
     node-gyp: "npm:latest"
     node-gyp-build: "npm:^4.8.4"
-    pprof-format: "npm:^2.3.1"
+    pprof-format: "npm:^2.3.2"
     source-map: "npm:^0.8.0"
-  checksum: 10/8b90ade6f2a1343675f2d744e54813bf40fd4388ecaf7f05247d97b1871ec700a678fcc635d9e7dff6c760f49f50e34ee9dc1df2a9fe86b0e89b69507643a8bc
+  checksum: 10/528edcc0d50d1795709f89ffd7471c96750cf9a6bd8bb788ea50caddb47ec0f0d17866156909e40317238dfc6a7a0fd4bb73570ad8692f8f3b2aec4ffc314b30
   languageName: node
   linkType: hard
 
@@ -5956,7 +5956,7 @@ __metadata:
     "@types/node": "npm:20.19.37"
     "@yao-pkg/pkg": "npm:6.19.0"
     chalk: "npm:3.0.0"
-    dd-trace: "npm:5.125.0"
+    dd-trace: "npm:5.132.0"
     eslint: "npm:9.34.0"
     eslint-config-prettier: "npm:10.1.8"
     eslint-import-resolver-typescript: "npm:4.4.4"
@@ -6002,21 +6002,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:5.125.0":
-  version: 5.125.0
-  resolution: "dd-trace@npm:5.125.0"
+"dd-trace@npm:5.132.0":
+  version: 5.132.0
+  resolution: "dd-trace@npm:5.132.0"
   dependencies:
-    "@datadog/libdatadog": "npm:^0.20.0"
-    "@datadog/libdatadog-extras": "npm:^0.20.0"
-    "@datadog/native-appsec": "npm:11.0.2"
+    "@datadog/libdatadog": "npm:^0.21.0"
+    "@datadog/libdatadog-extras": "npm:^0.21.0"
+    "@datadog/native-appsec": "npm:11.0.3"
     "@datadog/native-iast-taint-tracking": "npm:4.2.1"
     "@datadog/native-metrics": "npm:4.0.0"
-    "@datadog/pprof": "npm:5.18.1"
+    "@datadog/pprof": "npm:5.20.0"
     "@datadog/wasm-js-rewriter": "npm:5.0.4"
     "@opentelemetry/api": "npm:>=1.0.0 <1.10.0"
     "@opentelemetry/api-logs": "npm:<1.0.0"
     dc-polyfill: "npm:^0.1.11"
-    import-in-the-middle: "npm:^3.3.2"
+    import-in-the-middle: "npm:3.5.1"
     opentracing: "npm:>=0.14.7"
     oxc-parser: "npm:^0.132.0"
   dependenciesMeta:
@@ -6040,7 +6040,7 @@ __metadata:
       optional: true
     oxc-parser:
       optional: true
-  checksum: 10/84f7552723728a449be9a2c3f9e3d43fe2353685be14d882b207b4ce407e50355b8111293c6422faffa75ee74a2ff3f1e22f7e05c1f54fd201669844d77b6923
+  checksum: 10/c7eaac5c83d257348ad482d95f16644b39aa6239b9945ad733e51877e20d630618c96ddbf77111f46be3beedbe29c5ce3c9c0ea9c061bfa080e3195453c9bd60
   languageName: node
   linkType: hard
 
@@ -6419,10 +6419,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-module-lexer@npm:^2.2.0":
-  version: 2.3.2
-  resolution: "es-module-lexer@npm:2.3.2"
-  checksum: 10/065246d6e2b2dfea3287650b5800a30326771e0d9d238570e81371d7ae8d53db239bccb2166e272926bba44917da7c66dd7407a5214d17b0af5269005b1fec52
+"es-module-lexer@npm:^3.0.2":
+  version: 3.0.4
+  resolution: "es-module-lexer@npm:3.0.4"
+  checksum: 10/31198ec02dd28ce70f378832e9b00c1f4cf466f01e6d5796a74538a0d69f9fe0aa1bfd40fde74e1b472dec62124d49ea85cf41fa5b8d4a5e4145a1b3e11a05de
   languageName: node
   linkType: hard
 
@@ -7990,14 +7990,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"import-in-the-middle@npm:^3.3.2":
-  version: 3.4.0
-  resolution: "import-in-the-middle@npm:3.4.0"
+"import-in-the-middle@npm:3.5.1":
+  version: 3.5.1
+  resolution: "import-in-the-middle@npm:3.5.1"
   dependencies:
     cjs-module-lexer: "npm:^2.2.0"
-    es-module-lexer: "npm:^2.2.0"
+    es-module-lexer: "npm:^3.0.2"
     module-details-from-path: "npm:^1.0.4"
-  checksum: 10/87569be1e8aa3c866aa53da6ffe2090aa1c16464623529b96ffe4c4986782a298d0c32366164a37ff9d45570e3d90bbe18291c3d7af07fa737fb079671c406e2
+  checksum: 10/4e5e355a24597eee79f29e5db35bfd4b394f64b446ea202a7757a4ec048c318a01a5b1c0345aa5b70dcff5cc546e4467e69a2662ff539bdfc9772e36ba8f4bed
   languageName: node
   linkType: hard
 
@@ -10184,10 +10184,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pprof-format@npm:^2.3.1":
-  version: 2.3.1
-  resolution: "pprof-format@npm:2.3.1"
-  checksum: 10/790a7e8dc62442ed47290ddd12518bcd6ab00598fdb043343f0576bc204635c3e229cb34354f3ab1a3082389e7b213b1039a510901c967b6ae85a2e4406e552c
+"pprof-format@npm:^2.3.2":
+  version: 2.3.2
+  resolution: "pprof-format@npm:2.3.2"
+  checksum: 10/b6eb50c4694fc87f82a7519f5d30d42d2fbe1f615d6cc88f223a3fdced6819960f7702b3dd21af128982304fc393df9491c53477d783a50d2e67a47078ffc2d8
   languageName: node
   linkType: hard
 
