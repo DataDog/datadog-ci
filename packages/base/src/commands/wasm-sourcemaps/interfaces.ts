@@ -4,7 +4,6 @@ export const VALUE_NAME_SOURCE_MAP = 'source_map'
 export const SOURCE_MAP_FILE_NAME = 'source_map'
 
 export interface WasmSourcemapFile {
-  modulePath: string
   moduleUrl: string
   sourcemapPath: string
 }

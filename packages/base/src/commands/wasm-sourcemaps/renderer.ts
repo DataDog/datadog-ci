@@ -59,9 +59,6 @@ export const renderInvalidPrefix = () =>
 
 export const renderMissingOption = (option: string) => chalk.red(`${ICONS.FAILED} Missing ${option}.\n`)
 
-export const renderMissingModule = (modulePath: string) =>
-  chalk.yellow(`${ICONS.WARNING} Skipping sourcemap because its WASM module was not found: ${modulePath}\n`)
-
 export const renderGeneralizedError = (error: unknown) => {
   const stack = error instanceof Error ? error.stack : undefined
 

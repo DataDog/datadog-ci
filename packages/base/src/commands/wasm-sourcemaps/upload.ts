@@ -39,7 +39,6 @@ import {
   renderGitWarning,
   renderInvalidLocation,
   renderInvalidPrefix,
-  renderMissingModule,
   renderMissingOption,
   renderRetriedUpload,
   renderUpload,
@@ -190,13 +189,8 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
         continue
       }
       const modulePath = sourcemapPath.slice(0, -'.map'.length)
-      if (!fs.existsSync(modulePath)) {
-        this.context.stdout.write(renderMissingModule(modulePath))
-        continue
-      }
       const relativeModulePath = upath.relative(relativeRoot, modulePath)
       files.push({
-        modulePath,
         moduleUrl: buildPath(this.minifiedPathPrefix!, relativeModulePath),
         sourcemapPath,
       })

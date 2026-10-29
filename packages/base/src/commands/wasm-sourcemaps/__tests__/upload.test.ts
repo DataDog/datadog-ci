@@ -10,7 +10,6 @@ import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {uploadMultipartHelper} from '../helpers'
-import {renderMissingModule} from '../renderer'
 import {WasmSourcemapsUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () => ({
@@ -33,11 +32,10 @@ describe('wasm-sourcemaps upload', () => {
 
   afterEach(() => fs.rmSync(fixtureDir, {recursive: true}))
 
-  const writePair = (relativeModulePath: string) => {
+  const writeSourcemap = (relativeModulePath: string) => {
     const modulePath = upath.join(fixtureDir, relativeModulePath)
     const sourcemapPath = `${modulePath}.map`
     fs.mkdirSync(upath.dirname(modulePath), {recursive: true})
-    fs.writeFileSync(modulePath, Buffer.from([0x00, 0x61, 0x73, 0x6d]))
     fs.writeFileSync(sourcemapPath, JSON.stringify({version: 3, sources: ['main.dart'], mappings: ''}))
 
     return {modulePath, sourcemapPath}
@@ -69,34 +67,41 @@ describe('wasm-sourcemaps upload', () => {
   })
 
   test('discovers source maps recursively and constructs module URLs', async () => {
-    const pair = writePair('nested/main.dart.wasm')
+    const pair = writeSourcemap('nested/main.dart.wasm')
     const {command} = await runCommand((cmd) => {
       cmd['dryRun'] = true
     })
 
     await expect(command['getWasmSourcemapFiles']()).resolves.toEqual([
       {
-        modulePath: pair.modulePath,
         moduleUrl: 'https://cdn.example.com/flutter/nested/main.dart.wasm',
         sourcemapPath: pair.sourcemapPath,
       },
     ])
   })
 
-  test('skips a source map when its module is missing', async () => {
-    const sourcemapPath = upath.join(fixtureDir, 'missing.wasm.map')
-    fs.writeFileSync(sourcemapPath, '{}')
+  test.each([false, true])('uploads without a local WASM module (single file: %s)', async (singleFile) => {
+    const {modulePath, sourcemapPath} = writeSourcemap('main.dart.wasm')
 
-    const {command, exitCode} = await runCommand((cmd) => {
-      cmd['dryRun'] = true
+    const {exitCode} = await runCommand((cmd) => {
+      if (singleFile) {
+        cmd['basePath'] = sourcemapPath
+      }
     })
 
+    expect(fs.existsSync(modulePath)).toBe(false)
     expect(exitCode).toBe(0)
-    expect(command.context.stdout.toString()).toContain(renderMissingModule(upath.join(fixtureDir, 'missing.wasm')))
+    expect(uploadMultipartHelper).toHaveBeenCalledTimes(1)
+    const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+    expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value).minified_url).toBe(
+      'https://cdn.example.com/flutter/main.dart.wasm'
+    )
+    expect((payload.content.get('source_map') as MultipartFileValue).path).toBe(sourcemapPath)
+    expect([...payload.content.keys()]).toEqual(['event', 'source_map'])
   })
 
   test('uploads metadata keyed by service, version, and module URL', async () => {
-    const pair = writePair('main.dart.wasm')
+    const pair = writeSourcemap('main.dart.wasm')
 
     const {exitCode} = await runCommand(() => {})
 
@@ -123,7 +128,7 @@ describe('wasm-sourcemaps upload', () => {
     // Like JS, a root-only prefix is normalized to a leading slash by sourcemap-processor.
     ['/', 'nested/main.dart.wasm'],
   ])('uploads module paths relative to the build directory with prefix %s', async (prefix, expectedUrl) => {
-    writePair('nested/main.dart.wasm')
+    writeSourcemap('nested/main.dart.wasm')
 
     const {exitCode} = await runCommand((cmd) => {
       cmd['minifiedPathPrefix'] = prefix
@@ -136,7 +141,7 @@ describe('wasm-sourcemaps upload', () => {
   })
 
   test('uses the module filename when uploading a single source map', async () => {
-    const pair = writePair('nested/main.dart.wasm')
+    const pair = writeSourcemap('nested/main.dart.wasm')
 
     const {exitCode} = await runCommand((cmd) => {
       cmd['basePath'] = pair.sourcemapPath
@@ -150,7 +155,7 @@ describe('wasm-sourcemaps upload', () => {
   })
 
   test('does not upload during a dry run', async () => {
-    writePair('main.dart.wasm')
+    writeSourcemap('main.dart.wasm')
 
     const {exitCode} = await runCommand((cmd) => {
       cmd['dryRun'] = true

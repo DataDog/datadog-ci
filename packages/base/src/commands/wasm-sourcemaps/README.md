@@ -17,7 +17,7 @@ DD_BETA_COMMANDS_ENABLED=1 datadog-ci wasm-sourcemaps upload ./build/web \
   --minified-path-prefix https://cdn.example.com/flutter/
 ```
 
-The command recursively finds `*.wasm.map` files. Each source map must be next to its corresponding `.wasm` module. The relative module path is appended to `--minified-path-prefix` to produce the URL used for symbolication.
+The command recursively finds `*.wasm.map` files. The corresponding `.wasm` modules do not need to be present locally and are not uploaded. The module path is derived by removing the final `.map` extension from each source map's relative path, then appended to `--minified-path-prefix` to produce the URL used for symbolication. The source maps' directory layout must match the deployed modules' layout under that prefix.
 
 For example, `./build/web/nested/main.dart.wasm.map` with prefix `https://cdn.example.com/app/` is uploaded with `minified_url: https://cdn.example.com/app/nested/main.dart.wasm`. Sourcemap-processor extracts domain `cdn.example.com` and absolute path `/app/nested/main.dart.wasm` from that URL. An absolute-path-only prefix leaves the domain empty. These paths identify the generated `.wasm` module, not the `.wasm.map` file or the original source files.
 
