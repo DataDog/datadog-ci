@@ -272,17 +272,17 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 - `upload`: Upload Elf debug info files for Profiling.
 
-#### `wasm-sourcemaps`
-
-<sub>**README:** [📚](/packages/base/src/commands/wasm-sourcemaps)</sub>
-
-- `upload`: Upload WebAssembly source maps (`*.wasm.map`) for Error Tracking, identified by service, version, and module URL.
-
 #### `wasm-symbols`
 
 <sub>**README:** [📚](/packages/base/src/commands/wasm-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/guide/upload-webassembly-symbols/)</sub>
 
 - `upload`: Upload WebAssembly (.wasm) debug info files for Error Tracking.
+
+#### `wasm-sourcemaps`
+
+<sub>**README:** [📚](/packages/base/src/commands/wasm-sourcemaps)</sub>
+
+- `upload`: Upload WebAssembly source maps (`*.wasm.map`) for Error Tracking, identified by service, version, and module URL.
 
 ### FIPS support
 
