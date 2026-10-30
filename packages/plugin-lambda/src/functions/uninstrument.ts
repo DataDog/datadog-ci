@@ -162,16 +162,10 @@ export const calculateUpdateRequest = (
     }
   }
 
-  // Remove AWS_LAMBDA_EXEC_WRAPPER for .NET and Java or if ASM is enabled
-  if (
-    runtimeType === RuntimeType.DOTNET ||
-    runtimeType === RuntimeType.JAVA ||
-    oldEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] === 'true'
-  ) {
-    if (oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] === AWS_LAMBDA_EXEC_WRAPPER) {
-      needsUpdate = true
-      delete oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR]
-    }
+  // Remove the Datadog wrapper even if its original AppSec flag has been removed.
+  if (oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] === AWS_LAMBDA_EXEC_WRAPPER) {
+    needsUpdate = true
+    delete oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR]
   }
 
   /**

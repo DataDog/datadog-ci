@@ -341,9 +341,19 @@ export const calculateUpdateRequest = async (
   if (settings['appsecEnabled'] === true) {
     if (supportsInTracerAppsec(runtime, layerOrTraceVersion)) {
       newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
+      delete newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR]
     } else {
+      delete newEnvVars[APPSEC_ENABLED_ENV_VAR]
       newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
       newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+    }
+
+    if (
+      [APPSEC_ENABLED_ENV_VAR, SERVERLESS_APPSEC_ENABLED_ENV_VAR, AWS_LAMBDA_EXEC_WRAPPER_VAR].some(
+        (name) => oldEnvVars[name] !== newEnvVars[name]
+      )
+    ) {
+      needsUpdate = true
     }
   }
 
