@@ -39,6 +39,8 @@ describe('run-tests', () => {
         DATADOG_SYNTHETICS_FILES: 'test-file1;test-file2;test-file3',
         DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report.xml',
         DATADOG_SYNTHETICS_JSON_REPORT: 'json-report.json',
+        DATADOG_SYNTHETICS_PAGE_LEVEL_VRT_CAPTURE_SCREENSHOTS: 'false',
+        DATADOG_SYNTHETICS_PAGE_LEVEL_VRT_RECORD_NETWORK: 'true',
         DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id;another-public-id',
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
@@ -121,6 +123,7 @@ describe('run-tests', () => {
         files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
         jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
         jsonReport: overrideEnv.DATADOG_SYNTHETICS_JSON_REPORT,
+        pageLevelVrt: {captureScreenshots: false, recordNetwork: true},
         publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
         selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
@@ -227,6 +230,7 @@ describe('run-tests', () => {
         jUnitReport: 'junit-report.xml',
         jsonReport: 'test-results-report.json',
         mobileApplicationVersionFilePath: './path/to/application.apk',
+        pageLevelVrt: {captureScreenshots: true, recordNetwork: true},
         publicIds: ['ran-dom-id2'],
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
@@ -279,6 +283,8 @@ describe('run-tests', () => {
       command['jsonReport'] = overrideCLI.jsonReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
+      command['pageLevelVrtCaptureScreenshots'] = overrideCLI.pageLevelVrt?.captureScreenshots
+      command['pageLevelVrtRecordNetwork'] = overrideCLI.pageLevelVrt?.recordNetwork
       command['publicIds'] = overrideCLI.publicIds
       command['selectiveRerun'] = overrideCLI.selectiveRerun
       command['subdomain'] = overrideCLI.subdomain
@@ -362,6 +368,7 @@ describe('run-tests', () => {
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
         jsonReport: 'test-results-report.json',
+        pageLevelVrt: {captureScreenshots: true, recordNetwork: true},
         publicIds: ['ran-dom-id2'],
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
