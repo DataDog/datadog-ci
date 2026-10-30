@@ -551,6 +551,44 @@ describe('run-test', () => {
         },
       })
     })
+
+    test.each([
+      ['sets pageLevelVrt on every test', {captureScreenshots: true, recordNetwork: true}, true],
+      ['does not set an empty pageLevelVrt', {}, false],
+      ['does not set pageLevelVrt by default', undefined, false],
+    ])('%s', async (_, pageLevelVrt, expected) => {
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          testPlan: ['aaa-aaa-aaa', 'bbb-bbb-bbb'].map((publicId) => ({
+            test: {options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: publicId} as any,
+            testOverrides: {} as any,
+            executionRule: ExecutionRule.BLOCKING,
+          })),
+          initialSummary: utils.createInitialSummary(),
+        })
+      )
+
+      const triggerTestsSpy = jest.fn(() => mockServerTriggerResponse)
+      const apiHelper = {
+        getBatch: () => ({results: []}),
+        getTunnelPresignedURL: () => ({url: 'url'}),
+        pollResults: () => [getApiResult('1', getApiTest())],
+        triggerTests: triggerTestsSpy,
+      }
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+
+      await runTests.executeTests(mockReporter, {
+        ...ciConfig,
+        pageLevelVrt,
+        publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
+      })
+
+      const [{tests}] = triggerTestsSpy.mock.calls[0] as unknown as [{tests: {pageLevelVrt?: unknown}[]}]
+      expect(tests).toHaveLength(2)
+      for (const test of tests) {
+        expect(test.pageLevelVrt).toEqual(expected ? pageLevelVrt : undefined)
+      }
+    })
   })
 
   describe('executeWithDetails', () => {
