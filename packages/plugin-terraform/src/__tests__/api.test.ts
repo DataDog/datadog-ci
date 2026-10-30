@@ -263,4 +263,37 @@ describe('uploadTerraformArtifact', () => {
     // Gzipped content should be smaller or similar size
     expect(gzippedContent.length).toBeGreaterThan(0)
   })
+
+  describe('expected_plan_count', () => {
+    const uploadAndGetEvent = async (expectedPlanCount?: number) => {
+      const appendMock = jest.fn()
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore override constructor
+      FormData.mockImplementation(() => ({append: appendMock, getHeaders: jest.fn().mockReturnValue({})}))
+
+      await uploadTerraformArtifact(jest.fn().mockResolvedValue({status: 200}))({
+        artifactType: 'plan',
+        filePath: '/path/to/plan.json',
+        fileContent: '{}',
+        artifactSha256: 'hash',
+        artifactSizeBytes: 2,
+        spanTags: {},
+        expectedPlanCount,
+      })
+
+      return JSON.parse(appendMock.mock.calls.find((call) => call[0] === 'event')[1])
+    }
+
+    it('includes expected_plan_count when provided', async () => {
+      const eventJson = await uploadAndGetEvent(3)
+
+      expect(eventJson.expected_plan_count).toBe(3)
+    })
+
+    it('omits expected_plan_count when not provided', async () => {
+      const eventJson = await uploadAndGetEvent(undefined)
+
+      expect(eventJson).not.toHaveProperty('expected_plan_count')
+    })
+  })
 })
