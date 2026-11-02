@@ -555,6 +555,11 @@ describe('run-test', () => {
     test.each([
       ['sets pageLevelVrt on every test', {captureScreenshots: true, recordNetwork: true}, true],
       ['does not set an empty pageLevelVrt', {}, false],
+      [
+        'does not set a pageLevelVrt without any enabled setting',
+        {captureScreenshots: false, recordNetwork: false},
+        false,
+      ],
       ['does not set pageLevelVrt by default', undefined, false],
     ])('%s', async (_, pageLevelVrt, expected) => {
       jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(

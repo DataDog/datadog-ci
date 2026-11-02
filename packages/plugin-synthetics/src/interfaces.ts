@@ -620,9 +620,7 @@ export interface UserConfigOverride extends BaseConfigOverride {
 }
 
 export interface PageLevelVrt {
-  /** Capture the visual regression screenshots. */
   captureScreenshots?: boolean
-  /** Record the network exchanges of the test, so they can be replayed. */
   recordNetwork?: boolean
 }
 
@@ -630,7 +628,6 @@ export interface ServerConfigOverride extends BaseConfigOverride {
   // Programmatically set with `overrideMobileConfig()`.
   appExtractedMetadata?: MobileAppExtractedMetadata
   mobileApplication?: MobileApplication
-  // Set from the `pageLevelVrt` run setting, the same for all tests.
   pageLevelVrt?: PageLevelVrt
   // Programmatically set with `tunnel.start()`.
   // XXX: This would be better passed as a batch option in the future since it's always the same for all tests.
@@ -771,7 +768,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   jUnitReport?: string
   jsonReport?: string
   mobileApplicationVersionFilePath?: string
-  /** Page-level visual regression testing settings, applied to all browser tests of the run. */
   pageLevelVrt?: PageLevelVrt
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */

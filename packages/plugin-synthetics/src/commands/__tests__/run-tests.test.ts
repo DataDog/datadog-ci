@@ -199,6 +199,7 @@ describe('run-tests', () => {
         files: ['my-new-file'],
         jUnitReport: 'junit-report.xml',
         jsonReport: 'test-results-report.json',
+        pageLevelVrt: {captureScreenshots: true, recordNetwork: true},
         proxy: {
           protocol: 'https',
         },
