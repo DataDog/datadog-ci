@@ -517,6 +517,11 @@ export interface CookiesObject {
   value: string
 }
 
+export interface PageLevelVrt {
+  captureScreenshots?: boolean
+  recordNetwork?: boolean
+}
+
 export interface BaseConfigOverride {
   /** Override the certificate checks in Synthetic API and Browser tests. */
   allowInsecureCertificates?: boolean
@@ -604,6 +609,12 @@ export interface BaseConfigOverride {
   startUrlSubstitutionRegex?: string
   /** Override the maximum duration in seconds for browser tests. */
   testTimeout?: number
+  /**
+   * Internal: enable page-level visual regression testing for browser tests. Only accepted for orgs enrolled by Datadog.
+   *
+   * @hidden
+   */
+  pageLevelVrt?: PageLevelVrt
   /**
    * Override existing or inject new local and [global variables](https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables) in Synthetic tests.
    *
