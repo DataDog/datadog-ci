@@ -1,0 +1,26 @@
+name: PR labeler
+
+on:
+  # Never check out or execute PR code because pull_request_target has write access.
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  label-serverless:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Get GitHub token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        id: octo-sts
+        with:
+          scope: DataDog/datadog-ci
+          policy: self.pr-labeler
+      - name: Add labels based on changed files
+        uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
+        with:
+          repo-token: ${{ steps.octo-sts.outputs.token }}
+          sync-labels: false

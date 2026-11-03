@@ -1,0 +1,12 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject: repo:DataDog/datadog-ci:pull_request
+
+claim_pattern:
+  event_name: pull_request_target
+  ref: refs/heads/master
+  job_workflow_ref: DataDog/datadog-ci/\.github/workflows/pr-labeler\.yml@refs/heads/master
+
+permissions:
+  contents: read
+  pull_requests: write

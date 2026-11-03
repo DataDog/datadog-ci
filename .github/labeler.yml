@@ -1,0 +1,17 @@
+serverless:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/plugin-aas/**
+          - packages/base/src/commands/aas/**
+          - packages/plugin-cloud-run/**
+          - packages/base/src/commands/cloud-run/**
+          - packages/plugin-container-app/**
+          - packages/base/src/commands/container-app/**
+          - packages/plugin-ecs-fargate/**
+          - packages/base/src/commands/ecs-fargate/**
+          - packages/plugin-lambda/**
+          - packages/base/src/commands/lambda/**
+          - packages/plugin-stepfunctions/**
+          - packages/base/src/commands/stepfunctions/**
+          - packages/base/src/helpers/serverless/**
+          - e2e/serverless/**
