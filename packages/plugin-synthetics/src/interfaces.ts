@@ -519,6 +519,8 @@ export interface CookiesObject {
 
 export interface PageLevelVrt {
   captureScreenshots?: boolean
+  /** Epoch timestamp in milliseconds used as the page clock reference for recording and replay. */
+  fixedTime?: number
   recordNetwork?: boolean
 }
 
