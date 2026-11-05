@@ -113,6 +113,13 @@ export class SyntheticsRunTestsCommand extends BaseCommand {
   public overrides = Option.Array('--override', {
     description: 'Override specific test properties.',
   })
+  public pageLevelVrtCaptureScreenshots = Option.Boolean('--pageLevelVrtCaptureScreenshots', {
+    description: 'Capture the page-level visual regression screenshots in all browser tests of the run.',
+  })
+  public pageLevelVrtRecordNetwork = Option.Boolean('--pageLevelVrtRecordNetwork', {
+    description:
+      'Record the network exchanges for page-level visual regression testing in all browser tests of the run.',
+  })
   public publicIds = Option.Array('-p,--public-id', {
     description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
   })

@@ -415,6 +415,16 @@ Override the mobile application version for [Synthetic mobile application tests]
 * ENV variable: Not Available
 * CLI param: `--mobileApp "path/to/application.apk"` / `--mobileApplicationVersionFilePath "path/to/application.apk"`
 
+#### `pageLevelVrt`
+
+Page-level visual regression testing settings, applied to all browser tests of the run. `recordNetwork` records the network exchanges of each test, and `captureScreenshots` captures the visual regression screenshots. This feature must be enabled for your organization.
+
+**Configuration options**
+
+* Global Config: `"pageLevelVrt": {"recordNetwork": true, "captureScreenshots": true}`
+* ENV variable: `DATADOG_SYNTHETICS_PAGE_LEVEL_VRT_RECORD_NETWORK=true`, `DATADOG_SYNTHETICS_PAGE_LEVEL_VRT_CAPTURE_SCREENSHOTS=true`
+* CLI param: `--pageLevelVrtRecordNetwork`, `--pageLevelVrtCaptureScreenshots`
+
 #### `proxy`
 
 The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
