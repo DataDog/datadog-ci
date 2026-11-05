@@ -268,6 +268,14 @@ describe('utils', () => {
       })
     })
 
+    test('pageLevelVrt override is forwarded', () => {
+      const publicId = 'abc-def-ghi'
+      const pageLevelVrt = {captureScreenshots: true, recordNetwork: true}
+      expect(
+        utils.makeTestPayload({public_id: publicId} as Test, {id: publicId, testOverrides: {pageLevelVrt}}, publicId)
+      ).toEqual({pageLevelVrt, public_id: publicId})
+    })
+
     test('strictest executionRule is forwarded when it has to be', () => {
       const expectHandledConfigToBe = (
         expectedExecutionRule: ExecutionRule | undefined,

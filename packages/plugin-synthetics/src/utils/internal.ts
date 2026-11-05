@@ -392,6 +392,7 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'followRedirects',
       'headers',
       'locations',
+      'pageLevelVrt',
       'resourceUrlSubstitutionRegexes',
       'retry',
       'startUrlSubstitutionRegex',
