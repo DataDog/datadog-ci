@@ -60,11 +60,12 @@ export class DeploymentGateCommand extends BaseCommand {
     validator: t.isString(),
   })
   protected version = Option.String('--version', {
-    description: 'The deployment version (required for gates with faulty deployment detection rules)',
+    description:
+      'The deployment version (required for gates with faulty deployment detection or automatic detection rules)',
     validator: t.isString(),
   })
   protected apmPrimaryTag = Option.String('--apm-primary-tag', {
-    description: 'The APM primary tag (only for gates with faulty deployment detection rules)',
+    description: 'The APM primary tag (only for gates with faulty deployment detection or automatic detection rules)',
     validator: t.isString(),
   })
   protected timeout = Option.String('--timeout', '10800', {
