@@ -60,7 +60,8 @@ export class DeploymentGateCommand extends BaseCommand {
     validator: t.isString(),
   })
   protected version = Option.String('--version', {
-    description: 'The deployment version (required for gates with faulty deployment detection or automatic detection rules)',
+    description:
+      'The deployment version (required for gates with faulty deployment detection or automatic detection rules)',
     validator: t.isString(),
   })
   protected apmPrimaryTag = Option.String('--apm-primary-tag', {
