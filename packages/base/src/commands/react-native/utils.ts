@@ -1,6 +1,6 @@
 import {existsSync} from 'fs'
 
-import type {RNPlatform} from './interfaces'
+import type {RNSourcemapPlatform} from './interfaces'
 
 export const getReactNativeVersion = (packageJsonPath: string): undefined | string => {
   if (!existsSync(packageJsonPath)) {
@@ -17,8 +17,9 @@ export const getReactNativeVersion = (packageJsonPath: string): undefined | stri
 
 const DEFAULT_ANDROID_BUNDLE_NAME = 'index.android.bundle'
 const DEFAULT_IOS_BUNDLE_NAME = 'main.jsbundle'
+const DEFAULT_VEGA_BUNDLE_NAME = 'index.bundle'
 
-export const getBundleName = (bundlePath: string | undefined, platform: RNPlatform): string => {
+export const getBundleName = (bundlePath: string | undefined, platform: RNSourcemapPlatform): string => {
   if (bundlePath) {
     const splitPath = bundlePath.split('/')
 
@@ -26,6 +27,9 @@ export const getBundleName = (bundlePath: string | undefined, platform: RNPlatfo
   }
   if (platform === 'ios') {
     return DEFAULT_IOS_BUNDLE_NAME
+  }
+  if (platform === 'vega') {
+    return DEFAULT_VEGA_BUNDLE_NAME
   }
 
   return DEFAULT_ANDROID_BUNDLE_NAME
