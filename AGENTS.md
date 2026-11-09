@@ -59,6 +59,9 @@ After making changes, always verify by running:
 2. `yarn lint` -- ensure no lint errors (use `yarn format` to auto-fix)
 3. `yarn test <path to relevant test files>` -- ensure tests pass for affected packages
 
+## Pull requests
+
+CI requires at least one label from [`.github/workflows/pr-required-labels.yml`](.github/workflows/pr-required-labels.yml) on every PR. When opening a PR, apply the matching label(s) with `gh pr edit --add-label <label>` (for example, the product label such as `serverless`, or `datadog-ci`, `chores`, `documentation`, or `dependencies` for repo-wide and maintenance changes).
 
 ## Per domain info
 
