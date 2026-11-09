@@ -56,7 +56,7 @@ jest.mock('child_process', () => ({
   }),
 }))
 
-const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
+const runCLI = async (appName: string, options?: {platform?: string; uploadBundle?: boolean}) => {
   const cli = new Cli()
   cli.register(ReactNativeCodepushCommand)
 
@@ -67,7 +67,7 @@ const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
     'react-native',
     'codepush',
     '--platform',
-    'ios',
+    options?.platform ?? 'ios',
     '--service',
     'com.myapp',
     '--sourcemap',
@@ -90,6 +90,15 @@ const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
 
 describe('codepush', () => {
   describe('execute', () => {
+    it('rejects Vega as a CodePush platform', async () => {
+      const {context, code} = await runCLI('FakeOrg/FakeApp', {platform: 'vega'})
+
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain(
+        'Platform vega is not supported.\nSupported platforms are ios and android.'
+      )
+    })
+
     it('calls the upload command with a correct version number from the codepush history', async () => {
       const {context, code} = await runCLI('FakeOrg/FakeApp')
       // Uncomment these lines for debugging failing script

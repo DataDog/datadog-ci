@@ -23,6 +23,10 @@ describe('react-native utils', () => {
     test('should return the default Android bundle name when no bundle is specified on Android', () => {
       expect(getBundleName(undefined, 'android')).toBe('index.android.bundle')
     })
+
+    test('should return the default Vega bundle name when no bundle is specified on Vega', () => {
+      expect(getBundleName(undefined, 'vega')).toBe('index.bundle')
+    })
   })
 
   describe('sanitizeReleaseVersion', () => {
