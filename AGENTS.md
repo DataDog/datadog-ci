@@ -61,7 +61,9 @@ After making changes, always verify by running:
 
 ## Pull requests
 
-CI requires at least one label from [`.github/workflows/pr-required-labels.yml`](.github/workflows/pr-required-labels.yml) on every PR. Add in a label for the scope of PR as well as the type of PR. The scope could be a product like `synthetics` or `serverless`, or `datadog-ci` for a repo-wide change. The type of PR is usually one of `bug`, `enhancement`, or `chores`.
+CI requires at least one label from [`.github/workflows/pr-required-labels.yml`](.github/workflows/pr-required-labels.yml) on every PR (`gh pr edit --add-label <labels>`). Add a label for both the scope and the type of the PR:
+- Look up the product scope label for the changed paths in [`.github/CODEOWNERS`](.github/CODEOWNERS) (each section header lists `(label: <name>)`, such as `synthetics` or `serverless`), or use `datadog-ci` for repo-wide changes.
+- Type is usually one of `bug`, `enhancement`, `chores`, `documentation`, `dependencies`, or `release`.
 
 ## Per domain info
 
