@@ -86,7 +86,7 @@ describeOrSkip('cloud-run SSI', () => {
         }
       }
     },
-    600_000
+    1_200_000
   )
 
   it('detects and injects the Node.js tracer', async () => {
@@ -145,5 +145,5 @@ describeOrSkip('cloud-run SSI', () => {
         console.error(`Failed to delete Cloud Run service "${serviceName}": ${deleteResult.stderr}`)
       }
     }
-  }, 600_000)
+  }, 1_200_000)
 })

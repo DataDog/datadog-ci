@@ -33,7 +33,7 @@ describeOrSkip('cloud-run', () => {
     if (result.exitCode !== 0) {
       throw new Error(`Failed to deploy Cloud Run service (exit code ${result.exitCode}): ${result.stderr}`)
     }
-  }, 600_000)
+  }, 900_000)
 
   afterAll(async () => {
     try {
@@ -65,7 +65,7 @@ describeOrSkip('cloud-run', () => {
     expect(result.exitCode).toBe(0)
 
     verifyInstrumented(serviceName, project, region)
-  }, 600_000)
+  }, 900_000)
 
   it('telemetry flows', async () => {
     const urlResult = await execPromise(
@@ -76,7 +76,7 @@ describeOrSkip('cloud-run', () => {
     await triggerTraffic(serviceUrl)
 
     await checkTelemetryFlowing({serviceName})
-  }, 600_000)
+  }, 900_000)
 
   it('uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(
@@ -91,5 +91,5 @@ describeOrSkip('cloud-run', () => {
     expect(result.exitCode).toBe(0)
 
     verifyUninstrumented(serviceName, project, region)
-  }, 600_000)
+  }, 900_000)
 })

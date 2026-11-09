@@ -157,6 +157,6 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
         throw lifecycleError
       }
     },
-    1_200_000
+    1_800_000
   )
 })

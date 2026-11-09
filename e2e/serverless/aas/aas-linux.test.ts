@@ -94,7 +94,7 @@ describeOrSkip('aas (Linux)', () => {
       version: runId,
       tags: [`one_e2e_run_id:${runId}`],
     })
-  }, 600_000)
+  }, 900_000)
 
   it('instrument is idempotent', async () => {
     const result = await execPromiseWithRetries(instrumentCommand, {

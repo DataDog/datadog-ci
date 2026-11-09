@@ -158,7 +158,7 @@ describeOrSkip('aas (Windows)', () => {
       },
       {checkLogs: false}
     )
-  }, 600_000)
+  }, 900_000)
 
   it('instrument is idempotent', async () => {
     const result = await execPromiseWithRetries(
@@ -184,5 +184,5 @@ describeOrSkip('aas (Windows)', () => {
     expect(result.exitCode).toBe(0)
 
     verifyWindowsUninstrumented(windowsAppName, resourceGroup, subscriptionId)
-  }, 600_000)
+  }, 900_000)
 })

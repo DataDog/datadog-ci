@@ -182,6 +182,13 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID_E2E }}
           tenant-id: ${{ vars.AZURE_TENANT_ID_E2E }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+      - name: Export Azure access token
+        if: (needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true') && matrix.version == 24
+        # The federated login assertion expires after 5 minutes, so later `az account get-access-token` calls fail.
+        run: |
+          token=$(az account get-access-token --resource https://management.azure.com/ --query accessToken --output tsv)
+          echo "::add-mask::$token"
+          echo "AZURE_MANAGEMENT_ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
       - name: Google Cloud auth (OIDC)
         if: needs.check-cloud-run-changes.outputs.should_run == 'true' && matrix.version == 24
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
