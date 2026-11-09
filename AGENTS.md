@@ -61,7 +61,7 @@ After making changes, always verify by running:
 
 ## Pull requests
 
-CI requires at least one label from [`.github/workflows/pr-required-labels.yml`](.github/workflows/pr-required-labels.yml) on every PR. When opening a PR, apply the matching label(s) with `gh pr edit --add-label <label>` (for example, the product label such as `serverless`, or `datadog-ci`, `chores`, `documentation`, or `dependencies` for repo-wide and maintenance changes).
+CI requires at least one label from [`.github/workflows/pr-required-labels.yml`](.github/workflows/pr-required-labels.yml) on every PR. Add in a label for the scope of PR as well as the type of PR. The scope could be a product like `synthetics` or `serverless`, or `datadog-ci` for a repo-wide change. The type of PR is usually one of `bug`, `enhancement`, or `chores`.
 
 ## Per domain info
 
