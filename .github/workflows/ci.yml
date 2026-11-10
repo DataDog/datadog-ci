@@ -723,7 +723,8 @@ jobs:
 
   standalone-binary-test-alpine:
     name: Test standalone binary in Alpine
-    runs-on: ubuntu-latest
+    # jirutka/setup-alpine v1.4.1 uses `sudo -E`, which is unsupported by sudo-rs on Ubuntu 26.04 (https://github.com/jirutka/setup-alpine/pull/35)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Restore x86_64 apk.static

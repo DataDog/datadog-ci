@@ -143,7 +143,8 @@ jobs:
             })
 
   build-binary-alpine:
-    runs-on: ubuntu-latest
+    # jirutka/setup-alpine v1.4.1 uses `sudo -E`, which is unsupported by sudo-rs on Ubuntu 26.04 (https://github.com/jirutka/setup-alpine/pull/35)
+    runs-on: ubuntu-24.04
     needs: create-draft-release
     steps:
       - uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4

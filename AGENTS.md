@@ -59,6 +59,11 @@ After making changes, always verify by running:
 2. `yarn lint` -- ensure no lint errors (use `yarn format` to auto-fix)
 3. `yarn test <path to relevant test files>` -- ensure tests pass for affected packages
 
+## Pull requests
+
+CI requires at least one label from [`.github/workflows/pr-required-labels.yml`](.github/workflows/pr-required-labels.yml) on every PR (`gh pr edit --add-label <labels>`). Add a label for both the scope and the type of the PR:
+- Look up the product scope label for the changed paths in [`.github/CODEOWNERS`](.github/CODEOWNERS) (each section header lists `(label: <name>)`, such as `synthetics` or `serverless`), or use `datadog-ci` for repo-wide changes.
+- Type is usually one of `bug`, `enhancement`, `chores`, `documentation`, `dependencies`, or `release`.
 
 ## Per domain info
 
