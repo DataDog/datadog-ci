@@ -3,7 +3,9 @@
 name: Continuous Integration
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # On branches, a new push cancels the previous run. On master, the group is keyed on the commit
+  # so runs never cancel (or replace pending) runs of other commits, and every commit gets a CI result.
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.sha || github.ref }}
   cancel-in-progress: true
 
 on:
