@@ -152,12 +152,7 @@ jobs:
       - build-and-pack
       # Don't create cloud resources for commits that fail lint
       - lint
-      - check-container-app-changes
-      - check-aas-changes
-      - check-cloud-run-changes
-      - check-version-bump-only
-      - check-lambda-changes
-      - check-ecs-fargate-changes
+      - changes
       
     permissions:
       contents: read
@@ -216,23 +211,23 @@ jobs:
           yarn config set nodeLinker node-modules
           yarn install --no-immutable
       - name: Azure login (OIDC)
-        if: (needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true') && matrix.version == 24
+        if: (needs.changes.outputs.container-app == 'true' || needs.changes.outputs.aas == 'true') && matrix.version == 24
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID_E2E }}
           tenant-id: ${{ vars.AZURE_TENANT_ID_E2E }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
       - name: Google Cloud auth (OIDC)
-        if: needs.check-cloud-run-changes.outputs.should_run == 'true' && matrix.version == 24
+        if: needs.changes.outputs.cloud-run == 'true' && matrix.version == 24
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER_E2E }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT_E2E }}
       - name: Set up Google Cloud CLI
-        if: needs.check-cloud-run-changes.outputs.should_run == 'true' && matrix.version == 24
+        if: needs.changes.outputs.cloud-run == 'true' && matrix.version == 24
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
       - name: Configure AWS credentials (OIDC)
-        if: (needs.check-lambda-changes.outputs.should_run == 'true' || needs.check-ecs-fargate-changes.outputs.should_run == 'true') && matrix.version == 24
+        if: (needs.changes.outputs.lambda == 'true' || needs.changes.outputs.ecs-fargate == 'true') && matrix.version == 24
         uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN_E2E }}
@@ -245,11 +240,11 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           GITHUB_SHA: ${{ github.sha }}
-          SKIP_CONTAINER_APP_TESTS: ${{ matrix.version != 24 || needs.check-container-app-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
-          SKIP_AAS_TESTS: ${{ matrix.version != 24 || needs.check-aas-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
-          SKIP_CLOUD_RUN_TESTS: ${{ matrix.version != 24 || needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
-          SKIP_LAMBDA_TESTS: ${{ matrix.version != 24 || needs.check-lambda-changes.outputs.should_run != 'true' }}
-          SKIP_ECS_FARGATE_TESTS: ${{ matrix.version != 24 || needs.check-ecs-fargate-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_CONTAINER_APP_TESTS: ${{ matrix.version != 24 || needs.changes.outputs.container-app != 'true' || needs.changes.outputs.version-bump-only == 'true' }}
+          SKIP_AAS_TESTS: ${{ matrix.version != 24 || needs.changes.outputs.aas != 'true' || needs.changes.outputs.version-bump-only == 'true' }}
+          SKIP_CLOUD_RUN_TESTS: ${{ matrix.version != 24 || needs.changes.outputs.cloud-run != 'true' || needs.changes.outputs.version-bump-only == 'true' }}
+          SKIP_LAMBDA_TESTS: ${{ matrix.version != 24 || needs.changes.outputs.lambda != 'true' }}
+          SKIP_ECS_FARGATE_TESTS: ${{ matrix.version != 24 || needs.changes.outputs.ecs-fargate != 'true' || needs.changes.outputs.version-bump-only == 'true' }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
           GCP_REGION: ${{ vars.GCP_REGION_E2E }}
           GCP_CLOUD_RUN_APP_IMAGE_E2E: ${{ vars.GCP_CLOUD_RUN_APP_IMAGE_E2E }}
@@ -270,11 +265,18 @@ jobs:
           AWS_ECS_API_KEY_SECRET_ARN: ${{ vars.AWS_ECS_API_KEY_SECRET_ARN_E2E }}
           AWS_ECS_LOG_GROUP: ${{ vars.AWS_ECS_LOG_GROUP_E2E }}
 
-  check-container-app-changes:
-    name: Check container-app changes
+  # Detects which parts of the repo changed, to decide which e2e tests to run.
+  # One job for all filters instead of one runner (and full-history checkout) per filter.
+  changes:
+    name: Detect changes
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ steps.filter.outputs.container-app }}
+      container-app: ${{ steps.filter.outputs.container-app }}
+      cloud-run: ${{ steps.filter.outputs.cloud-run }}
+      aas: ${{ steps.filter.outputs.aas }}
+      lambda: ${{ steps.filter.outputs.lambda }}
+      ecs-fargate: ${{ steps.filter.outputs.ecs-fargate }}
+      version-bump-only: ${{ steps.version-bump.outputs.result }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -300,21 +302,6 @@ jobs:
               - 'e2e/serverless/container-app/**'
               - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
-
-  check-cloud-run-changes:
-    name: Check cloud-run changes
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.filter.outputs.cloud-run }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
-          fetch-depth: 0
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
-        id: filter
-        with:
-          filters: |
             cloud-run:
               - 'packages/plugin-cloud-run/**'
               - 'packages/base/package.json'
@@ -326,21 +313,6 @@ jobs:
               - 'e2e/serverless/cloud-run/**'
               - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
-
-  check-aas-changes:
-    name: Check aas changes
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.filter.outputs.aas }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
-          fetch-depth: 0
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
-        id: filter
-        with:
-          filters: |
             aas:
               - 'packages/plugin-aas/**'
               - 'packages/base/package.json'
@@ -352,21 +324,6 @@ jobs:
               - 'e2e/serverless/aas/**'
               - 'e2e/serverless/helpers/**'
               - '.github/workflows/ci.yml'
-
-  check-lambda-changes:
-    name: Check lambda changes
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.filter.outputs.lambda }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
-          fetch-depth: 0
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
-        id: filter
-        with:
-          filters: |
             lambda:
               - 'packages/plugin-lambda/**'
               - 'packages/base/package.json'
@@ -377,21 +334,6 @@ jobs:
               - 'e2e/serverless/helpers/**'
               - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
-
-  check-ecs-fargate-changes:
-    name: Check ecs-fargate changes
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.filter.outputs.ecs-fargate }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          # See comment on check-container-app-changes for why `fetch-depth: 0` is needed.
-          fetch-depth: 0
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
-        id: filter
-        with:
-          filters: |
             ecs-fargate:
               - 'packages/plugin-ecs-fargate/**'
               - 'packages/base/package.json'
@@ -402,18 +344,8 @@ jobs:
               - 'e2e/serverless/helpers/**'
               - 'jest.config-e2e.js'
               - '.github/workflows/ci.yml'
-
-  check-version-bump-only:
-    name: Check if only version fields changed
-    runs-on: ubuntu-latest
-    outputs:
-      result: ${{ steps.check.outputs.result }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 2
       - name: Detect version-bump-only commit
-        id: check
+        id: version-bump
         run: |
           non_json=$(git diff --name-only HEAD^ HEAD | grep -v 'package\.json' || true)
           if [ -n "$non_json" ]; then
@@ -428,6 +360,7 @@ jobs:
           [ -z "$leftover" ] \
             && echo "result=true" >> $GITHUB_OUTPUT \
             || echo "result=false" >> $GITHUB_OUTPUT
+
 
   e2e-test-windows:
     strategy:
