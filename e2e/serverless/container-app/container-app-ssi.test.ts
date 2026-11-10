@@ -71,7 +71,7 @@ describeOrSkip('container-app automatic APM instrumentation', () => {
           `az containerapp create` +
             ` --name "${appName}"` +
             ` --resource-group "${resourceGroup}"` +
-            ` --environment "${process.env.AZURE_CONTAINER_APP_ENV}"` +
+            ` --environment "${process.env.AZURE_CONTAINER_APP_SSI_ENV}"` +
             ` --image "${applicationImage}"` +
             ` --cpu 0.25 --memory 0.5Gi` +
             ` --min-replicas 0 --max-replicas 1` +

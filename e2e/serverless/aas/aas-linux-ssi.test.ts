@@ -26,7 +26,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
   const runId = crypto.randomBytes(4).toString('hex')
   const appName = `one-e2e-ci-aas-linux-ssi-${runId}`
-  const plan = process.env.AZURE_AAS_LINUX_PLAN!
+  const plan = process.env.AZURE_AAS_LINUX_SSI_PLAN!
   const instrumentCommand =
     `${DATADOG_CI_COMMAND} aas instrument` +
     ` -s "${subscriptionId}" -g "${resourceGroup}" -n "${appName}"` +
