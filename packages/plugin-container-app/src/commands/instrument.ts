@@ -26,6 +26,7 @@ import {
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 import {
   MULTI_LANGUAGE_SSI_MODE,
   SINGLE_LANGUAGE_SSI_MODE,
@@ -258,11 +259,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
       (containerApp.template?.scale?.minReplicas ?? 0) === 0
     ) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Automatic APM instrumentation can increase cold-start delays for ${containerApp.name} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
-        )
-      )
+      this.context.stdout.write(renderScaleToZeroWarning(containerApp.name!, 'minimum replicas'))
     }
 
     if (!hasSsi(containerApp) && hasManagedTracerNames(containerApp)) {

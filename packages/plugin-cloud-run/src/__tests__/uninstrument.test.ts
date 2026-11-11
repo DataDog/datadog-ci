@@ -51,6 +51,7 @@ describe('UninstrumentCommand', () => {
     mockServicesClient.updateService.mockImplementation(({service}) => [
       {
         metadata: service,
+        on: jest.fn(),
         promise: jest.fn().mockResolvedValue([service]),
       },
     ])

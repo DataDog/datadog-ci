@@ -51,6 +51,7 @@ describe('InstrumentCommand', () => {
     mockServicesClient.updateService.mockImplementation(({service}) => [
       {
         metadata: service,
+        on: jest.fn(),
         promise: jest.fn().mockResolvedValue([service]),
       },
     ])
@@ -259,6 +260,41 @@ describe('InstrumentCommand', () => {
           }),
         })
       )
+    })
+
+    test('warns about scale-to-zero cold starts after the diff', async () => {
+      mockServicesClient.getService.mockResolvedValue([service])
+
+      const {code, context} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--tracing',
+        'inject',
+        '--language',
+        'python',
+      ])
+      const output = context.stdout.toString()
+
+      expect(code).toBe(0)
+      expect(output).toContain(
+        '\n[Warning] Automatic APM instrumentation can increase cold-start delays for test-service because scale-to-zero is enabled.\n'
+      )
+      expect(output).toContain('or set minimum instances to 1 or more.\n\n')
+      expect(output).toMatch(/"datadog-sidecar"[\s\S]*cold-start delays[\s\S]*Would have updated service/)
+    })
+
+    test.each([
+      [1, ['--tracing', 'inject', '--language', 'python']],
+      [0, ['--tracing', 'manual']],
+    ])('does not warn about cold starts with minInstanceCount %s and %s', async (minInstanceCount, tracingFlags) => {
+      mockServicesClient.getService.mockResolvedValue([
+        {...service, template: {...service.template, scaling: {minInstanceCount}}},
+      ])
+
+      const {code, context} = await runCLI([...requiredFlags, '--dry-run', ...tracingFlags])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('cold-start delays')
     })
 
     test('renders service configuration failures once without a stack trace', async () => {

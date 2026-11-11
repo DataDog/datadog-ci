@@ -3,6 +3,10 @@ import type {LanguageInjectionSpec, Libc} from './injection-spec'
 import type {Language, TracerRegistry} from './tracer'
 import type {TracingMode} from './tracing'
 
+import chalk from 'chalk'
+
+import {warningTag} from '../../renderer'
+
 import {MULTI_LANGUAGE_SSI_MODE, SINGLE_LANGUAGE_SSI_MODE, TRACER_MOUNT_PATH} from './constants'
 import {DEFAULT_TRACER_LIBC, LIBCS, getLanguageCompatibilityErrors, getLanguageInjectionSpec} from './injection-spec'
 import {getCompositeSpec} from './recognition'
@@ -60,6 +64,18 @@ export const getInjectionModeTagValue = (config: SsiConfigResult): string | unde
       return undefined
   }
 }
+
+/**
+ * @param resourceName the service or app that scales to zero.
+ * @param minimumScaleSetting the platform's name for the setting, such as `minimum instances`.
+ * @returns a warning, separated from surrounding output, that automatic instrumentation slows cold starts.
+ */
+export const renderScaleToZeroWarning = (resourceName: string, minimumScaleSetting: string) =>
+  `\n${warningTag} ${chalk.yellow(
+    `Automatic APM instrumentation can increase cold-start delays for ${chalk.bold(
+      resourceName
+    )} because scale-to-zero is enabled.\n          To avoid this, install the tracer in your image and use --tracing manual, or set ${minimumScaleSetting} to 1 or more.`
+  )}\n\n`
 
 export type InjectionPlatform = {
   readonly registry: TracerRegistry
