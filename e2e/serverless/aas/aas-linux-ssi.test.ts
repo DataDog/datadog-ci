@@ -7,7 +7,7 @@ import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../hel
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
-import {verifyLinuxInstrumented, verifyLinuxUninstrumented} from './aas-verifier'
+import {getAppServiceToken, verifyLinuxInstrumented, verifyLinuxUninstrumented} from './aas-verifier'
 
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -26,7 +26,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
   const resourceGroup = process.env.AZURE_RESOURCE_GROUP!
   const runId = crypto.randomBytes(4).toString('hex')
   const appName = `one-e2e-ci-aas-linux-ssi-${runId}`
-  const plan = process.env.AZURE_AAS_LINUX_PLAN!
+  const plan = process.env.AZURE_AAS_LINUX_SSI_PLAN!
   const instrumentCommand =
     `${DATADOG_CI_COMMAND} aas instrument` +
     ` -s "${subscriptionId}" -g "${resourceGroup}" -n "${appName}"` +
@@ -63,14 +63,8 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
     }
     const credentials = JSON.parse(deployResult.stdout)
     const scmUri = (credentials.properties ?? credentials).scmUri
-    const tokenResult = await execPromise(
-      'az account get-access-token --resource https://management.azure.com/ --query accessToken --output tsv'
-    )
-    if (tokenResult.exitCode !== 0) {
-      throw new Error(`Failed to get Azure access token (exit code ${tokenResult.exitCode}): ${tokenResult.stderr}`)
-    }
     const uploadResult = await execPromise(
-      `curl --fail --silent --show-error --request PUT --header "Authorization: Bearer ${tokenResult.stdout.trim()}"` +
+      `curl --fail --silent --show-error --request PUT --header "Authorization: Bearer ${getAppServiceToken()}"` +
         ` --upload-file "${appPath}" "${scmUri.replace(/\/$/, '')}/api/vfs/site/wwwroot/app.js"`
     )
     if (uploadResult.exitCode !== 0) {
@@ -123,7 +117,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
       },
       {checkLogs: false}
     )
-  }, 600_000)
+  }, 900_000)
 
   it('uninstruments and removes the staged tracer', async () => {
     const result = await execPromiseWithRetries(

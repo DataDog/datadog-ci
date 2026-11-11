@@ -137,7 +137,7 @@ describeOrSkip('lambda', () => {
     functionCreated = true
 
     await waitForFunctionActive(functionName)
-  }, 600_000)
+  }, 900_000)
 
   afterAll(async () => {
     if (functionCreated) {
@@ -155,7 +155,7 @@ describeOrSkip('lambda', () => {
       node: NODE_LAYER_VERSION,
       extension: EXTENSION_LAYER_VERSION,
     })
-  }, 600_000)
+  }, 900_000)
 
   it('invoke and verify telemetry', async () => {
     const invokeOutputPath = path.join(os.tmpdir(), `${functionName}-invoke.json`)
@@ -169,7 +169,7 @@ describeOrSkip('lambda', () => {
       env: expectedTags.environment,
       version: expectedTags.version,
     })
-  }, 600_000)
+  }, 900_000)
 
   it('idempotent reinstrument', async () => {
     const before = getLambdaSnapshot(functionName, region)
@@ -186,7 +186,7 @@ describeOrSkip('lambda', () => {
       node: NODE_LAYER_VERSION,
       extension: EXTENSION_LAYER_VERSION,
     })
-  }, 600_000)
+  }, 900_000)
 
   it('uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(
@@ -196,7 +196,7 @@ describeOrSkip('lambda', () => {
 
     await waitForFunctionUpdated(functionName)
     verifyLambdaUninstrumented(functionName, region)
-  }, 600_000)
+  }, 900_000)
 })
 
 // The custom (provided.al2023) runtime has no Datadog language layer, so instrumenting
@@ -257,7 +257,7 @@ describeOrSkip('lambda extension-only (custom runtime)', () => {
     functionCreated = true
 
     await waitForFunctionActive(functionName)
-  }, 600_000)
+  }, 900_000)
 
   afterAll(async () => {
     if (functionCreated) {
@@ -272,7 +272,7 @@ describeOrSkip('lambda extension-only (custom runtime)', () => {
 
     await waitForFunctionUpdated(functionName)
     verifyLambdaExtensionOnly(functionName, region, expectedTags, EXTENSION_LAYER_VERSION, originalHandler)
-  }, 600_000)
+  }, 900_000)
 
   it('uninstrument and verify (custom runtime)', async () => {
     const result = await execPromiseWithRetries(
@@ -282,5 +282,5 @@ describeOrSkip('lambda extension-only (custom runtime)', () => {
 
     await waitForFunctionUpdated(functionName)
     verifyLambdaUninstrumented(functionName, region, originalHandler)
-  }, 600_000)
+  }, 900_000)
 })

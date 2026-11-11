@@ -35,7 +35,7 @@ describeOrSkip('container-app', () => {
     if (result.exitCode !== 0) {
       throw new Error(`Failed to create container app (exit code ${result.exitCode}): ${result.stderr}`)
     }
-  }, 600_000)
+  }, 900_000)
 
   afterAll(async () => {
     try {
@@ -65,7 +65,7 @@ describeOrSkip('container-app', () => {
     expect(result.exitCode).toBe(0)
 
     verifyInstrumented(appName, resourceGroup, subscriptionId, runId)
-  }, 600_000)
+  }, 900_000)
 
   it('telemetry flows', async () => {
     const appUrl = getContainerAppUrl(appName, resourceGroup, subscriptionId)
@@ -77,7 +77,7 @@ describeOrSkip('container-app', () => {
       version: runId,
       tags: [`one_e2e_run_id:${runId}`],
     })
-  }, 600_000)
+  }, 900_000)
 
   it('instrument is idempotent', async () => {
     const result = await execPromiseWithRetries(
@@ -100,7 +100,7 @@ describeOrSkip('container-app', () => {
     )
 
     verifyInstrumented(appName, resourceGroup, subscriptionId, runId)
-  }, 600_000)
+  }, 900_000)
 
   it('uninstrument and verify', async () => {
     const result = await execPromiseWithRetries(
@@ -112,5 +112,5 @@ describeOrSkip('container-app', () => {
     expect(result.exitCode).toBe(0)
 
     verifyUninstrumented(appName, resourceGroup, subscriptionId)
-  }, 600_000)
+  }, 900_000)
 })

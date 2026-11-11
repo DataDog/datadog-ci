@@ -40,6 +40,16 @@ const getWebApp = (appName: string, rg: string): WebApp => {
   return JSON.parse(output)
 }
 
+/**
+ * Kudu token for the App Service audience. In CI, getting it after login needs the federated assertion, which expires
+ * after 5 minutes, so the workflow exports one at login time as `AZURE_APP_SERVICE_ACCESS_TOKEN`.
+ */
+export const getAppServiceToken = (): string =>
+  process.env.AZURE_APP_SERVICE_ACCESS_TOKEN ??
+  execSync(
+    'az account get-access-token --resource https://appservice.azure.com --query accessToken --output tsv'
+  ).trim()
+
 const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode?: number} => {
   const credentials = JSON.parse(
     execSync(
@@ -48,9 +58,7 @@ const runKuduCommand = (appName: string, rg: string, command: string): {ExitCode
   )
   const properties = credentials.properties ?? credentials
   const scmUrl = new URL(properties.scmUri)
-  const accessToken = execSync(
-    'az account get-access-token --resource https://management.azure.com/ --query accessToken --output tsv'
-  ).trim()
+  const accessToken = getAppServiceToken()
 
   return JSON.parse(
     execFileSync(
