@@ -3,6 +3,7 @@ import fs from 'fs'
 import {Cli} from 'clipanion'
 
 import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
+import * as utils from '../../../helpers/utils'
 
 import {TagCommand} from '../tag'
 
@@ -32,6 +33,27 @@ describe('execute', () => {
 
   afterEach(() => {
     jest.resetAllMocks()
+  })
+
+  test.each([
+    {args: [], attempts: 6, exitCode: 1},
+    {args: ['--no-retry'], attempts: 1, exitCode: 1},
+    {args: ['--no-retry', '--no-fail'], attempts: 1, exitCode: 0},
+  ])('makes $attempts requests after rate limiting with $args', async ({args, attempts, exitCode}) => {
+    const request = jest.fn().mockRejectedValue({response: {status: 429}})
+    const builder = jest.spyOn(utils, 'getRequestBuilder').mockReturnValue(request)
+    jest.useFakeTimers()
+    try {
+      const env = {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'build', BUILDKITE_JOB_ID: 'job'}
+      const result = runCLI('pipeline', ['team:backend'], env, args)
+      await jest.runAllTimersAsync()
+      const {code} = await result
+      expect(request).toHaveBeenCalledTimes(attempts)
+      expect(code).toBe(exitCode)
+    } finally {
+      jest.useRealTimers()
+      builder.mockRestore()
+    }
   })
 
   test('should fail if an invalid level given', async () => {
