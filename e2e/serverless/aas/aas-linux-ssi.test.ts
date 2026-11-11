@@ -7,7 +7,7 @@ import {DATADOG_CI_COMMAND, execPromise, execPromiseWithRetries} from '../../hel
 import {checkTelemetryFlowing} from '../helpers/telemetry-checker'
 import {triggerTraffic} from '../helpers/traffic'
 
-import {getAzureManagementToken, verifyLinuxInstrumented, verifyLinuxUninstrumented} from './aas-verifier'
+import {getAppServiceToken, verifyLinuxInstrumented, verifyLinuxUninstrumented} from './aas-verifier'
 
 const describeOrSkip =
   process.env.SKIP_AAS_TESTS === 'true' || process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
@@ -64,7 +64,7 @@ describeOrSkip('aas (Linux code-based SSI)', () => {
     const credentials = JSON.parse(deployResult.stdout)
     const scmUri = (credentials.properties ?? credentials).scmUri
     const uploadResult = await execPromise(
-      `curl --fail --silent --show-error --request PUT --header "Authorization: Bearer ${getAzureManagementToken()}"` +
+      `curl --fail --silent --show-error --request PUT --header "Authorization: Bearer ${getAppServiceToken()}"` +
         ` --upload-file "${appPath}" "${scmUri.replace(/\/$/, '')}/api/vfs/site/wwwroot/app.js"`
     )
     if (uploadResult.exitCode !== 0) {
