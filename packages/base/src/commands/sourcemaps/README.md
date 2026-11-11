@@ -84,7 +84,7 @@ To upload the sourcemaps in the build folder, this command should be run:
 datadog-ci sourcemaps upload ./build --service my-service --minified-path-prefix https://static.datadog.com --release-version 1.234
 ```
 
-* The first positional argument is the directory in which sourcemaps are located. The CLI will look for all `.js.map` files in this folder and subfolders recursively. The corresponding JS file should be located in the same folder as the sourcemaps it applies to (for example, `common.min.js.map` and `common.min.js` should be in the same directory).
+* The first positional argument is the directory to search recursively. For `.js`, `.mjs`, and `.cjs` bundles, upload and injection follow relative `sourceMappingURL` references to local `.map` files. A bundle that omits the comment or points to a CDN can use an adjacent map named after the bundle, such as `chunk.js.map` for `chunk.js`. Both layouts can appear in the same directory.
 The folder structure should match the structure of the served static files.
 
 * `--service` (required) should be set as the name of the service you're uploading sourcemaps for, and Datadog will use this service name to find the corresponding sourcemaps based on the `service` tag set on the RUM SDK.

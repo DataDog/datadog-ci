@@ -17,9 +17,10 @@ export const findSourcemaps = async (
   createSourcemap: CreateSourcemap,
   reportError?: ReportDiscoveryWarning
 ): Promise<Sourcemap[]> => {
-  const jsFiles = globSync(buildPath(basePath, '**/*.js'))
+  const jsFiles = globSync(buildPath(basePath, '**/*.{js,mjs,cjs}'))
   const resolvedBasePath = upath.resolve(basePath)
-  let foundSourceMappingUrl = false
+  const bundlesUsingAdjacentMap = new Set<string>()
+  let foundLocalReference = false
 
   const sourcemaps = (
     await doWithMaxConcurrency(maxConcurrency, jsFiles, async (minifiedFilePath) => {
@@ -42,10 +43,12 @@ export const findSourcemaps = async (
 
         // Remote and absolute paths cannot be resolved to local files.
         if (sourcemapUrl.includes('://') || upath.isAbsolute(sourcemapUrl)) {
+          bundlesUsingAdjacentMap.add(minifiedFilePath)
+
           return undefined
         }
 
-        foundSourceMappingUrl = true
+        foundLocalReference = true
         const sourcemapPath = upath.join(upath.dirname(minifiedFilePath), sourcemapUrl)
         const relativeSourcemapPath = upath.relative(resolvedBasePath, upath.resolve(sourcemapPath))
         if (
@@ -63,16 +66,27 @@ export const findSourcemaps = async (
         return createSourcemap(minifiedFilePath, sourcemapPath)
       }
 
+      bundlesUsingAdjacentMap.add(minifiedFilePath)
+
       return undefined
     })
   ).filter((sourcemap): sourcemap is Sourcemap => sourcemap !== undefined)
 
-  if (sourcemaps.length > 0 || foundSourceMappingUrl) {
+  if (foundLocalReference && bundlesUsingAdjacentMap.size === 0) {
     return sourcemaps
   }
 
-  // Preserve the legacy convention when bundles do not contain sourceMappingURL.
-  return globSync(buildPath(basePath, '**/*js.map')).map((sourcemapPath) =>
-    createSourcemap(getMinifiedFilePath(sourcemapPath), sourcemapPath)
-  )
+  const referencedMaps = new Set(sourcemaps.map((payload) => upath.resolve(payload.sourcemapPath)))
+  for (const sourcemapPath of globSync(buildPath(basePath, '**/*js.map'))) {
+    const bundle = getMinifiedFilePath(sourcemapPath)
+    // With no local references, keep the legacy scan so callers can report maps with missing bundles.
+    if (
+      !foundLocalReference ||
+      (bundlesUsingAdjacentMap.has(bundle) && !referencedMaps.has(upath.resolve(sourcemapPath)))
+    ) {
+      sourcemaps.push(createSourcemap(bundle, sourcemapPath))
+    }
+  }
+
+  return sourcemaps
 }
