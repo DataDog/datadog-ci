@@ -3,10 +3,6 @@
   "version": "5.27.0",
   "description": "Lightweight programmatic CI Visibility recording for GitHub Actions",
   "license": "Apache-2.0",
-  "author": {
-    "name": "Datadog, Inc.",
-    "email": "package@datadoghq.com"
-  },
   "keywords": [
     "ci-visibility",
     "datadog",
@@ -52,5 +48,9 @@
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist"
+  },
+  "author": {
+    "name": "Datadog, Inc.",
+    "email": "package@datadoghq.com"
   }
 }
