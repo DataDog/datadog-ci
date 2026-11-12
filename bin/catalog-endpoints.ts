@@ -74,6 +74,10 @@ const extractRoutes = (filePath: string): {route: string; method: string}[] => {
 
 const collectScopeEntries = (): Map<string, string[]> => {
   const scopes = new Map<string, string[]>()
+  scopes.set(
+    'ci-visibility',
+    collectTsFiles(path.join(ROOT, 'packages/ci-visibility/src')).filter((file) => !file.endsWith('datadog-route.ts'))
+  )
 
   // Plugin packages: packages/plugin-<scope>/src/**/*.ts
   const packagesDir = path.join(ROOT, 'packages')

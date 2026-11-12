@@ -4,6 +4,8 @@
 # Commands (grouped by product)
 
 ## Software Delivery (label: software-delivery)
+packages/ci-visibility                         @DataDog/datadog-ci-admins @DataDog/ci-app-backend
+actions/ci-visibility-tag                      @DataDog/datadog-ci-admins @DataDog/ci-app-backend
 packages/plugin-coverage                       @DataDog/datadog-ci-admins @DataDog/ci-app-backend
 packages/base/src/commands/coverage            @DataDog/datadog-ci-admins @DataDog/ci-app-backend
 packages/plugin-deployment                     @DataDog/datadog-ci-admins @DataDog/ci-app-backend

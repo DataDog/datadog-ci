@@ -2,6 +2,7 @@
   "name": "datadog-ci-monorepo",
   "scripts": {
     "build": "yarn tsc:build",
+    "bundle:ci-visibility-action": "node scripts/bundle-ci-visibility-action.mjs",
     "bundle:npm": "cd packages/datadog-ci && node ../../scripts/tsdown-cli-npm.mjs",
     "bundle:sea": "cd packages/datadog-ci && node ../../scripts/tsdown-cli-sea.mjs",
     "catalog-endpoints": "tsx --conditions=development bin/catalog-endpoints.ts",

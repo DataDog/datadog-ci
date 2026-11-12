@@ -6,6 +6,10 @@ Execute commands from your Continuous Integration (CI) and Continuous Delivery (
 
 See the [Usage section](#usage) for a list of available commands.
 
+For in-process GitHub Actions instrumentation, see the new
+[`@datadog/ci-visibility` JavaScript API](https://github.com/DataDog/datadog-ci/tree/master/packages/ci-visibility)
+and its optional collector action. This package is not yet released.
+
 ## How to install the CLI
 
 The `datadog-ci` CLI can be installed in three ways:

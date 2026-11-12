@@ -251,6 +251,7 @@ ${imports.map((i) => `  ${i.importName},`).join('\n')}
 
 const datadogCiPackage = loadPackage('datadog-ci')
 const basePackage = loadPackage('base')
+const ciVisibilityPackage = loadPackage('ci-visibility')
 
 // The source of truth is the filesystem and `noPluginExceptions`
 const pluginPackages = fs
@@ -558,6 +559,7 @@ TO_APPLY.push(matchAndReplace('tsconfig.json')`
   "references": [
     {"path": "./packages/base"},
     {"path": "./packages/datadog-ci"},
+    {"path": "./packages/ci-visibility"},
     ${pluginPackages.map((p) => `{"path": "./packages/plugin-${p.scope}"}`).join(',\n')}
   ],
 `)
@@ -618,7 +620,7 @@ if (sum > 0) {
 console.log(chalk.bold.blue('Running other checks...\n'))
 
 // #region - All packages have the same version
-const allPackages = [datadogCiPackage, basePackage, ...pluginPackages]
+const allPackages = [datadogCiPackage, basePackage, ciVisibilityPackage, ...pluginPackages]
 const versions = allPackages.reduce<Record<string, string[]>>(
   (acc, p) => ({...acc, [p.packageJson.version]: [...(acc[p.packageJson.version] || []), p.packageJson.name]}),
   {}
