@@ -545,6 +545,39 @@ describe('execute', () => {
     })
   })
 
+  test('discovers conventional maps alongside explicitly referenced maps', async () => {
+    await withTempDirectory(async (directory) => {
+      const map = JSON.stringify({version: 3, sources: ['original.js'], mappings: 'AAAA'})
+      fs.writeFileSync(upath.join(directory, 'entry.mjs'), 'run();\n//# sourceMappingURL=entry-digest.js.map')
+      fs.writeFileSync(upath.join(directory, 'entry-digest.js.map'), map)
+      fs.writeFileSync(upath.join(directory, 'entry.mjs.map'), map)
+      fs.writeFileSync(upath.join(directory, 'entry-digest.js'), 'run();')
+      fs.writeFileSync(
+        upath.join(directory, 'cdn.js'),
+        'run();\n//# sourceMappingURL=https://cdn.example.com/cdn.js.map'
+      )
+      fs.writeFileSync(upath.join(directory, 'cdn.js.map'), map)
+      for (const extension of ['js', 'mjs', 'cjs']) {
+        fs.writeFileSync(upath.join(directory, `lazy.${extension}`), 'run();')
+        fs.writeFileSync(upath.join(directory, `lazy.${extension}.map`), map)
+      }
+
+      const {context, code} = await runCLI([directory])
+      const output = context.stdout.toString()
+
+      expect(code).toBe(0)
+      expect(output).toContain('[DRYRUN] Handled 5 sourcemaps with success')
+      expect(output).toContain('entry-digest.js.map for JS file available at https://static.com/js/entry.mjs')
+      expect(output).toContain('cdn.js.map for JS file available at https://static.com/js/cdn.js')
+      for (const extension of ['js', 'mjs', 'cjs']) {
+        expect(output).toContain(
+          `lazy.${extension}.map for JS file available at https://static.com/js/lazy.${extension}`
+        )
+      }
+      expect(output).not.toContain('entry.mjs.map')
+    })
+  })
+
   test('absolute URL in sourceMappingURL falls back to legacy method', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/with-absolute-sourcemap-url'])
     const output = context.stdout.toString().split('\n')

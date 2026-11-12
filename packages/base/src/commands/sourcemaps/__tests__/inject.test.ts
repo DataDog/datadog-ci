@@ -58,6 +58,23 @@ describe('sourcemaps inject', () => {
     expect(context.stdout.toString()).toContain('failed 0 file(s)')
   })
 
+  test('injects a separate debug ID into each bundle in a mixed build', async () => {
+    const lazyPath = upath.join(directory, 'lazy.js')
+    const lazyMapPath = `${lazyPath}.map`
+    fs.writeFileSync(lazyPath, 'run();')
+    fs.copyFileSync(sourcemapPath, lazyMapPath)
+
+    const {code} = await runCLI([directory])
+    expect(code).toBe(0)
+    const entryId = JSON.parse(fs.readFileSync(sourcemapPath, 'utf-8')).debug_id
+    const lazyId = JSON.parse(fs.readFileSync(lazyMapPath, 'utf-8')).debug_id
+    expect(entryId).toEqual(expect.any(String))
+    expect(lazyId).toEqual(expect.any(String))
+    expect(lazyId).not.toBe(entryId)
+    expect(fs.readFileSync(jsPath, 'utf-8')).toContain(entryId)
+    expect(fs.readFileSync(lazyPath, 'utf-8')).toContain(lazyId)
+  })
+
   test('preserves semicolonless directives and strict mode through the command', async () => {
     fs.writeFileSync(
       jsPath,
