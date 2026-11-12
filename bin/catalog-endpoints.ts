@@ -4,10 +4,11 @@ import path from 'path'
 
 const ROOT = path.resolve(__dirname, '..')
 
-// Files too cross-cutting to attribute to a single scope
+// Cross-cutting helpers and route declarations do not belong to a single scope.
 const SKIP_HELPERS = new Set([
   path.join(ROOT, 'packages/base/src/helpers/apikey.ts'),
   path.join(ROOT, 'packages/base/src/helpers/upload.ts'),
+  path.join(ROOT, 'packages/base/src/helpers/request/datadog-route.ts'),
 ])
 
 type Row = {scope: string; route: string; method: string}

@@ -33,11 +33,6 @@
       "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
       "default": "./dist/index.js"
-    },
-    "./request/datadog-route": {
-      "types": "./dist/request/datadog-route.d.ts",
-      "development": "./src/request/datadog-route.ts",
-      "default": "./dist/request/datadog-route.js"
     }
   },
   "files": [

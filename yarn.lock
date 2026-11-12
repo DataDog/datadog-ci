@@ -1306,7 +1306,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/ci-visibility@workspace:*, @datadog/ci-visibility@workspace:packages/ci-visibility":
+"@datadog/ci-visibility@workspace:packages/ci-visibility":
   version: 0.0.0-use.local
   resolution: "@datadog/ci-visibility@workspace:packages/ci-visibility"
   languageName: unknown
@@ -1334,7 +1334,6 @@ __metadata:
   dependencies:
     "@antfu/install-pkg": "npm:^1.1.0"
     "@babel/parser": "npm:^7.29.0"
-    "@datadog/ci-visibility": "workspace:*"
     "@simple-git/argv-parser": "npm:^2.0.1"
     "@types/async-retry": "npm:^1.4.8"
     "@types/datadog-metrics": "npm:^0.6.1"

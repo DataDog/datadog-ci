@@ -6,6 +6,9 @@ import path from 'path'
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
+import {DATADOG_ROUTE_PATHS} from '../packages/base/src/helpers/request/datadog-route'
+import {DATADOG_ROUTE_PATHS as CI_VISIBILITY_ROUTES} from '../packages/ci-visibility/src/request/datadog-route'
+
 /**
  * Source of truth for command scopes without plugins: this should be updated manually.
  */
@@ -618,6 +621,16 @@ if (sum > 0) {
 
 // #region ================================ OTHER CHECKS ================================
 console.log(chalk.bold.blue('Running other checks...\n'))
+
+// #region - The standalone SDK only uses routes registered in the base catalogue
+const registeredRoutes = new Set<string>(DATADOG_ROUTE_PATHS)
+for (const route of CI_VISIBILITY_ROUTES) {
+  if (!registeredRoutes.has(route)) {
+    error(`CI Visibility route ${route} is missing from the base route catalogue`)
+    process.exit(1)
+  }
+}
+// #endregion
 
 // #region - All packages have the same version
 const allPackages = [datadogCiPackage, basePackage, ciVisibilityPackage, ...pluginPackages]
