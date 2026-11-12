@@ -297,7 +297,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
       (existingService.template?.scaling?.minInstanceCount ?? 0) === 0
     ) {
-      this.context.stdout.write(renderScaleToZeroWarning(serviceName, 'minimum instances'))
+      this.context.stdout.write(`\n${renderScaleToZeroWarning(serviceName, 'minimum instances')}`)
     }
     if (this.dryRun) {
       this.context.stdout.write(
