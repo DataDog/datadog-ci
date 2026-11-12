@@ -290,22 +290,27 @@ describe('CI Visibility recorder', () => {
 
   test('honors disabling before flush and does not truncate span correlation data', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    data.env.DD_API_KEY = 'test'
     const recorder = createRecorder({env: data.env})
     await recorder.span('Build', (current) => current.setTags({long: 'x'.repeat(1000)}))
-    data.env.DD_CI_VISIBILITY = 'false'
+    data.env.DD_CI_VISIBILITY_ENABLED = 'false'
     expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 1})
     expect(send).not.toHaveBeenCalled()
-    data.env.DD_CI_VISIBILITY = 'true'
+    data.env.DD_CI_VISIBILITY_ENABLED = 'true'
     await recorder.span('Build', (current) => current.setTags({long: 'x'.repeat(1000)}))
-    await recorder.flush({apiKey: 'test'})
+    expect(await recorder.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
     expect(send.mock.calls[0][0].data).toMatchObject({data: {attributes: {tags: {long: 'x'.repeat(1000)}}}})
   })
 
-  test.each([{}, {GITHUB_ACTIONS: 'true', DD_CI_VISIBILITY: 'false'}])(
+  test.each([{}, {GITHUB_ACTIONS: 'true', DD_CI_VISIBILITY_ENABLED: 'false'}])(
     'executes application code with reporting disabled: %p',
     async (env) => {
       const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
-      const recorder = createRecorder({env})
+      const warning = jest.fn()
+      const recorder = createRecorder({
+        env: {...data.env, GITHUB_ACTIONS: undefined, DD_API_KEY: 'test', ...env},
+        onWarning: warning,
+      })
       expect(
         await recorder.span('Build', (current) => {
           current.setTags({mode: 'test'})
@@ -318,8 +323,9 @@ describe('CI Visibility recorder', () => {
       manual.setTags({mode: 'updated'})
       manual.setMeasure('count', 1)
       expect(manual.end({error: new Error('ignored')})).toBeGreaterThanOrEqual(0)
-      await recorder.flush()
+      expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
       expect(send).not.toHaveBeenCalled()
+      expect(warning).not.toHaveBeenCalled()
     }
   )
 })

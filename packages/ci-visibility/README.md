@@ -90,6 +90,9 @@ Set `DD_API_KEY` or `DATADOG_API_KEY` before calling `flush()`. Optionally set
 `DD_SITE` or `DATADOG_SITE`; the default is `datadoghq.com`. GitHub run, job, step,
 and Git metadata are discovered automatically.
 
+Set `DD_CI_VISIBILITY_ENABLED=false` to disable reporting. Wrapped application code
+still executes.
+
 Uploads use at most four concurrent requests, a 4-second request deadline, and a
 10-second overall budget. HTTP 429/5xx responses receive bounded retries;
 transport failures stop the remaining queue. Override the deadlines with

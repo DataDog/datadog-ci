@@ -39,7 +39,7 @@ export const createRecorder = ({
       }
     }
   }
-  const enabled = () => env.GITHUB_ACTIONS === 'true' && env.DD_CI_VISIBILITY?.toLowerCase() !== 'false'
+  const enabled = () => env.GITHUB_ACTIONS === 'true' && env.DD_CI_VISIBILITY_ENABLED?.toLowerCase() !== 'false'
   const record = (event: RecordedEvent) => {
     if (
       !event.context.ciEnv.GITHUB_REPOSITORY ||
