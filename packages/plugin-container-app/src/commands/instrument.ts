@@ -26,7 +26,7 @@ import {
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import {renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import {isInjection, renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 import {
   MULTI_LANGUAGE_SSI_MODE,
   SINGLE_LANGUAGE_SSI_MODE,
@@ -255,10 +255,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
     )
 
-    if (
-      (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
-      (containerApp.template?.scale?.minReplicas ?? 0) === 0
-    ) {
+    if (isInjection(ssiConfig) && (containerApp.template?.scale?.minReplicas ?? 0) === 0) {
       this.context.stdout.write(renderScaleToZeroWarning(containerApp.name!, 'minimum replicas'))
     }
 

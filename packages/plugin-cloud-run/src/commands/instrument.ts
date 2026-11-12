@@ -23,7 +23,7 @@ import {
   DD_LLMOBS_ML_APP_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import {renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import {isInjection, renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
@@ -292,11 +292,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
 
       return false
     }
-    const ssiConfig = this.getSsiConfig()
-    if (
-      (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
-      (existingService.template?.scaling?.minInstanceCount ?? 0) === 0
-    ) {
+    if (isInjection(this.getSsiConfig()) && (existingService.template?.scaling?.minInstanceCount ?? 0) === 0) {
       this.context.stdout.write(`\n${renderScaleToZeroWarning(serviceName, 'minimum instances')}`)
     }
     if (this.dryRun) {

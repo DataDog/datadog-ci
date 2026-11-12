@@ -47,7 +47,9 @@ export type InjectionConfig = Extract<SsiConfigResult, {kind: 'single-language' 
 /** Tracer inputs a command has accepted, which a transform can apply without checking them again. */
 export type ResolvedSsiConfig = Exclude<SsiConfigResult, {kind: 'errors'}>
 
-export const isInjection = (config: SsiConfigResult): config is InjectionConfig =>
+export const isInjection = <T extends {kind: SsiConfigResult['kind']}>(
+  config: T
+): config is Extract<T, {kind: InjectionConfig['kind']}> =>
   config.kind === 'single-language' || config.kind === 'multi-language'
 
 export const getInjectionMountPath = (config: InjectionConfig): string =>
