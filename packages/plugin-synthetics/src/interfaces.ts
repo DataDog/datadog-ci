@@ -1,5 +1,5 @@
 import type {TunnelInfo} from './tunnel'
-import type {RecursivePartial} from './utils/internal'
+import type {PageLevelVrt, RecursivePartial} from './utils/internal'
 import type {InitialSummary} from './utils/public'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
@@ -604,6 +604,12 @@ export interface BaseConfigOverride {
   startUrlSubstitutionRegex?: string
   /** Override the maximum duration in seconds for browser tests. */
   testTimeout?: number
+  /**
+   * Internal only: Enable page-level visual regression testing for browser tests.
+   *
+   * @hidden
+   */
+  pageLevelVrt?: PageLevelVrt
   /**
    * Override existing or inject new local and [global variables](https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables) in Synthetic tests.
    *
