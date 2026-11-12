@@ -1,19 +1,20 @@
 import fs from 'fs'
 
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as utils from '@datadog/datadog-ci-base/helpers/utils'
 
 import {PluginCommand as DeploymentMarkCommand} from '../commands/mark'
 
 describe('mark', () => {
   describe('execute', () => {
-    const runCLI = makeRunCLI(DeploymentMarkCommand, ['deployment', 'mark', '--dry-run'])
+    const runCLI = makeRunCLI(DeploymentMarkCommand, ['deployment', 'mark'])
 
     afterEach(() => {
       jest.resetAllMocks()
     })
 
     test('should fail if not running in a supported provider', async () => {
-      const {context, code} = await runCLI([])
+      const {context, code} = await runCLI(['--dry-run'])
       expect(code).toBe(1)
       expect(context.stdout.toString()).toStrictEqual('')
       expect(context.stderr.toString()).toContain(
@@ -22,7 +23,7 @@ describe('mark', () => {
     })
 
     test('all ok', async () => {
-      const {context, code} = await runCLI([], {
+      const {context, code} = await runCLI(['--dry-run'], {
         DD_BETA_COMMANDS_ENABLED: '1',
         BUILDKITE: 'true',
         BUILDKITE_BUILD_ID: 'id',
@@ -30,6 +31,24 @@ describe('mark', () => {
       })
       expect(code).toBe(0)
       console.log(context.stdout.toString())
+    })
+
+    test('retries a rate-limited job tag before tagging the pipeline', async () => {
+      const request = jest
+        .fn()
+        .mockRejectedValueOnce({response: {status: 429}})
+        .mockResolvedValue({})
+      const builder = jest.spyOn(utils, 'getRequestBuilder').mockReturnValue(request)
+      jest.useFakeTimers()
+      try {
+        const result = runCLI([], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'build', BUILDKITE_JOB_ID: 'job'})
+        await jest.runAllTimersAsync()
+        expect((await result).code).toBe(0)
+        expect(request.mock.calls.map(([{data}]) => data.data.attributes.ci_level)).toEqual([1, 1, 0])
+      } finally {
+        jest.useRealTimers()
+        builder.mockRestore()
+      }
     })
 
     test('tag command should try to determine github job display name', async () => {
@@ -48,7 +67,7 @@ describe('mark', () => {
         },
       ])
       jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name"}`)
-      const {context, code} = await runCLI([], {
+      const {context, code} = await runCLI(['--dry-run'], {
         GITHUB_ACTIONS: 'true',
         GITHUB_SERVER_URL: 'url',
         GITHUB_REPOSITORY: 'repo',
