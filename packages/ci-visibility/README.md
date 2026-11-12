@@ -97,16 +97,3 @@ Uploads use at most four concurrent requests, a 4-second request deadline, and a
 10-second overall budget. HTTP 429/5xx responses receive bounded retries;
 transport failures stop the remaining queue. Override the deadlines with
 `flush({requestTimeoutMs, timeoutMs})`. Proxy configuration is not supported.
-
-## Local development
-
-From the monorepo root:
-
-```sh
-yarn install
-yarn build
-yarn test packages/ci-visibility --runInBand
-yarn workspace @datadog/ci-visibility pack --out /tmp/ci-visibility.tgz
-```
-
-Tests use mocked or local HTTP endpoints and do not call Datadog.
