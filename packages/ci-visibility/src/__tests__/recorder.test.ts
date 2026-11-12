@@ -288,6 +288,76 @@ describe('CI Visibility recorder', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
+  test.each([
+    {level: undefined, output: 'warn'},
+    {level: 'warn', output: 'warn'},
+    {level: 'info', output: 'info'},
+    {level: 'DEBUG', output: 'debug'},
+    {level: 'off', output: undefined},
+    {level: 'invalid', output: 'warn'},
+  ] as const)('routes recording and upload diagnostics at warning level $level', async ({level, output}) => {
+    const logs = {
+      warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
+      info: jest.spyOn(console, 'info').mockImplementation(() => {}),
+      debug: jest.spyOn(console, 'debug').mockImplementation(() => {}),
+    }
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(403)
+    const recorder = createRecorder({
+      env: {...data.env, DD_API_KEY: 'test', DD_CI_VISIBILITY_WARNING_LEVEL: level},
+    })
+    recorder.setMeasure('invalid', NaN)
+    recorder.setTags({version: '1'})
+    expect(await recorder.flush({timeoutMs: 0})).toEqual({sent: 0, failed: 0, skipped: 1})
+    recorder.setTags({version: '2'})
+    expect(await recorder.flush()).toEqual({sent: 0, failed: 1, skipped: 0})
+    expect(send).toHaveBeenCalledTimes(1)
+    const messages = [
+      ['CI Visibility: Could not record annotation'],
+      ['CI Visibility: Upload skipped: missing API key, unsupported site, or invalid timeout'],
+      ['CI Visibility: Upload incomplete: 0 sent, 1 failed, 0 skipped'],
+    ]
+    for (const [name, log] of Object.entries(logs)) {
+      expect(log.mock.calls).toEqual(name === output ? messages : [])
+    }
+  })
+
+  test('reads the warning level again when flushing', async () => {
+    const info = jest.spyOn(console, 'info').mockImplementation(() => {})
+    const debug = jest.spyOn(console, 'debug').mockImplementation(() => {})
+    jest.spyOn(request, 'httpRequest').mockResolvedValue(403)
+    data.env.DD_API_KEY = 'test'
+    data.env.DD_CI_VISIBILITY_WARNING_LEVEL = 'info'
+    const recorder = createRecorder({env: data.env})
+    recorder.setMeasure('invalid', NaN)
+    recorder.setTags({version: '1'})
+    data.env.DD_CI_VISIBILITY_WARNING_LEVEL = 'debug'
+    await recorder.flush()
+    expect(info).toHaveBeenCalledWith('CI Visibility: Could not record annotation')
+    expect(debug).toHaveBeenCalledWith('CI Visibility: Upload incomplete: 0 sent, 1 failed, 0 skipped')
+  })
+
+  test('keeps explicit diagnostic callbacks in control when default logging is off', async () => {
+    const logs = (['warn', 'info', 'debug'] as const).map((level) =>
+      jest.spyOn(console, level).mockImplementation(() => {})
+    )
+    jest.spyOn(request, 'httpRequest').mockResolvedValue(403)
+    const warning = jest.fn()
+    const flushWarning = jest.fn()
+    const recorder = createRecorder({
+      env: {...data.env, DD_API_KEY: 'test', DD_CI_VISIBILITY_WARNING_LEVEL: 'off'},
+      onWarning: warning,
+    })
+    recorder.setMeasure('invalid', NaN)
+    recorder.setTags({version: '1'})
+    await recorder.flush()
+    expect(warning).toHaveBeenCalledTimes(2)
+    recorder.setTags({version: '2'})
+    await recorder.flush({onWarning: flushWarning})
+    expect(warning).toHaveBeenCalledTimes(2)
+    expect(flushWarning).toHaveBeenCalledWith('CI Visibility: Upload incomplete: 0 sent, 1 failed, 0 skipped')
+    expect(logs.every((log) => log.mock.calls.length === 0)).toBe(true)
+  })
+
   test('honors disabling before flush and does not truncate span correlation data', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
     data.env.DD_API_KEY = 'test'

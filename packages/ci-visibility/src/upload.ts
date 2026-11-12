@@ -1,12 +1,16 @@
 import {setTimeout as delay} from 'node:timers/promises'
 
 import type {UploadRequest} from './payloads'
-import type {FlushResult, UploadOptions} from './types'
+import type {Environment, FlushResult, UploadOptions} from './types'
 
 import {httpRequest, TransportError} from './request'
 import {warn} from './validation'
 
-export const upload = async (requests: UploadRequest[], options: UploadOptions = {}): Promise<FlushResult> => {
+export const upload = async (
+  requests: UploadRequest[],
+  options: UploadOptions = {},
+  env: Environment = process.env
+): Promise<FlushResult> => {
   const result = {sent: 0, failed: 0, skipped: 0}
   if (!requests.length) {
     return result
@@ -23,7 +27,7 @@ export const upload = async (requests: UploadRequest[], options: UploadOptions =
     !Number.isSafeInteger(requestTimeoutMs) ||
     requestTimeoutMs < 1
   ) {
-    warn(options.onWarning, 'Upload skipped: missing API key, unsupported site, or invalid timeout')
+    warn(options.onWarning, 'Upload skipped: missing API key, unsupported site, or invalid timeout', env)
     result.skipped = requests.length
 
     return result
@@ -76,7 +80,8 @@ export const upload = async (requests: UploadRequest[], options: UploadOptions =
   if (result.failed || result.skipped) {
     warn(
       options.onWarning,
-      `Upload incomplete: ${result.sent} sent, ${result.failed} failed, ${result.skipped} skipped`
+      `Upload incomplete: ${result.sent} sent, ${result.failed} failed, ${result.skipped} skipped`,
+      env
     )
   }
 

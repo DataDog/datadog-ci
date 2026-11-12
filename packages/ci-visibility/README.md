@@ -93,6 +93,19 @@ and Git metadata are discovered automatically.
 Set `DD_CI_VISIBILITY_ENABLED=false` to disable reporting. Wrapped application code
 still executes.
 
+`DD_CI_VISIBILITY_WARNING_LEVEL` selects the console method for SDK diagnostics:
+`warn` (default), `info`, or `debug`. Set it to `off` to silence default logging.
+Values are case-insensitive; unrecognized values use `warn`. This only changes
+logging; recording and uploads still run. An `onWarning` callback supplied to
+`createRecorder()` or `flush()` takes precedence over this setting.
+
+Set it through the workflow, job, or step environment, for example:
+
+```yaml
+env:
+  DD_CI_VISIBILITY_WARNING_LEVEL: info
+```
+
 Uploads use at most four concurrent requests, a 4-second request deadline, and a
 10-second overall budget. HTTP 429/5xx responses receive bounded retries;
 transport failures stop the remaining queue. Override the deadlines with

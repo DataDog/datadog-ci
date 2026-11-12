@@ -1,4 +1,4 @@
-import type {Measures, Tags} from './types'
+import type {Environment, Measures, Tags} from './types'
 
 export const cleanTags = (tags: Tags, limited = true): Record<string, string> => {
   const result: Record<string, string> = {}
@@ -38,9 +38,16 @@ export const cleanMeasures = (measures: Measures): Record<string, number> => {
   return result
 }
 
-export const warn = (callback: ((message: string) => void) | undefined, message: string): void => {
+export const warn = (
+  callback: ((message: string) => void) | undefined,
+  message: string,
+  env: Environment = process.env
+): void => {
   try {
-    ;(callback ?? console.warn)(`CI Visibility: ${message}`)
+    const level = env.DD_CI_VISIBILITY_WARNING_LEVEL?.toLowerCase()
+    const log =
+      callback ?? (level === 'off' ? undefined : level === 'info' || level === 'debug' ? console[level] : console.warn)
+    log?.(`CI Visibility: ${message}`)
   } catch {
     // Diagnostic callbacks must not affect instrumented work.
   }

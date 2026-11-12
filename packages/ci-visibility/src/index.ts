@@ -35,7 +35,7 @@ export const createRecorder = ({
     } catch {
       if (!warned) {
         warned = true
-        warn(onWarning, 'Could not record annotation')
+        warn(onWarning, 'Could not record annotation', env)
       }
     }
   }
@@ -183,12 +183,16 @@ export const createRecorder = ({
     }
     const records = pending.splice(0)
     const plan = planRequests(records)
-    flushing = upload(plan.requests, {
-      ...options,
-      apiKey: options.apiKey || env.DATADOG_API_KEY || env.DD_API_KEY,
-      site: options.site || env.DATADOG_SITE || env.DD_SITE,
-      onWarning: options.onWarning || onWarning,
-    }).then(({sent, failed, skipped}) => ({sent, failed, skipped: skipped + plan.skipped}))
+    flushing = upload(
+      plan.requests,
+      {
+        ...options,
+        apiKey: options.apiKey || env.DATADOG_API_KEY || env.DD_API_KEY,
+        site: options.site || env.DATADOG_SITE || env.DD_SITE,
+        onWarning: options.onWarning || onWarning,
+      },
+      env
+    ).then(({sent, failed, skipped}) => ({sent, failed, skipped: skipped + plan.skipped}))
     try {
       return await flushing
     } finally {
