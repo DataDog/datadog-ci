@@ -37,13 +37,6 @@ export interface GithubContext {
   stepIndices: number[]
 }
 
-interface Envelope {
-  version: 1
-  id: string
-  recordedAt: string
-  context: GithubContext
-}
-
 export interface SpanData {
   span_id: string
   name: string
@@ -56,9 +49,8 @@ export interface SpanData {
   measures: Record<string, number>
 }
 
-export type RecordedEvent = Envelope &
-  (
-    | {type: 'span'; span: SpanData}
-    | {type: 'tags'; tags: Record<string, string>; levels: Level[]; steps: 'current' | 'all'}
-    | {type: 'measure'; measures: Record<string, number>; level: Level}
-  )
+export type RecordedEvent = {context: GithubContext} & (
+  | {type: 'span'; span: SpanData}
+  | {type: 'tags'; tags: Record<string, string>; levels: Level[]; steps: 'current' | 'all'}
+  | {type: 'measure'; measures: Record<string, number>; level: Level}
+)

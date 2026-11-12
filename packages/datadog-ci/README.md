@@ -8,7 +8,7 @@ See the [Usage section](#usage) for a list of available commands.
 
 For in-process GitHub Actions instrumentation, see the new
 [`@datadog/ci-visibility` JavaScript API](https://github.com/DataDog/datadog-ci/tree/master/packages/ci-visibility)
-and its optional collector action. This package is not yet released.
+for custom spans, tags, measures, and explicit flushing. This package is not yet released.
 
 ## How to install the CLI
 

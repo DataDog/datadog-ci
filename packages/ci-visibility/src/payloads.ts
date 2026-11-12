@@ -8,7 +8,6 @@ export interface UploadRequest {
   method: 'POST'
   url: DatadogRoute
   data: object
-  recordIds: string[]
 }
 
 const levels: Record<Level, number> = {pipeline: 0, job: 1, step: 3}
@@ -22,7 +21,6 @@ export const planRequests = (records: RecordedEvent[]): {requests: UploadRequest
       level: Level
       ciEnv: Record<string, string>
       values: Record<string, string | number>
-      recordIds: Set<string>
     }
   >()
   let skipped = 0
@@ -32,7 +30,6 @@ export const planRequests = (records: RecordedEvent[]): {requests: UploadRequest
         method: 'POST',
         url: datadogRoute('/api/intake/ci/custom_spans'),
         data: {data: {type: 'ci_app_custom_span', attributes: {ci_provider: 'github', ...record.span}}},
-        recordIds: [record.id],
       })
       continue
     }
@@ -69,10 +66,8 @@ export const planRequests = (records: RecordedEvent[]): {requests: UploadRequest
           level,
           ciEnv: target,
           values: {},
-          recordIds: new Set<string>(),
         }
         Object.assign(patch.values, record.type === 'tags' ? record.tags : record.measures)
-        patch.recordIds.add(record.id)
         patches.set(key, patch)
       }
     }
@@ -95,7 +90,6 @@ export const planRequests = (records: RecordedEvent[]): {requests: UploadRequest
           },
         },
       },
-      recordIds: [...patch.recordIds],
     })
   }
 

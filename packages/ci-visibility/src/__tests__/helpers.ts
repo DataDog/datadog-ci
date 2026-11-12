@@ -6,9 +6,7 @@ import type {Environment} from '../types'
 
 export const fixture = () => {
   const root = mkdtempSync(join(tmpdir(), 'ci-visibility-test-'))
-  const buffer = join(root, 'records')
   const diagnostic = join(root, '_diag')
-  mkdirSync(buffer)
   mkdirSync(diagnostic)
   mkdirSync(join(root, '_work', '_temp'), {recursive: true})
   const env: Environment = {
@@ -39,5 +37,5 @@ export const fixture = () => {
   }
   writeLog()
 
-  return {root, buffer, diagnostic, env, writeLog, cleanup: () => rmSync(root, {recursive: true, force: true})}
+  return {root, diagnostic, env, writeLog, cleanup: () => rmSync(root, {recursive: true, force: true})}
 }

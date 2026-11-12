@@ -1,10 +1,9 @@
-import {randomBytes, randomUUID} from 'node:crypto'
-import {renameSync, writeFileSync} from 'node:fs'
-import {join} from 'node:path'
+import {randomBytes} from 'node:crypto'
 
 import type {
   Environment,
   FlushResult,
+  GithubContext,
   Level,
   RecordedEvent,
   Span,
@@ -27,7 +26,6 @@ export const createRecorder = ({
 }: {env?: Environment; onWarning?: (message: string) => void} = {}) => {
   const captureContext = createGithubContext(env)
   const pending: RecordedEvent[] = []
-  let sequence = 0
   let warned = false
   let flushing: Promise<FlushResult> | undefined
   const bestEffort = (operation: () => void) => {
@@ -41,12 +39,6 @@ export const createRecorder = ({
     }
   }
   const enabled = () => env.GITHUB_ACTIONS === 'true' && env.DD_CI_VISIBILITY?.toLowerCase() !== 'false'
-  const envelope = () => ({
-    version: 1 as const,
-    id: randomUUID(),
-    recordedAt: new Date().toISOString(),
-    context: captureContext(),
-  })
   const record = (event: RecordedEvent) => {
     if (
       !event.context.ciEnv.GITHUB_REPOSITORY ||
@@ -55,15 +47,7 @@ export const createRecorder = ({
     ) {
       throw new Error('Missing GitHub context')
     }
-    if (!env.DD_CI_BUFFER_DIR) {
-      pending.push(event)
-
-      return
-    }
-    const filename = `${event.recordedAt.replace(/:/g, '-')}-${process.pid}-${String(sequence++).padStart(8, '0')}-${event.id}.json`
-    const destination = join(env.DD_CI_BUFFER_DIR, filename)
-    writeFileSync(`${destination}.tmp`, JSON.stringify(event), {mode: 0o600, flag: 'wx'})
-    renameSync(`${destination}.tmp`, destination)
+    pending.push(event)
   }
   const recordTags = (tags: Tags, {levels = ['job'], steps = 'current'}: TagOptions = {}) =>
     bestEffort(() => {
@@ -79,7 +63,7 @@ export const createRecorder = ({
       }
       const values = cleanTags(tags)
       if (Object.keys(values).length) {
-        record({...envelope(), type: 'tags', tags: values, levels: [...new Set(levels)], steps})
+        record({context: captureContext(), type: 'tags', tags: values, levels: [...new Set(levels)], steps})
       }
     })
   const recordMeasure = (name: string, value: number, {level = 'job'}: {level?: Level} = {}) =>
@@ -90,15 +74,15 @@ export const createRecorder = ({
       if (!['pipeline', 'job', 'step'].includes(level)) {
         throw new Error('Unsupported annotation target')
       }
-      record({...envelope(), type: 'measure', measures: cleanMeasures({[name]: value}), level})
+      record({context: captureContext(), type: 'measure', measures: cleanMeasures({[name]: value}), level})
     })
   const recordSpan = async <T>(name: string, callback: (currentSpan: Span) => T | Promise<T>): Promise<T> => {
     if (!enabled()) {
       return callback({setTags: () => {}, setMeasure: () => {}})
     }
-    let event: ReturnType<typeof envelope> | undefined
+    let context: GithubContext | undefined
     bestEffort(() => {
-      event = envelope()
+      context = captureContext()
     })
     const data: SpanData = {
       span_id: randomBytes(8).toString('hex'),
@@ -108,7 +92,7 @@ export const createRecorder = ({
       end_time: '',
       exit_code: 0,
       error_message: '',
-      tags: {...event?.context.tags},
+      tags: {...context?.tags},
       measures: {},
     }
     const currentSpan: Span = {
@@ -129,8 +113,8 @@ export const createRecorder = ({
       throw error
     } finally {
       data.end_time = new Date().toISOString()
-      if (event) {
-        bestEffort(() => record({...event!, type: 'span', span: data}))
+      if (context) {
+        bestEffort(() => record({context: context!, type: 'span', span: data}))
       }
     }
   }
@@ -139,9 +123,6 @@ export const createRecorder = ({
       const skipped = planRequests(pending.splice(0)).requests.length
 
       return {sent: 0, failed: 0, skipped}
-    }
-    if (env.DD_CI_BUFFER_DIR) {
-      return {sent: 0, failed: 0, skipped: 0}
     }
     if (flushing) {
       await flushing

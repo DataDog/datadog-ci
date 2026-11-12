@@ -1,10 +1,4 @@
-import {readFileSync, readdirSync} from 'node:fs'
-import {join} from 'node:path'
-
-import type {RecordedEvent} from '../types'
-
 import {createRecorder} from '..'
-import {planRequests} from '../payloads'
 import * as request from '../request'
 
 import {fixture} from './helpers'
@@ -63,31 +57,35 @@ describe('CI Visibility recorder', () => {
     expect(send).toHaveBeenCalledTimes(5)
   })
 
-  test('persists without HTTP or flush and captures identity before upload', async () => {
+  test('captures the originating identity before an explicit flush', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
-    data.env.DD_CI_BUFFER_DIR = data.buffer
-    data.env.DD_API_KEY = 'must-not-be-recorded'
-    const recorder = createRecorder({env: data.env})
-    recorder.setTags({version: '1'})
+    const env = {...data.env, DD_API_KEY: 'test-key'}
+    const recorder = createRecorder({env})
+    recorder.setTags({version: '1'}, {levels: ['job', 'step']})
     await recorder.span('Build', async () => {})
-    data.env.GITHUB_ACTION = 'collector'
-    expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
-    const records = readdirSync(data.buffer).map(
-      (name) => JSON.parse(readFileSync(join(data.buffer, name), 'utf8')) as RecordedEvent
-    )
-    expect(records).toHaveLength(2)
-    expect(records[0].context.ciEnv).toMatchObject({
-      DD_GITHUB_STEP_INDEX: '1',
-      DD_GITHUB_JOB_NAME: 'Build',
-      GITHUB_RUN_ATTEMPT: '2',
-    })
-    expect(JSON.stringify(records)).not.toContain('must-not-be-recorded')
+    Object.assign(env, {GITHUB_ACTION: 'later', DD_GITHUB_STEP_INDEX: '9', DD_GITHUB_JOB_NAME: 'Later job'})
     expect(send).not.toHaveBeenCalled()
+    expect(await recorder.flush()).toEqual({sent: 3, failed: 0, skipped: 0})
+    const step = send.mock.calls.find(
+      ([config]) => config.url.endsWith('tags') && (config.data as any).data.attributes.ci_level === 3
+    )
+    expect(step?.[0].data).toMatchObject({
+      data: {
+        attributes: {
+          ci_env: {
+            DD_GITHUB_STEP_INDEX: '1',
+            DD_GITHUB_JOB_NAME: 'Build',
+            GITHUB_RUN_ATTEMPT: '2',
+          },
+        },
+      },
+    })
+    expect(JSON.stringify(send.mock.calls.map(([config]) => config.data))).not.toContain('test-key')
   })
 
   test('keeps overlapping spans and native annotations isolated', async () => {
-    data.env.DD_CI_BUFFER_DIR = data.buffer
-    const recorder = createRecorder({env: data.env})
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}})
     recorder.setTags({shared: 'job'})
     await Promise.all(
       ['one', 'two'].map((name) =>
@@ -97,11 +95,12 @@ describe('CI Visibility recorder', () => {
         })
       )
     )
-    const records = readdirSync(data.buffer).map(
-      (name) => JSON.parse(readFileSync(join(data.buffer, name), 'utf8')) as RecordedEvent
-    )
-    const spans = planRequests(records).requests.filter((item) => item.url.endsWith('custom_spans'))
-    expect(spans.map((item) => item.data)).toEqual(
+    expect(send).not.toHaveBeenCalled()
+    expect(await recorder.flush()).toEqual({sent: 3, failed: 0, skipped: 0})
+    const spans = send.mock.calls
+      .filter(([config]) => config.url.endsWith('custom_spans'))
+      .map(([config]) => config.data)
+    expect(spans).toEqual(
       expect.arrayContaining(
         ['one', 'two'].map((name) => ({
           data: {
@@ -114,19 +113,26 @@ describe('CI Visibility recorder', () => {
     expect(JSON.stringify(spans)).not.toContain('shared')
   })
 
-  test('preserves the original error when recording and diagnostic callbacks fail', async () => {
-    data.env.DD_CI_BUFFER_DIR = join(data.root, 'missing')
+  test('preserves the original error when recording, upload, and diagnostic callbacks fail', async () => {
+    jest.spyOn(request, 'httpRequest').mockRejectedValue(new request.TransportError('unreachable'))
     const recorder = createRecorder({
-      env: data.env,
+      env: {...data.env, DD_API_KEY: 'test'},
       onWarning: () => {
         throw new Error('warning failed')
       },
     })
     const failure = new Error('build failed')
     await expect(
-      recorder.span('Build', () => {
-        throw failure
-      })
+      (async () => {
+        try {
+          await recorder.span('Build', (current) => {
+            current.setMeasure('invalid', NaN)
+            throw failure
+          })
+        } finally {
+          await recorder.flush()
+        }
+      })()
     ).rejects.toBe(failure)
     expect(await recorder.span('Recover', () => 42)).toBe(42)
   })
@@ -145,6 +151,38 @@ describe('CI Visibility recorder', () => {
     expect(send.mock.calls[0][0].data).toMatchObject({
       data: {attributes: {exit_code: 1, error_message: failure.message}},
     })
+  })
+
+  test('fans out to all declared main steps and merges native patches before flush', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}})
+    recorder.setTags({version: 'old'}, {levels: ['pipeline', 'job', 'step'], steps: 'all'})
+    recorder.setTags({version: 'new'}, {levels: ['pipeline', 'job', 'step'], steps: 'all'})
+    expect(send).not.toHaveBeenCalled()
+    expect(await recorder.flush()).toEqual({sent: 5, failed: 0, skipped: 0})
+    const bodies = send.mock.calls.map(([config]) => config.data as any)
+    expect(
+      bodies
+        .filter((body) => body.data.attributes.ci_level === 3)
+        .map((body) => body.data.attributes.ci_env.DD_GITHUB_STEP_INDEX)
+    ).toEqual(['0', '1', '2'])
+    expect(bodies.every((body) => body.data.attributes.tags.version === 'new')).toBe(true)
+  })
+
+  test('keeps recorder queues independent and drains failed uploads', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(403)
+    const options = {env: {...data.env, DD_API_KEY: 'test'}, onWarning: jest.fn()}
+    const first = createRecorder(options)
+    const second = createRecorder(options)
+    await first.span('First', () => {})
+    await second.span('Second', () => {})
+    expect(await first.flush()).toEqual({sent: 0, failed: 1, skipped: 0})
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send.mock.calls[0][0].data).toMatchObject({data: {attributes: {name: 'First'}}})
+    expect(await first.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
+    send.mockResolvedValue(202)
+    expect(await second.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
+    expect(send.mock.calls[1][0].data).toMatchObject({data: {attributes: {name: 'Second'}}})
   })
 
   test('skips unknown step identity without dropping the other targets', async () => {

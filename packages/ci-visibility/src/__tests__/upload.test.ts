@@ -13,7 +13,6 @@ const requests = (count: number) =>
     method: 'POST' as const,
     url: datadogRoute('/api/v2/ci/pipeline/tags'),
     data: {data: {value: i}},
-    recordIds: [String(i)],
   }))
 
 describe('bounded uploads', () => {
@@ -67,7 +66,7 @@ describe('bounded uploads', () => {
     )
     const pending = upload(requests(20), {apiKey: 'test', timeoutMs: 10, onWarning: jest.fn()})
     await jest.advanceTimersByTimeAsync(10)
-    expect(await pending).toMatchObject({sent: 0, failed: 4, skipped: 16, completedIds: []})
+    expect(await pending).toMatchObject({sent: 0, failed: 4, skipped: 16})
   })
 
   test('validates credentials and destination before HTTP', async () => {

@@ -2,8 +2,8 @@
 
 Record custom spans, tags, and numerical measures from JavaScript GitHub actions
 without starting a Datadog CLI process for each annotation. Recording makes no HTTP
-requests. Upload explicitly with `flush()`, or use the optional collector action
-to upload after the job's action cleanup has finished.
+requests. Each process buffers its annotations in memory and uploads them when
+you call `flush()` at completion.
 
 This new package is not yet released. It supports Node.js 20 and later, GitHub
 Actions, and has no external runtime dependencies. It does not install the CLI or
@@ -37,60 +37,14 @@ try {
 }
 ```
 
-Without a collector, every process owns an in-memory queue. Main scripts, post
-scripts, and instrumented child processes each call `flush()` before completing.
+Every process owns an in-memory queue. Main scripts, post scripts, and instrumented
+child processes each call `flush()` before completing.
 It uploads the current queue and returns `{sent, failed, skipped}` HTTP-request
-counts. A subsequent flush does not resend that queue. Failed standalone uploads
+counts. A subsequent flush does not resend that queue. Failed uploads
 are discarded, and reporting errors do not replace application results or errors.
 
 For an existing Node.js project, the same API can be imported by a CI script run
 directly in a workflow step, using the project's normal dependency installation.
-
-## Automatic upload at job cleanup
-
-The collector in this repository is available at `actions/ci-visibility-tag`.
-Replace `<commit>` below with a commit containing this action; this is not a
-published `datadog/ci-visibility-tag@v1` release.
-
-```yaml
-steps:
-  - uses: actions/checkout@v6
-  - uses: DataDog/datadog-ci/actions/ci-visibility-tag@<commit>
-    # Alternatively, omit api-key and export DD_API_KEY in a later step.
-    with:
-      api-key: ${{ secrets.DD_API_KEY }}
-  - uses: example/compile-action@v1
-  - uses: example/test-action@v1
-```
-
-Place the collector before every action that records information, including
-actions with instrumented post scripts. GitHub executes those post scripts in
-reverse order; the collector's post then uploads their completed records. Earlier
-uninstrumented actions may have their own cleanup after the collector.
-
-Setup exports a local `DD_CI_BUFFER_DIR` and requires no credentials. The SDK
-atomically publishes completed records there using unique filenames, including
-from child processes that inherit the environment and share the filesystem. No
-GitHub artifact upload or background service is involved. Producers must finish
-before collection starts.
-
-In this mode, explicit `flush()` calls can be removed. Keeping one is also safe:
-it makes no HTTP requests because completed records are already persisted. The
-collector reads the API key at post execution, so a later step can export it
-through `GITHUB_ENV`. API keys are not written to recording files.
-
-The SDK also exports the directory uploader independently:
-
-```js
-import {uploadDirectory} from '@datadog/ci-visibility/collector'
-
-await uploadDirectory(directory, {apiKey: process.env.DD_API_KEY})
-```
-
-Successfully uploaded records are removed. Failed records remain available for
-another collection attempt. Partially uploaded native annotations may be resent;
-there is no exactly-once delivery guarantee. Do not collect the same directory
-concurrently. `dryRun: true` skips HTTP and retains all files.
 
 ## Annotation scope
 
@@ -155,9 +109,8 @@ From the monorepo root:
 yarn install
 yarn build
 yarn test packages/ci-visibility --runInBand
-yarn bundle:ci-visibility-action
 yarn workspace @datadog/ci-visibility pack --out /tmp/ci-visibility.tgz
 ```
 
 Tests use generic fixtures and mocked or local HTTP endpoints. They do not call
-Datadog. The action's committed bundle must be regenerated when its source changes.
+Datadog.

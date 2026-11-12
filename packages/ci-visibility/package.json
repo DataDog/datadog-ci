@@ -29,11 +29,6 @@
       "development": "./src/index.ts",
       "default": "./dist/index.js"
     },
-    "./collector": {
-      "types": "./dist/collector.d.ts",
-      "development": "./src/collector.ts",
-      "default": "./dist/collector.js"
-    },
     "./request/datadog-route": {
       "types": "./dist/request/datadog-route.d.ts",
       "development": "./src/request/datadog-route.ts",

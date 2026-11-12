@@ -6,11 +6,8 @@ import type {FlushResult, UploadOptions} from './types'
 import {httpRequest, TransportError} from './request'
 import {warn} from './validation'
 
-export const upload = async (
-  requests: UploadRequest[],
-  options: UploadOptions = {}
-): Promise<FlushResult & {completedIds: string[]}> => {
-  const result = {sent: 0, failed: 0, skipped: 0, completedIds: [] as string[]}
+export const upload = async (requests: UploadRequest[], options: UploadOptions = {}): Promise<FlushResult> => {
+  const result = {sent: 0, failed: 0, skipped: 0}
   if (!requests.length) {
     return result
   }
@@ -33,8 +30,6 @@ export const upload = async (
   }
   const controller = new AbortController()
   const deadline = setTimeout(() => controller.abort(), timeoutMs)
-  const failedIds = new Set<string>()
-  const sentIds = new Set<string>()
   let next = 0
   try {
     await Promise.all(
@@ -68,10 +63,8 @@ export const upload = async (
           }
           if (success) {
             result.sent++
-            item.recordIds.forEach((id) => sentIds.add(id))
           } else {
             result.failed++
-            item.recordIds.forEach((id) => failedIds.add(id))
           }
         }
       })
@@ -79,11 +72,7 @@ export const upload = async (
   } finally {
     clearTimeout(deadline)
   }
-  for (const item of requests.slice(next)) {
-    item.recordIds.forEach((id) => failedIds.add(id))
-  }
   result.skipped = requests.length - result.sent - result.failed
-  result.completedIds = [...sentIds].filter((id) => !failedIds.has(id))
   if (result.failed || result.skipped) {
     warn(
       options.onWarning,
