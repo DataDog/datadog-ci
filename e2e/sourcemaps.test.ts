@@ -16,7 +16,7 @@ const RELEASE_VERSION = [
 describe('sourcemaps', () => {
   it('upload completes successfully', async () => {
     const result = await execPromise(
-      `${DATADOG_CI_COMMAND} sourcemaps upload e2e/fixtures/sourcemaps/ --release-version=${RELEASE_VERSION} --service=${DD_SERVICE} --minified-path-prefix=https://e2e-tests.datadoghq.com/static/`,
+      `${DATADOG_CI_COMMAND} sourcemaps upload e2e/fixtures/sourcemaps/ --strict --release-version=${RELEASE_VERSION} --service=${DD_SERVICE} --minified-path-prefix=https://e2e-tests.datadoghq.com/static/`,
       {
         DATADOG_API_KEY: process.env.DATADOG_API_KEY,
         DATADOG_APP_KEY: process.env.DATADOG_APP_KEY,
