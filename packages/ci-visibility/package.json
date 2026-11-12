@@ -29,6 +29,11 @@
       "development": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./github": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
     "./request/datadog-route": {
       "types": "./dist/request/datadog-route.d.ts",
       "development": "./src/request/datadog-route.ts",

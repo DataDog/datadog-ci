@@ -20,6 +20,7 @@ export default {
   modulePathIgnorePatterns: ['<rootDir>/packages/.*/dist'],
   moduleNameMapper: {
     '^@datadog/ci-visibility/package.json$': '<rootDir>/packages/ci-visibility/package.json',
+    '^@datadog/ci-visibility/github$': '<rootDir>/packages/ci-visibility/src/index.ts',
     '^@datadog/ci-visibility$': '<rootDir>/packages/ci-visibility/src/index.ts',
     '^@datadog/ci-visibility/(.*)$': '<rootDir>/packages/ci-visibility/src/$1',
     '^@datadog/datadog-ci-plugin-([\\w-]+)/package.json$': '<rootDir>/packages/plugin-$1/package.json',

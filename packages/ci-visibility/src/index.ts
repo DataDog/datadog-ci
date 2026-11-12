@@ -8,6 +8,7 @@ import type {
   RecordedEvent,
   Span,
   SpanData,
+  SpanEndOptions,
   TagOptions,
   Tags,
   UploadOptions,
@@ -18,7 +19,7 @@ import {planRequests} from './payloads'
 import {upload} from './upload'
 import {cleanMeasures, cleanTags, warn} from './validation'
 
-export type {FlushResult, Level, Span, TagOptions, Tags, UploadOptions} from './types'
+export type {FlushResult, Level, Span, SpanEndOptions, TagOptions, Tags, UploadOptions} from './types'
 
 export const createRecorder = ({
   env = process.env,
@@ -76,46 +77,97 @@ export const createRecorder = ({
       }
       record({context: captureContext(), type: 'measure', measures: cleanMeasures({[name]: value}), level})
     })
-  const recordSpan = async <T>(name: string, callback: (currentSpan: Span) => T | Promise<T>): Promise<T> => {
-    if (!enabled()) {
-      return callback({setTags: () => {}, setMeasure: () => {}})
-    }
+  const recordStartSpan = (name: string, initialTags: Tags = {}): Span => {
+    const start = Date.now()
+    let duration: number | undefined
     let context: GithubContext | undefined
+    let data: SpanData | undefined
     bestEffort(() => {
-      context = captureContext()
+      if (enabled()) {
+        context = captureContext()
+        data = {
+          span_id: randomBytes(8).toString('hex'),
+          name,
+          command: name,
+          start_time: new Date(start).toISOString(),
+          end_time: '',
+          exit_code: 0,
+          error_message: '',
+          tags: {...context.tags},
+          measures: {},
+        }
+      }
     })
-    const data: SpanData = {
-      span_id: randomBytes(8).toString('hex'),
-      name,
-      command: name,
-      start_time: new Date().toISOString(),
-      end_time: '',
-      exit_code: 0,
-      error_message: '',
-      tags: {...context?.tags},
-      measures: {},
-    }
     const currentSpan: Span = {
       setTags: (tags) =>
         bestEffort(() => {
-          Object.assign(data.tags, cleanTags(tags, false))
+          if (data && duration === undefined) {
+            Object.assign(data.tags, cleanTags(tags, false))
+          }
         }),
       setMeasure: (key, value) =>
         bestEffort(() => {
-          Object.assign(data.measures, cleanMeasures({[key]: value}))
+          if (data && duration === undefined) {
+            Object.assign(data.measures, cleanMeasures({[key]: value}))
+          }
         }),
+      end: (options: SpanEndOptions = {}) => {
+        if (duration !== undefined) {
+          return duration
+        }
+        const end = Date.now()
+        bestEffort(() => {
+          if (data) {
+            Object.assign(data.tags, cleanTags(options.tags || {}, false))
+          }
+        })
+        bestEffort(() => {
+          if (data) {
+            Object.assign(data.measures, cleanMeasures(options.measures || {}))
+          }
+        })
+        bestEffort(() => {
+          if (data) {
+            const exitCode = options.exitCode ?? (options.error === undefined ? 0 : 1)
+            if (!Number.isSafeInteger(exitCode) || exitCode < 0) {
+              throw new Error('Exit codes must be nonnegative integers')
+            }
+            data.exit_code = exitCode
+            data.error_message =
+              exitCode === 0
+                ? ''
+                : options.error === undefined
+                  ? 'Span failed'
+                  : options.error instanceof Error
+                    ? options.error.message
+                    : String(options.error)
+          }
+        })
+        duration = end - start
+        bestEffort(() => {
+          if (data && context) {
+            data.end_time = new Date(end).toISOString()
+            record({context, type: 'span', span: data})
+          }
+        })
+
+        return duration
+      },
     }
+    currentSpan.setTags(initialTags)
+
+    return currentSpan
+  }
+  const recordSpan = async <T>(name: string, callback: (currentSpan: Span) => T | Promise<T>): Promise<T> => {
+    const currentSpan = recordStartSpan(name)
     try {
-      return await callback(currentSpan)
+      const result = await callback(currentSpan)
+      currentSpan.end()
+
+      return result
     } catch (error) {
-      data.exit_code = 1
-      data.error_message = error instanceof Error ? error.message : String(error)
+      currentSpan.end({error, exitCode: 1})
       throw error
-    } finally {
-      data.end_time = new Date().toISOString()
-      if (context) {
-        bestEffort(() => record({context: context!, type: 'span', span: data}))
-      }
     }
   }
   const flushRecords = async (options: UploadOptions = {}): Promise<FlushResult> => {
@@ -144,7 +196,13 @@ export const createRecorder = ({
     }
   }
 
-  return {span: recordSpan, setTags: recordTags, setMeasure: recordMeasure, flush: flushRecords}
+  return {
+    span: recordSpan,
+    startSpan: recordStartSpan,
+    setTags: recordTags,
+    setMeasure: recordMeasure,
+    flush: flushRecords,
+  }
 }
 
-export const {span, setTags, setMeasure, flush} = createRecorder()
+export const {span, startSpan, setTags, setMeasure, flush} = createRecorder()

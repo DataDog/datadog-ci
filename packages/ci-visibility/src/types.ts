@@ -3,9 +3,19 @@ export type Tags = Record<string, string | undefined>
 export type Measures = Record<string, number | undefined>
 export type Level = 'pipeline' | 'job' | 'step'
 
+export interface SpanEndOptions {
+  /** Defaults to 0, or 1 when an error is supplied. */
+  exitCode?: number
+  error?: unknown
+  tags?: Tags
+  measures?: Measures
+}
+
 export interface Span {
   setTags(tags: Tags): void
   setMeasure(name: string, value: number): void
+  /** Queue the completed span once and return its duration in milliseconds. */
+  end(options?: SpanEndOptions): number
 }
 
 export interface TagOptions {

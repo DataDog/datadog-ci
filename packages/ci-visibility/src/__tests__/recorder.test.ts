@@ -1,4 +1,5 @@
-import {createRecorder} from '..'
+import {createRecorder} from '@datadog/ci-visibility/github'
+
 import * as request from '../request'
 
 import {fixture} from './helpers'
@@ -81,6 +82,87 @@ describe('CI Visibility recorder', () => {
       },
     })
     expect(JSON.stringify(send.mock.calls.map(([config]) => config.data))).not.toContain('test-key')
+  })
+
+  test('ends a manual span once, preserving explicit status, timing, and annotations', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1000)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}})
+    const current = recorder.startSpan('Build', {'tool.version': '1', mode: 'initial'})
+    expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
+    current.setTags({mode: 'running'})
+    current.setMeasure('output.bytes', 12)
+    now.mockReturnValue(1123)
+    expect(current.end({exitCode: 7, tags: {mode: 'final'}, measures: {'output.bytes': 42}})).toBe(123)
+    expect(current.end({exitCode: 0})).toBe(123)
+    current.setTags({late: 'ignored'})
+    current.setMeasure('late', 1)
+    expect(send).not.toHaveBeenCalled()
+    expect(await recorder.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
+    const body = send.mock.calls[0][0].data
+    expect(body).toMatchObject({
+      data: {
+        attributes: {
+          name: 'Build',
+          start_time: '1970-01-01T00:00:01.000Z',
+          end_time: '1970-01-01T00:00:01.123Z',
+          exit_code: 7,
+          error_message: 'Span failed',
+          tags: {'tool.version': '1', mode: 'final'},
+          measures: {'output.bytes': 42},
+        },
+      },
+    })
+    expect(JSON.stringify(body)).not.toContain('late')
+    expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
+  })
+
+  test.each([
+    {options: {error: new Error('build failed')}, exitCode: 1, message: 'build failed'},
+    {options: {exitCode: 23, error: 'command failed'}, exitCode: 23, message: 'command failed'},
+    {options: {exitCode: 0, error: new Error('ignored')}, exitCode: 0, message: ''},
+  ])('records a manual outcome without throwing: $exitCode', async ({options, exitCode, message}) => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}})
+    expect(() => recorder.startSpan('Build').end(options)).not.toThrow()
+    await recorder.flush()
+    expect(send.mock.calls[0][0].data).toMatchObject({
+      data: {attributes: {exit_code: exitCode, error_message: message}},
+    })
+  })
+
+  test('preserves an explicitly ended callback span and its nonthrowing result', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}})
+    expect(
+      await recorder.span('Build', (current) => {
+        current.end({exitCode: 7})
+
+        return 7
+      })
+    ).toBe(7)
+    expect(await recorder.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
+    expect(send.mock.calls[0][0].data).toMatchObject({data: {attributes: {exit_code: 7}}})
+  })
+
+  test('keeps the manual outcome when end annotations are invalid', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const warning = jest.fn()
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}, onWarning: warning})
+    const current = recorder.startSpan('Build', {mode: 'release'})
+    expect(() =>
+      current.end({
+        exitCode: 3,
+        error: new Error('build failed'),
+        tags: {invalid: 12} as unknown as Record<string, string>,
+        measures: {invalid: NaN},
+      })
+    ).not.toThrow()
+    expect(await recorder.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
+    expect(send.mock.calls[0][0].data).toMatchObject({
+      data: {attributes: {exit_code: 3, error_message: 'build failed', tags: {mode: 'release'}, measures: {}}},
+    })
+    expect(warning).toHaveBeenCalledTimes(1)
   })
 
   test('keeps overlapping spans and native annotations isolated', async () => {
@@ -232,6 +314,10 @@ describe('CI Visibility recorder', () => {
         })
       ).toBe(42)
       recorder.setTags({version: '1'})
+      const manual = recorder.startSpan('Manual', {mode: 'test'})
+      manual.setTags({mode: 'updated'})
+      manual.setMeasure('count', 1)
+      expect(manual.end({error: new Error('ignored')})).toBeGreaterThanOrEqual(0)
       await recorder.flush()
       expect(send).not.toHaveBeenCalled()
     }
