@@ -79,6 +79,7 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
 
   private basePath = Option.String({required: true})
   private disableGit = Option.Boolean('--disable-git')
+  private strict = Option.Boolean('--strict', false)
   private quiet = Option.Boolean('--quiet', false)
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
@@ -143,7 +144,7 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
     })
     const useGit = this.disableGit === undefined || !this.disableGit
     const initialTime = Date.now()
-    const payloads = await this.getPayloadsToUpload(useGit)
+    const {payloads, discoverySkips} = await this.getPayloadsToUpload(useGit)
     if (this.debugId) {
       if (payloads.length > 0 && !addDebugIdToPayloads(payloads)) {
         this.context.stderr.write(renderNoDebugIdFound())
@@ -165,12 +166,13 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await doWithMaxConcurrency(this.maxConcurrency, payloadsToUpload, uploadMultipart)
+      const uploads = await doWithMaxConcurrency(this.maxConcurrency, payloadsToUpload, uploadMultipart)
+      const results = uploads.concat(discoverySkips)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun, skippedExisting))
       metricsLogger.logger.gauge('duration', totalTime)
 
-      return 0
+      return this.strict && (payloads.length === 0 || results.some((status) => status !== UploadStatus.Success)) ? 1 : 0
     } catch (error) {
       if (error instanceof InvalidConfigurationError) {
         this.context.stdout.write(renderConfigurationError(error))
@@ -231,10 +233,9 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
     }
   }
 
-  // Looks for the sourcemaps and minified files on disk and returns
-  // the associated payloads.
-  private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    return findSourcemaps(
+  private getPayloadsToUpload = async (useGit: boolean) => {
+    const discoverySkips: UploadStatus[] = []
+    const payloads = await findSourcemaps(
       this.basePath,
       this.maxConcurrency,
       (minifiedFilePath, sourcemapPath) => {
@@ -242,25 +243,22 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
 
         return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
       },
-      (message) => this.context.stdout.write(renderDiscoveryWarning(message))
+      (message) => {
+        this.context.stdout.write(renderDiscoveryWarning(message))
+        discoverySkips.push(UploadStatus.Skipped)
+      }
     )
+    if (useGit) {
+      await this.addRepositoryDataToPayloads(payloads)
+    }
+
+    return {payloads, discoverySkips}
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
     const relativePath = upath.relative(this.basePath, minifiedFilePath)
 
     return [buildPath(this.minifiedPathPrefix ?? '', relativePath), relativePath]
-  }
-
-  private getPayloadsToUpload = async (useGit: boolean): Promise<Sourcemap[]> => {
-    const payloads = await this.getMatchingSourcemapFiles()
-    if (!useGit) {
-      return payloads
-    }
-
-    await this.addRepositoryDataToPayloads(payloads)
-
-    return payloads
   }
 
   // GetRepositoryPayload generates the repository payload for a specific sourcemap.

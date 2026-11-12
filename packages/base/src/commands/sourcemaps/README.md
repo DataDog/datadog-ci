@@ -99,6 +99,7 @@ In addition, some optional parameters are available:
 
 * `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--disable-git` (default: false): prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the sourcemap).
+* `--strict` makes the command exit with code 1 if it finds no sourcemaps, skips an invalid artifact, or fails to upload a sourcemap. A debug ID confirmed as already uploaded counts as a success.
 * `--quiet` (default: false): suppresses individual line output for each upload. Success and error logs are never suppressed.
 * `--experimental-duplicate-check` (default: `false`): in `--debug-id` mode, query the `check_exists` endpoint before upload and skip sourcemaps whose debug IDs already exist. If the check fails, upload proceeds as usual.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.

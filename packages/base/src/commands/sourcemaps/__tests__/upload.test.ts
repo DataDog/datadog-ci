@@ -5,7 +5,12 @@ import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {createCommand, makeRunCLI, withTempDirectory} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  createCommand,
+  getRequestError,
+  makeRunCLI,
+  withTempDirectory,
+} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
@@ -612,6 +617,33 @@ describe('execute', () => {
     })
   })
 
+  test.each([
+    ['basic', 0, '[DRYRUN] Handled 1 sourcemap'],
+    ['doesnotexist', 1, 'No sourcemaps detected'],
+    ['stdout-output/mixed', 1, '1 sourcemap was skipped'],
+  ] as const)('strict upload of %s exits with %i', async (fixture, expectedCode, summary) => {
+    const {context, code} = await runCLI(['--strict', `./src/commands/sourcemaps/__tests__/fixtures/${fixture}`])
+    expect(context.stdout.toString()).toContain(summary)
+    expect(code).toBe(expectedCode)
+  })
+
+  test.each([
+    {options: [], code: 0},
+    {options: ['--strict'], code: 1},
+  ])('returns $code with $options when discovery skips one of two map references', async ({options, code}) => {
+    await withTempDirectory(async (directory) => {
+      fs.cpSync('./src/commands/sourcemaps/__tests__/fixtures/with-sourcemap-url', directory, {recursive: true})
+      fs.writeFileSync(upath.join(directory, 'other.js'), '//# sourceMappingURL=../other.js.map')
+
+      const result = await runCLI([...options, directory])
+
+      expect(result.code).toBe(code)
+      const output = result.context.stdout.toString()
+      expect(output).toContain('[DRYRUN] Uploading sourcemap')
+      expect(output).toContain('1 sourcemap was skipped')
+    })
+  })
+
   test('all files are skipped', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped'])
     const output = context.stdout.toString().split('\n')
@@ -829,10 +861,21 @@ describe('execute with check_exists', () => {
     expect(context.stdout.toString()).toContain('Uploading sourcemap')
   })
 
-  test('skips the upload when the debug ID already exists in Datadog', async () => {
+  test.each([
+    {options: [], code: 0},
+    {options: ['--strict'], code: 1},
+  ])('returns $code when the intake rejects the upload with $options', async ({options, code}) => {
+    mockedHttpRequest.mockRejectedValue(getRequestError(413, {message: 'Payload too large'}))
+
+    const result = await runCLIWithDebugIdNoDuplicateCheck([...options, debugIdFixture])
+    expect(result.context.stdout.toString()).toContain('Some sourcemaps have not been uploaded correctly')
+    expect(result.code).toBe(code)
+  })
+
+  test.each([{options: []}, {options: ['--strict']}])('skips an existing debug ID with $options', async ({options}) => {
     mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: true})
 
-    const {context, code} = await runCLIWithDebugIdNoDryRun([debugIdFixture])
+    const {context, code} = await runCLIWithDebugIdNoDryRun([...options, debugIdFixture])
 
     expect(code).toBe(0)
     expect(mockedCheckExistingDebugIds).toHaveBeenCalledTimes(1)
