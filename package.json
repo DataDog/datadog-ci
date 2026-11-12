@@ -93,9 +93,6 @@
   },
   "packageManager": "yarn@4.10.3",
   "private": true,
-  "resolutions": {
-    "basic-ftp": "6.2.3"
-  },
   "volta": {
     "node": "22.22.3",
     "yarn": "4.10.3"

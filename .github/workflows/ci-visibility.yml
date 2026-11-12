@@ -1,7 +1,11 @@
 name: CI Visibility package
 
 on:
-  pull_request:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
     paths:
       - 'packages/ci-visibility/**'
       - '.github/workflows/ci-visibility.yml'
