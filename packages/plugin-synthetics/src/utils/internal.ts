@@ -36,6 +36,11 @@ export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>
 }
 
+export interface PageLevelVrt {
+  captureScreenshots?: boolean
+  recordNetwork?: boolean
+}
+
 export const getDefaultConfig = (): DatadogCIConfig => {
   return {
     apiKey: '',

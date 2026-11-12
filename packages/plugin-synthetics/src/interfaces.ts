@@ -1,5 +1,5 @@
 import type {TunnelInfo} from './tunnel'
-import type {RecursivePartial} from './utils/internal'
+import type {PageLevelVrt, RecursivePartial} from './utils/internal'
 import type {InitialSummary} from './utils/public'
 import type {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
@@ -517,11 +517,6 @@ export interface CookiesObject {
   value: string
 }
 
-export interface PageLevelVrt {
-  captureScreenshots?: boolean
-  recordNetwork?: boolean
-}
-
 export interface BaseConfigOverride {
   /** Override the certificate checks in Synthetic API and Browser tests. */
   allowInsecureCertificates?: boolean
@@ -610,7 +605,7 @@ export interface BaseConfigOverride {
   /** Override the maximum duration in seconds for browser tests. */
   testTimeout?: number
   /**
-   * Internal: enable page-level visual regression testing for browser tests. Only accepted for orgs enrolled by Datadog.
+   * Internal only: Enable page-level visual regression testing for browser tests.
    *
    * @hidden
    */
