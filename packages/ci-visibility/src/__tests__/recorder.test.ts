@@ -84,6 +84,24 @@ describe('CI Visibility recorder', () => {
     expect(JSON.stringify(send.mock.calls.map(([config]) => config.data))).not.toContain('test-key')
   })
 
+  test('does not upload credentials embedded in repository metadata', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({
+      env: {
+        ...data.env,
+        DD_API_KEY: 'test',
+        DD_GIT_REPOSITORY_URL:
+          'https://private-user:private-token@example.com/project.git?token=private-query#private-fragment',
+      },
+    })
+    await recorder.span('Build', () => {})
+    expect(await recorder.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
+    expect(send.mock.calls[0][0].data).toMatchObject({
+      data: {attributes: {tags: {'git.repository_url': 'https://example.com/project.git'}}},
+    })
+    expect(JSON.stringify(send.mock.calls[0][0].data)).not.toMatch(/private-(user|token|query|fragment)/)
+  })
+
   test('ends a manual span once, preserving explicit status, timing, and annotations', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
     const now = jest.spyOn(Date, 'now').mockReturnValue(1000)

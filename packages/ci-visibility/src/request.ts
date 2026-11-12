@@ -4,7 +4,10 @@ import type {DatadogRoute} from './request/datadog-route'
 
 export class TransportError extends Error {}
 
-/** The dependency-free HTTP boundary. Call sites must use audited Datadog routes. */
+/**
+ * The SDK keeps its own CI intake transport to avoid the CLI helper's runtime dependencies.
+ * Keep this package dependency-free and require audited Datadog routes at call sites.
+ */
 export const httpRequest = async (config: {
   url: DatadogRoute
   site: string

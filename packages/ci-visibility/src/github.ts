@@ -110,23 +110,17 @@ const workerMetadata = (env: Environment): WorkerMetadata => {
       break
     }
   }
-  const contents = logs
-    .sort((a, b) => b.split(/[\\/]/).pop()!.localeCompare(a.split(/[\\/]/).pop()!))
-    .map((file) => {
-      try {
-        return readFileSync(file, 'utf8')
-      } catch {
-        return ''
-      }
-    })
-  const matching = env.ACTIONS_ORCHESTRATION_ID
-    ? contents.filter(
-        (content) =>
-          content.includes('"system.orchestrationId"') && content.includes(JSON.stringify(env.ACTIONS_ORCHESTRATION_ID))
-      )
-    : contents
-  for (const content of matching) {
+  logs.sort((a, b) => b.split(/[\\/]/).pop()!.localeCompare(a.split(/[\\/]/).pop()!))
+  for (const file of logs) {
     try {
+      const content = readFileSync(file, 'utf8')
+      if (
+        env.ACTIONS_ORCHESTRATION_ID &&
+        (!content.includes('"system.orchestrationId"') ||
+          !content.includes(JSON.stringify(env.ACTIONS_ORCHESTRATION_ID)))
+      ) {
+        continue
+      }
       const encodedName = content.match(/"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/)?.[1]
       const steps = readSteps(content)
       if (!encodedName) {
@@ -147,6 +141,27 @@ const workerMetadata = (env: Environment): WorkerMetadata => {
 }
 
 const normalizeRef = (ref = ''): string => ref.replace(/^(refs\/(heads|tags)\/|origin\/)/, '')
+
+const sanitizeRepositoryUrl = (remote: string | undefined): string | undefined => {
+  if (!remote || /^git@[^:@/?#\s]+:[^?#\s]+$/.test(remote)) {
+    return remote
+  }
+  try {
+    const url = new URL(remote)
+    if (!url.hostname) {
+      return undefined
+    }
+    url.username = ''
+    url.password = ''
+    url.search = ''
+    url.hash = ''
+
+    return url.toString()
+  } catch {
+    // Omit malformed URLs rather than risking credentials in telemetry.
+    return undefined
+  }
+}
 
 export const createGithubContext = (env: Environment): (() => GithubContext) => {
   let metadata: WorkerMetadata | undefined
@@ -172,7 +187,8 @@ export const createGithubContext = (env: Environment): (() => GithubContext) => 
     const attempt = env.GITHUB_RUN_ATTEMPT || '1'
     const repository = env.GITHUB_REPOSITORY
     const jobName = env.DD_GITHUB_JOB_NAME || metadata.jobName || env.GITHUB_JOB
-    const jobId = env.JOB_CHECK_RUN_ID || metadata.jobId || env.GITHUB_JOB
+    const resolvedJobId = env.JOB_CHECK_RUN_ID || metadata.jobId
+    const jobId = resolvedJobId && /^\d+$/.test(resolvedJobId) ? resolvedJobId : undefined
     const offset = env.ACTIONS_RUNNER_HOOK_JOB_STARTED ? 1 : 0
     const declaredIndex = metadata.steps.findIndex((step) => step.contextName === env.GITHUB_ACTION)
     const override = env.DD_GITHUB_STEP_INDEX
@@ -206,17 +222,23 @@ export const createGithubContext = (env: Environment): (() => GithubContext) => 
         'ci.pipeline.url':
           repository && runId ? `${server}/${repository}/actions/runs/${runId}/attempts/${attempt}` : undefined,
         'ci.job.name': jobName,
-        'ci.job.id': jobId,
+        'ci.job.id': jobId || env.GITHUB_JOB,
         'ci.job.url':
-          repository && runId && jobId ? `${server}/${repository}/actions/runs/${runId}/job/${jobId}` : undefined,
+          repository && runId && jobId
+            ? `${server}/${repository}/actions/runs/${runId}/job/${jobId}`
+            : repository && env.GITHUB_SHA
+              ? `${server}/${repository}/commit/${env.GITHUB_SHA}/checks`
+              : undefined,
         'ci.workspace_path': env.GITHUB_WORKSPACE,
-        'git.repository_url': env.DD_GIT_REPOSITORY_URL || (repository ? `${server}/${repository}.git` : undefined),
+        'git.repository_url': sanitizeRepositoryUrl(
+          env.DD_GIT_REPOSITORY_URL || (repository ? `${server}/${repository}.git` : undefined)
+        ),
         'git.commit.sha': env.DD_GIT_COMMIT_SHA || env.GITHUB_SHA,
         'git.branch': env.DD_GIT_BRANCH || (!ref.startsWith('refs/tags/') ? normalizeRef(ref) : undefined),
         'git.tag': env.DD_GIT_TAG || (ref.startsWith('refs/tags/') ? normalizeRef(ref) : undefined),
         'git.pull_request.base_branch': env.GITHUB_BASE_REF,
         'git.commit.head.sha': event?.pull_request?.head?.sha,
-        'git.pull_request.base_branch_sha': event?.pull_request?.base?.sha,
+        'git.pull_request.base_branch_head_sha': event?.pull_request?.base?.sha,
         'pr.number': event?.pull_request?.number?.toString(),
         '_dd.ci.env_vars': JSON.stringify(
           compact({

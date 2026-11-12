@@ -1,4 +1,4 @@
-import {mkdirSync, renameSync, writeFileSync} from 'node:fs'
+import fs, {mkdirSync, renameSync, writeFileSync} from 'node:fs'
 import {join} from 'node:path'
 
 import {createGithubContext, diagnosticRoots} from '../github'
@@ -10,7 +10,10 @@ describe('GitHub context', () => {
   beforeEach(() => {
     data = fixture()
   })
-  afterEach(() => data.cleanup())
+  afterEach(() => {
+    data.cleanup()
+    jest.restoreAllMocks()
+  })
 
   test('discovers job identity and steps, caching log contents', () => {
     const capture = createGithubContext(data.env)
@@ -36,6 +39,29 @@ describe('GitHub context', () => {
     expect(createGithubContext(data.env)().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
     data.env.ACTIONS_ORCHESTRATION_ID = 'plan.unknown.default'
     expect(createGithubContext(data.env)().ciEnv.DD_GITHUB_JOB_NAME).toBe('build')
+  })
+
+  test('stops reading historical logs after finding the current job', () => {
+    data.writeLog('Worker_20251231.log', 'Old job')
+    const read = jest.spyOn(fs, 'readFileSync')
+    const capture = createGithubContext(data.env)
+    expect(capture().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
+    expect(capture().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
+    expect(read.mock.calls.map(([file]) => file)).toEqual([join(data.diagnostic, 'Worker_20260101.log')])
+  })
+
+  test('skips partial and unrelated logs before stopping at a matching job', () => {
+    data.writeLog('Worker_20251231.log', 'Old job')
+    data.writeLog('Worker_20260102.log', 'Other job', 'plan.other.matrix')
+    writeFileSync(join(data.diagnostic, 'Worker_20260103.log'), 'Partial worker log')
+    data.env.ACTIONS_ORCHESTRATION_ID = 'plan.build.default'
+    const read = jest.spyOn(fs, 'readFileSync')
+    expect(createGithubContext(data.env)().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
+    expect(read.mock.calls.map(([file]) => file)).toEqual([
+      join(data.diagnostic, 'Worker_20260103.log'),
+      join(data.diagnostic, 'Worker_20260102.log'),
+      join(data.diagnostic, 'Worker_20260101.log'),
+    ])
   })
 
   test('handles versioned runner directories, escaped names, brackets, and a job hook', () => {
@@ -65,13 +91,43 @@ describe('GitHub context', () => {
     expect(context.ciEnv).toMatchObject({DD_GITHUB_JOB_NAME: 'Explicit', DD_GITHUB_STEP_INDEX: '7'})
     expect(context.tags).toMatchObject({
       'ci.job.id': '300',
+      'ci.job.url': 'https://github.com/example/project/actions/runs/100/job/300',
       'git.branch': 'feature',
       'git.commit.head.sha': 'head',
-      'git.pull_request.base_branch_sha': 'base',
+      'git.pull_request.base_branch_head_sha': 'base',
       'pr.number': '42',
     })
+    expect(context.tags['git.pull_request.base_branch_sha']).toBeUndefined()
     expect(JSON.parse(context.tags['_dd.ci.env_vars'])).toMatchObject({GITHUB_RUN_ATTEMPT: '2'})
     expect(context.tags['git.commit.author.name']).toBeUndefined()
+  })
+
+  test('uses the commit checks page when a numeric job ID is unavailable', () => {
+    fs.rmSync(data.diagnostic, {recursive: true})
+    const context = createGithubContext(data.env)()
+    expect(context.tags).toMatchObject({
+      'ci.job.id': 'build',
+      'ci.job.url': 'https://github.com/example/project/commit/abc123/checks',
+    })
+  })
+
+  test('does not construct a job URL from an invalid explicit ID', () => {
+    data.env.JOB_CHECK_RUN_ID = 'build'
+    delete data.env.GITHUB_SHA
+    expect(createGithubContext(data.env)().tags['ci.job.url']).toBeUndefined()
+  })
+
+  test.each([
+    ['https://user:secret@example.com/project.git?token=secret#secret', 'https://example.com/project.git'],
+    ['https://secret@example.com/project.git', 'https://example.com/project.git'],
+    ['https://example.com/project.git', 'https://example.com/project.git'],
+    ['ssh://git@example.com:2222/project.git', 'ssh://example.com:2222/project.git'],
+    ['git@example.com:project.git', 'git@example.com:project.git'],
+    ['https://user:secret@', undefined],
+    ['data:text/plain,secret', undefined],
+  ])('sanitizes repository metadata: %s', (url, sanitized) => {
+    data.env.DD_GIT_REPOSITORY_URL = url
+    expect(createGithubContext(data.env)().tags['git.repository_url']).toBe(sanitized)
   })
 
   test('uses Git tag semantics and tolerates malformed metadata', () => {
