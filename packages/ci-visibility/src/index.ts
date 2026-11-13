@@ -6,6 +6,7 @@ import type {
   GithubContext,
   Level,
   RecordedEvent,
+  RecordSpanOptions,
   Span,
   SpanData,
   SpanEndOptions,
@@ -20,6 +21,7 @@ import {upload} from './upload'
 import {cleanMeasures, cleanTags, warn} from './validation'
 
 export type {FlushResult, Level, Span, SpanEndOptions, TagOptions, Tags, UploadOptions} from './types'
+export type {RecordSpanOptions} from './types'
 
 export const createRecorder = ({
   env = process.env,
@@ -77,8 +79,12 @@ export const createRecorder = ({
       }
       record({context: captureContext(), type: 'measure', measures: cleanMeasures({[name]: value}), level})
     })
-  const recordStartSpan = (name: string, initialTags: Tags = {}): Span => {
-    const start = Date.now()
+  const recordStartSpan = (
+    name: string,
+    initialTags: Tags = {},
+    timing?: Pick<RecordSpanOptions, 'startTimeMs' | 'endTimeMs' | 'command'>
+  ): Span => {
+    const start = timing?.startTimeMs ?? Date.now()
     let duration: number | undefined
     let context: GithubContext | undefined
     let data: SpanData | undefined
@@ -88,7 +94,7 @@ export const createRecorder = ({
         data = {
           span_id: randomBytes(8).toString('hex'),
           name,
-          command: name,
+          command: timing?.command ?? name,
           start_time: new Date(start).toISOString(),
           end_time: '',
           exit_code: 0,
@@ -115,7 +121,7 @@ export const createRecorder = ({
         if (duration !== undefined) {
           return duration
         }
-        const end = Date.now()
+        const end = timing?.endTimeMs ?? Date.now()
         bestEffort(() => {
           if (data) {
             Object.assign(data.tags, cleanTags(options.tags || {}, false))
@@ -158,7 +164,25 @@ export const createRecorder = ({
 
     return currentSpan
   }
-  const recordSpan = async <T>(name: string, callback: (currentSpan: Span) => T | Promise<T>): Promise<T> => {
+  const recordCompletedSpan = (options: RecordSpanOptions): void =>
+    bestEffort(() => {
+      if (!enabled()) {
+        return
+      }
+      const {name, command, startTimeMs, endTimeMs} = options
+      if (
+        typeof name !== 'string' ||
+        !name.trim() ||
+        (command !== undefined && (typeof command !== 'string' || !command.trim()))
+      ) {
+        throw new Error('Span name and command must be nonempty strings')
+      }
+      if (!Number.isSafeInteger(startTimeMs) || !Number.isSafeInteger(endTimeMs) || endTimeMs < startTimeMs) {
+        throw new Error('Span timestamps must be integer milliseconds with endTimeMs >= startTimeMs')
+      }
+      recordStartSpan(name, {}, options).end(options)
+    })
+  const wrapSpan = async <T>(name: string, callback: (currentSpan: Span) => T | Promise<T>): Promise<T> => {
     const currentSpan = recordStartSpan(name)
     try {
       const result = await callback(currentSpan)
@@ -201,12 +225,13 @@ export const createRecorder = ({
   }
 
   return {
-    span: recordSpan,
-    startSpan: recordStartSpan,
+    span: wrapSpan,
+    startSpan: (name: string, tags?: Tags): Span => recordStartSpan(name, tags),
+    recordSpan: recordCompletedSpan,
     setTags: recordTags,
     setMeasure: recordMeasure,
     flush: flushRecords,
   }
 }
 
-export const {span, startSpan, setTags, setMeasure, flush} = createRecorder()
+export const {span, startSpan, recordSpan, setTags, setMeasure, flush} = createRecorder()

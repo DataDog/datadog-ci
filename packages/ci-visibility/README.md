@@ -53,6 +53,11 @@ are discarded rather than retried by a later flush.
 - `startSpan(name, tags?)` starts a manual span. Call `end({exitCode, error, tags,
   measures})` to finish it; the options are optional. `end()` returns the duration
   in milliseconds and queues the span only once. End manual spans before flushing.
+- `recordSpan({name, startTimeMs, endTimeMs, command?, exitCode?, error?, tags?,
+  measures?})` queues an already completed span. Timestamps are integer milliseconds
+  since the Unix epoch; `endTimeMs` must be at least `startTimeMs`. Zero duration is
+  allowed. The command defaults to the span name. Invalid spans are skipped with a
+  diagnostic through the configured logger.
 - `setTags(tags, {levels})` annotates existing pipeline, job, or current main-step
   events. The default level is `job`; tags do not inherit between levels.
 - `setMeasure(name, value, {level})` adds a numerical annotation, defaulting to `job`.
@@ -80,6 +85,33 @@ try {
   await flush()
 }
 ```
+
+For build tools that report completed tasks, supply their original timestamps:
+
+```js
+import {recordSpan, flush} from '@datadog/ci-visibility/github'
+import {readCompletedTasks} from './build.js'
+
+try {
+  const tasks = await readCompletedTasks() // Application logic.
+  for (const task of tasks) {
+    recordSpan({
+      name: task.name,
+      command: task.command,
+      startTimeMs: task.startTimeMs,
+      endTimeMs: task.endTimeMs,
+      exitCode: task.exitCode,
+      tags: {'build.target': task.target},
+      measures: {'output.bytes': task.outputBytes},
+    })
+  }
+} finally {
+  await flush({timeoutMs: 30_000})
+}
+```
+
+`recordSpan()` captures the current job's context when called, so record completed
+tasks in the same job where they ran. It makes no HTTP requests until `flush()`.
 
 In post scripts, use custom spans or job/pipeline annotations. Current-step
 annotations would otherwise target the action's main step.

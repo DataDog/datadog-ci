@@ -11,6 +11,16 @@ export interface SpanEndOptions {
   measures?: Measures
 }
 
+export interface RecordSpanOptions extends SpanEndOptions {
+  name: string
+  /** Defaults to the span name. */
+  command?: string
+  /** Integer milliseconds since the Unix epoch. */
+  startTimeMs: number
+  /** Integer milliseconds since the Unix epoch; may equal startTimeMs. */
+  endTimeMs: number
+}
+
 export interface Span {
   setTags(tags: Tags): void
   setMeasure(name: string, value: number): void
