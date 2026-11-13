@@ -1,13 +1,14 @@
 import type {Environment, Measures, Tags} from './types'
 
-export const cleanTags = (tags: Tags, limited = true): Record<string, string> => {
+export const cleanTags = (tags: Tags, limited = true, onInvalid?: () => void): Record<string, string> => {
   const result: Record<string, string> = {}
   for (const [key, value] of Object.entries(tags)) {
     if (!key || value === undefined) {
       continue
     }
     if (typeof value !== 'string') {
-      throw new Error('Tag values must be strings')
+      onInvalid?.()
+      continue
     }
     if (limited && (Object.keys(result).length >= 100 || key.length >= 300)) {
       continue
@@ -21,14 +22,15 @@ export const cleanTags = (tags: Tags, limited = true): Record<string, string> =>
   return result
 }
 
-export const cleanMeasures = (measures: Measures): Record<string, number> => {
+export const cleanMeasures = (measures: Measures, onInvalid?: () => void): Record<string, number> => {
   const result: Record<string, number> = {}
   for (const [key, value] of Object.entries(measures)) {
     if (value === undefined) {
       continue
     }
     if (!key || typeof value !== 'number' || !Number.isFinite(value)) {
-      throw new Error('Measures require a name and a finite number')
+      onInvalid?.()
+      continue
     }
     if (Object.keys(result).length < 100) {
       result[key] = value

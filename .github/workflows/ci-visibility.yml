@@ -29,4 +29,6 @@ jobs:
           cache: yarn
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn test packages/ci-visibility --runInBand
+      - run: >-
+          yarn test packages/ci-visibility
+          packages/base/src/helpers/__tests__/ci-visibility-parity.test.ts --runInBand

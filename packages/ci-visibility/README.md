@@ -63,10 +63,15 @@ are discarded rather than retried by a later flush.
 - `setMeasure(name, value, {level})` adds a numerical annotation, defaulting to `job`.
 - Add `steps: 'all'` with the `step` level to tag all declared main steps of the
   current job.
+- `getJobName()` returns the resolved GitHub job display name, falling back to
+  `GITHUB_JOB`, or `undefined` outside GitHub Actions. Action code can export the
+  value as `DD_GITHUB_JOB_NAME` to share it with later steps and child processes.
 
 Supply workflow, action, tool, and cache tags through these methods. Span tags can
 be supplied at creation, through the span's `setTags()`, or when ending the span.
 Repeated tag keys use the last supplied value.
+Invalid annotation entries are skipped individually, preserving valid tags and
+measures supplied in the same call.
 
 For application code that returns an exit code, or has separate start/end callbacks:
 
@@ -113,8 +118,9 @@ try {
 `recordSpan()` captures the current job's context when called, so record completed
 tasks in the same job where they ran. It makes no HTTP requests until `flush()`.
 
-In post scripts, use custom spans or job/pipeline annotations. Current-step
-annotations would otherwise target the action's main step.
+Main and post scripts use the same API. Native current-step annotations in post
+scripts target the action's main step. Use the span handle to annotate a custom
+span.
 
 ## Configuration
 

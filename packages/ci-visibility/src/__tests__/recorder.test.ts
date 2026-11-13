@@ -384,6 +384,71 @@ describe('CI Visibility recorder', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
+  test('keeps valid native tags when another entry is invalid', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const warning = jest.fn()
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}, onWarning: warning})
+    recorder.setTags(JSON.parse('{"version":"1","invalid":null,"later":"kept"}'))
+    recorder.setMeasure('invalid', NaN)
+    recorder.setMeasure('count', 42)
+    expect(send).not.toHaveBeenCalled()
+    expect(await recorder.flush()).toEqual({sent: 2, failed: 0, skipped: 0})
+    expect(send.mock.calls.map(([config]) => config.data)).toEqual([
+      {data: {type: 'ci_custom_tag', attributes: expect.objectContaining({tags: {version: '1', later: 'kept'}})}},
+      {data: {type: 'ci_custom_metric', attributes: expect.objectContaining({metrics: {count: 42}})}},
+    ])
+    expect(warning).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps valid entries in wrapped, manual, and completed span annotations', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}, onWarning: jest.fn()})
+    const tags = JSON.parse('{"valid":"kept","invalid":null,"later":"also-kept"}')
+    const measures = {valid: 42, invalid: NaN, later: 7}
+    await recorder.span('Wrapped', (current) => {
+      current.setTags(tags)
+      current.setMeasure('valid', 42)
+      current.setMeasure('invalid', NaN)
+      current.setMeasure('later', 7)
+    })
+    const manual = recorder.startSpan('Manual', {...tags, initial: 'kept'})
+    manual.end({tags, measures})
+    recorder.recordSpan({
+      name: 'Completed',
+      startTimeMs: 1_700_000_000_000,
+      endTimeMs: 1_700_000_000_125,
+      tags,
+      measures,
+    })
+    expect(await recorder.flush()).toEqual({sent: 3, failed: 0, skipped: 0})
+    for (const [config] of send.mock.calls) {
+      expect(config.data).toMatchObject({
+        data: {attributes: {tags: {valid: 'kept', later: 'also-kept'}, measures: {valid: 42, later: 7}}},
+      })
+      expect(JSON.stringify(config.data)).not.toContain('invalid')
+    }
+    expect(send.mock.calls[1][0].data).toMatchObject({data: {attributes: {tags: {initial: 'kept'}}}})
+  })
+
+  test('exposes the resolved job name without recording or exporting it', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: data.env})
+    expect(recorder.getJobName()).toBe('Build')
+    data.writeLog('Worker_20260101.log', 'Changed')
+    expect(recorder.getJobName()).toBe('Build')
+    expect(data.env.DD_GITHUB_JOB_NAME).toBeUndefined()
+    data.env.DD_GITHUB_JOB_NAME = 'Explicit job'
+    expect(recorder.getJobName()).toBe('Explicit job')
+    expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  test('uses the job key when a display name is unavailable and returns undefined outside GitHub', () => {
+    const recorder = createRecorder({env: {...data.env, ACTIONS_ORCHESTRATION_ID: 'unmatched'}})
+    expect(recorder.getJobName()).toBe('build')
+    expect(createRecorder({env: {}}).getJobName()).toBeUndefined()
+  })
+
   test.each([
     {level: undefined, output: 'warn'},
     {level: 'warn', output: 'warn'},

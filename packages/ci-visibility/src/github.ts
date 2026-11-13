@@ -92,6 +92,8 @@ const diagnosticDirectories = (root: string, depth = 2): string[] => {
   return directories
 }
 
+// Keep worker-log resolution aligned with base/src/helpers/ci.ts.
+// Shared fixtures in base/src/helpers/__tests__/ci-visibility-parity.test.ts compare both implementations.
 const workerMetadata = (env: Environment): WorkerMetadata => {
   const seen = new Set<string>()
   for (const root of diagnosticRoots(env)) {
@@ -196,7 +198,6 @@ export const createGithubContext = (env: Environment): (() => GithubContext) => 
     const override = env.DD_GITHUB_STEP_INDEX
     const stepIndex =
       override && /^\d+$/.test(override) ? override : declaredIndex >= 0 ? String(declaredIndex + offset) : undefined
-    const post = env.DD_CI_PHASE === 'post'
     const ciEnv = compact({
       GITHUB_SERVER_URL: server,
       GITHUB_REPOSITORY: repository,
@@ -204,7 +205,7 @@ export const createGithubContext = (env: Environment): (() => GithubContext) => 
       GITHUB_RUN_ATTEMPT: attempt,
       GITHUB_JOB: env.GITHUB_JOB,
       DD_GITHUB_JOB_NAME: jobName,
-      DD_GITHUB_STEP_INDEX: post ? undefined : stepIndex,
+      DD_GITHUB_STEP_INDEX: stepIndex,
     })
     const ref = env.GITHUB_HEAD_REF || env.GITHUB_REF || ''
 

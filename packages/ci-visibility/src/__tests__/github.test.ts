@@ -25,9 +25,6 @@ describe('GitHub context', () => {
     data.writeLog('Worker_20260101.log', 'Changed')
     data.env.GITHUB_ACTION = 'test'
     expect(capture().ciEnv).toMatchObject({DD_GITHUB_JOB_NAME: 'Build', DD_GITHUB_STEP_INDEX: '2'})
-    data.env.DD_CI_PHASE = 'post'
-    expect(capture().ciEnv.DD_GITHUB_STEP_INDEX).toBeUndefined()
-    data.env.DD_CI_PHASE = 'main'
     data.env.GITHUB_ACTION = 'unknown'
     expect(capture().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
     expect(capture().ciEnv.DD_GITHUB_STEP_INDEX).toBeUndefined()

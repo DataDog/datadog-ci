@@ -1,0 +1,10 @@
+Job message: {
+  "jobDisplayName": "Build \"release\" [linux]",
+  "contextData": {"job": {"d": [{"k": "check_run_id", "v": 300}]}},
+  "variables": {"system.orchestrationId": {"value": "plan.other.matrix"}},
+  "steps": [
+    {"contextName": "checkout"},
+    {"contextName": "compile", "displayName": "Compile sources ] before [cache]"},
+    {"contextName": "test"}
+  ]
+}

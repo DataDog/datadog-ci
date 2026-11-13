@@ -31,14 +31,17 @@ export const createRecorder = ({
   const pending: RecordedEvent[] = []
   let warned = false
   let flushing: Promise<FlushResult> | undefined
+  const warnRecording = () => {
+    if (!warned) {
+      warned = true
+      warn(onWarning, 'Could not record annotation', env)
+    }
+  }
   const bestEffort = (operation: () => void) => {
     try {
       operation()
     } catch {
-      if (!warned) {
-        warned = true
-        warn(onWarning, 'Could not record annotation', env)
-      }
+      warnRecording()
     }
   }
   const enabled = () => env.GITHUB_ACTIONS === 'true' && env.DD_CI_VISIBILITY_ENABLED?.toLowerCase() !== 'false'
@@ -64,7 +67,7 @@ export const createRecorder = ({
       ) {
         throw new Error('Unsupported annotation target')
       }
-      const values = cleanTags(tags)
+      const values = cleanTags(tags, true, warnRecording)
       if (Object.keys(values).length) {
         record({context: captureContext(), type: 'tags', tags: values, levels: [...new Set(levels)], steps})
       }
@@ -77,7 +80,10 @@ export const createRecorder = ({
       if (!['pipeline', 'job', 'step'].includes(level)) {
         throw new Error('Unsupported annotation target')
       }
-      record({context: captureContext(), type: 'measure', measures: cleanMeasures({[name]: value}), level})
+      const measures = cleanMeasures({[name]: value}, warnRecording)
+      if (Object.keys(measures).length) {
+        record({context: captureContext(), type: 'measure', measures, level})
+      }
     })
   const recordStartSpan = (
     name: string,
@@ -108,13 +114,13 @@ export const createRecorder = ({
       setTags: (tags) =>
         bestEffort(() => {
           if (data && duration === undefined) {
-            Object.assign(data.tags, cleanTags(tags, false))
+            Object.assign(data.tags, cleanTags(tags, false, warnRecording))
           }
         }),
       setMeasure: (key, value) =>
         bestEffort(() => {
           if (data && duration === undefined) {
-            Object.assign(data.measures, cleanMeasures({[key]: value}))
+            Object.assign(data.measures, cleanMeasures({[key]: value}, warnRecording))
           }
         }),
       end: (options: SpanEndOptions = {}) => {
@@ -124,12 +130,12 @@ export const createRecorder = ({
         const end = timing?.endTimeMs ?? Date.now()
         bestEffort(() => {
           if (data) {
-            Object.assign(data.tags, cleanTags(options.tags || {}, false))
+            Object.assign(data.tags, cleanTags(options.tags || {}, false, warnRecording))
           }
         })
         bestEffort(() => {
           if (data) {
-            Object.assign(data.measures, cleanMeasures(options.measures || {}))
+            Object.assign(data.measures, cleanMeasures(options.measures || {}, warnRecording))
           }
         })
         bestEffort(() => {
@@ -225,14 +231,26 @@ export const createRecorder = ({
     }
   }
 
+  const resolveJobName = (): string | undefined => {
+    let name: string | undefined
+    bestEffort(() => {
+      if (env.GITHUB_ACTIONS === 'true') {
+        name = captureContext().ciEnv.DD_GITHUB_JOB_NAME
+      }
+    })
+
+    return name
+  }
+
   return {
     span: wrapSpan,
     startSpan: (name: string, tags?: Tags): Span => recordStartSpan(name, tags),
     recordSpan: recordCompletedSpan,
     setTags: recordTags,
     setMeasure: recordMeasure,
+    getJobName: resolveJobName,
     flush: flushRecords,
   }
 }
 
-export const {span, startSpan, recordSpan, setTags, setMeasure, flush} = createRecorder()
+export const {span, startSpan, recordSpan, setTags, setMeasure, getJobName, flush} = createRecorder()
