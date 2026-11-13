@@ -7,6 +7,7 @@
   "references": [
     {"path": "./packages/base"},
     {"path": "./packages/datadog-ci"},
+    {"path": "./packages/ci-visibility"},
     {"path": "./packages/plugin-aas"},
     {"path": "./packages/plugin-cloud-run"},
     {"path": "./packages/plugin-container-app"},

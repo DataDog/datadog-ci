@@ -1306,6 +1306,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@datadog/ci-visibility@workspace:packages/ci-visibility":
+  version: 0.0.0-use.local
+  resolution: "@datadog/ci-visibility@workspace:packages/ci-visibility"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-api-client@npm:1.64.0":
   version: 1.64.0
   resolution: "@datadog/datadog-api-client@npm:1.64.0"
