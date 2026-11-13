@@ -20,6 +20,10 @@ export class TerraformUploadCommand extends BaseCommand {
       ['Upload a Terraform plan file', 'datadog-ci terraform upload plan terraform-plan.json'],
       ['Upload multiple Terraform plan files', 'datadog-ci terraform upload plan plan1.json plan2.json plan3.json'],
       ['Upload a Terraform state file', 'datadog-ci terraform upload state terraform.tfstate'],
+      [
+        'Upload plans from a pipeline that uploads 3 plans in total for this commit',
+        'datadog-ci terraform upload plan terraform-plan.json --expected-plans 3',
+      ],
       ['Upload with verbose output', 'datadog-ci terraform upload plan terraform-plan.json --verbose'],
       ['Dry run mode', 'datadog-ci terraform upload plan terraform-plan.json --dry-run'],
     ],
@@ -34,6 +38,13 @@ export class TerraformUploadCommand extends BaseCommand {
   // Optional repo ID override
   protected repoId = Option.String('--repo-id', {
     description: 'Repository identifier override (e.g., github.com/datadog/my-repo)',
+  })
+
+  // Total number of plans the pipeline will upload for this commit
+  protected expectedPlans = Option.String('--expected-plans', {
+    description:
+      'Total number of plans the pipeline will upload for this commit (all jobs combined). Defaults to the number of plan files provided. Only valid for plan uploads',
+    validator: t.cascade(t.isNumber(), [t.isInteger(), t.isAtLeast(1)]),
   })
 
   // Skip git metadata upload
