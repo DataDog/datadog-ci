@@ -136,6 +136,7 @@ export const createRecorder = ({
           if (data) {
             const exitCode = options.exitCode ?? (options.error === undefined ? 0 : 1)
             if (!Number.isSafeInteger(exitCode) || exitCode < 0) {
+              data = undefined
               throw new Error('Exit codes must be nonnegative integers')
             }
             data.exit_code = exitCode

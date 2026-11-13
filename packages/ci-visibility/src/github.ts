@@ -182,7 +182,7 @@ export const createGithubContext = (env: Environment): (() => GithubContext) => 
         // Metadata from the environment remains usable without an event file.
       }
     }
-    const server = env.GITHUB_SERVER_URL || 'https://github.com'
+    const server = (sanitizeRepositoryUrl(env.GITHUB_SERVER_URL) || 'https://github.com').replace(/\/$/, '')
     const runId = env.GITHUB_RUN_ID
     const attempt = env.GITHUB_RUN_ATTEMPT || '1'
     const repository = env.GITHUB_REPOSITORY

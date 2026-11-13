@@ -130,6 +130,22 @@ describe('GitHub context', () => {
     expect(createGithubContext(data.env)().tags['git.repository_url']).toBe(sanitized)
   })
 
+  test.each([
+    [undefined, 'https://github.com'],
+    ['not-a-url', 'https://github.com'],
+    ['https://user:secret@github.example.com:8443/?token=secret#secret', 'https://github.example.com:8443'],
+    ['https://github.example.com/', 'https://github.example.com'],
+  ])('sanitizes GitHub server URLs before deriving context: %s', (url, server) => {
+    data.env.GITHUB_SERVER_URL = url
+    const context = createGithubContext(data.env)()
+    expect(context.ciEnv.GITHUB_SERVER_URL).toBe(server)
+    expect(JSON.parse(context.tags['_dd.ci.env_vars']).GITHUB_SERVER_URL).toBe(server)
+    expect(context.tags['ci.pipeline.url']).toBe(`${server}/example/project/actions/runs/100/attempts/2`)
+    expect(context.tags['ci.job.url']).toBe(`${server}/example/project/actions/runs/100/job/200`)
+    expect(context.tags['git.repository_url']).toBe(`${server}/example/project.git`)
+    expect(JSON.stringify(context)).not.toContain('secret')
+  })
+
   test('uses Git tag semantics and tolerates malformed metadata', () => {
     data.env.GITHUB_REF = 'refs/tags/v1'
     data.env.GITHUB_EVENT_PATH = join(data.root, 'event.json')

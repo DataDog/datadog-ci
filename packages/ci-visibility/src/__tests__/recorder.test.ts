@@ -102,6 +102,41 @@ describe('CI Visibility recorder', () => {
     expect(JSON.stringify(send.mock.calls[0][0].data)).not.toMatch(/private-(user|token|query|fragment)/)
   })
 
+  test('sanitizes the shared GitHub server in spans and native annotation uploads', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const server = 'https://github.example.com:8443'
+    const recorder = createRecorder({
+      env: {
+        ...data.env,
+        DD_API_KEY: 'test',
+        GITHUB_SERVER_URL:
+          'https://server-user:server-token@github.example.com:8443/?token=server-query#server-fragment',
+      },
+    })
+    await recorder.span('Build', () => {})
+    recorder.recordSpan({name: 'Compile', startTimeMs: 1_700_000_000_000, endTimeMs: 1_700_000_000_125})
+    recorder.setTags({version: '1'}, {levels: ['pipeline', 'job', 'step']})
+    recorder.setMeasure('output.bytes', 42)
+    expect(await recorder.flush()).toEqual({sent: 6, failed: 0, skipped: 0})
+    const spanAttributes = {
+      tags: {
+        'ci.pipeline.url': `${server}/example/project/actions/runs/100/attempts/2`,
+        'ci.job.url': `${server}/example/project/actions/runs/100/job/200`,
+        'git.repository_url': `${server}/example/project.git`,
+        '_dd.ci.env_vars': expect.stringContaining('"GITHUB_SERVER_URL":"https://github.example.com:8443"'),
+      },
+    }
+    for (const [config] of send.mock.calls) {
+      expect(config.data).toMatchObject({
+        data: {
+          attributes:
+            config.url === '/api/intake/ci/custom_spans' ? spanAttributes : {ci_env: {GITHUB_SERVER_URL: server}},
+        },
+      })
+    }
+    expect(JSON.stringify(send.mock.calls)).not.toMatch(/server-(user|token|query|fragment)/)
+  })
+
   test('ends a manual span once, preserving explicit status, timing, and annotations', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
     const now = jest.spyOn(Date, 'now').mockReturnValue(1000)
@@ -148,6 +183,30 @@ describe('CI Visibility recorder', () => {
       data: {attributes: {exit_code: exitCode, error_message: message}},
     })
   })
+
+  test.each([-1, NaN, Infinity, 1.5, Number.MAX_SAFE_INTEGER + 1, '7'])(
+    'discards manual and completed spans with invalid exit codes: %p',
+    async (exitCode) => {
+      const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+      const warning = jest.fn()
+      const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}, onWarning: warning})
+      const options = {exitCode: exitCode as number, error: new Error('Build failed')}
+      const manual = recorder.startSpan('Manual')
+      expect(() => manual.end(options)).not.toThrow()
+      expect(() =>
+        recorder.recordSpan({
+          name: 'Completed',
+          startTimeMs: 1_700_000_000_000,
+          endTimeMs: 1_700_000_000_125,
+          ...options,
+        })
+      ).not.toThrow()
+      manual.end({exitCode: 0})
+      expect(warning).toHaveBeenCalledTimes(1)
+      expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
+      expect(send).not.toHaveBeenCalled()
+    }
+  )
 
   test('preserves an explicitly ended callback span and its nonthrowing result', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
