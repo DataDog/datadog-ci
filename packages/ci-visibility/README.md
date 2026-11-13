@@ -4,12 +4,12 @@ Record custom spans, tags, and measures from JavaScript in GitHub Actions withou
 starting a CLI process for each call. Calls record in memory; users explicitly
 call `await flush()` to upload.
 
-This package is not yet released. It requires Node.js 20 or later and has no
-external runtime dependencies. **Only GitHub Actions is supported at the moment.**
+This package requires Node.js 20 or later and has no external runtime dependencies.
+**GitHub Actions is the only supported CI provider.**
 
 ## Usage
 
-Once published, install `@datadog/ci-visibility` and import its `/github` entry point
+Install `@datadog/ci-visibility` and import its `/github` entry point
 in your JavaScript action or Node.js CI script. For a custom action, bundle it with
 your code following GitHub's
 [JavaScript action guide](https://docs.github.com/en/actions/tutorials/create-actions/create-a-javascript-action).
