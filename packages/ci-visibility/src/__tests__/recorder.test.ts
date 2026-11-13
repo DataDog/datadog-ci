@@ -184,7 +184,8 @@ describe('CI Visibility recorder', () => {
     })
   })
 
-  test.each([-1, NaN, Infinity, 1.5, Number.MAX_SAFE_INTEGER + 1, '7'])(
+  // eslint-disable-next-line no-null/no-null -- Child processes report null after signal termination.
+  test.each([-1, NaN, Infinity, 1.5, Number.MAX_SAFE_INTEGER + 1, '7', null])(
     'discards manual and completed spans with invalid exit codes: %p',
     async (exitCode) => {
       const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
@@ -207,6 +208,24 @@ describe('CI Visibility recorder', () => {
       expect(send).not.toHaveBeenCalled()
     }
   )
+
+  test('discards signal-terminated spans with a null exit status and no error', async () => {
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const warning = jest.fn()
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test'}, onWarning: warning})
+    // eslint-disable-next-line no-null/no-null -- Exercise a real child-process exit status from JavaScript.
+    const exitCode = null as unknown as number
+    recorder.startSpan('Manual').end({exitCode})
+    recorder.recordSpan({
+      name: 'Completed',
+      startTimeMs: 1_700_000_000_000,
+      endTimeMs: 1_700_000_000_125,
+      exitCode,
+    })
+    expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 0})
+    expect(send).not.toHaveBeenCalled()
+    expect(warning).toHaveBeenCalledTimes(1)
+  })
 
   test('preserves an explicitly ended callback span and its nonthrowing result', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)

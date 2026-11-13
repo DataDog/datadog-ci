@@ -43,11 +43,40 @@ describe('GitHub context', () => {
 
   test('stops reading historical logs after finding the current job', () => {
     data.writeLog('Worker_20251231.log', 'Old job')
+    data.env.HOME = join(data.root, 'other-home')
+    const list = jest.spyOn(fs, 'readdirSync')
     const read = jest.spyOn(fs, 'readFileSync')
     const capture = createGithubContext(data.env)
     expect(capture().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
     expect(capture().ciEnv.DD_GITHUB_JOB_NAME).toBe('Build')
     expect(read.mock.calls.map(([file]) => file)).toEqual([join(data.diagnostic, 'Worker_20260101.log')])
+    expect(list.mock.calls.map(([directory]) => directory)).not.toContain(data.env.HOME)
+  })
+
+  test('searches later roots after stale logs without rereading overlapping files', () => {
+    const cached = join(data.root, 'actions-runner', 'cached')
+    mkdirSync(join(cached, 'v1'), {recursive: true})
+    data.writeLog('Worker_20260101.log', 'Stale job', 'plan.other.matrix')
+    renameSync(join(data.diagnostic, 'Worker_20260101.log'), join(data.diagnostic, 'Worker_20260103.log'))
+    renameSync(data.diagnostic, join(cached, '_diag'))
+    mkdirSync(data.diagnostic)
+    data.writeLog('Worker_20260102.log', 'Build (linux)')
+    renameSync(data.diagnostic, join(cached, 'v1', '_diag'))
+    Object.assign(data.env, {
+      RUNNER_TEMP: undefined,
+      HOME: data.root,
+      ACTIONS_ORCHESTRATION_ID: 'plan.build.default',
+    })
+    const read = jest.spyOn(fs, 'readFileSync')
+    expect(createGithubContext(data.env)()).toMatchObject({
+      ciEnv: {DD_GITHUB_JOB_NAME: 'Build (linux)', DD_GITHUB_STEP_INDEX: '1'},
+      tags: {'ci.job.id': '200'},
+      stepIndices: [0, 1, 2],
+    })
+    expect(read.mock.calls.map(([file]) => file)).toEqual([
+      join(cached, '_diag', 'Worker_20260103.log'),
+      join(cached, 'v1', '_diag', 'Worker_20260102.log'),
+    ])
   })
 
   test('skips partial and unrelated logs before stopping at a matching job', () => {

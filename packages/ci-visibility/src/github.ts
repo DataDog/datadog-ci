@@ -93,8 +93,9 @@ const diagnosticDirectories = (root: string, depth = 2): string[] => {
 }
 
 const workerMetadata = (env: Environment): WorkerMetadata => {
-  const logs: string[] = []
+  const seen = new Set<string>()
   for (const root of diagnosticRoots(env)) {
+    const logs: string[] = []
     for (const directory of new Set(diagnosticDirectories(root))) {
       try {
         logs.push(
@@ -106,34 +107,35 @@ const workerMetadata = (env: Environment): WorkerMetadata => {
         // Try the next candidate without exposing runner paths or log contents.
       }
     }
-    if (logs.length) {
-      break
-    }
-  }
-  logs.sort((a, b) => b.split(/[\\/]/).pop()!.localeCompare(a.split(/[\\/]/).pop()!))
-  for (const file of logs) {
-    try {
-      const content = readFileSync(file, 'utf8')
-      if (
-        env.ACTIONS_ORCHESTRATION_ID &&
-        (!content.includes('"system.orchestrationId"') ||
-          !content.includes(JSON.stringify(env.ACTIONS_ORCHESTRATION_ID)))
-      ) {
+    logs.sort((a, b) => b.split(/[\\/]/).pop()!.localeCompare(a.split(/[\\/]/).pop()!))
+    for (const file of logs) {
+      if (seen.has(file)) {
         continue
       }
-      const encodedName = content.match(/"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/)?.[1]
-      const steps = readSteps(content)
-      if (!encodedName) {
-        continue
-      }
+      seen.add(file)
+      try {
+        const content = readFileSync(file, 'utf8')
+        if (
+          env.ACTIONS_ORCHESTRATION_ID &&
+          (!content.includes('"system.orchestrationId"') ||
+            !content.includes(JSON.stringify(env.ACTIONS_ORCHESTRATION_ID)))
+        ) {
+          continue
+        }
+        const encodedName = content.match(/"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/)?.[1]
+        const steps = readSteps(content)
+        if (!encodedName) {
+          continue
+        }
 
-      return {
-        jobName: JSON.parse(`"${encodedName}"`) as string,
-        jobId: content.match(/"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/)?.[1],
-        steps,
+        return {
+          jobName: JSON.parse(`"${encodedName}"`) as string,
+          jobId: content.match(/"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/)?.[1],
+          steps,
+        }
+      } catch {
+        // A partial worker log must not prevent recording other annotations.
       }
-    } catch {
-      // A partial worker log must not prevent recording other annotations.
     }
   }
 
