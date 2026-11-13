@@ -5,7 +5,7 @@ Tag CI Visibility pipeline and job spans.
 ## Usage
 
 ```bash
-datadog-ci tag [--no-fail] [--level <levels>] [--tags]
+datadog-ci tag [--no-fail] [--no-retry] [--level <levels>] [--tags]
 ```
 
 For example:
@@ -29,6 +29,7 @@ datadog-ci tag --level job --tags "go.version:`go version`"
   datadog-ci tag --level pipeline,job --tags team:backend
   ```
 - `--no-fail` (default: `false`) will prevent the tag command from failing if there are issues submitting the data.
+- `--no-retry` sends at most one request per level. By default, the command retries transient failures up to five times.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will be the tags added to the pipeline or job span.
   The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable and in the `--tags-file` argument.
 - `--tags-file` is a file path to a JSON file that contains the tags in the form:

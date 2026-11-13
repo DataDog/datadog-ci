@@ -34,6 +34,7 @@ export class TagCommand extends BaseCommand {
 
   private level = Option.String('--level')
   private noFail = Option.Boolean('--no-fail')
+  private noRetry = Option.Boolean('--no-retry')
   private silent = Option.Boolean('--silent')
   private dryRun = Option.Boolean('--dry-run', false)
   private tags = Option.Array('--tags')
@@ -181,7 +182,7 @@ export class TagCommand extends BaseCommand {
             chalk.yellow(`[attempt ${attempt}] Could not send tags. Retrying...: ${(e as Error).message}\n`)
           )
         },
-        retries: 5,
+        retries: this.noRetry === true ? 0 : 5,
       })
     } catch (error) {
       this.handleError(error as RequestError)
