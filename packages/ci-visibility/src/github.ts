@@ -237,8 +237,8 @@ export const createGithubContext = (env: Environment): (() => GithubContext) => 
           env.DD_GIT_REPOSITORY_URL || (repository ? `${server}/${repository}.git` : undefined)
         ),
         'git.commit.sha': env.DD_GIT_COMMIT_SHA || env.GITHUB_SHA,
-        'git.branch': env.DD_GIT_BRANCH || (!ref.startsWith('refs/tags/') ? normalizeRef(ref) : undefined),
-        'git.tag': env.DD_GIT_TAG || (ref.startsWith('refs/tags/') ? normalizeRef(ref) : undefined),
+        'git.branch': normalizeRef(env.DD_GIT_BRANCH || (!ref.startsWith('refs/tags/') ? ref : undefined)),
+        'git.tag': normalizeRef(env.DD_GIT_TAG || (ref.startsWith('refs/tags/') ? ref : undefined)),
         'git.pull_request.base_branch': env.GITHUB_BASE_REF,
         'git.commit.head.sha': event?.pull_request?.head?.sha,
         'git.pull_request.base_branch_head_sha': event?.pull_request?.base?.sha,

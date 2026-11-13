@@ -58,6 +58,34 @@ describe('CI Visibility recorder', () => {
     expect(send).toHaveBeenCalledTimes(5)
   })
 
+  test('does not fall back to ambient credentials with a supplied environment', async () => {
+    jest.replaceProperty(process, 'env', {
+      ...process.env,
+      DATADOG_API_KEY: 'ambient-primary',
+      DD_API_KEY: 'ambient-secondary',
+    })
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const warning = jest.fn()
+    const recorder = createRecorder({env: data.env, onWarning: warning})
+    recorder.setTags({version: '1'})
+    expect(await recorder.flush()).toEqual({sent: 0, failed: 0, skipped: 1})
+    expect(send).not.toHaveBeenCalled()
+    expect(warning).toHaveBeenCalledTimes(1)
+  })
+
+  test('uses the default site when the supplied environment has no site', async () => {
+    jest.replaceProperty(process, 'env', {
+      ...process.env,
+      DATADOG_SITE: 'datadoghq.eu',
+      DD_SITE: 'us3.datadoghq.com',
+    })
+    const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
+    const recorder = createRecorder({env: {...data.env, DD_API_KEY: 'test-key'}})
+    recorder.setTags({version: '1'})
+    expect(await recorder.flush()).toEqual({sent: 1, failed: 0, skipped: 0})
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({apiKey: 'test-key', site: 'datadoghq.com'}))
+  })
+
   test('captures the originating identity before an explicit flush', async () => {
     const send = jest.spyOn(request, 'httpRequest').mockResolvedValue(202)
     const env = {...data.env, DD_API_KEY: 'test-key'}

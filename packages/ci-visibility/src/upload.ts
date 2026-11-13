@@ -15,8 +15,8 @@ export const upload = async (
   if (!requests.length) {
     return result
   }
-  const apiKey = options.apiKey || process.env.DATADOG_API_KEY || process.env.DD_API_KEY
-  const site = options.site || process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+  const apiKey = options.apiKey || env.DATADOG_API_KEY || env.DD_API_KEY
+  const site = options.site || env.DATADOG_SITE || env.DD_SITE || 'datadoghq.com'
   const timeoutMs = options.timeoutMs ?? 10_000
   const requestTimeoutMs = options.requestTimeoutMs ?? 4_000
   if (

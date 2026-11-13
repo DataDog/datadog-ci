@@ -181,6 +181,17 @@ describe('GitHub context', () => {
     expect(context.tags['git.branch']).toBeUndefined()
   })
 
+  test.each([
+    ['DD_GIT_BRANCH', 'refs/heads/feature', 'git.branch', 'feature'],
+    ['DD_GIT_BRANCH', 'origin/feature', 'git.branch', 'feature'],
+    ['DD_GIT_BRANCH', 'feature', 'git.branch', 'feature'],
+    ['DD_GIT_TAG', 'refs/tags/v1', 'git.tag', 'v1'],
+    ['DD_GIT_TAG', 'v1', 'git.tag', 'v1'],
+  ])('normalizes explicit Git refs: %s=%s', (variable, value, tag, expected) => {
+    data.env[variable] = value
+    expect(createGithubContext(data.env)().tags[tag]).toBe(expected)
+  })
+
   test('derives Windows and macOS installation roots without a path dependency', () => {
     expect(diagnosticRoots({RUNNER_OS: 'Windows', RUNNER_TEMP: 'D:\\runner\\_work\\_temp'})).toContain('D:\\runner')
     expect(diagnosticRoots({RUNNER_OS: 'macOS', RUNNER_TEMP: '/opt/runner/_work/_temp'})).toContain('/opt/runner')

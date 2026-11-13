@@ -79,6 +79,16 @@ describe('bounded uploads', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
+  test('reads upload settings from the supplied environment', async () => {
+    const send = jest.spyOn(transport, 'httpRequest').mockResolvedValue(202)
+    expect(await upload(requests(1), {}, {DATADOG_API_KEY: 'test-key', DATADOG_SITE: 'datadoghq.eu'})).toEqual({
+      sent: 1,
+      failed: 0,
+      skipped: 0,
+    })
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({apiKey: 'test-key', site: 'datadoghq.eu'}))
+  })
+
   test('sends the expected paths, payloads, and headers through the HTTP boundary', async () => {
     const received: {path?: string; body: unknown; key?: string}[] = []
     const server = createServer((incoming, response) => {
