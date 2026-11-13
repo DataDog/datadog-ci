@@ -22,7 +22,7 @@ export class RNSourcemap {
     service: string,
     version: string,
     projectPath: string,
-    platform: RNPlatform,
+    platform: RNSourcemapPlatform,
     build: string,
     context: CommandContext
   ): MultipartPayload {
@@ -92,7 +92,7 @@ export class RNSourcemap {
     service: string,
     version: string,
     projectPath: string,
-    platform: RNPlatform,
+    platform: RNSourcemapPlatform,
     build: string,
     debugId: string | undefined
   ): MultipartValue {
@@ -129,6 +129,8 @@ export interface GitData {
   gitRepositoryURL: string
 }
 
-export const RN_SUPPORTED_PLATFORMS = ['ios', 'android'] as const
-// Notice that the array and type can have the same name if you want
-export type RNPlatform = (typeof RN_SUPPORTED_PLATFORMS)[number]
+export const RN_SOURCEMAP_SUPPORTED_PLATFORMS = ['ios', 'android', 'vega'] as const
+export type RNSourcemapPlatform = (typeof RN_SOURCEMAP_SUPPORTED_PLATFORMS)[number]
+
+export const RN_CODEPUSH_SUPPORTED_PLATFORMS = ['ios', 'android'] as const
+export type RNCodepushPlatform = (typeof RN_CODEPUSH_SUPPORTED_PLATFORMS)[number]

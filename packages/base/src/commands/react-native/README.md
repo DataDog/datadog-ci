@@ -42,13 +42,31 @@ To upload the source maps for Android, run this command:
 datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4 --build-version 1234
 ```
 
+For a Vega Release build, run this command from your application root, adjusting the service, release version, and build version for your application:
+
+```bash
+datadog-ci react-native upload --platform vega --service com.company.app --bundle ./build/lib/rn-bundles/Release/index.bundle --sourcemap ./build/debugging/Release/srcmap/index.bundle.map --release-version 0.1.0 --build-version 1234
+```
+
+Vega generates the JavaScript bundle at `build/lib/rn-bundles/Release/index.bundle` and its source map at `build/debugging/Release/srcmap/index.bundle.map`. For a Debug build, replace `Release` with `Debug` in both paths.
+
+Wrap your merged Metro configuration with `withDatadogMetroConfig` from `@datadog/mobile-react-native/metro` so the bundle and source map contain matching Debug IDs:
+
+```js
+const {withDatadogMetroConfig} = require('@datadog/mobile-react-native/metro')
+
+module.exports = withDatadogMetroConfig(mergedConfig)
+```
+
+Set `--service` to the service reported by your SDK. Set `--release-version` to `[package].version` in `manifest.toml` (for example, `0.1.0` in `example-vega`), or to `configuration.version` if you override it. Append any configured `versionSuffix` with a separating hyphen, such as `0.1.0-preview`. Use a distinct `--build-version` for each application build.
+
 | Parameter           | Condition | Description                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--platform`        | Required  | Identifies if you are uploading iOS or Android source maps.                                                                                                                                                                                                                                                                                                     |
-| `--service`         | Required  | Set as the service name you are uploading source maps for. Datadog uses this service name to find corresponding source maps based on the `service` tag set on the RUM React Native SDK.<br>By default, the RUM React Native SDK uses your application's bundle identifier as the service.                                                                       |
-| `--bundle`          | Required  | Must be set as the path to your generated JS bundle file, `main.jsbundle` for iOS and `index.android.bundle` for Android.                                                                                                                                                                                                                                       |
-| `--sourcemap`       | Required  | Must be set to the path to your generated source map file, `main.jsbundle.map` for iOS and `index.android.bundle.map` for Android.                                                                                                                                                                                                                              |
-| `--release-version` | Required  | Used to match the `version` tag set on the RUM React Native SDK. This should be the "Version" or "MARKETING_VERSION" in XCode for iOS and the "versionName" in your `android/app/build.gradle` for Android.                                                                                                                                                     |
+| `--platform`        | Required  | Identifies if you are uploading iOS, Android, or Vega source maps.                                                                                                                                                                                                                                                                                              |
+| `--service`         | Required  | Set as the service name you are uploading source maps for. Datadog uses this service name to find corresponding source maps based on the `service` tag set on the RUM React Native SDK.                                                                                                                                                                            |
+| `--bundle`          | Required  | Must be set as the path to your generated JS bundle file, `main.jsbundle` for iOS, `index.android.bundle` for Android, and `index.bundle` for Vega.                                                                                                                                                                                                             |
+| `--sourcemap`       | Required  | Must be set to the path to your generated source map file, `main.jsbundle.map` for iOS, `index.android.bundle.map` for Android, and `index.bundle.map` for Vega.                                                                                                                                                                                                |
+| `--release-version` | Required  | Used to match the `version` tag set on the RUM React Native SDK. This should be the "Version" or "MARKETING_VERSION" in XCode for iOS, the "versionName" in your `android/app/build.gradle` for Android, or `[package].version` in `manifest.toml` for Vega, unless overridden in the SDK configuration.                                                                                                                                                     |
 | `--build-version`   | Required  | Used to avoid overwriting your source maps by accident. Only one upload is needed for a specific `build-version` and `service` combination. Subsequent uploads are ignored until the `build-version` changes. This should match the "Build" or "CURRENT_PROJECT_VERSION" in XCode for iOS and the "versionCode" in your `android/app/build.gradle` for Android. |
 
 The following optional parameters are available:

@@ -1,6 +1,6 @@
 import {exec} from 'child_process'
 
-import type {RNPlatform} from './interfaces'
+import type {RNCodepushPlatform} from './interfaces'
 
 import {Cli, Command, Option} from 'clipanion'
 
@@ -10,7 +10,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
-import {RN_SUPPORTED_PLATFORMS} from './interfaces'
+import {RN_CODEPUSH_SUPPORTED_PLATFORMS} from './interfaces'
 import {ReactNativeUploadCommand} from './upload'
 import {sanitizeReleaseVersion} from './utils'
 
@@ -48,7 +48,7 @@ export class ReactNativeCodepushCommand extends BaseCommand {
   private disableGit = Option.Boolean('--disable-git')
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20')
-  private platform?: RNPlatform = Option.String('--platform')
+  private platform?: RNCodepushPlatform = Option.String('--platform')
   private projectPath = Option.String('--project-path')
   private removeSourcesContent = Option.Boolean('--remove-sources-content')
   private repositoryURL = Option.String('--repository-url')
@@ -79,7 +79,7 @@ export class ReactNativeCodepushCommand extends BaseCommand {
       return 1
     }
 
-    if (!RN_SUPPORTED_PLATFORMS.includes(this.platform)) {
+    if (!RN_CODEPUSH_SUPPORTED_PLATFORMS.includes(this.platform)) {
       this.context.stderr.write(
         `Platform ${this.platform} is not supported.\nSupported platforms are ios and android.\n`
       )
