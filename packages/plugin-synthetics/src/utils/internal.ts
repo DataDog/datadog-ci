@@ -38,6 +38,7 @@ export type RecursivePartial<T> = {
 
 export interface PageLevelVrt {
   captureScreenshots?: boolean
+  fixedTime?: number
   recordNetwork?: boolean
 }
 

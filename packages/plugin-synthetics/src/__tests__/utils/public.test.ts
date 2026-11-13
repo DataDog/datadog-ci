@@ -268,9 +268,13 @@ describe('utils', () => {
       })
     })
 
-    test('pageLevelVrt override is forwarded', () => {
+    test.each([
+      {captureScreenshots: true, recordNetwork: true},
+      {captureScreenshots: true, fixedTime: 1793145600000, recordNetwork: true},
+      {captureScreenshots: true, fixedTime: 1793145600000, recordNetwork: false},
+      {captureScreenshots: true, fixedTime: 0, recordNetwork: false},
+    ])('pageLevelVrt override is forwarded unchanged: %j', (pageLevelVrt) => {
       const publicId = 'abc-def-ghi'
-      const pageLevelVrt = {captureScreenshots: true, recordNetwork: true}
       expect(
         utils.makeTestPayload({public_id: publicId} as Test, {id: publicId, testOverrides: {pageLevelVrt}}, publicId)
       ).toEqual({pageLevelVrt, public_id: publicId})
