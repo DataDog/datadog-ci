@@ -42,6 +42,7 @@
     "testTimeout": 200000,
     "variables": {"titleVariable": "new value"}
   },
+  "pageLevelVrt": {"captureScreenshots": true, "recordNetwork": true},
   "proxy": {
     "protocol": "https"
   },

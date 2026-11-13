@@ -625,10 +625,16 @@ export interface UserConfigOverride extends BaseConfigOverride {
   mobileApplicationVersionFilePath?: string
 }
 
+export interface PageLevelVrt {
+  captureScreenshots?: boolean
+  recordNetwork?: boolean
+}
+
 export interface ServerConfigOverride extends BaseConfigOverride {
   // Programmatically set with `overrideMobileConfig()`.
   appExtractedMetadata?: MobileAppExtractedMetadata
   mobileApplication?: MobileApplication
+  pageLevelVrt?: PageLevelVrt
   // Programmatically set with `tunnel.start()`.
   // XXX: This would be better passed as a batch option in the future since it's always the same for all tests.
   tunnel?: TunnelInfo
@@ -768,6 +774,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   jUnitReport?: string
   jsonReport?: string
   mobileApplicationVersionFilePath?: string
+  pageLevelVrt?: PageLevelVrt
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
   selectiveRerun?: boolean
