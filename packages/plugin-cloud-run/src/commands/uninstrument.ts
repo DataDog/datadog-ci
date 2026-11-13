@@ -14,7 +14,7 @@ import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirma
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {uninstrumentServiceConfig} from '../service-config'
 import {previewServiceUpdate} from '../service-update'
-import {checkAuthentication, fetchServiceConfigs} from '../utils'
+import {checkAuthentication, fetchServiceConfigs, updateServiceAndWait} from '../utils'
 
 interface UninstrumentedServiceUpdate {
   existingService: IService
@@ -120,9 +120,10 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     )
 
     const updatedServices: string[] = []
-    for (const update of updates) {
+    for (const [index, update] of updates.entries()) {
+      const position = updates.length > 1 ? ` (${index + 1}/${updates.length})` : ''
       try {
-        if (await this.uninstrumentService(client, update)) {
+        if (await this.uninstrumentService(client, update, position)) {
           updatedServices.push(update.serviceName)
         }
       } catch (error) {
@@ -158,7 +159,11 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     return result.service
   }
 
-  private async uninstrumentService(client: ServicesClient, update: UninstrumentedServiceUpdate): Promise<boolean> {
+  private async uninstrumentService(
+    client: ServicesClient,
+    update: UninstrumentedServiceUpdate,
+    position: string
+  ): Promise<boolean> {
     const {existingService, updatedService, serviceName, preview} = update
     this.context.stdout.write(preview.diff)
     if (!preview.hasChanges && existingService.terminalCondition?.state === 'CONDITION_SUCCEEDED') {
@@ -184,13 +189,8 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     }
 
     await withSpinner(
-      `Uninstrumenting service ${chalk.bold(serviceName)}...`,
-      async () => {
-        const [operation] = await client.updateService({
-          service: updatedService,
-        })
-        await operation.promise()
-      },
+      `Uninstrumenting service ${chalk.bold(serviceName)}${position}...`,
+      (setStatus) => updateServiceAndWait(client, updatedService, setStatus),
       `Uninstrumented service ${chalk.bold(serviceName)}`
     )
 

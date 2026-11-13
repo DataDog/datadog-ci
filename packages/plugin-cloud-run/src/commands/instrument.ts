@@ -23,6 +23,7 @@ import {
   DD_LLMOBS_ML_APP_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {isInjection, renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
@@ -33,7 +34,7 @@ import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../re
 import {instrumentServiceConfig} from '../service-config'
 import {previewServiceUpdate} from '../service-update'
 import {getTracingEnvValue, normalizeTracingMode, resolveSsiConfig} from '../ssi'
-import {checkAuthentication, fetchServiceConfigs} from '../utils'
+import {checkAuthentication, fetchServiceConfigs, updateServiceAndWait} from '../utils'
 
 interface InstrumentedServiceUpdate {
   existingService: IService
@@ -201,17 +202,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       existingServiceConfigs.map(async (existingService, index): Promise<InstrumentedServiceUpdate> => {
         const serviceName = services[index]
         try {
-          const ssiConfig = this.getSsiConfig()
-          if (
-            (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') &&
-            (existingService.template?.scaling?.minInstanceCount ?? 0) === 0
-          ) {
-            this.context.stdout.write(
-              renderSoftWarning(
-                `Automatic APM instrumentation can increase cold-start delays for ${serviceName} because scale-to-zero is enabled. Prefer manual instrumentation for scale-to-zero workloads.`
-              )
-            )
-          }
           const updatedService = this.createInstrumentedServiceConfig(existingService, ddService ?? serviceName)
           const preview = await previewServiceUpdate(client, existingService, updatedService)
 
@@ -224,9 +214,10 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     )
 
     const updatedServices: string[] = []
-    for (const update of updates) {
+    for (const [index, update] of updates.entries()) {
+      const position = updates.length > 1 ? ` (${index + 1}/${updates.length})` : ''
       try {
-        if (await this.instrumentService(client, update)) {
+        if (await this.instrumentService(client, update, position)) {
           updatedServices.push(update.serviceName)
         }
       } catch (error) {
@@ -287,7 +278,11 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     return Object.fromEntries(Object.entries(envVars).map(([name, value]) => [name, {name, value}]))
   }
 
-  private async instrumentService(client: ServicesClient, update: InstrumentedServiceUpdate): Promise<boolean> {
+  private async instrumentService(
+    client: ServicesClient,
+    update: InstrumentedServiceUpdate,
+    position: string
+  ): Promise<boolean> {
     const {existingService, updatedService, serviceName, preview} = update
     this.context.stdout.write(preview.diff)
     if (!preview.hasChanges && existingService.terminalCondition?.state === 'CONDITION_SUCCEEDED') {
@@ -296,6 +291,9 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       )
 
       return false
+    }
+    if (isInjection(this.getSsiConfig()) && (existingService.template?.scaling?.minInstanceCount ?? 0) === 0) {
+      this.context.stdout.write(`\n${renderScaleToZeroWarning(serviceName, 'minimum instances')}`)
     }
     if (this.dryRun) {
       this.context.stdout.write(
@@ -313,13 +311,8 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
 
     await withSpinner(
-      `Instrumenting service ${chalk.bold(serviceName)}...`,
-      async () => {
-        const [operation] = await client.updateService({
-          service: updatedService,
-        })
-        await operation.promise()
-      },
+      `Instrumenting service ${chalk.bold(serviceName)}${position}...`,
+      (setStatus) => updateServiceAndWait(client, updatedService, setStatus),
       `Instrumented service ${chalk.bold(serviceName)}`
     )
 

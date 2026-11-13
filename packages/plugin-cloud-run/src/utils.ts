@@ -55,3 +55,22 @@ export const fetchServiceConfigs = async (
 
   return existingServiceConfigs
 }
+
+/**
+ * Updates a service and waits for its revision rollout, reporting Cloud Run's status message as it changes,
+ * such as `Provisioning revision instances to receive traffic.`
+ */
+export const updateServiceAndWait = async (
+  client: ServicesClient,
+  service: IService,
+  setStatus: (status: string) => void
+) => {
+  const [operation] = await client.updateService({service})
+  operation.on('progress', (metadata: IService) => {
+    const message = metadata.terminalCondition?.message
+    if (message) {
+      setStatus(message)
+    }
+  })
+  await operation.promise()
+}

@@ -310,6 +310,37 @@ Ensure you copied the value and not the Key ID.
       )
     })
 
+    const withMinReplicas = (minReplicas: number) => ({
+      ...DEFAULT_CONTAINER_APP,
+      template: {...DEFAULT_CONTAINER_APP.template, scale: {minReplicas}},
+    })
+
+    test('Warns about scale-to-zero cold starts after the configuration diff', async () => {
+      containerAppsOperations.get.mockResolvedValue(withMinReplicas(0))
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--tracing', 'inject', '--language', 'python'])
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        '\n[Warning] Automatic APM instrumentation can increase cold-start delays for my-container-app because scale-to-zero is enabled.\n'
+      )
+      expect(output).toContain('or set minimum replicas to 1 or more.\n\n')
+      expect(output).toMatch(/Updating configuration for[\s\S]*cold-start delays/)
+    })
+
+    test.each([
+      [1, ['--tracing', 'inject', '--language', 'python']],
+      [0, ['--tracing', 'manual']],
+    ])('Does not warn about cold starts with minReplicas %s and %s', async (minReplicas, tracingFlags) => {
+      containerAppsOperations.get.mockResolvedValue(withMinReplicas(minReplicas))
+
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, ...tracingFlags])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).not.toContain('cold-start delays')
+    })
+
     test('Redacts secrets in the configuration diff without redacting the Azure update', async () => {
       containerAppsOperations.listSecrets.mockResolvedValue({
         value: [
