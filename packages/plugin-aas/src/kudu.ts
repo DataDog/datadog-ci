@@ -6,7 +6,7 @@ import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
 export interface KuduClient {
-  deleteDirectory(directory: string): Promise<void>
+  deleteDirectory(directory: string, attempts?: number): Promise<void>
   publish(directory: string, archive: Buffer): Promise<void>
   hasArtifacts(artifacts: readonly (readonly string[])[]): Promise<boolean>
   /** Atomically renames `source` to `target`. Fails if `target` is a non-empty directory. */
@@ -142,7 +142,7 @@ export const getKuduClient = async (
         throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
       }
     },
-    deleteDirectory: async (directory) => {
+    deleteDirectory: async (directory, attempts = 7) => {
       // Deleting onto the Azure Files-backed /home mount races directory enumeration on CIFS and
       // fails while the app or sidecar still holds the files after the restart triggered by the
       // settings update, so retry with backoff long enough for the restart to settle.
@@ -150,7 +150,7 @@ export const getKuduClient = async (
         if ((await runCommand(`rm -rf -- ${directory}`)).ExitCode === 0) {
           return
         }
-        if (attempt >= 6) {
+        if (attempt >= attempts - 1) {
           throw new Error(`Failed to delete ${directory} from the Web App.`)
         }
         await new Promise((resolve) => setTimeout(resolve, Math.min(5_000 * 2 ** attempt, 30_000)))

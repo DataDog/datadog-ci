@@ -290,7 +290,9 @@ export class PluginCommand extends AasInstrumentCommand {
           }
         } else {
           this.context.stdout.write(`Staging the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`)
-          const staged = await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp))
+          const staged = await staging.publish(await getKuduClient(aasClient, resourceGroup, webApp), (message) =>
+            this.context.stdout.write(renderSoftWarning(message))
+          )
           this.context.stdout.write(
             staged
               ? `Staged the ${runtime.language} tracer for ${renderWebApp(webApp)}\n`

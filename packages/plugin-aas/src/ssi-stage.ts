@@ -24,7 +24,7 @@ export interface AasTracerStaging {
   readonly root: string
   readonly spec: LanguageInjectionSpec
   /** Publishes the tracer unless already staged. Returns whether anything was uploaded. */
-  publish(kudu: KuduClient): Promise<boolean>
+  publish(kudu: KuduClient, warn: (message: string) => void): Promise<boolean>
 }
 
 // Resolution performs no app mutation, so callers can validate environment conflicts against
@@ -45,8 +45,20 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
   return {
     root,
     spec,
-    publish: async (kudu) => {
+    publish: async (kudu, warn) => {
+      // Removes temporary trees left by interrupted runs. The tracer is usable without this, so a
+      // failure only warns. deleteDirectory runs through bash, which expands the glob.
+      const removeLeftovers = async () => {
+        const leftovers = `${root}.tmp-*`
+        try {
+          await kudu.deleteDirectory(leftovers, 1)
+        } catch {
+          warn(`Could not remove leftover tracer staging directories ${leftovers}. The next run removes them.`)
+        }
+      }
       if (await kudu.hasArtifacts(spec.artifacts)) {
+        await removeLeftovers()
+
         return false
       }
       const layer = await httpRequest<Uint8Array>({
@@ -73,9 +85,7 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
         await new Promise((resolve) => setTimeout(resolve, 5_000))
       }
       await kudu.rename(temporaryRoot, root)
-      // Removes temporary trees left by interrupted runs. deleteDirectory runs through bash, which
-      // expands the glob.
-      await kudu.deleteDirectory(`${root}.tmp-*`)
+      await removeLeftovers()
 
       return true
     },
