@@ -633,3 +633,38 @@ describe('Container Apps automatic APM instrumentation', () => {
     })
   })
 })
+
+describe('Agent port conflicts', () => {
+  const appListeningOn = (targetPort: number, additionalTargetPort?: number): ContainerApp => ({
+    ...DEFAULT_CONTAINER_APP,
+    configuration: {
+      ingress: {
+        targetPort,
+        additionalPortMappings: additionalTargetPort ? [{external: false, targetPort: additionalTargetPort}] : [],
+      },
+    },
+  })
+
+  describe.each([
+    ['manual', {...DEFAULT_CONFIG, service: DEFAULT_CONTAINER_APP.name, tracing: 'manual'}],
+    ['inject', injectConfig()],
+  ] as const)('with --tracing %s', (_tracing, config) => {
+    test.each([
+      [5555, 'Datadog Agent health port'],
+      [8126, 'Datadog Agent trace port'],
+      [8125, 'Datadog Agent DogStatsD port'],
+    ])('rejects ingress target port %s that the sidecar binds', (port, name) => {
+      expect(() => createInstrumentedApp(config, appListeningOn(port))).toThrow(
+        `Port ${port} on the ingress of container app 'my-container-app' conflicts with ${name} ${port}. Change the port on the ingress of container app 'my-container-app'.`
+      )
+    })
+
+    test('rejects an additional ingress port that the sidecar binds', () => {
+      expect(() => createInstrumentedApp(config, appListeningOn(8080, 8126))).toThrow('Port 8126 on the ingress')
+    })
+
+    test('accepts ingress ports the sidecar does not bind', () => {
+      expect(() => createInstrumentedApp(config, appListeningOn(8080, 9000))).not.toThrow()
+    })
+  })
+})

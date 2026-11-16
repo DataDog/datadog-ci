@@ -24,6 +24,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {isInjection, renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import {checkPinnedTracerVersion} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
@@ -57,6 +58,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
     )
 
+    this.ssiConfig = await checkPinnedTracerVersion(this.getSsiConfig())
     if (!this.validateLocalOptions()) {
       return 1
     }

@@ -1238,6 +1238,27 @@ describe('instrumentTaskDefinition', () => {
       )
     })
 
+    describe.each([
+      ['manual', {}],
+      ['inject', {tracing: 'inject', language: 'nodejs'}],
+    ] as const)('with --tracing %s', (_tracing, tracingSettings) => {
+      const listeningOn = (containerPort: number) =>
+        fargateTaskDefinition({containerDefinitions: [{...APP_CONTAINER, portMappings: [{containerPort}]}]})
+
+      test.each([
+        [8126, 'Datadog Agent trace port'],
+        [8125, 'Datadog Agent DogStatsD port'],
+      ])('rejects app port %s that the Agent binds', (port, name) => {
+        expect(() => instrumentTaskDefinition(listeningOn(port), {...MOCK_SETTINGS, ...tracingSettings})).toThrow(
+          `Port ${port} on container 'my-app' conflicts with ${name} ${port}. Change the port on container 'my-app'.`
+        )
+      })
+
+      test('accepts an app port the Agent does not bind', () => {
+        expect(() => instrumentTaskDefinition(listeningOn(8080), {...MOCK_SETTINGS, ...tracingSettings})).not.toThrow()
+      })
+    })
+
     test('accepts a task definition that declares no compatibilities', () => {
       const original = fargateTaskDefinition({requiresCompatibilities: undefined})
 

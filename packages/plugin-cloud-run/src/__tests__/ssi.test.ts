@@ -635,6 +635,42 @@ describe('SSI service preparation', () => {
     )
   })
 
+  describe.each([
+    ['manual', 'none'],
+    ['inject', 'nodejs'],
+  ] as const)('with --tracing %s', (_tracing, language) => {
+    const serviceListeningOn = (port: number) => {
+      const service = serviceWithWorker()
+      service.template!.containers![0].ports = [{containerPort: port}]
+
+      return service
+    }
+
+    test.each([
+      [
+        DEFAULT_HEALTH_CHECK_PORT,
+        undefined,
+        "Datadog Agent health port 5555. Change the port on container 'app' or --health-check-port.",
+      ],
+      [9000, 9000, "Datadog Agent health port 9000. Change the port on container 'app' or --health-check-port."],
+      [8126, undefined, "Datadog Agent trace port 8126. Change the port on container 'app'."],
+      [8125, undefined, "Datadog Agent DogStatsD port 8125. Change the port on container 'app'."],
+    ])('rejects app port %s that the Agent binds', (port, healthCheckPort, message) => {
+      expect(() =>
+        instrumentServiceConfig(serviceListeningOn(port), {...serviceConfigOptions(language), healthCheckPort})
+      ).toThrow(`Port ${port} on container 'app' conflicts with ${message}`)
+    })
+
+    test('accepts the default health port as an app port when the Agent uses another', () => {
+      expect(() =>
+        instrumentServiceConfig(serviceListeningOn(DEFAULT_HEALTH_CHECK_PORT), {
+          ...serviceConfigOptions(language),
+          healthCheckPort: 9000,
+        })
+      ).not.toThrow()
+    })
+  })
+
   test('uses an explicit health port for the Agent environment and startup probe', () => {
     const service = serviceWithWorker()
     service.template!.containers!.push({

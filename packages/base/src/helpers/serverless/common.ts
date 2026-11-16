@@ -15,6 +15,8 @@ import {
   LOGS_PATH_ENV_VAR,
   ENV_VAR_REGEX,
   DEFAULT_HEALTH_CHECK_PORT,
+  DOGSTATSD_PORT,
+  SIDECAR_PORT,
 } from './constants'
 /**
  * Parses environment variables from array format (KEY=VALUE) to object format.
@@ -311,5 +313,39 @@ export const createInstrumentedTemplate = (
     ...template,
     containers: updatedContainers,
     volumes: updatedVolumes as Volume[], // we can assume any input volumes are valid
+  }
+}
+
+/** A port a Datadog sidecar binds in the network namespace it shares with the application. */
+export interface SidecarPort {
+  readonly port: number
+  readonly name: string
+  /** The flag that changes this port, when the command has one. */
+  readonly flag?: string
+}
+
+export const AGENT_TRACE_PORT: SidecarPort = {port: SIDECAR_PORT, name: 'Datadog Agent trace port'}
+export const AGENT_DOGSTATSD_PORT: SidecarPort = {port: DOGSTATSD_PORT, name: 'Datadog Agent DogStatsD port'}
+
+/** A port the application listens on, and where it is declared, such as `container 'app'`. */
+export interface AppPort {
+  readonly port: number
+  readonly source: string
+}
+
+/** Rejects an application port that a sidecar also binds, since only one of them can listen on it. */
+export const assertAppPortsAvoidSidecarPorts = (
+  appPorts: readonly AppPort[],
+  sidecarPorts: readonly SidecarPort[]
+): void => {
+  for (const {port, source} of appPorts) {
+    const sidecarPort = sidecarPorts.find((candidate) => candidate.port === port)
+    if (sidecarPort) {
+      throw new Error(
+        `Port ${port} on ${source} conflicts with ${sidecarPort.name} ${sidecarPort.port}. Change the port on ${source}${
+          sidecarPort.flag ? ` or ${sidecarPort.flag}` : ''
+        }.`
+      )
+    }
   }
 }

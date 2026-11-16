@@ -2,7 +2,12 @@ import type {SsiConfigResult} from './ssi'
 import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume} from './types'
 
 import {CLOUD_RUN_TRACER_REGISTRY, type TracerVolumeMedium} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
-import {createInstrumentedTemplate} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
+  AGENT_DOGSTATSD_PORT,
+  AGENT_TRACE_PORT,
+  assertAppPortsAvoidSidecarPorts,
+  createInstrumentedTemplate,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_TRACE_ENABLED_ENV_VAR,
   HEALTH_PORT_ENV_VAR,
@@ -99,6 +104,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   }
   const hasSsi = hasSsiState(service)
   const sourceContainers = sourceTemplate.containers ?? []
+  assertAgentPortsAvailable(sourceContainers, options.sidecarName, healthCheckPort)
   const hasTracerContainer = sourceContainers.some(isManagedTracerContainer)
   const hasTracerVolume = sourceTemplate.volumes?.some((volume) => volume.name === TRACER_VOLUME_NAME) ?? false
   const shouldRemoveSsi = hasSsi && ssiConfig.kind === 'no-injection' && ssiConfig.tracing !== undefined
@@ -381,6 +387,26 @@ const assertTracerReadinessPortAvailable = (
     )
   }
 }
+
+const assertAgentPortsAvailable = (
+  containers: readonly IContainer[],
+  sidecarName: string,
+  healthCheckPort: number
+): void =>
+  assertAppPortsAvoidSidecarPorts(
+    containers
+      .filter((container) => container.name !== sidecarName)
+      .flatMap((container) =>
+        (container.ports ?? []).flatMap(({containerPort}) =>
+          containerPort ? [{port: containerPort, source: `container '${container.name || '<unnamed>'}'`}] : []
+        )
+      ),
+    [
+      {port: healthCheckPort, name: 'Datadog Agent health port', flag: '--health-check-port'},
+      AGENT_TRACE_PORT,
+      AGENT_DOGSTATSD_PORT,
+    ]
+  )
 
 const hasSsiState = (service: IService): boolean =>
   service.labels?.[SSI_INJECTION_MODE_LABEL] !== undefined || hasCompleteSsiSignature(service.template)

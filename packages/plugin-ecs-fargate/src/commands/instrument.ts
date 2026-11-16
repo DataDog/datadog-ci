@@ -11,6 +11,7 @@ import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/r
 import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {checkPinnedTracerVersion} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
@@ -33,7 +34,7 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     const [config, configErrors] = await this.ensureConfig()
     // Resolved before any AWS call, so that a tracer option the command cannot honour stops the run
     // rather than registering a revision for the task definitions it reaches first.
-    const ssiConfig = resolveSsiConfig(config)
+    const ssiConfig = await checkPinnedTracerVersion(resolveSsiConfig(config))
     if (ssiConfig.kind === 'errors' || configErrors.length > 0) {
       for (const error of [...(ssiConfig.kind === 'errors' ? ssiConfig.errors : []), ...configErrors]) {
         this.context.stdout.write(renderError(error))
