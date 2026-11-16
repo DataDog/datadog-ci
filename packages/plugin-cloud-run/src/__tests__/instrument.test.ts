@@ -546,7 +546,7 @@ describe('InstrumentCommand', () => {
       })
     })
 
-    test('sanitizes env and version label values without changing DD_ENV and DD_VERSION', () => {
+    test('sanitizes service, env, and version label values without changing DD_SERVICE, DD_ENV, and DD_VERSION', () => {
       ;(command as any).environment = 'Prod'
       ;(command as any).version = '1.2.3'
 
@@ -557,10 +557,11 @@ describe('InstrumentCommand', () => {
         },
       }
 
-      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+      const result = command.createInstrumentedServiceConfig(service, 'My.Service')
 
-      expect(result.labels).toMatchObject({env: 'prod', version: '1_2_3'})
+      expect(result.labels).toMatchObject({service: 'my_service', env: 'prod', version: '1_2_3'})
       const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(mainContainer?.env).toContainEqual({name: 'DD_SERVICE', value: 'My.Service'})
       expect(mainContainer?.env).toContainEqual({name: 'DD_ENV', value: 'Prod'})
       expect(mainContainer?.env).toContainEqual({name: 'DD_VERSION', value: '1.2.3'})
     })

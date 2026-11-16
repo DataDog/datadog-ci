@@ -162,7 +162,7 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
   ) as IServiceTemplate
   const labels: Record<string, string> = {
     ...service.labels,
-    [UNIFIED_SERVICE_TAG_LABELS.service]: options.ddService,
+    [UNIFIED_SERVICE_TAG_LABELS.service]: toLabelValue(options.ddService),
     [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace(/\./g, '_'),
   }
   if (options.environment) {
