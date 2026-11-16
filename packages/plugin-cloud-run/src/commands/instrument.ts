@@ -292,6 +292,17 @@ export class PluginCommand extends CloudRunInstrumentCommand {
 
       return false
     }
+    const existingContainers = existingService.template?.containers ?? []
+    const namedContainer = updatedService.template?.containers?.find(
+      (container, index) => existingContainers[index] && !existingContainers[index].name && container.name
+    )
+    if (namedContainer) {
+      this.context.stdout.write(
+        `\n${dryRunPrefix(this.dryRun)}Naming the unnamed app container '${
+          namedContainer.name
+        }' because gcloud can't update a service whose unnamed container has a dependency.\n`
+      )
+    }
     if (isInjection(this.getSsiConfig()) && (existingService.template?.scaling?.minInstanceCount ?? 0) === 0) {
       this.context.stdout.write(`\n${renderScaleToZeroWarning(serviceName, 'minimum instances')}`)
     }

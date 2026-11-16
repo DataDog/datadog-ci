@@ -138,7 +138,16 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     )
     assertTracerMountPathAvailable(updatedMainContainer, getTracerMountPath(ssiConfig))
     assertInjectionEnvCanBeMerged(updatedMainContainer.env, ssiConfig)
-    targetContainers = new Set([updatedMainContainer])
+    const namedMainContainer = updatedMainContainer.name
+      ? updatedMainContainer
+      : {...updatedMainContainer, name: freeAppContainerName(sourceTemplate.containers ?? [], options.sidecarName)}
+    sourceTemplate = {
+      ...sourceTemplate,
+      containers: sourceTemplate.containers?.map((container) =>
+        container === updatedMainContainer ? namedMainContainer : container
+      ),
+    }
+    targetContainers = new Set([namedMainContainer])
     envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'}
   }
 
@@ -442,6 +451,14 @@ const isManagedSingleLanguageTracerImage = (image: string | null | undefined): b
 
 const reservedContainerNames = (sidecarName: string): ReadonlySet<string> =>
   new Set([sidecarName, ...MANAGED_TRACER_CONTAINER_NAMES])
+
+// gcloud cannot update a service whose unnamed container has dependencies, so SSI names the app container.
+const freeAppContainerName = (containers: readonly IContainer[], sidecarName: string): string => {
+  const taken = new Set([...reservedContainerNames(sidecarName), ...containers.map((container) => container.name)])
+  const candidates = ['app', ...Array.from({length: containers.length + taken.size}, (_, index) => `app-${index + 1}`)]
+
+  return candidates.find((name) => !taken.has(name))!
+}
 
 const removeDependencies = (container: IContainer, names: ReadonlySet<string>): IContainer =>
   [...names].reduce((updated, name) => removeDependency(updated, name), container)
