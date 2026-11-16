@@ -1,3 +1,5 @@
+import {randomBytes} from 'node:crypto'
+
 import type {KuduClient} from './kudu'
 import type {LanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
@@ -56,18 +58,26 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
         timeout: 120_000,
       })
       const zip = await buildFleetPackageZip(layer.data, fleetPackage.layer.digest, runtime)
-      await kudu.publish(root, zip)
+      // Kudu keeps extracting after the client disconnects, so an interrupted upload can leave a
+      // partial tree. Extract to a temporary sibling and rename it into place, which is atomic on
+      // the /home mount, so `root` only ever holds a complete tree.
+      const temporaryRoot = `${root}.tmp-${randomBytes(4).toString('hex')}`
+      await kudu.publish(temporaryRoot, zip)
       // The Azure Files-backed /home mount intermittently lags on file enumeration right after
       // extraction (CIFS), so retry the startup-file check before declaring the deploy incomplete.
-      for (let attempt = 0; ; attempt++) {
-        if (await kudu.hasArtifacts(spec.artifacts)) {
-          return true
-        }
+      const temporaryArtifacts = getAasInjectionSpec(runtime, temporaryRoot).artifacts
+      for (let attempt = 0; !(await kudu.hasArtifacts(temporaryArtifacts)); attempt++) {
         if (attempt >= 3) {
           throw new Error('The tracer staging deployment completed without all required startup files.')
         }
         await new Promise((resolve) => setTimeout(resolve, 5_000))
       }
+      await kudu.rename(temporaryRoot, root)
+      // Removes temporary trees left by interrupted runs. deleteDirectory runs through bash, which
+      // expands the glob.
+      await kudu.deleteDirectory(`${root}.tmp-*`)
+
+      return true
     },
   }
 }

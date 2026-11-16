@@ -9,6 +9,8 @@ export interface KuduClient {
   deleteDirectory(directory: string): Promise<void>
   publish(directory: string, archive: Buffer): Promise<void>
   hasArtifacts(artifacts: readonly (readonly string[])[]): Promise<boolean>
+  /** Atomically renames `source` to `target`. Fails if `target` is a non-empty directory. */
+  rename(source: string, target: string): Promise<void>
 }
 
 type PublishingCredentials = {
@@ -104,6 +106,15 @@ export const getKuduClient = async (
       })
 
       return result.data?.ExitCode === 0
+    },
+    rename: async (source, target) => {
+      const result = await request<{ExitCode?: number}>('POST', '/api/command', {
+        command: `/bin/bash -c "${escapeBashArgument(`mv -T -- ${shellQuote(source)} ${shellQuote(target)}`)}"`,
+        dir: '/home',
+      })
+      if (result.data?.ExitCode !== 0) {
+        throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
+      }
     },
     deleteDirectory: async (directory) => {
       // Deleting onto the Azure Files-backed /home mount races directory enumeration on CIFS and
