@@ -548,7 +548,7 @@ describe('InstrumentCommand', () => {
 
     test('sanitizes service, env, and version label values without changing DD_SERVICE, DD_ENV, and DD_VERSION', () => {
       ;(command as any).environment = 'Élan'
-      ;(command as any).version = '1.2.3'
+      ;(command as any).version = '東'.repeat(63)
 
       const service = {
         template: {
@@ -559,11 +559,11 @@ describe('InstrumentCommand', () => {
 
       const result = command.createInstrumentedServiceConfig(service, '東京.Service')
 
-      expect(result.labels).toMatchObject({service: '東京_service', env: 'élan', version: '1_2_3'})
+      expect(result.labels).toMatchObject({service: '東京_service', env: 'élan', version: '東'.repeat(42)})
       const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
       expect(mainContainer?.env).toContainEqual({name: 'DD_SERVICE', value: '東京.Service'})
       expect(mainContainer?.env).toContainEqual({name: 'DD_ENV', value: 'Élan'})
-      expect(mainContainer?.env).toContainEqual({name: 'DD_VERSION', value: '1.2.3'})
+      expect(mainContainer?.env).toContainEqual({name: 'DD_VERSION', value: '東'.repeat(63)})
     })
 
     test('preserves existing labels and adds service tag', () => {
