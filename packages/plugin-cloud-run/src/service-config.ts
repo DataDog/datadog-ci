@@ -69,6 +69,7 @@ export interface InstrumentServiceConfigOptions {
   readonly sidecarMemory: string
   readonly sharedVolumeName: string
   readonly sharedVolumePath: string
+  readonly onAppContainerNamed?: (name: string) => void
 }
 
 interface UninstrumentServiceConfigOptions {
@@ -138,9 +139,13 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     )
     assertTracerMountPathAvailable(updatedMainContainer, getTracerMountPath(ssiConfig))
     assertInjectionEnvCanBeMerged(updatedMainContainer.env, ssiConfig)
-    const namedMainContainer = updatedMainContainer.name
-      ? updatedMainContainer
-      : {...updatedMainContainer, name: freeAppContainerName(sourceTemplate.containers ?? [], options.sidecarName)}
+    const assignedName = updatedMainContainer.name
+      ? undefined
+      : freeAppContainerName(sourceTemplate.containers ?? [], options.sidecarName)
+    const namedMainContainer = assignedName ? {...updatedMainContainer, name: assignedName} : updatedMainContainer
+    if (assignedName) {
+      options.onAppContainerNamed?.(assignedName)
+    }
     sourceTemplate = {
       ...sourceTemplate,
       containers: sourceTemplate.containers?.map((container) =>
@@ -455,9 +460,12 @@ const reservedContainerNames = (sidecarName: string): ReadonlySet<string> =>
 // gcloud cannot update a service whose unnamed container has dependencies, so SSI names the app container.
 const freeAppContainerName = (containers: readonly IContainer[], sidecarName: string): string => {
   const taken = new Set([...reservedContainerNames(sidecarName), ...containers.map((container) => container.name)])
-  const candidates = ['app', ...Array.from({length: containers.length + taken.size}, (_, index) => `app-${index + 1}`)]
+  let name = 'app'
+  for (let suffix = 1; taken.has(name); suffix++) {
+    name = `app-${suffix}`
+  }
 
-  return candidates.find((name) => !taken.has(name))!
+  return name
 }
 
 const removeDependencies = (container: IContainer, names: ReadonlySet<string>): IContainer =>

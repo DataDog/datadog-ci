@@ -41,6 +41,7 @@ interface InstrumentedServiceUpdate {
   updatedService: IService
   serviceName: string
   preview: ServiceUpdatePreview
+  namedAppContainer: string | undefined
 }
 
 export class PluginCommand extends CloudRunInstrumentCommand {
@@ -202,10 +203,15 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       existingServiceConfigs.map(async (existingService, index): Promise<InstrumentedServiceUpdate> => {
         const serviceName = services[index]
         try {
-          const updatedService = this.createInstrumentedServiceConfig(existingService, ddService ?? serviceName)
+          let namedAppContainer: string | undefined
+          const updatedService = this.createInstrumentedServiceConfig(
+            existingService,
+            ddService ?? serviceName,
+            (name) => (namedAppContainer = name)
+          )
           const preview = await previewServiceUpdate(client, existingService, updatedService)
 
-          return {existingService, updatedService, serviceName, preview}
+          return {existingService, updatedService, serviceName, preview, namedAppContainer}
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
           throw new Error(`Failed to validate service ${serviceName}: ${message}`)
@@ -229,8 +235,13 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
   }
 
-  public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
+  public createInstrumentedServiceConfig(
+    service: IService,
+    ddService: string,
+    onAppContainerNamed?: (name: string) => void
+  ): IService {
     return instrumentServiceConfig(service, {
+      onAppContainerNamed,
       ssiConfig: this.getSsiConfig(),
       ddService,
       environment: this.environment,
@@ -283,7 +294,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     update: InstrumentedServiceUpdate,
     position: string
   ): Promise<boolean> {
-    const {existingService, updatedService, serviceName, preview} = update
+    const {existingService, updatedService, serviceName, preview, namedAppContainer} = update
     this.context.stdout.write(preview.diff)
     if (!preview.hasChanges && existingService.terminalCondition?.state === 'CONDITION_SUCCEEDED') {
       this.context.stdout.write(
@@ -292,15 +303,11 @@ export class PluginCommand extends CloudRunInstrumentCommand {
 
       return false
     }
-    const existingContainers = existingService.template?.containers ?? []
-    const namedContainer = updatedService.template?.containers?.find(
-      (container, index) => existingContainers[index] && !existingContainers[index].name && container.name
-    )
-    if (namedContainer) {
+    if (namedAppContainer) {
       this.context.stdout.write(
-        `\n${dryRunPrefix(this.dryRun)}Naming the unnamed app container '${
-          namedContainer.name
-        }' because gcloud can't update a service whose unnamed container has a dependency.\n`
+        `\n${dryRunPrefix(
+          this.dryRun
+        )}Naming the unnamed app container '${namedAppContainer}' because gcloud can't update a service whose unnamed container has a dependency.\n`
       )
     }
     if (isInjection(this.getSsiConfig()) && (existingService.template?.scaling?.minInstanceCount ?? 0) === 0) {

@@ -297,6 +297,28 @@ describe('InstrumentCommand', () => {
       expect(context.stdout.toString()).not.toContain('cold-start delays')
     })
 
+    test.each([
+      ['', true],
+      ['app', false],
+    ])('prints the app container naming line for container name %j: %s', async (name, printed) => {
+      mockServicesClient.getService.mockResolvedValue([
+        {...service, template: {...service.template, containers: [{name, ports: [{containerPort: 8080}]}]}},
+      ])
+
+      const {code, context} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--tracing',
+        'inject',
+        '--language',
+        'python',
+      ])
+      const line = "[Dry Run] Naming the unnamed app container 'app' because gcloud can't update"
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString().includes(line)).toBe(printed)
+    })
+
     test('renders service configuration failures once without a stack trace', async () => {
       mockServicesClient.getService.mockResolvedValue([
         {
