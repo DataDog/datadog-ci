@@ -1,4 +1,4 @@
-import type {ContainerDefinition, RuntimePlatform} from '@aws-sdk/client-ecs'
+import type {ContainerDefinition, PortMapping, RuntimePlatform} from '@aws-sdk/client-ecs'
 
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
@@ -1242,20 +1242,30 @@ describe('instrumentTaskDefinition', () => {
       ['manual', {}],
       ['inject', {tracing: 'inject', language: 'nodejs'}],
     ] as const)('with --tracing %s', (_tracing, tracingSettings) => {
-      const listeningOn = (containerPort: number) =>
-        fargateTaskDefinition({containerDefinitions: [{...APP_CONTAINER, portMappings: [{containerPort}]}]})
+      const listeningOn = (portMapping: PortMapping) =>
+        fargateTaskDefinition({containerDefinitions: [{...APP_CONTAINER, portMappings: [portMapping]}]})
 
       test.each([
-        [8126, 'Datadog Agent trace port'],
-        [8125, 'Datadog Agent DogStatsD port'],
-      ])('rejects app port %s that the Agent binds', (port, name) => {
-        expect(() => instrumentTaskDefinition(listeningOn(port), {...MOCK_SETTINGS, ...tracingSettings})).toThrow(
-          `Port ${port} on container 'my-app' conflicts with ${name} ${port}. Change the port on container 'my-app'.`
+        [{containerPort: 8126}, 'Port 8126', 'Datadog Agent trace port 8126', 'port'],
+        [{containerPort: 8125, protocol: 'udp'}, 'Port 8125', 'Datadog Agent DogStatsD UDP port 8125', 'port'],
+        [{containerPortRange: '8100-8200'}, 'Port range 8100-8200', 'Datadog Agent trace port 8126', 'port range'],
+      ] as const)('rejects %j, which the Agent binds', (portMapping, ports, sidecarPort, change) => {
+        expect(() =>
+          instrumentTaskDefinition(listeningOn(portMapping), {...MOCK_SETTINGS, ...tracingSettings})
+        ).toThrow(
+          `${ports} on container 'my-app' conflicts with ${sidecarPort}. Change the ${change} on container 'my-app'.`
         )
       })
 
-      test('accepts an app port the Agent does not bind', () => {
-        expect(() => instrumentTaskDefinition(listeningOn(8080), {...MOCK_SETTINGS, ...tracingSettings})).not.toThrow()
+      test.each([
+        {containerPort: 8080},
+        {containerPort: 8125, protocol: 'tcp'},
+        {containerPort: 8126, protocol: 'udp'},
+        {containerPortRange: '9000-9100'},
+      ] as const)('accepts %j, which the Agent does not bind', (portMapping) => {
+        expect(() =>
+          instrumentTaskDefinition(listeningOn(portMapping), {...MOCK_SETTINGS, ...tracingSettings})
+        ).not.toThrow()
       })
     })
 

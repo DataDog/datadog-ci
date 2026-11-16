@@ -58,7 +58,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
     )
 
-    this.ssiConfig = await checkPinnedTracerVersion(this.getSsiConfig())
     if (!this.validateLocalOptions()) {
       return 1
     }
@@ -103,6 +102,16 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
+
+    const tracerVersion = await checkPinnedTracerVersion(this.getSsiConfig())
+    if (tracerVersion.kind === 'not-found') {
+      this.context.stderr.write(renderError(`Invalid APM configuration: ${tracerVersion.message}\n`))
+
+      return 1
+    }
+    if (tracerVersion.kind === 'unverified') {
+      this.context.stdout.write(renderSoftWarning(`${tracerVersion.message}\n`))
+    }
 
     // Verify DD API Key
     const site = getDatadogSite()

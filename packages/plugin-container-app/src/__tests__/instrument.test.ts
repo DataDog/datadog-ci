@@ -38,7 +38,8 @@ import type {ContainerApp} from '@azure/arm-appcontainers'
 
 import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
 import {DefaultAzureCredential} from '@azure/identity'
-import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getRequestError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as request from '@datadog/datadog-ci-base/helpers/request'
 import {
   MULTI_LANGUAGE_SSI_MODE,
   SINGLE_LANGUAGE_SSI_MODE,
@@ -82,6 +83,33 @@ describe('container-app instrument', () => {
       handleSourceCodeIntegration
         .mockClear()
         .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
+    })
+
+    test('rejects a tracer version the registry does not have before any Azure call', async () => {
+      jest
+        .spyOn(request, 'httpRequest')
+        .mockImplementation(async ({method}) =>
+          method === 'HEAD' ? Promise.reject(getRequestError(404, {})) : ({data: {access_token: 'anonymous'}} as any)
+        )
+
+      const {code, context} = await runCLI([
+        ...DEFAULT_INSTRUMENT_ARGS,
+        '--tracing',
+        'inject',
+        '--language',
+        'nodejs',
+        '--tracer-version',
+        '99.0.0',
+      ])
+
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain(
+        'Tracer version 99.0.0 was not found in datadoghq.azurecr.io/dd-lib-js-init.'
+      )
+      expect(DefaultAzureCredential).not.toHaveBeenCalled()
+      expect(containerAppsOperations.get).not.toHaveBeenCalled()
+      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+      jest.restoreAllMocks()
     })
 
     test('Adds a sidecar and updates the tags', async () => {

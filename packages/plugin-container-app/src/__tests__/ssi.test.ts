@@ -652,7 +652,6 @@ describe('Agent port conflicts', () => {
     test.each([
       [5555, 'Datadog Agent health port'],
       [8126, 'Datadog Agent trace port'],
-      [8125, 'Datadog Agent DogStatsD port'],
     ])('rejects ingress target port %s that the sidecar binds', (port, name) => {
       expect(() => createInstrumentedApp(config, appListeningOn(port))).toThrow(
         `Port ${port} on the ingress of container app 'my-container-app' conflicts with ${name} ${port}. Change the port on the ingress of container app 'my-container-app'.`
@@ -663,8 +662,8 @@ describe('Agent port conflicts', () => {
       expect(() => createInstrumentedApp(config, appListeningOn(8080, 8126))).toThrow('Port 8126 on the ingress')
     })
 
-    test('accepts ingress ports the sidecar does not bind', () => {
-      expect(() => createInstrumentedApp(config, appListeningOn(8080, 9000))).not.toThrow()
+    test('accepts ingress ports the sidecar does not bind on TCP', () => {
+      expect(() => createInstrumentedApp(config, appListeningOn(8080, 8125))).not.toThrow()
     })
   })
 })

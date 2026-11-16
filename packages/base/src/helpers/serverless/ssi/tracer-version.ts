@@ -22,67 +22,66 @@ const ANONYMOUS_TOKEN_URLS: Record<TracerRegistry, ((repository: string) => stri
     `https://datadoghq.azurecr.io/oauth2/token?service=datadoghq.azurecr.io&scope=repository:${repository}:pull`,
 }
 
-type ConfigErrors = {kind: 'errors'; errors: readonly string[]; warnings: readonly string[]}
+export type TracerVersionCheck =
+  | {kind: 'ok'}
+  | {kind: 'not-found'; message: string}
+  | {kind: 'unverified'; message: string}
 
 /**
  * Confirms that a pinned single-language tracer image exists before any resource changes, so a
  * version that was never published fails here instead of in a revision that cannot start.
- *
- * @returns the config unchanged when the tag exists or nothing is pinned, an error result when the
- * registry has no such tag, and the config with a warning when the registry cannot be checked.
+ * Only a 404 for the manifest means the version does not exist; any other failure is `unverified`.
  */
-export const checkPinnedTracerVersion = async <
-  T extends {kind: string; warnings: readonly string[]; spec?: {image: string}},
->(
-  config: T
-): Promise<T | ConfigErrors> => {
+export const checkPinnedTracerVersion = async (config: {
+  kind: string
+  spec?: {image: string}
+}): Promise<TracerVersionCheck> => {
   const image = config.kind === 'single-language' ? config.spec?.image : undefined
   const separator = image?.lastIndexOf(':') ?? -1
   const version = image?.slice(separator + 1)
   const registry = TRACER_REGISTRIES.find((candidate) => image?.startsWith(`${candidate}/`))
   if (!image || !version || version === DEFAULT_TRACER_VERSION || !registry) {
-    return config
+    return {kind: 'ok'}
   }
 
   const imageName = image.slice(0, separator)
   try {
-    await headManifest(registry, imageName.slice(imageName.indexOf('/') + 1), version)
-
-    return config
+    return (await manifestExists(registry, imageName.slice(imageName.indexOf('/') + 1), version))
+      ? {kind: 'ok'}
+      : {
+          kind: 'not-found',
+          message: `Tracer version ${version} was not found in ${imageName}. Set --tracer-version to a published version.`,
+        }
   } catch (error) {
-    if (isRequestError(error) && error.response?.status === 404) {
-      return {
-        kind: 'errors',
-        errors: [
-          `Tracer version ${version} was not found in ${imageName}. Set --tracer-version to a published version.`,
-        ],
-        warnings: [],
-      }
-    }
-
     const reason = error instanceof Error ? error.message : String(error)
 
     return {
-      ...config,
-      warnings: [
-        ...config.warnings,
-        `Could not verify that tracer version ${version} exists in ${imageName}: ${reason}. Continuing without the check.`,
-      ],
+      kind: 'unverified',
+      message: `Could not verify that tracer version ${version} exists in ${imageName}: ${reason}. Continuing without the check.`,
     }
   }
 }
 
-const headManifest = async (registry: TracerRegistry, repository: string, version: string): Promise<void> => {
+const manifestExists = async (registry: TracerRegistry, repository: string, version: string): Promise<boolean> => {
   const host = registry.split('/')[0]
   const tokenUrl = ANONYMOUS_TOKEN_URLS[registry]?.(repository)
   const token = tokenUrl ? await fetchAnonymousToken(tokenUrl) : undefined
-  await httpRequest({
-    method: 'HEAD',
-    url: thirdParty(`https://${host}/v2/${repository}/manifests/${version}`),
-    headers: {Accept: MANIFEST_MEDIA_TYPES, Authorization: token ? `Bearer ${token}` : undefined},
-    dispatcher: getProxyDispatcher(),
-    timeout: REQUEST_TIMEOUT_MS,
-  })
+  try {
+    await httpRequest({
+      method: 'HEAD',
+      url: thirdParty(`https://${host}/v2/${repository}/manifests/${version}`),
+      headers: {Accept: MANIFEST_MEDIA_TYPES, Authorization: token ? `Bearer ${token}` : undefined},
+      dispatcher: getProxyDispatcher(),
+      timeout: REQUEST_TIMEOUT_MS,
+    })
+
+    return true
+  } catch (error) {
+    if (isRequestError(error) && error.response?.status === 404) {
+      return false
+    }
+    throw error
+  }
 }
 
 const fetchAnonymousToken = async (url: string): Promise<string> => {

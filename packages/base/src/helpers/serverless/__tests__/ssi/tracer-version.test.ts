@@ -2,7 +2,7 @@ import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testin
 import * as request from '@datadog/datadog-ci-base/helpers/request'
 import {checkPinnedTracerVersion} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version'
 
-const singleLanguage = (image: string) => ({kind: 'single-language', warnings: ['existing'], spec: {image}})
+const singleLanguage = (image: string) => ({kind: 'single-language', spec: {image}})
 
 describe('checkPinnedTracerVersion', () => {
   let httpRequest: jest.SpyInstance
@@ -17,17 +17,17 @@ describe('checkPinnedTracerVersion', () => {
 
   test.each([
     ['an unpinned version', singleLanguage('gcr.io/datadoghq/dd-lib-js-init:latest')],
-    ['the composite image', {kind: 'multi-language', warnings: [], spec: {image: 'gcr.io/datadoghq/dd-lib-init:1'}}],
-    ['no injection', {kind: 'no-injection', warnings: []}],
+    ['the composite image', {kind: 'multi-language', spec: {image: 'gcr.io/datadoghq/dd-lib-init:1'}}],
+    ['no injection', {kind: 'no-injection'}],
   ])('makes no request for %s', async (_, config) => {
-    await expect(checkPinnedTracerVersion(config)).resolves.toBe(config)
+    await expect(checkPinnedTracerVersion(config)).resolves.toEqual({kind: 'ok'})
     expect(httpRequest).not.toHaveBeenCalled()
   })
 
   test('accepts a published version', async () => {
-    const config = singleLanguage('gcr.io/datadoghq/dd-lib-js-init:5.1.0')
-
-    await expect(checkPinnedTracerVersion(config)).resolves.toBe(config)
+    await expect(checkPinnedTracerVersion(singleLanguage('gcr.io/datadoghq/dd-lib-js-init:5.1.0'))).resolves.toEqual({
+      kind: 'ok',
+    })
     expect(httpRequest).toHaveBeenCalledTimes(1)
     expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -66,12 +66,23 @@ describe('checkPinnedTracerVersion', () => {
     httpRequest.mockRejectedValue(getRequestError(404, {}))
 
     await expect(checkPinnedTracerVersion(singleLanguage('gcr.io/datadoghq/dd-lib-js-init:99.0.0'))).resolves.toEqual({
-      kind: 'errors',
-      errors: [
+      kind: 'not-found',
+      message:
         'Tracer version 99.0.0 was not found in gcr.io/datadoghq/dd-lib-js-init. Set --tracer-version to a published version.',
-      ],
-      warnings: [],
     })
+  })
+
+  test('warns and continues when the anonymous token request returns 404', async () => {
+    httpRequest.mockRejectedValue(getRequestError(404, {message: 'Request failed with status code 404'}))
+
+    await expect(
+      checkPinnedTracerVersion(singleLanguage('public.ecr.aws/datadog/dd-lib-js-init:5.1.0'))
+    ).resolves.toEqual({
+      kind: 'unverified',
+      message:
+        'Could not verify that tracer version 5.1.0 exists in public.ecr.aws/datadog/dd-lib-js-init: Request failed with status code 404. Continuing without the check.',
+    })
+    expect(httpRequest).toHaveBeenCalledTimes(1)
   })
 
   test.each([
@@ -79,14 +90,10 @@ describe('checkPinnedTracerVersion', () => {
     ['a registry error', getRequestError(503, {message: 'Request failed with status code 503'})],
   ])('warns and continues on %s', async (_, error) => {
     httpRequest.mockRejectedValue(error)
-    const config = singleLanguage('gcr.io/datadoghq/dd-lib-js-init:5.1.0')
 
-    await expect(checkPinnedTracerVersion(config)).resolves.toEqual({
-      ...config,
-      warnings: [
-        'existing',
-        `Could not verify that tracer version 5.1.0 exists in gcr.io/datadoghq/dd-lib-js-init: ${error.message}. Continuing without the check.`,
-      ],
+    await expect(checkPinnedTracerVersion(singleLanguage('gcr.io/datadoghq/dd-lib-js-init:5.1.0'))).resolves.toEqual({
+      kind: 'unverified',
+      message: `Could not verify that tracer version 5.1.0 exists in gcr.io/datadoghq/dd-lib-js-init: ${error.message}. Continuing without the check.`,
     })
   })
 })

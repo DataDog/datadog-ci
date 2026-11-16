@@ -34,7 +34,7 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
     const [config, configErrors] = await this.ensureConfig()
     // Resolved before any AWS call, so that a tracer option the command cannot honour stops the run
     // rather than registering a revision for the task definitions it reaches first.
-    const ssiConfig = await checkPinnedTracerVersion(resolveSsiConfig(config))
+    const ssiConfig = resolveSsiConfig(config)
     if (ssiConfig.kind === 'errors' || configErrors.length > 0) {
       for (const error of [...(ssiConfig.kind === 'errors' ? ssiConfig.errors : []), ...configErrors]) {
         this.context.stdout.write(renderError(error))
@@ -52,6 +52,16 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       )
 
       return 1
+    }
+
+    const tracerVersion = await checkPinnedTracerVersion(ssiConfig)
+    if (tracerVersion.kind === 'not-found') {
+      this.context.stdout.write(renderError(tracerVersion.message))
+
+      return 1
+    }
+    if (tracerVersion.kind === 'unverified') {
+      this.context.stdout.write(renderSoftWarning(tracerVersion.message))
     }
 
     const apiKey = await this.resolveApiKey(config)

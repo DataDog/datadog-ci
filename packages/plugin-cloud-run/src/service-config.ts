@@ -3,7 +3,6 @@ import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume} from './t
 
 import {CLOUD_RUN_TRACER_REGISTRY, type TracerVolumeMedium} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {
-  AGENT_DOGSTATSD_PORT,
   AGENT_TRACE_PORT,
   assertAppPortsAvoidSidecarPorts,
   createInstrumentedTemplate,
@@ -401,11 +400,7 @@ const assertAgentPortsAvailable = (
           containerPort ? [{port: containerPort, source: `container '${container.name || '<unnamed>'}'`}] : []
         )
       ),
-    [
-      {port: healthCheckPort, name: 'Datadog Agent health port', flag: '--health-check-port'},
-      AGENT_TRACE_PORT,
-      AGENT_DOGSTATSD_PORT,
-    ]
+    [{port: healthCheckPort, name: 'Datadog Agent health port', flag: '--health-check-port'}, AGENT_TRACE_PORT]
   )
 
 const hasSsiState = (service: IService): boolean =>

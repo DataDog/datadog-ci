@@ -15,7 +15,6 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {
-  AGENT_DOGSTATSD_PORT,
   AGENT_TRACE_PORT,
   assertAppPortsAvoidSidecarPorts,
   createInstrumentedTemplate,
@@ -62,7 +61,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [containerAppsToInstrument, config, errors] = await this.ensureConfig()
-    const ssiConfig = await checkPinnedTracerVersion(resolveSsiConfig(config))
+    const ssiConfig = resolveSsiConfig(config)
     if (ssiConfig.kind === 'errors') {
       for (const error of ssiConfig.errors) {
         this.context.stdout.write(renderError(error))
@@ -79,6 +78,15 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
     for (const warning of ssiConfig.warnings) {
       this.context.stdout.write(renderSoftWarning(warning))
+    }
+    const tracerVersion = await checkPinnedTracerVersion(ssiConfig)
+    if (tracerVersion.kind === 'not-found') {
+      this.context.stdout.write(renderError(tracerVersion.message))
+
+      return 1
+    }
+    if (tracerVersion.kind === 'unverified') {
+      this.context.stdout.write(renderSoftWarning(tracerVersion.message))
     }
 
     try {
@@ -296,7 +304,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       [ingress?.targetPort, ...(ingress?.additionalPortMappings ?? []).map(({targetPort}) => targetPort)].flatMap(
         (port) => (port ? [{port, source: `the ingress of container app '${containerApp.name}'`}] : [])
       ),
-      [{port: DEFAULT_HEALTH_CHECK_PORT, name: 'Datadog Agent health port'}, AGENT_TRACE_PORT, AGENT_DOGSTATSD_PORT]
+      [{port: DEFAULT_HEALTH_CHECK_PORT, name: 'Datadog Agent health port'}, AGENT_TRACE_PORT]
     )
     let targetIndex: number | undefined
     if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {

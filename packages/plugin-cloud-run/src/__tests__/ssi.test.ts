@@ -654,19 +654,18 @@ describe('SSI service preparation', () => {
       ],
       [9000, 9000, "Datadog Agent health port 9000. Change the port on container 'app' or --health-check-port."],
       [8126, undefined, "Datadog Agent trace port 8126. Change the port on container 'app'."],
-      [8125, undefined, "Datadog Agent DogStatsD port 8125. Change the port on container 'app'."],
     ])('rejects app port %s that the Agent binds', (port, healthCheckPort, message) => {
       expect(() =>
         instrumentServiceConfig(serviceListeningOn(port), {...serviceConfigOptions(language), healthCheckPort})
       ).toThrow(`Port ${port} on container 'app' conflicts with ${message}`)
     })
 
-    test('accepts the default health port as an app port when the Agent uses another', () => {
+    test.each([
+      ['the default health port when the Agent uses another', DEFAULT_HEALTH_CHECK_PORT, 9000],
+      ['the DogStatsD port, which the Agent binds on UDP only', 8125, undefined],
+    ])('accepts %s', (_name, port, healthCheckPort) => {
       expect(() =>
-        instrumentServiceConfig(serviceListeningOn(DEFAULT_HEALTH_CHECK_PORT), {
-          ...serviceConfigOptions(language),
-          healthCheckPort: 9000,
-        })
+        instrumentServiceConfig(serviceListeningOn(port), {...serviceConfigOptions(language), healthCheckPort})
       ).not.toThrow()
     })
   })

@@ -891,9 +891,11 @@ export const instrumentTaskDefinition = (
     containers
       .filter((container) => !isSidecar(container))
       .flatMap((container) =>
-        (container.portMappings ?? []).flatMap(({containerPort}) =>
-          containerPort ? [{port: containerPort, source: `container '${container.name}'`}] : []
-        )
+        (container.portMappings ?? []).flatMap(({containerPort, containerPortRange, protocol}) => {
+          const [port, lastPort] = containerPortRange?.split('-').map(Number) ?? [containerPort, containerPort]
+
+          return port ? [{port, lastPort, protocol, source: `container '${container.name}'`}] : []
+        })
       ),
     [AGENT_TRACE_PORT, AGENT_DOGSTATSD_PORT]
   )
