@@ -205,6 +205,8 @@ const getDotnetEnv = (root: string): EnvFragment[] => [
     value: path.posix.join(root, 'continuousprofiler/Datadog.Linux.ApiWrapper.x64.so'),
     separator: ' ',
     mode: 'prepend',
+    // Matches auto_inject, which skips .NET injection when the merged LD_PRELOAD exceeds 1,024 bytes
+    // (auto_inject src/lang/dotnet/lang.c). glibc and the .NET tracer have no such limit.
     maxLength: 1024,
   },
 ]
