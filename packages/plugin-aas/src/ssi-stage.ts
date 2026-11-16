@@ -84,7 +84,16 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
         }
         await new Promise((resolve) => setTimeout(resolve, 5_000))
       }
-      await kudu.rename(temporaryRoot, root)
+      try {
+        await kudu.rename(temporaryRoot, root)
+      } catch {
+        // A concurrent run may have completed `root` first, so keep it. Otherwise `root` holds a
+        // partial tree from an earlier CLI version that failed the artifact check, so replace it.
+        if (!(await kudu.hasArtifacts(spec.artifacts))) {
+          await kudu.deleteDirectory(root)
+          await kudu.rename(temporaryRoot, root)
+        }
+      }
       await removeLeftovers()
 
       return true
