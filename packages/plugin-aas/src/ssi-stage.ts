@@ -58,7 +58,7 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
         timeout: 120_000,
       })
       const zip = await buildFleetPackageZip(layer.data, fleetPackage.layer.digest, runtime)
-      // Kudu keeps extracting after the client disconnects, so an interrupted upload can leave a
+      // Extraction continues on the Web App after the CLI exits, so an interrupted run can leave a
       // partial tree. Extract to a temporary sibling and rename it into place, which is atomic on
       // the /home mount, so `root` only ever holds a complete tree.
       const temporaryRoot = `${root}.tmp-${randomBytes(4).toString('hex')}`
