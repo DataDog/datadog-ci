@@ -407,8 +407,8 @@ describe('SSI service preparation', () => {
       startupProbe: {
         tcpSocket: {port: 18999},
         initialDelaySeconds: 0,
-        periodSeconds: 5,
-        failureThreshold: 48,
+        periodSeconds: 1,
+        failureThreshold: 240,
         timeoutSeconds: 1,
       },
     })
