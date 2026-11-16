@@ -22,6 +22,36 @@ describe('generation of payload', () => {
     jest.spyOn(console, 'log').mockImplementation()
   })
 
+  test('should preserve parent refs in serialized dependency relations', () => {
+    const sbomContent = {
+      dependencies: [
+        {ref: 'root', dependsOn: ['direct', 'transitive']},
+        {ref: 'direct', dependsOn: ['transitive']},
+        {ref: 'transitive', dependsOn: []},
+      ],
+    }
+
+    const payload = JSON.parse(JSON.stringify(generatePayload(sbomContent, {}, 'service', 'env')))
+
+    expect(payload.relations).toStrictEqual([
+      {ref: 'root', depends_on: ['direct', 'transitive']},
+      {ref: 'direct', depends_on: ['transitive']},
+      {ref: 'transitive', depends_on: []},
+    ])
+  })
+
+  test('should omit licenses from serialized dependencies', () => {
+    const sbomFile = './src/__tests__/fixtures/sbom-rust.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+
+    const payload = JSON.parse(JSON.stringify(generatePayload(sbomContent, {}, 'service', 'env')))
+
+    expect(payload.dependencies).toHaveLength(305)
+    for (const dependency of payload.dependencies) {
+      expect(dependency).not.toHaveProperty('licenses')
+    }
+  })
+
   test('should correctly work with a CycloneDX 1.4 file', async () => {
     const sbomFile = './src/__tests__/fixtures/sbom.1.4.ok.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
@@ -47,7 +77,7 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(62)
     expect(payload?.dependencies[0].name).toBe('stack-cors')
     expect(payload?.dependencies[0].version).toBe('1.3.0')
-    expect(payload?.dependencies[0].licenses.length).toBe(0)
+    expect(payload?.dependencies[0]).not.toHaveProperty('licenses')
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
     expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
     expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('in-dev')
@@ -80,8 +110,8 @@ describe('generation of payload', () => {
     expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('trivy')
     expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.44.1')
 
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toBe(147)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     const directDependencies = payload?.dependencies.filter((d) => d.is_direct)
     expect(directDependencies?.length).toBe(1)
@@ -140,11 +170,11 @@ describe('generation of payload', () => {
     expect(payload?.dependencies).toHaveLength(2)
     expect(payload?.dependencies[0].name).toBe('Flask')
     expect(payload?.dependencies[0].version).toBe('3.0.0')
-    expect(payload?.dependencies[0].licenses).toHaveLength(0)
+    expect(payload?.dependencies[0]).not.toHaveProperty('licenses')
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PYTHON)
     expect(payload?.dependencies[1].name).toBe('requests')
     expect(payload?.dependencies[1].version).toBe('2.31.0')
-    expect(payload?.dependencies[1].licenses).toHaveLength(0)
+    expect(payload?.dependencies[1]).not.toHaveProperty('licenses')
     expect(payload?.dependencies[1].language).toBe(DependencyLanguage.PYTHON)
     expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cdxgen')
     expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('11.0.7')
@@ -163,8 +193,8 @@ describe('generation of payload', () => {
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(305)
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(305)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -184,8 +214,8 @@ describe('generation of payload', () => {
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(64)
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(64)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -205,8 +235,8 @@ describe('generation of payload', () => {
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(89)
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(89)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -230,8 +260,8 @@ describe('generation of payload', () => {
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(19)
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(19)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -254,8 +284,8 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(433)
     const dependencies = payload?.dependencies
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(433)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -280,8 +310,8 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(63)
 
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(63)
+    const dependenciesWithLicenses = payload?.dependencies.filter((d) => 'licenses' in d)
+    expect(dependenciesWithLicenses).toHaveLength(0)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -415,7 +445,7 @@ describe('generation of payload', () => {
       expect(payload?.dependencies.length).toBe(62)
       expect(payload?.dependencies[0].name).toBe('stack-cors')
       expect(payload?.dependencies[0].version).toBe('1.3.0')
-      expect(payload?.dependencies[0].licenses.length).toBe(0)
+      expect(payload?.dependencies[0]).not.toHaveProperty('licenses')
       expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
     } finally {
       // Removed temporary git file

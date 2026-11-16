@@ -304,7 +304,6 @@ const extractingDependency = (component: any): Dependency | undefined => {
     group: component['group'] || undefined,
     version: component['version'] || undefined,
     language: lang,
-    licenses: [],
     purl,
     locations,
     is_direct: isDirect,
@@ -324,7 +323,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
 
 const extractingRelations = (dependency: any): Relations => {
   return {
-    component_ref: dependency['ref'],
+    ref: dependency['ref'],
     depends_on: dependency['dependsOn'],
   }
 }
