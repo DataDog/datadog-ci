@@ -546,6 +546,25 @@ describe('InstrumentCommand', () => {
       })
     })
 
+    test('sanitizes env and version label values without changing DD_ENV and DD_VERSION', () => {
+      ;(command as any).environment = 'Prod'
+      ;(command as any).version = '1.2.3'
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      expect(result.labels).toMatchObject({env: 'prod', version: '1_2_3'})
+      const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(mainContainer?.env).toContainEqual({name: 'DD_ENV', value: 'Prod'})
+      expect(mainContainer?.env).toContainEqual({name: 'DD_VERSION', value: '1.2.3'})
+    })
+
     test('preserves existing labels and adds service tag', () => {
       const service = {
         labels: {

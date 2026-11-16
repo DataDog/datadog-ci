@@ -49,6 +49,12 @@ const UNIFIED_SERVICE_TAG_LABELS = {
   environment: 'env',
   version: 'version',
 } as const
+// GCP label values allow only lowercase letters, digits, `_`, and `-`, up to 63 characters.
+const toLabelValue = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '_')
+    .slice(0, 63)
 const INSTRUMENTATION_LABELS = new Set([
   ...Object.values(UNIFIED_SERVICE_TAG_LABELS),
   SERVERLESS_CLI_VERSION_TAG_NAME,
@@ -160,10 +166,10 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace(/\./g, '_'),
   }
   if (options.environment) {
-    labels[UNIFIED_SERVICE_TAG_LABELS.environment] = options.environment
+    labels[UNIFIED_SERVICE_TAG_LABELS.environment] = toLabelValue(options.environment)
   }
   if (options.version) {
-    labels[UNIFIED_SERVICE_TAG_LABELS.version] = options.version
+    labels[UNIFIED_SERVICE_TAG_LABELS.version] = toLabelValue(options.version)
   }
 
   if (shouldRemoveSsi) {

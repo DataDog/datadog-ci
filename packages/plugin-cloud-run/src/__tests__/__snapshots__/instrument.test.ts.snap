@@ -155,7 +155,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +     "dd_sls_ci": "v0_0_0",
 +     "env": "staging",
 +     "service": "test-service",
-+     "version": "1.0.0"
++     "version": "1_0_0"
 +   },
     "template": {
       "containers": [
