@@ -325,7 +325,7 @@ describe('InstrumentCommand', () => {
         '--language',
         'python',
       ])
-      const line = "[Dry Run] Naming the unnamed app container 'app' because gcloud can't update"
+      const line = "[Dry Run] Updating the main container name to 'app', since container dependencies require a name."
 
       expect(code).toBe(0)
       expect(context.stdout.toString().includes(line)).toBe(printed)

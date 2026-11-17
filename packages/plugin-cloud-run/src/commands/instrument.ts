@@ -301,7 +301,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(
         `\n${dryRunPrefix(
           this.dryRun
-        )}Naming the unnamed app container '${namedAppContainer}' because gcloud can't update a service whose unnamed container has a dependency.\n`
+        )}Updating the main container name to '${namedAppContainer}', since container dependencies require a name.\n`
       )
     }
     if (isInjection(this.getSsiConfig()) && (existingService.template?.scaling?.minInstanceCount ?? 0) === 0) {
