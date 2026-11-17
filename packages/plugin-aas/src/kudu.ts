@@ -18,9 +18,9 @@ export interface KuduClient {
   rename(source: string, target: string): Promise<void>
   /**
    * Atomically renames `source` to `target` if `source` exists, retrying until the command deadline,
-   * then checks once that `source` is gone.
+   * then checks once and returns whether `source` is gone.
    */
-  moveAside(source: string, target: string): Promise<void>
+  moveAside(source: string, target: string): Promise<boolean>
   /** Deletes the `<path>.tmp-*` siblings of `path`, optionally only those unmodified for `olderThanMinutes`. */
   deleteTemporaryTrees(path: string, olderThanMinutes?: number): Promise<void>
 }
@@ -147,12 +147,11 @@ export const getKuduClient = async (
     moveAside: async (source, target) => {
       // Renaming fails while the restarting app still holds files in `source`, so retry it.
       const script = `test ! -e ${shellQuote(source)} || mv -T -- ${shellQuote(source)} ${shellQuote(target)}`
-      if (
-        !(await runCommand(script, 'untilSuccess')) ||
-        !(await runCommand(`test ! -e ${shellQuote(source)}`, 'once'))
-      ) {
+      if (!(await runCommand(script, 'untilSuccess'))) {
         throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
       }
+
+      return runCommand(`test ! -e ${shellQuote(source)}`, 'once')
     },
     deleteTemporaryTrees: async (path, olderThanMinutes) => {
       const parent = shellQuote(posix.dirname(path))

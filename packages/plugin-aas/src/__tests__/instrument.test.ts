@@ -154,7 +154,7 @@ describe('aas instrument', () => {
         .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
       resolveAasTracerStaging.mockReset().mockResolvedValue({root: STAGED_ROOT, publish: publishTracer})
       publishTracer.mockReset().mockResolvedValue(undefined)
-      moveAside.mockReset().mockResolvedValue(undefined)
+      moveAside.mockReset().mockResolvedValue(true)
     })
 
     test('Adds a sidecar and updates the application settings and tags', async () => {

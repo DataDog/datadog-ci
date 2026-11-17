@@ -35,6 +35,7 @@ const createFakeKudu = (
     onPublish = () => {},
     onVerified = () => {},
     failDelete = false,
+    stuck = false,
     stale = new Set<string>(),
     failedUploads = 0,
   } = {}
@@ -84,6 +85,8 @@ const createFakeKudu = (
     },
     moveAside: async (source, target) => {
       move(source, target)
+
+      return !stuck
     },
     deleteTemporaryTrees: async (path, olderThanMinutes) => {
       if (failDelete) {
@@ -176,5 +179,13 @@ describe('removeStagedTracers', () => {
 
     expect(directories.has(ROOT)).toBe(false)
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('The next run removes them.'))
+  })
+
+  test('warns when the staging root is still present after the move', async () => {
+    const warn = jest.fn()
+
+    await removeStagedTracers(createFakeKudu(new Map(), {stuck: true}), warn)
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('still present'))
   })
 })

@@ -106,7 +106,7 @@ describe('aas instrument', () => {
       webAppsOperations.updateSlotConfigurationNames.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
-      moveAside.mockReset().mockResolvedValue(undefined)
+      moveAside.mockReset().mockResolvedValue(true)
       deleteTemporaryTrees.mockReset().mockResolvedValue(undefined)
     })
 

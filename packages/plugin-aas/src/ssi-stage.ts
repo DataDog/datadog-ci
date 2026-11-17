@@ -101,7 +101,10 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
  * interrupted delete never leaves part of a tree under a root that `publish` reads as staged.
  */
 export const removeStagedTracers = async (kudu: KuduClient, warn: (message: string) => void): Promise<void> => {
-  await kudu.moveAside(AAS_SSI_STAGING_ROOT, temporaryPath(AAS_SSI_STAGING_ROOT))
+  if (!(await kudu.moveAside(AAS_SSI_STAGING_ROOT, temporaryPath(AAS_SSI_STAGING_ROOT)))) {
+    // The move can report success right after an SCM restart while the root stays in place.
+    warn(`Tracer staging directory ${AAS_SSI_STAGING_ROOT} is still present. The next run removes it.`)
+  }
   await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn)
 }
 
