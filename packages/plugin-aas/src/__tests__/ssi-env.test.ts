@@ -7,7 +7,7 @@ describe('getStagedRoot', () => {
   it('strips the digest algorithm prefix so colon-delimited settings keep working', () => {
     const root = getStagedRoot(parseLinuxFxVersion('PYTHON|3.12'), '4.0.0', DIGEST)
 
-    expect(root).toBe(`/home/data/datadog-tracer/python/4.0.0-${'a'.repeat(64)}`)
+    expect(root).toBe(`/home/data/datadog-tracer/published/python/4.0.0-${'a'.repeat(64)}`)
     expect(root).not.toContain('sha256:')
   })
 })

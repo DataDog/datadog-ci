@@ -19,26 +19,26 @@ jest.mock('../ssi', () => ({
   buildFleetPackageZip: jest.fn().mockResolvedValue(Buffer.from('zip')),
 }))
 
-const ROOT = `/home/data/datadog-tracer/nodejs/1.2.3-${'a'.repeat(64)}`
+const ROOT = `/home/data/datadog-tracer/published/nodejs/1.2.3-${'a'.repeat(64)}`
 const STARTUP_FILE = 'node_modules/dd-trace/init.js'
 
-/** In-memory Web App filesystem: each directory is either a complete or a partial tracer tree. */
+type Tree = 'complete' | 'partial'
+
+/** In-memory Web App filesystem: each directory is a complete or partial tracer tree. */
 const createFakeKudu = (
-  directories: Map<string, 'complete' | 'partial'>,
-  {extracts = 'complete' as 'complete' | 'partial', onPublish = () => {}, failDelete = false} = {}
-): KuduClient => ({
-  publish: async (directory) => {
-    directories.set(directory, extracts)
-    onPublish()
-  },
-  hasArtifacts: async (artifacts) =>
-    artifacts.every((alternatives) =>
-      alternatives.some((artifact) => directories.get(artifact.replace(`/${STARTUP_FILE}`, '')) === 'complete')
-    ),
-  rename: async (source, target) => {
+  directories: Map<string, Tree>,
+  {
+    extracts = 'complete' as Tree,
+    onPublish = () => {},
+    onVerified = () => {},
+    failDelete = false,
+    stale = new Set<string>(),
+  } = {}
+): KuduClient => {
+  const move = (source: string, target: string) => {
     const moved = [...directories].filter(([directory]) => directory === source || directory.startsWith(`${source}/`))
     if (moved.length === 0) {
-      return
+      return false
     }
     if (directories.has(target)) {
       throw new Error('rename failed')
@@ -47,17 +47,44 @@ const createFakeKudu = (
       directories.delete(directory)
       directories.set(target + directory.slice(source.length), tree)
     })
-  },
-  deleteDirectory: async (pattern) => {
-    if (failDelete) {
-      throw new Error('delete failed')
-    }
-    const matches = pattern.endsWith('*')
-      ? (directory: string) => directory.startsWith(pattern.slice(0, -1))
-      : (directory: string) => directory === pattern
-    ;[...directories.keys()].filter(matches).forEach((directory) => directories.delete(directory))
-  },
-})
+
+    return true
+  }
+
+  return {
+    publish: async (directory) => {
+      directories.set(directory, extracts)
+      onPublish()
+    },
+    hasArtifacts: async (artifacts, waitUntilPresent) => {
+      const present = artifacts.every((alternatives) =>
+        alternatives.some((artifact) => directories.get(artifact.replace(`/${STARTUP_FILE}`, '')) === 'complete')
+      )
+      if (present && waitUntilPresent) {
+        onVerified()
+      }
+
+      return present
+    },
+    rename: async (source, target) => {
+      if (!move(source, target)) {
+        throw new Error('missing source')
+      }
+    },
+    moveAside: async (source, target) => {
+      move(source, target)
+    },
+    deleteTemporaryTrees: async (path, olderThanMinutes) => {
+      if (failDelete) {
+        throw new Error('delete failed')
+      }
+      ;[...directories.keys()]
+        .filter((directory) => directory.startsWith(`${path}.tmp-`))
+        .filter((directory) => olderThanMinutes === undefined || stale.has(directory))
+        .forEach((directory) => directories.delete(directory))
+    },
+  }
+}
 
 const publish = async (kudu: KuduClient) => {
   const staging = await resolveAasTracerStaging({language: 'nodejs', runtimeVersion: '22', libc: 'glibc'})
@@ -66,21 +93,8 @@ const publish = async (kudu: KuduClient) => {
 }
 
 describe('resolveAasTracerStaging publish', () => {
-  beforeEach(() => {
-    // Skip the CIFS enumeration retry delays.
-    jest.spyOn(global, 'setTimeout').mockImplementation((callback: () => void) => {
-      callback()
-
-      return 0 as unknown as NodeJS.Timeout
-    })
-  })
-
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
   test('does not move a temporary tree without the startup files into the root', async () => {
-    const directories = new Map<string, 'complete' | 'partial'>()
+    const directories = new Map<string, Tree>()
 
     await expect(publish(createFakeKudu(directories, {extracts: 'partial'}))).rejects.toThrow(
       'without all required startup files'
@@ -88,25 +102,46 @@ describe('resolveAasTracerStaging publish', () => {
     expect(directories.has(ROOT)).toBe(false)
   })
 
-  test('replaces a partial root left by an earlier CLI version', async () => {
-    const directories = new Map<string, 'complete' | 'partial'>([[ROOT, 'partial']])
+  test('fails when the verified temporary tree disappears before the rename', async () => {
+    const directories = new Map<string, Tree>()
+    const onVerified = () =>
+      [...directories.keys()].filter((directory) => directory.includes('.tmp-')).forEach((d) => directories.delete(d))
+
+    await expect(publish(createFakeKudu(directories, {onVerified}))).rejects.toThrow('missing source')
+    expect(directories.has(ROOT)).toBe(false)
+  })
+
+  test('replaces a partial root', async () => {
+    const directories = new Map<string, Tree>([[ROOT, 'partial']])
 
     await expect(publish(createFakeKudu(directories))).resolves.toBe(true)
-    expect(directories).toEqual(new Map([[ROOT, 'complete']]))
+    expect(directories.get(ROOT)).toBe('complete')
   })
 
   test('keeps a root that a concurrent run completed first', async () => {
-    const directories = new Map<string, 'complete' | 'partial'>()
+    const directories = new Map<string, Tree>()
     const kudu = createFakeKudu(directories, {onPublish: () => directories.set(ROOT, 'complete')})
 
     await expect(publish(kudu)).resolves.toBe(true)
-    expect(directories).toEqual(new Map([[ROOT, 'complete']]))
+    expect(directories.get(ROOT)).toBe('complete')
+  })
+
+  test('removes only stale temporary trees, so an in-flight tree survives', async () => {
+    const directories = new Map<string, Tree>([
+      [`${ROOT}.tmp-inflight`, 'partial'],
+      [`${ROOT}.tmp-stale`, 'partial'],
+    ])
+
+    await publish(createFakeKudu(directories, {stale: new Set([`${ROOT}.tmp-stale`])}))
+
+    expect(directories.has(`${ROOT}.tmp-inflight`)).toBe(true)
+    expect(directories.has(`${ROOT}.tmp-stale`)).toBe(false)
   })
 })
 
 describe('removeStagedTracers', () => {
   test('leaves no staged root when deleting the moved tree fails', async () => {
-    const directories = new Map<string, 'complete' | 'partial'>([[ROOT, 'complete']])
+    const directories = new Map<string, Tree>([[ROOT, 'complete']])
     const warn = jest.fn()
 
     await removeStagedTracers(createFakeKudu(directories, {failDelete: true}), warn)

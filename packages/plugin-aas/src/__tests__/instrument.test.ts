@@ -60,9 +60,9 @@ jest.mock('../ssi-stage', () => ({
   resolveAasTracerStaging: (...args: unknown[]) => resolveAasTracerStaging(...args),
 }))
 
-const deleteDirectory = jest.fn()
+const moveAside = jest.fn()
 jest.mock('../kudu', () => ({
-  getKuduClient: jest.fn().mockImplementation(async () => ({deleteDirectory})),
+  getKuduClient: jest.fn().mockImplementation(async () => ({moveAside})),
 }))
 
 jest.mock('@azure/arm-resources', () => ({
@@ -154,7 +154,7 @@ describe('aas instrument', () => {
         .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
       resolveAasTracerStaging.mockReset().mockResolvedValue({root: STAGED_ROOT, publish: publishTracer})
       publishTracer.mockReset().mockResolvedValue(undefined)
-      deleteDirectory.mockReset().mockResolvedValue(undefined)
+      moveAside.mockReset().mockResolvedValue(undefined)
     })
 
     test('Adds a sidecar and updates the application settings and tags', async () => {
@@ -257,7 +257,7 @@ describe('aas instrument', () => {
           }),
         })
       )
-      expect(deleteDirectory).not.toHaveBeenCalled()
+      expect(moveAside).not.toHaveBeenCalled()
       expect(webAppsOperations.updateSlotConfigurationNames).not.toHaveBeenCalled()
     })
 
@@ -309,7 +309,7 @@ describe('aas instrument', () => {
       expect(code).toEqual(0)
       expect(resolveAasTracerStaging).not.toHaveBeenCalled()
       expect(context.stdout.toString()).toContain('Removing automatic tracer injection')
-      expect(deleteDirectory).not.toHaveBeenCalled()
+      expect(moveAside).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
         'my-resource-group',
         'my-web-app',

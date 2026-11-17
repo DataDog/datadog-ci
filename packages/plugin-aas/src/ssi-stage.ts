@@ -19,6 +19,8 @@ import {
 import {AAS_SSI_STAGING_ROOT, getAasInjectionSpec, getStagedRoot} from './ssi-env'
 
 const FLEET_REGISTRY = 'https://install.datadoghq.com/v2'
+// A run uploads its temporary tree within minutes, so a tree this old belongs to no running staging.
+const LEFTOVER_MIN_AGE_MINUTES = 30
 
 export interface AasTracerStaging {
   readonly root: string
@@ -47,9 +49,10 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
     spec,
     publish: async (kudu, warn) => {
       const removeLeftovers = async () => {
-        await removeTemporaryTrees(kudu, `${root}.tmp-*`, warn)
-        await removeTemporaryTrees(kudu, `${AAS_SSI_STAGING_ROOT}.tmp-*`, warn)
+        await removeTemporaryTrees(kudu, root, warn, LEFTOVER_MIN_AGE_MINUTES)
+        await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn, LEFTOVER_MIN_AGE_MINUTES)
       }
+      // This check also waits for the SCM site to be ready before anything is uploaded.
       if (await kudu.hasArtifacts(spec.artifacts)) {
         await removeLeftovers()
 
@@ -67,24 +70,20 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
       // Extraction continues on the Web App after the CLI exits, so an interrupted run can leave a
       // partial tree. Extract to a temporary sibling and rename it into place, which is atomic on
       // the /home mount, so `root` only ever holds a complete tree.
-      const temporaryRoot = `${root}.tmp-${randomBytes(4).toString('hex')}`
+      const temporaryRoot = temporaryPath(root)
       await kudu.publish(temporaryRoot, zip)
-      // The Azure Files-backed /home mount intermittently lags on file enumeration right after
-      // extraction (CIFS), so retry the startup-file check before declaring the deploy incomplete.
-      const temporaryArtifacts = getAasInjectionSpec(runtime, temporaryRoot).artifacts
-      for (let attempt = 0; !(await kudu.hasArtifacts(temporaryArtifacts)); attempt++) {
-        if (attempt >= 3) {
-          throw new Error('The tracer staging deployment completed without all required startup files.')
-        }
-        await new Promise((resolve) => setTimeout(resolve, 5_000))
+      // The Azure Files-backed /home mount can lag on file enumeration right after extraction
+      // (CIFS), so wait for the startup files before declaring the deploy incomplete.
+      if (!(await kudu.hasArtifacts(getAasInjectionSpec(runtime, temporaryRoot).artifacts, true))) {
+        throw new Error('The tracer staging deployment completed without all required startup files.')
       }
       try {
         await kudu.rename(temporaryRoot, root)
       } catch {
-        // A concurrent run may have completed `root` first, so keep it. Otherwise `root` holds a
-        // partial tree from an earlier CLI version that failed the artifact check, so replace it.
+        // A concurrent run may have completed `root` first, so keep it. Otherwise move the invalid
+        // `root` aside, which never deletes a tree another run just published, and retry.
         if (!(await kudu.hasArtifacts(spec.artifacts))) {
-          await kudu.deleteDirectory(root)
+          await kudu.rename(root, temporaryPath(root))
           await kudu.rename(temporaryRoot, root)
         }
       }
@@ -100,17 +99,23 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
  * interrupted delete never leaves part of a tree under a root that `publish` reads as staged.
  */
 export const removeStagedTracers = async (kudu: KuduClient, warn: (message: string) => void): Promise<void> => {
-  await kudu.rename(AAS_SSI_STAGING_ROOT, `${AAS_SSI_STAGING_ROOT}.tmp-${randomBytes(4).toString('hex')}`, 7)
-  await removeTemporaryTrees(kudu, `${AAS_SSI_STAGING_ROOT}.tmp-*`, warn)
+  await kudu.moveAside(AAS_SSI_STAGING_ROOT, temporaryPath(AAS_SSI_STAGING_ROOT))
+  await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn)
 }
 
-// Removes temporary trees left by interrupted runs. Nothing runs from them, so a failure only warns.
-// deleteDirectory runs through bash, which expands the glob.
-const removeTemporaryTrees = async (kudu: KuduClient, pattern: string, warn: (message: string) => void) => {
+const temporaryPath = (path: string): string => `${path}.tmp-${randomBytes(4).toString('hex')}`
+
+// Removes temporary trees left by earlier runs. Nothing runs from them, so a failure only warns.
+const removeTemporaryTrees = async (
+  kudu: KuduClient,
+  path: string,
+  warn: (message: string) => void,
+  olderThanMinutes?: number
+) => {
   try {
-    await kudu.deleteDirectory(pattern, 1)
+    await kudu.deleteTemporaryTrees(path, olderThanMinutes)
   } catch {
-    warn(`Could not remove leftover tracer staging directories ${pattern}. The next run removes them.`)
+    warn(`Could not remove leftover tracer staging directories ${path}.tmp-*. The next run removes them.`)
   }
 }
 

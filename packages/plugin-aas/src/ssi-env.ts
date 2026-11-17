@@ -26,9 +26,11 @@ export const hasStagedAasTracer = (settings: Record<string, string>): boolean =>
   LANGUAGE_INJECTION_ENV_NAMES.some((name) => settings[name]?.includes(stagingPrefix) ?? false)
 
 // The digest's 'sha256:' prefix is stripped: colon-delimited settings (PYTHONPATH, PHP_INI_SCAN_DIR)
-// would otherwise split the staged path into two garbage entries.
+// would otherwise split the staged path into two garbage entries. Roots live under `published/`
+// because earlier CLI versions extracted directly into `<staging root>/<language>/`, which can hold
+// partial trees that must never count as staged.
 export const getStagedRoot = (runtime: AasCodeRuntime, version: string, digest: string): string =>
-  `${AAS_SSI_STAGING_ROOT}/${runtime.language}/${version}-${digest.replace(/^sha256:/, '')}`
+  `${AAS_SSI_STAGING_ROOT}/published/${runtime.language}/${version}-${digest.replace(/^sha256:/, '')}`
 
 export const getAasInjectionSpec = (runtime: AasCodeRuntime, root: string): LanguageInjectionSpec =>
   getLanguageInjectionSpec({

@@ -33,10 +33,10 @@ const webAppsOperations = {
 const updateTags = jest.fn().mockResolvedValue({})
 const deleteAzureResource = jest.fn().mockResolvedValue({})
 
-const deleteDirectory = jest.fn()
-const rename = jest.fn()
+const moveAside = jest.fn()
+const deleteTemporaryTrees = jest.fn()
 jest.mock('../kudu', () => ({
-  getKuduClient: jest.fn().mockImplementation(async () => ({deleteDirectory, rename})),
+  getKuduClient: jest.fn().mockImplementation(async () => ({moveAside, deleteTemporaryTrees})),
 }))
 
 jest.mock('@azure/arm-resources', () => ({
@@ -106,8 +106,8 @@ describe('aas instrument', () => {
       webAppsOperations.updateSlotConfigurationNames.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
-      deleteDirectory.mockReset().mockResolvedValue(undefined)
-      rename.mockReset().mockResolvedValue(undefined)
+      moveAside.mockReset().mockResolvedValue(undefined)
+      deleteTemporaryTrees.mockReset().mockResolvedValue(undefined)
     })
 
     test('Fails if not authenticated with Azure', async () => {
@@ -182,20 +182,20 @@ describe('aas instrument', () => {
       const {code} = await runCLI(DEFAULT_ARGS)
 
       expect(code).toEqual(0)
-      expect(rename).toHaveBeenCalledWith('/home/data/datadog-tracer', expect.any(String), 7)
+      expect(moveAside).toHaveBeenCalledWith('/home/data/datadog-tracer', expect.any(String))
     })
 
     test('Does not require SCM access for containerized Linux apps', async () => {
       const {code} = await runCLI(DEFAULT_ARGS)
 
       expect(code).toEqual(0)
-      expect(rename).not.toHaveBeenCalled()
+      expect(moveAside).not.toHaveBeenCalled()
     })
 
     test('Logs and continues when the SCM site is inaccessible', async () => {
       webAppsOperations.get.mockResolvedValue({...LINUX_CODE_WEB_APP, tags: {}})
       webAppsOperations.getConfiguration.mockResolvedValue(LINUX_CODE_WEB_APP.siteConfig)
-      rename.mockRejectedValue(new Error('scm down'))
+      moveAside.mockRejectedValue(new Error('scm down'))
 
       const {code, context} = await runCLI(DEFAULT_ARGS)
 
@@ -213,7 +213,7 @@ describe('aas instrument', () => {
       const {code} = await runCLI(SLOT_ARGS)
 
       expect(code).toEqual(0)
-      expect(rename).toHaveBeenCalledWith('/home/data/datadog-tracer', expect.any(String), 7)
+      expect(moveAside).toHaveBeenCalledWith('/home/data/datadog-tracer', expect.any(String))
       expect(webAppsOperations.updateSlotConfigurationNames).toHaveBeenCalledWith(
         'my-resource-group',
         'my-web-app',
