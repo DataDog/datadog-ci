@@ -9,8 +9,11 @@ export interface KuduClient {
   deleteDirectory(directory: string, attempts?: number): Promise<void>
   publish(directory: string, archive: Buffer): Promise<void>
   hasArtifacts(artifacts: readonly (readonly string[])[]): Promise<boolean>
-  /** Atomically renames `source` to `target`. Fails if `target` is a non-empty directory. */
-  rename(source: string, target: string): Promise<void>
+  /**
+   * Atomically renames `source` to `target`, or does nothing if `source` doesn't exist. Fails if
+   * `target` is a non-empty directory.
+   */
+  rename(source: string, target: string, attempts?: number): Promise<void>
 }
 
 type PublishingCredentials = {
@@ -94,6 +97,21 @@ export const getKuduClient = async (
     return result.data ?? {}
   }
 
+  // Changes on the Azure Files-backed /home mount race directory enumeration on CIFS and fail while
+  // the app or sidecar still holds the files after the restart triggered by a settings update, so
+  // retry with backoff long enough for the restart to settle.
+  const runWithRetries = async (script: string, attempts: number): Promise<boolean> => {
+    for (let attempt = 0; ; attempt++) {
+      if ((await runCommand(script)).ExitCode === 0) {
+        return true
+      }
+      if (attempt >= attempts - 1) {
+        return false
+      }
+      await new Promise((resolve) => setTimeout(resolve, Math.min(5_000 * 2 ** attempt, 30_000)))
+    }
+  }
+
   return {
     publish: async (directory, archive) => {
       // Plain zip extraction via the Kudu zip API. Unlike OneDeploy (/api/publish) this runs no
@@ -112,23 +130,15 @@ export const getKuduClient = async (
 
       return (await runCommand(checks)).ExitCode === 0
     },
-    rename: async (source, target) => {
-      if ((await runCommand(`mv -T -- ${shellQuote(source)} ${shellQuote(target)}`)).ExitCode !== 0) {
+    rename: async (source, target, attempts = 1) => {
+      const script = `test ! -e ${shellQuote(source)} || mv -T -- ${shellQuote(source)} ${shellQuote(target)}`
+      if (!(await runWithRetries(script, attempts))) {
         throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
       }
     },
     deleteDirectory: async (directory, attempts = 7) => {
-      // Deleting onto the Azure Files-backed /home mount races directory enumeration on CIFS and
-      // fails while the app or sidecar still holds the files after the restart triggered by the
-      // settings update, so retry with backoff long enough for the restart to settle.
-      for (let attempt = 0; ; attempt++) {
-        if ((await runCommand(`rm -rf -- ${directory}`)).ExitCode === 0) {
-          return
-        }
-        if (attempt >= attempts - 1) {
-          throw new Error(`Failed to delete ${directory} from the Web App.`)
-        }
-        await new Promise((resolve) => setTimeout(resolve, Math.min(5_000 * 2 ** attempt, 30_000)))
+      if (!(await runWithRetries(`rm -rf -- ${directory}`, attempts))) {
+        throw new Error(`Failed to delete ${directory} from the Web App.`)
       }
     },
   }

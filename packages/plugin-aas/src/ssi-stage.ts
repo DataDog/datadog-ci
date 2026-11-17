@@ -16,7 +16,7 @@ import {
   verifySha256,
   type AasCodeRuntime,
 } from './ssi'
-import {getAasInjectionSpec, getStagedRoot} from './ssi-env'
+import {AAS_SSI_STAGING_ROOT, getAasInjectionSpec, getStagedRoot} from './ssi-env'
 
 const FLEET_REGISTRY = 'https://install.datadoghq.com/v2'
 
@@ -46,15 +46,9 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
     root,
     spec,
     publish: async (kudu, warn) => {
-      // Removes temporary trees left by interrupted runs. The tracer is usable without this, so a
-      // failure only warns. deleteDirectory runs through bash, which expands the glob.
       const removeLeftovers = async () => {
-        const leftovers = `${root}.tmp-*`
-        try {
-          await kudu.deleteDirectory(leftovers, 1)
-        } catch {
-          warn(`Could not remove leftover tracer staging directories ${leftovers}. The next run removes them.`)
-        }
+        await removeTemporaryTrees(kudu, `${root}.tmp-*`, warn)
+        await removeTemporaryTrees(kudu, `${AAS_SSI_STAGING_ROOT}.tmp-*`, warn)
       }
       if (await kudu.hasArtifacts(spec.artifacts)) {
         await removeLeftovers()
@@ -98,6 +92,25 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
 
       return true
     },
+  }
+}
+
+/**
+ * Removes every staged tracer. Moving the staging root aside first is atomic, so a failed or
+ * interrupted delete never leaves part of a tree under a root that `publish` reads as staged.
+ */
+export const removeStagedTracers = async (kudu: KuduClient, warn: (message: string) => void): Promise<void> => {
+  await kudu.rename(AAS_SSI_STAGING_ROOT, `${AAS_SSI_STAGING_ROOT}.tmp-${randomBytes(4).toString('hex')}`, 7)
+  await removeTemporaryTrees(kudu, `${AAS_SSI_STAGING_ROOT}.tmp-*`, warn)
+}
+
+// Removes temporary trees left by interrupted runs. Nothing runs from them, so a failure only warns.
+// deleteDirectory runs through bash, which expands the glob.
+const removeTemporaryTrees = async (kudu: KuduClient, pattern: string, warn: (message: string) => void) => {
+  try {
+    await kudu.deleteDirectory(pattern, 1)
+  } catch {
+    warn(`Could not remove leftover tracer staging directories ${pattern}. The next run removes them.`)
   }
 }
 
