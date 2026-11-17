@@ -132,7 +132,7 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
       loggerTags.push(`version:${this.releaseVersion}`)
       loggerTags.push(`service:${this.service}`)
     }
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       datadogSite: getDatadogSiteFromEnv(),
       defaultTags: loggerTags,
       prefix: 'datadog.ci.sourcemaps.',

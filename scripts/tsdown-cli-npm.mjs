@@ -8,6 +8,7 @@ import {
   createPluginInjections,
   createOutExtensions,
   createOutputOptions,
+  createQuickjsWasmInlining,
   formatBundleSizeMb,
   summarizeBundle,
   writeLegalFiles,
@@ -36,9 +37,12 @@ try {
       neverBundle: ['cpu-features'],
       onlyBundle: false,
     },
-    plugins: createPluginInjections({
-      pluginCommandsByScope: builtinPluginCommands,
-    }),
+    plugins: [
+      ...createPluginInjections({
+        pluginCommandsByScope: builtinPluginCommands,
+      }),
+      createQuickjsWasmInlining(),
+    ],
   })
 
   await writeLegalFiles([outputPath], bundles)

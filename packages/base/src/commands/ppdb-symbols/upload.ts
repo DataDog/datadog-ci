@@ -220,7 +220,7 @@ export class PpdbSymbolsUploadCommand extends BaseCommand {
   }
 
   private async performPpdbSymbolsUpload(manifest: DebugIdManifest): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger()
+    const metricsLogger = await this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const pdbPaths = (await Promise.all(this.symbolsLocations.map((location) => this.getPdbFiles(location)))).flat()

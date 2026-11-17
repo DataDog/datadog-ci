@@ -10,6 +10,7 @@ import {
   REPO_ROOT,
   createOutExtensions,
   createOutputOptions,
+  createQuickjsWasmInlining,
   formatBundleSizeMb,
   summarizeBundle,
   writeLegalFiles,
@@ -111,6 +112,7 @@ try {
       neverBundle: ['cpu-features'],
       onlyBundle: false,
     },
+    plugins: [createQuickjsWasmInlining()],
   }
 
   const mainBundles = await build({

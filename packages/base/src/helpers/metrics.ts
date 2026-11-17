@@ -1,5 +1,4 @@
 import metrics from 'datadog-metrics'
-import {ProxyAgent} from 'proxy-agent'
 
 import {getDatadogSite} from './api'
 
@@ -15,8 +14,10 @@ export interface MetricsLoggerOptions {
   prefix: string
 }
 
-export const getMetricsLogger = (opts: MetricsLoggerOptions): MetricsLogger => {
+export const getMetricsLogger = async (opts: MetricsLoggerOptions): Promise<MetricsLogger> => {
   const apiUrl = 'api.' + getDatadogSite(opts.datadogSite)
+  // `proxy-agent` is ESM-only, so it must be imported dynamically from this CommonJS package.
+  const {ProxyAgent} = await import('proxy-agent')
 
   const metricsOpts = {
     // ProxyAgent will retrieve proxy agent from env vars when relevant

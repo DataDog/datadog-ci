@@ -1,6 +1,6 @@
 import {EventEmitter, once} from 'events'
 
-import type {ProxyAgent} from 'proxy-agent'
+import type {Agent} from 'http'
 
 import {createWebSocketStream, default as WebSocketModule} from 'ws'
 
@@ -11,7 +11,7 @@ export class WebSocket extends EventEmitter {
 
   constructor(
     private url: string,
-    private proxyAgent: ProxyAgent | undefined
+    private proxyAgent: Agent | undefined
   ) {
     super()
   }

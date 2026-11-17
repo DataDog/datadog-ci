@@ -91,7 +91,7 @@ export class GitMetadataUploadCommand extends BaseCommand {
       return 1
     }
 
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],

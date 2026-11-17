@@ -164,7 +164,7 @@ export const executeTests = async (
     }
     // Open a tunnel to Datadog
     try {
-      const tunnelProxyAgent = getProxyAgent(config.proxy)
+      const tunnelProxyAgent = await getProxyAgent(config.proxy)
       const tunnelReporter = getTunnelReporter(reporter)
       tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
 

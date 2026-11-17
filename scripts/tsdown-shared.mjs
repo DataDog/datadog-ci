@@ -117,6 +117,32 @@ export const createPluginInjections = ({pluginCommandsByScope}) => {
   ]
 }
 
+// `pac-proxy-agent` loads the QuickJS WASM binary with `import.meta.resolve()`, which is unavailable in CJS bundles.
+// Inline the binary instead, so PAC proxies keep working when `proxy-agent` is bundled.
+const QUICKJS_WASM_LOADER = "readFile(new URL(import.meta.resolve('quickjs-wasi/quickjs.wasm')))"
+
+export const createQuickjsWasmInlining = () => ({
+  name: 'datadog-inline-quickjs-wasm',
+  transform: async (code, id) => {
+    const normalizedId = normalizePath(id)
+    if (!normalizedId.includes('/node_modules/pac-proxy-agent/') || !code.includes('quickjs-wasi/quickjs.wasm')) {
+      return
+    }
+
+    if (!code.includes(QUICKJS_WASM_LOADER)) {
+      throw new Error(`Unexpected QuickJS WASM loader in ${id}, please update \`createQuickjsWasmInlining()\``)
+    }
+
+    const wasmPath = createRequire(id).resolve('quickjs-wasi/quickjs.wasm')
+    const wasmBase64 = (await readFile(wasmPath)).toString('base64')
+
+    return {
+      code: code.replace(QUICKJS_WASM_LOADER, `Promise.resolve(Buffer.from(${JSON.stringify(wasmBase64)}, 'base64'))`),
+      map: undefined,
+    }
+  },
+})
+
 export const createOutExtensions = (jsExtension) => () => ({js: jsExtension})
 
 export const createOutputOptions = () => ({

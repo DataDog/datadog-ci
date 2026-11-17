@@ -6,10 +6,10 @@ import type {RequestBuilder, SpanTag, SpanTags} from './interfaces'
 import type {RequestConfig} from './request'
 import type {DatadogRoute} from './request/datadog-route'
 import type {BaseContext, CommandClass} from 'clipanion'
+import type {Agent} from 'http'
 
 import {Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
-import {ProxyAgent} from 'proxy-agent'
 
 import {getProxyDispatcher, httpRequest} from './request'
 
@@ -183,21 +183,24 @@ export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
   return (args: RequestConfig) => httpRequest(overrideArgs(args))
 }
 
-const proxyAgentCache = new Map<string, ProxyAgent>()
+const proxyAgentCache = new Map<string, Agent>()
 
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
+export const getProxyAgent = async (proxyOpts?: ProxyConfiguration): Promise<Agent> => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
 
   let proxyAgent = proxyAgentCache.get(proxyUrlFromConfiguration)
   if (!proxyAgent) {
-    proxyAgent = createProxyAgentForUrl(proxyUrlFromConfiguration)
+    proxyAgent = await createProxyAgentForUrl(proxyUrlFromConfiguration)
     proxyAgentCache.set(proxyUrlFromConfiguration, proxyAgent)
   }
 
   return proxyAgent
 }
 
-const createProxyAgentForUrl = (proxyUrl: string) => {
+const createProxyAgentForUrl = async (proxyUrl: string) => {
+  // `proxy-agent` is ESM-only, so it must be imported dynamically from this CommonJS package.
+  const {ProxyAgent} = await import('proxy-agent')
+
   if (!proxyUrl) {
     // Let the default proxy agent discover environment variables.
     return new ProxyAgent()

@@ -166,7 +166,7 @@ export class ReactNativeUploadCommand extends BaseCommand {
       }
     )
 
-    const metricsLogger = getMetricsLogger({
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [
