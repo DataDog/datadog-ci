@@ -20,6 +20,10 @@ export const FLEET_PACKAGE_VERSION_ANNOTATION = 'com.datadoghq.package.version'
 
 const SHA256_DIGEST = /^sha256:[a-f0-9]{64}$/
 const PACKAGE_VERSION = /^[a-zA-Z0-9][a-zA-Z0-9._+-]*$/
+// Kudu extracts files onto the Azure Files-backed /home mount at roughly 0.1 s each, so a whole
+// tracer (2,374 files for Node.js) can exceed the ~230 s App Service front-end request limit. A zip
+// of 400 files extracts in under a minute on a B1 plan.
+const FLEET_PACKAGE_ZIP_MAX_FILES = 400
 const NON_X64_ARCHITECTURE = /(?:^|-)(?:arm|arm64|ia32|ppc64|s390x|wasm32)$/
 
 export type AasSsiLanguage = Exclude<Language, 'ruby'>
@@ -148,17 +152,21 @@ export const verifySha256 = (contents: Uint8Array, expectedDigest: string): void
   }
 }
 
-export const buildFleetPackageZip = async (
+export const buildFleetPackageZips = async (
   compressedLayer: Uint8Array,
   expectedDigest: string,
   runtime: AasCodeRuntime
-): Promise<Buffer> => {
+): Promise<Buffer[]> => {
   verifySha256(compressedLayer, expectedDigest)
 
-  return buildFleetPackageZipFromTar(decompress(compressedLayer), runtime)
+  return buildFleetPackageZipsFromTar(decompress(compressedLayer), runtime)
 }
 
-export const buildFleetPackageZipFromTar = async (tarArchive: Uint8Array, runtime: AasCodeRuntime): Promise<Buffer> => {
+/** Splits the selected runtime files into zips of at most FLEET_PACKAGE_ZIP_MAX_FILES files each. */
+export const buildFleetPackageZipsFromTar = async (
+  tarArchive: Uint8Array,
+  runtime: AasCodeRuntime
+): Promise<Buffer[]> => {
   const archive = await extractArchive(tarArchive)
   const selectedNames = [...archive.files.keys(), ...archive.links.keys()]
     .filter((name) => isSelectedRuntimeFile(name, runtime))
@@ -166,13 +174,21 @@ export const buildFleetPackageZipFromTar = async (tarArchive: Uint8Array, runtim
 
   assertRequiredArtifacts(selectedNames, runtime)
 
-  const zip = new JSZip()
-  for (const name of selectedNames) {
-    const file = resolveArchiveFile(name, archive, new Set())
-    zip.file(name, file.data, {unixPermissions: 0o100000 + (file.mode % 0o1000)})
-  }
+  const chunks = Array.from({length: Math.ceil(selectedNames.length / FLEET_PACKAGE_ZIP_MAX_FILES)}, (_, index) =>
+    selectedNames.slice(index * FLEET_PACKAGE_ZIP_MAX_FILES, (index + 1) * FLEET_PACKAGE_ZIP_MAX_FILES)
+  )
 
-  return zip.generateAsync({type: 'nodebuffer', platform: 'UNIX'})
+  return Promise.all(
+    chunks.map((names) => {
+      const zip = new JSZip()
+      for (const name of names) {
+        const file = resolveArchiveFile(name, archive, new Set())
+        zip.file(name, file.data, {unixPermissions: 0o100000 + (file.mode % 0o1000)})
+      }
+
+      return zip.generateAsync({type: 'nodebuffer', platform: 'UNIX'})
+    })
+  )
 }
 
 const parseRuntime = (

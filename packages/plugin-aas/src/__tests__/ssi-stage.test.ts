@@ -19,7 +19,9 @@ jest.mock('../ssi', () => ({
     manifestDigest: `sha256:${'a'.repeat(64)}`,
     layer: {digest: 'sha256:layer', mediaType: 'application/octet-stream'},
   }),
-  buildFleetPackageZip: jest.fn().mockResolvedValue(Buffer.from('zip')),
+  buildFleetPackageZips: jest
+    .fn()
+    .mockResolvedValue([Buffer.from('zip-1'), Buffer.from('zip-2'), Buffer.from('zip-3')]),
 }))
 
 const ROOT = `/home/data/datadog-tracer/nodejs/1.2.3-${'a'.repeat(64)}`
@@ -38,6 +40,7 @@ const createFakeKudu = (
     stuck = false,
     stale = new Set<string>(),
     failedUploads = 0,
+    failingZip = '',
   } = {}
 ): KuduClient => {
   const move = (source: string, target: string) => {
@@ -60,10 +63,14 @@ const createFakeKudu = (
 
   return {
     waitUntilReady: async () => {},
-    publish: async (directory) => {
+    publish: async (directory, zip) => {
       if (failuresLeft-- > 0) {
         directories.set(directory, 'partial')
         throw getRequestError(502, {})
+      }
+      if (zip.toString() === failingZip) {
+        directories.set(directory, 'partial')
+        throw new Error('upload failed')
       }
       directories.set(directory, extracts)
       onPublish()
@@ -130,15 +137,21 @@ describe('resolveAasTracerStaging publish', () => {
 
     await expect(publish(createFakeKudu(directories, {failedUploads: 1}))).resolves.toBe(true)
     expect(directories.get(ROOT)).toBe('complete')
-    expect([...directories].filter(([directory]) => directory.startsWith(`${ROOT}.tmp-`))).toEqual([
-      [expect.any(String), 'partial'],
-    ])
+    // Other chunks may still complete the abandoned tree, but it keeps its temporary name.
+    expect([...directories.keys()].filter((directory) => directory.startsWith(`${ROOT}.tmp-`))).toHaveLength(1)
   })
 
-  test('fails after three gateway errors', async () => {
+  test('fails when every upload attempt hits a gateway error', async () => {
     const directories = new Map<string, Tree>()
 
-    await expect(publish(createFakeKudu(directories, {failedUploads: 3}))).rejects.toThrow()
+    await expect(publish(createFakeKudu(directories, {failedUploads: Infinity}))).rejects.toThrow()
+    expect(directories.has(ROOT)).toBe(false)
+  })
+
+  test('does not move a temporary tree into the root when one zip fails to upload', async () => {
+    const directories = new Map<string, Tree>()
+
+    await expect(publish(createFakeKudu(directories, {failingZip: 'zip-2'}))).rejects.toThrow('upload failed')
     expect(directories.has(ROOT)).toBe(false)
   })
 
