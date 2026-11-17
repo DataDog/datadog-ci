@@ -158,7 +158,7 @@ export const verifyLinuxInstrumented = (
   // Logs only flow when instance logging is enabled (--instance-logging).
   expect(settings['DD_AAS_INSTANCE_LOGGING_ENABLED']).toBe('true')
   if (expectSsi) {
-    expect(settings.NODE_OPTIONS).toContain('/home/data/datadog-tracer/nodejs/')
+    expect(settings.NODE_OPTIONS).toContain('/home/data/datadog-tracer/published/nodejs/')
     expect(settings.NODE_OPTIONS).toContain('/init.js')
     expect(settings.DD_TAGS).toContain('_dd.injection.mode:serverless-single-lang')
   }
