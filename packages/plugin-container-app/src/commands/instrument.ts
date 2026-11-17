@@ -36,7 +36,6 @@ import {
   SSI_INJECTION_MODE_TAG,
   TRACER_CONTAINER_NAME,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
-import {checkPinnedTracerVersion} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
@@ -79,15 +78,6 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
     for (const warning of ssiConfig.warnings) {
       this.context.stdout.write(renderSoftWarning(warning))
-    }
-    const tracerVersion = await checkPinnedTracerVersion(ssiConfig)
-    if (tracerVersion.kind === 'not-found') {
-      this.context.stdout.write(renderError(tracerVersion.message))
-
-      return 1
-    }
-    if (tracerVersion.kind === 'unverified') {
-      this.context.stdout.write(renderSoftWarning(tracerVersion.message))
     }
 
     try {

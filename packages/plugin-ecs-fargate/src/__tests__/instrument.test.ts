@@ -33,8 +33,7 @@ import {
   RegisterTaskDefinitionCommand,
   UpdateServiceCommand,
 } from '@aws-sdk/client-ecs'
-import {getRequestError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import * as request from '@datadog/datadog-ci-base/helpers/request'
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {AGENT_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
@@ -1006,32 +1005,6 @@ describe('ecs-fargate instrument', () => {
   })
 
   describe('automatic tracer injection', () => {
-    test('rejects a tracer version the registry does not have before any AWS call', async () => {
-      jest
-        .spyOn(request, 'httpRequest')
-        .mockImplementation(async ({method}) =>
-          method === 'HEAD' ? Promise.reject(getRequestError(404, {})) : ({data: {token: 'anonymous'}} as any)
-        )
-
-      const {code, context} = await runCLI([
-        '--api-key-secret-arn',
-        MOCK_API_KEY_SECRET_ARN,
-        '--tracing',
-        'inject',
-        '--language',
-        'nodejs',
-        '--tracer-version',
-        '99.0.0',
-      ])
-
-      expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain(
-        'Tracer version 99.0.0 was not found in public.ecr.aws/datadog/dd-lib-js-init.'
-      )
-      expect(ecsMock.calls()).toHaveLength(0)
-      jest.restoreAllMocks()
-    })
-
     test('injects a Node.js tracer into the application container', async () => {
       const {code} = await runCLI([
         '--api-key-secret-arn',

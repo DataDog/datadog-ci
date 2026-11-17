@@ -11,7 +11,6 @@ import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/r
 import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import {checkPinnedTracerVersion} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
@@ -52,16 +51,6 @@ export class PluginCommand extends EcsFargateInstrumentCommand {
       )
 
       return 1
-    }
-
-    const tracerVersion = await checkPinnedTracerVersion(ssiConfig)
-    if (tracerVersion.kind === 'not-found') {
-      this.context.stdout.write(renderError(tracerVersion.message))
-
-      return 1
-    }
-    if (tracerVersion.kind === 'unverified') {
-      this.context.stdout.write(renderSoftWarning(tracerVersion.message))
     }
 
     const apiKey = await this.resolveApiKey(config)

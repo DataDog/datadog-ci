@@ -24,7 +24,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {isInjection, renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
-import {checkPinnedTracerVersion} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
@@ -102,16 +101,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
-
-    const tracerVersion = await checkPinnedTracerVersion(this.getSsiConfig())
-    if (tracerVersion.kind === 'not-found') {
-      this.context.stderr.write(renderError(`Invalid APM configuration: ${tracerVersion.message}\n`))
-
-      return 1
-    }
-    if (tracerVersion.kind === 'unverified') {
-      this.context.stdout.write(renderSoftWarning(`${tracerVersion.message}\n`))
-    }
 
     // Verify DD API Key
     const site = getDatadogSite()

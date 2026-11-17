@@ -18,9 +18,6 @@ jest.mock('../utils', () => ({
 }))
 
 jest.mock('@datadog/datadog-ci-base/helpers/serverless/source-code-integration')
-jest.mock('@datadog/datadog-ci-base/helpers/serverless/ssi/tracer-version', () => ({
-  checkPinnedTracerVersion: async () => ({kind: 'ok'}),
-}))
 
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '0.0.0'}))
 
