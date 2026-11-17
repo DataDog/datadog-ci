@@ -8,13 +8,18 @@ import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
 export interface KuduClient {
+  /** Waits until the SCM site answers commands, up to the command deadline. */
+  waitUntilReady(): Promise<void>
   /** Extracts `archive` into `directory` with a single request, which is never replayed. */
   publish(directory: string, archive: Buffer): Promise<void>
   /** Returns whether every artifact exists. With `waitUntilPresent`, rechecks until the command deadline. */
   hasArtifacts(artifacts: readonly (readonly string[])[], waitUntilPresent?: boolean): Promise<boolean>
   /** Atomically renames `source` to `target`. Fails if `source` is missing or `target` is a non-empty directory. */
   rename(source: string, target: string): Promise<void>
-  /** Atomically renames `source` to `target` if `source` exists, retrying until the command deadline. */
+  /**
+   * Atomically renames `source` to `target` if `source` exists, retrying until the command deadline,
+   * then checks once that `source` is gone.
+   */
   moveAside(source: string, target: string): Promise<void>
   /** Deletes the `<path>.tmp-*` siblings of `path`, optionally only those unmodified for `olderThanMinutes`. */
   deleteTemporaryTrees(path: string, olderThanMinutes?: number): Promise<void>
@@ -27,16 +32,20 @@ type PublishingCredentials = {
   scmUri?: string
 }
 
-// The SCM site answers these while it restarts after a settings update (about 46 s on B1).
+// The SCM front end answers these when the SCM site doesn't respond, for example while it restarts
+// after a settings update (about 46 s on B1).
 const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503, 504])
-// Commands retry every 10 s until a 3-minute deadline, which covers the SCM restart and the time
-// the restarting app holds files on /home with margin. Each attempt allows 120 s, which covers the
-// slowest observed command (65 s to delete a Node.js tracer on B1).
-const COMMAND_RETRY_INTERVAL_MS = 10_000
-const COMMAND_DEADLINE_MS = 180_000
+
+export const isRetryableScmError = (error: unknown): boolean =>
+  isRequestError(error) && RETRYABLE_SCM_STATUSES.has(error.response?.status ?? 0)
+const SCM_RETRY_INTERVAL_MS = 10_000
+const SCM_RETRY_DEADLINE_MS = 180_000
+// Retrying every 10 s until a 3-minute deadline covers the SCM restart and the time the restarting
+// app holds files on /home with margin. Each command attempt allows 120 s, which covers the slowest
+// observed command (65 s to delete a Node.js tracer on B1).
 const COMMAND_TIMEOUT_MS = 120_000
-// Kudu keeps extracting after a lost response, so an upload is never replayed: a replay could race
-// the first extraction. On B1, a 400-file zip extracts in at most 93 s with 6 uploads in flight.
+// Kudu keeps extracting after a lost response, so `publish` never replays an upload: a replay could
+// race the first extraction. On B1, a 400-file zip extracts in at most 93 s with 6 uploads in flight.
 const UPLOAD_TIMEOUT_MS = 180_000
 
 export const getKuduClient = async (
@@ -87,7 +96,7 @@ export const getKuduClient = async (
   // Runs `script` and returns whether it exited 0. `untilReady` retries retryable SCM statuses,
   // `untilSuccess` also retries non-zero exits, and `once` makes a single attempt.
   const runCommand = async (script: string, retry: 'once' | 'untilReady' | 'untilSuccess'): Promise<boolean> => {
-    const deadline = Date.now() + COMMAND_DEADLINE_MS
+    const deadline = Date.now() + SCM_RETRY_DEADLINE_MS
     for (;;) {
       try {
         const result = await request<{ExitCode?: number}>(
@@ -101,16 +110,18 @@ export const getKuduClient = async (
           return result?.ExitCode === 0
         }
       } catch (error) {
-        const status = isRequestError(error) ? error.response?.status : undefined
-        if (retry === 'once' || !RETRYABLE_SCM_STATUSES.has(status ?? 0) || Date.now() >= deadline) {
+        if (retry === 'once' || !isRetryableScmError(error) || Date.now() >= deadline) {
           throw error
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, COMMAND_RETRY_INTERVAL_MS))
+      await new Promise((resolve) => setTimeout(resolve, SCM_RETRY_INTERVAL_MS))
     }
   }
 
   return {
+    waitUntilReady: async () => {
+      await runCommand('true', 'untilReady')
+    },
     publish: async (directory, archive) => {
       // Plain zip extraction via the Kudu zip API. Unlike OneDeploy (/api/publish) this runs no
       // Oryx build (which would compress node_modules into a tarball for Node apps), needs no
@@ -136,7 +147,10 @@ export const getKuduClient = async (
     moveAside: async (source, target) => {
       // Renaming fails while the restarting app still holds files in `source`, so retry it.
       const script = `test ! -e ${shellQuote(source)} || mv -T -- ${shellQuote(source)} ${shellQuote(target)}`
-      if (!(await runCommand(script, 'untilSuccess'))) {
+      if (
+        !(await runCommand(script, 'untilSuccess')) ||
+        !(await runCommand(`test ! -e ${shellQuote(source)}`, 'once'))
+      ) {
         throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
       }
     },

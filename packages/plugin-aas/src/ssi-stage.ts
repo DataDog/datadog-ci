@@ -1,11 +1,11 @@
 import {randomBytes} from 'node:crypto'
 
-import type {KuduClient} from './kudu'
 import type {LanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
 import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
+import {isRetryableScmError, type KuduClient} from './kudu'
 import {
   OCI_INDEX_MEDIA_TYPE,
   OCI_MANIFEST_MEDIA_TYPE,
@@ -21,6 +21,9 @@ import {AAS_SSI_STAGING_ROOT, getAasInjectionSpec, getStagedRoot} from './ssi-en
 const FLEET_REGISTRY = 'https://install.datadoghq.com/v2'
 // A run uploads its temporary tree within minutes, so a tree this old belongs to no running staging.
 const LEFTOVER_MIN_AGE_MINUTES = 30
+// A full Node.js upload takes about 90 s on B1, so retries are counted rather than bounded by the
+// SCM command deadline.
+const UPLOAD_ATTEMPTS = 3
 
 export interface AasTracerStaging {
   readonly root: string
@@ -70,8 +73,7 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
       // Extraction continues on the Web App after the CLI exits, so an interrupted run can leave a
       // partial tree. Extract to a temporary sibling and rename it into place, which is atomic on
       // the /home mount, so `root` only ever holds a complete tree.
-      const temporaryRoot = temporaryPath(root)
-      await kudu.publish(temporaryRoot, zip)
+      const temporaryRoot = await uploadToTemporaryTree(kudu, root, (directory) => kudu.publish(directory, zip))
       // The Azure Files-backed /home mount can lag on file enumeration right after extraction
       // (CIFS), so wait for the startup files before declaring the deploy incomplete.
       if (!(await kudu.hasArtifacts(getAasInjectionSpec(runtime, temporaryRoot).artifacts, true))) {
@@ -101,6 +103,30 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
 export const removeStagedTracers = async (kudu: KuduClient, warn: (message: string) => void): Promise<void> => {
   await kudu.moveAside(AAS_SSI_STAGING_ROOT, temporaryPath(AAS_SSI_STAGING_ROOT))
   await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn)
+}
+
+// The SCM front end can answer 502 to an upload even after a readiness check passed, for example
+// while a freshly created app's SCM site restarts. A late extraction could still be running, so
+// each retry uploads into a fresh temporary tree after another readiness check, and an abandoned tree
+// is never renamed.
+const uploadToTemporaryTree = async (
+  kudu: KuduClient,
+  root: string,
+  upload: (directory: string) => Promise<unknown>
+): Promise<string> => {
+  for (let attempt = 1; ; attempt++) {
+    const temporaryRoot = temporaryPath(root)
+    try {
+      await upload(temporaryRoot)
+
+      return temporaryRoot
+    } catch (error) {
+      if (!isRetryableScmError(error) || attempt >= UPLOAD_ATTEMPTS) {
+        throw error
+      }
+    }
+    await kudu.waitUntilReady()
+  }
 }
 
 const temporaryPath = (path: string): string => `${path}.tmp-${randomBytes(4).toString('hex')}`

@@ -1,8 +1,11 @@
 import type {KuduClient} from '../kudu'
 
+import {getRequestError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+
 import {removeStagedTracers, resolveAasTracerStaging} from '../ssi-stage'
 
 jest.mock('@datadog/datadog-ci-base/helpers/request', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/request'),
   getProxyDispatcher: jest.fn(),
   httpRequest: jest.fn().mockResolvedValue({data: Buffer.from('{}')}),
 }))
@@ -33,6 +36,7 @@ const createFakeKudu = (
     onVerified = () => {},
     failDelete = false,
     stale = new Set<string>(),
+    failedUploads = 0,
   } = {}
 ): KuduClient => {
   const move = (source: string, target: string) => {
@@ -51,8 +55,15 @@ const createFakeKudu = (
     return true
   }
 
+  let failuresLeft = failedUploads
+
   return {
+    waitUntilReady: async () => {},
     publish: async (directory) => {
+      if (failuresLeft-- > 0) {
+        directories.set(directory, 'partial')
+        throw getRequestError(502, {})
+      }
       directories.set(directory, extracts)
       onPublish()
     },
@@ -108,6 +119,23 @@ describe('resolveAasTracerStaging publish', () => {
       [...directories.keys()].filter((directory) => directory.includes('.tmp-')).forEach((d) => directories.delete(d))
 
     await expect(publish(createFakeKudu(directories, {onVerified}))).rejects.toThrow('missing source')
+    expect(directories.has(ROOT)).toBe(false)
+  })
+
+  test('retries a gateway error into a new temporary tree and never renames the abandoned one', async () => {
+    const directories = new Map<string, Tree>()
+
+    await expect(publish(createFakeKudu(directories, {failedUploads: 1}))).resolves.toBe(true)
+    expect(directories.get(ROOT)).toBe('complete')
+    expect([...directories].filter(([directory]) => directory.startsWith(`${ROOT}.tmp-`))).toEqual([
+      [expect.any(String), 'partial'],
+    ])
+  })
+
+  test('fails after three gateway errors', async () => {
+    const directories = new Map<string, Tree>()
+
+    await expect(publish(createFakeKudu(directories, {failedUploads: 3}))).rejects.toThrow()
     expect(directories.has(ROOT)).toBe(false)
   })
 
