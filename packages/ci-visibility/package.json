@@ -1,0 +1,56 @@
+{
+  "name": "@datadog/ci-visibility",
+  "version": "5.27.0",
+  "description": "Lightweight programmatic CI Visibility recording for GitHub Actions",
+  "license": "Apache-2.0",
+  "keywords": [
+    "ci-visibility",
+    "datadog",
+    "datadog-ci"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/ci-visibility",
+  "bugs": {
+    "url": "https://github.com/DataDog/datadog-ci/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/ci-visibility"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./github": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "author": {
+    "name": "Datadog, Inc.",
+    "email": "package@datadoghq.com"
+  }
+}

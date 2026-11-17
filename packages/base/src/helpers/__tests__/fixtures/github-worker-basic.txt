@@ -1,0 +1,10 @@
+Job message: {
+  "jobDisplayName": "Build (linux)",
+  "contextData": {"job": {"d": [{"k": "check_run_id", "v": 200}]}},
+  "variables": {"system.orchestrationId": {"value": "plan.build.default"}},
+  "steps": [
+    {"contextName": "checkout"},
+    {"contextName": "compile", "displayName": "Compile sources"},
+    {"contextName": "test"}
+  ]
+}

@@ -168,6 +168,8 @@ export const githubWellKnownDiagnosticDirPatternsUnix = [
 ]
 export const githubWellKnownDiagnosticDirPatternsWin = ['C:/actions-runner/*/_diag', 'C:/actions-runner/*/*/_diag']
 
+// Keep worker-log resolution aligned with ci-visibility/src/github.ts.
+// Shared fixtures in __tests__/ci-visibility-parity.test.ts compare both implementations.
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
 const githubJodIDRegex = /"job":\s*{[\s\S]*?"v"\s*:\s*(\d+)(?:\.0)?/
 
@@ -1628,10 +1630,11 @@ export const getGithubStepInfoFromLogs = (
     const jobDisplayName = unescapeJsonString(displayNameMatch[1])
 
     // Extract just the "steps" array from the Job message and find the matching step
-    const stepIndex = getStepIndexFromLog(content, githubAction)
-    if (stepIndex === -1) {
+    const declaredIndex = getStepIndexFromLog(content, githubAction)
+    if (declaredIndex === -1) {
       continue
     }
+    const stepIndex = declaredIndex + (process.env.ACTIONS_RUNNER_HOOK_JOB_STARTED ? 1 : 0)
 
     context.stdout.write(`Successfully extracted step info: jobDisplayName=${jobDisplayName}, stepIndex=${stepIndex}\n`)
 
@@ -1687,10 +1690,23 @@ const getStepIndexFromLog = (content: string, githubAction: string): number => {
  */
 const extractJsonArray = (content: string, bracketStart: number): unknown[] | undefined => {
   let depth = 0
+  let quoted = false
+  let escaped = false
   for (let i = bracketStart; i < content.length; i++) {
-    if (content[i] === '[') {
+    const character = content[i]
+    if (quoted) {
+      if (escaped) {
+        escaped = false
+      } else if (character === '\\') {
+        escaped = true
+      } else if (character === '"') {
+        quoted = false
+      }
+    } else if (character === '"') {
+      quoted = true
+    } else if (character === '[') {
       depth++
-    } else if (content[i] === ']') {
+    } else if (character === ']') {
       depth--
     }
     if (depth === 0) {

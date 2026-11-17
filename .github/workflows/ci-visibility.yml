@@ -1,0 +1,34 @@
+name: CI Visibility package
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+    paths:
+      - 'packages/ci-visibility/**'
+      - '.github/workflows/ci-visibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '24'
+          cache: yarn
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: >-
+          yarn test packages/ci-visibility
+          packages/base/src/helpers/__tests__/ci-visibility-parity.test.ts --runInBand

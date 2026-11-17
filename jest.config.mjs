@@ -19,6 +19,10 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   modulePathIgnorePatterns: ['<rootDir>/packages/.*/dist'],
   moduleNameMapper: {
+    '^@datadog/ci-visibility/package.json$': '<rootDir>/packages/ci-visibility/package.json',
+    '^@datadog/ci-visibility/github$': '<rootDir>/packages/ci-visibility/src/index.ts',
+    '^@datadog/ci-visibility$': '<rootDir>/packages/ci-visibility/src/index.ts',
+    '^@datadog/ci-visibility/(.*)$': '<rootDir>/packages/ci-visibility/src/$1',
     '^@datadog/datadog-ci-plugin-([\\w-]+)/package.json$': '<rootDir>/packages/plugin-$1/package.json',
     '^@datadog/datadog-ci-plugin-([\\w-]+)(.*)$': '<rootDir>/packages/plugin-$1/src$2',
     '^@datadog/datadog-ci-base/package.json$': '<rootDir>/packages/base/package.json',
