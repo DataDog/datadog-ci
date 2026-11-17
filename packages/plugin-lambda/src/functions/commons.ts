@@ -359,7 +359,11 @@ export const isLayerRuntime = (runtime: string): runtime is LayerKey => LAYER_LO
 
 export const sentenceMatchesRegEx = (sentence: string, regex: RegExp) => sentence.match(regex)
 
-export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | undefined) => {
+export const supportsInTracerAppsec = (
+  runtime: Runtime,
+  layerVersion: number | undefined,
+  extensionVersion?: number
+) => {
   if (layerVersion === undefined || !isLayerRuntime(runtime)) {
     return false
   }
@@ -373,15 +377,16 @@ export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | 
     case 'python3.8':
     case 'python3.9':
       return layerVersion >= 114
-    case 'dotnet6':
-    case 'dotnet8':
-    case 'dotnet10':
     case 'java11':
     case 'java17':
     case 'java21':
     case 'java25':
     case 'java8':
     case 'java8.al2':
+      return layerVersion >= 31 && extensionVersion !== undefined && extensionVersion >= 102
+    case 'dotnet6':
+    case 'dotnet8':
+    case 'dotnet10':
     case 'nodejs16.x':
     case 'nodejs18.x':
     case 'nodejs20.x':

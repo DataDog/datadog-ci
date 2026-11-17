@@ -337,26 +337,6 @@ export const calculateUpdateRequest = async (
     layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
 
-  // Enable App and API Protection
-  if (settings['appsecEnabled'] === true) {
-    if (supportsInTracerAppsec(runtime, layerOrTraceVersion)) {
-      newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
-      delete newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR]
-    } else {
-      delete newEnvVars[APPSEC_ENABLED_ENV_VAR]
-      newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
-      newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
-    }
-
-    if (
-      [APPSEC_ENABLED_ENV_VAR, SERVERLESS_APPSEC_ENABLED_ENV_VAR, AWS_LAMBDA_EXEC_WRAPPER_VAR].some(
-        (name) => oldEnvVars[name] !== newEnvVars[name]
-      )
-    ) {
-      needsUpdate = true
-    }
-  }
-
   const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
   let fullExtensionLayerARN: string | undefined
   let extensionVersion: number | undefined
@@ -380,6 +360,44 @@ export const calculateUpdateRequest = async (
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+  // Enable App and API Protection
+  if (settings['appsecEnabled'] === true) {
+    // 'none' retains installed layers. Inspect their versions for Java AppSec without
+    // changing the existing version resolution used by universal instrumentation.
+    const retainedLayerVersion = (layerArn: string): number | undefined => {
+      const arn = layerARNs.find((layer) => layer.startsWith(`${layerArn}:`))
+      const version = arn?.slice(layerArn.length + 1)
+
+      return version && /^\d+$/.test(version) ? Number(version) : undefined
+    }
+    const appsecLayerVersion =
+      runtimeType === RuntimeType.JAVA
+        ? (layerOrTraceVersion ??
+          retainedLayerVersion(getLayerArn(config, runtime as LayerKey, region, {...settings, lambdaFips: false})))
+        : layerOrTraceVersion
+    const appsecExtensionVersion = extensionVersion ?? retainedLayerVersion(lambdaExtensionLayerArn)
+
+    if (supportsInTracerAppsec(runtime, appsecLayerVersion, appsecExtensionVersion)) {
+      newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
+      delete newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR]
+      if (runtimeType === RuntimeType.JAVA) {
+        newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+      }
+    } else {
+      delete newEnvVars[APPSEC_ENABLED_ENV_VAR]
+      newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
+      newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+    }
+
+    if (
+      [APPSEC_ENABLED_ENV_VAR, SERVERLESS_APPSEC_ENABLED_ENV_VAR, AWS_LAMBDA_EXEC_WRAPPER_VAR].some(
+        (name) => oldEnvVars[name] !== newEnvVars[name]
+      )
+    ) {
+      needsUpdate = true
+    }
+  }
 
   // Special handling for .NET and Java to support universal instrumentation
   if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
