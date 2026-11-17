@@ -24,6 +24,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {isInjection, renderScaleToZeroWarning} from '@datadog/datadog-ci-base/helpers/serverless/ssi/config'
+import {TRACER_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
@@ -291,6 +292,17 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       )
 
       return false
+    }
+    const existingNames = new Set(existingService.template?.containers?.map((container) => container.name))
+    const namedAppContainer = updatedService.template?.containers
+      ?.map((container) => container.name)
+      .find((name) => name && !existingNames.has(name) && name !== this.sidecarName && name !== TRACER_CONTAINER_NAME)
+    if (namedAppContainer) {
+      this.context.stdout.write(
+        `\n${dryRunPrefix(
+          this.dryRun
+        )}Updating the main container name to '${namedAppContainer}', since container dependencies require a name.\n`
+      )
     }
     if (isInjection(this.getSsiConfig()) && (existingService.template?.scaling?.minInstanceCount ?? 0) === 0) {
       this.context.stdout.write(`\n${renderScaleToZeroWarning(serviceName, 'minimum instances')}`)

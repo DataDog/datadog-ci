@@ -671,13 +671,22 @@ describe('SSI service preparation', () => {
     expect(sidecar?.env).toContainEqual({name: 'DD_HEALTH_PORT', value: String(DEFAULT_HEALTH_CHECK_PORT)})
   })
 
-  test('keeps an unnamed main container unnamed during injection and replacement', () => {
+  test.each([
+    [[], 'app'],
+    [['app'], 'app-1'],
+    [['app', 'app-1'], 'app-2'],
+  ])('names an unnamed main container when other containers are named %j', (otherNames, expectedName) => {
     const service = serviceWithWorker()
     service.template!.containers![0].name = ''
+    service.template!.containers!.push(...otherNames.map((name) => ({name, image: 'other'}) as IContainer))
 
     const injected = instrumentServiceConfig(service, serviceConfigOptions())
-    expect(injected.template?.containers?.[0].name).toBe('')
-    expect(instrumentServiceConfig(injected, serviceConfigOptions('python')).template?.containers?.[0].name).toBe('')
+    const main = injected.template?.containers?.[0]
+    expect(main?.name).toBe(expectedName)
+    expect(main?.dependsOn).toEqual(['datadog-tracer', 'datadog-sidecar'])
+    expect(instrumentServiceConfig(injected, serviceConfigOptions('python')).template?.containers?.[0].name).toBe(
+      expectedName
+    )
   })
 
   test('replaces owned SSI and removes stale injection from other containers', () => {
@@ -743,7 +752,7 @@ describe('SSI service preparation', () => {
     )
     expect(result.template!.volumes!.map((volume) => volume.name)).not.toContain('datadog-tracer')
     expect(app).toMatchObject({
-      name: '',
+      name: 'app',
       env: expect.arrayContaining([
         {name: 'NODE_OPTIONS', value: '--inspect'},
         {name: DD_TRACE_ENABLED_ENV_VAR, value: traceEnabled},

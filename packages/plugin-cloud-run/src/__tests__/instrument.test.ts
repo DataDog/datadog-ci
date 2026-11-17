@@ -297,6 +297,40 @@ describe('InstrumentCommand', () => {
       expect(context.stdout.toString()).not.toContain('cold-start delays')
     })
 
+    const ports = [{containerPort: 8080}]
+
+    test.each([
+      ['an unnamed app container', [{name: '', ports}], {}, true],
+      ['a named app container', [{name: 'app', ports}], {}, false],
+      [
+        'an unnamed app container after the tracer',
+        [{name: 'datadog-tracer'}, {name: '', ports}, {name: 'datadog-sidecar'}],
+        {dd_sls_injection_mode: 'single_language'},
+        true,
+      ],
+    ])('prints the app container naming line only for %s', async (_, containers, labels, printed) => {
+      mockServicesClient.getService.mockResolvedValue([
+        {
+          ...service,
+          labels,
+          template: {...service.template, containers},
+        },
+      ])
+
+      const {code, context} = await runCLI([
+        ...requiredFlags,
+        '--dry-run',
+        '--tracing',
+        'inject',
+        '--language',
+        'python',
+      ])
+      const line = "[Dry Run] Updating the main container name to 'app', since container dependencies require a name."
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString().includes(line)).toBe(printed)
+    })
+
     test('renders service configuration failures once without a stack trace', async () => {
       mockServicesClient.getService.mockResolvedValue([
         {
