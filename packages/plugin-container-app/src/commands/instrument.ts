@@ -318,6 +318,13 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     } else if (ssiConfig.tracing === 'disabled') {
       envVarsByName[DD_TRACE_ENABLED_ENV_VAR] = {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'}
     }
+    // serverless-init binds its health port from DD_HEALTH_PORT, which the sidecar takes from
+    // --env-vars first, then from its existing environment.
+    const existingHealthPort = sourceApp.template?.containers
+      ?.find(({name}) => name === config.sidecarName)
+      ?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+    const healthPort =
+      Number(envVarsByName[HEALTH_PORT_ENV_VAR]?.value ?? existingHealthPort) || DEFAULT_HEALTH_CHECK_PORT
     // Build base sidecar container
     const baseSidecar: Container = {
       name: config.sidecarName,
@@ -330,7 +337,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         {
           type: 'Startup',
           tcpSocket: {
-            port: DEFAULT_HEALTH_CHECK_PORT,
+            port: healthPort,
           },
           initialDelaySeconds: 0,
           periodSeconds: 10,
@@ -353,16 +360,12 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       envVarsByName
     )
     const ingress = sourceApp.configuration?.ingress
-    // The sidecar shares the replica's network namespace with the app containers, and serverless-init
-    // binds its health port from the DD_HEALTH_PORT it is given.
-    const healthPort = updatedTemplate.containers
-      .find(({name}) => name === config.sidecarName)
-      ?.env.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+    // The sidecar shares the replica's network namespace with the app containers.
     assertAppPortsAvoidSidecarPorts(
       [ingress?.targetPort, ...(ingress?.additionalPortMappings ?? []).map(({targetPort}) => targetPort)].flatMap(
         (port) => (port ? [{port, source: `the ingress of container app '${containerApp.name}'`}] : [])
       ),
-      [{port: Number(healthPort), name: 'Datadog Agent health port'}, AGENT_TRACE_PORT]
+      [{port: healthPort, name: 'Datadog Agent health port'}, AGENT_TRACE_PORT]
     )
     const secrets = sourceApp.configuration?.secrets ?? []
     const hasApiKey = secrets.some(({name}) => name === DD_API_KEY_SECRET_NAME)
