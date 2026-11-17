@@ -5,6 +5,7 @@ import {allPluginCommands} from '../packages/datadog-ci/shims/plugin-commands.mj
 
 import {
   REPO_ROOT,
+  assertBundlesParse,
   createPluginInjections,
   createOutExtensions,
   createOutputOptions,
@@ -49,6 +50,7 @@ try {
     ],
   })
 
+  assertBundlesParse([outputPath])
   await writeLegalFiles([outputPath], bundles)
 
   const summary = summarizeBundle(bundles)

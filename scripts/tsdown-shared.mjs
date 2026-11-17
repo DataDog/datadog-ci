@@ -1,3 +1,4 @@
+import {execFileSync} from 'node:child_process'
 import {readFile, writeFile} from 'node:fs/promises'
 import {createRequire} from 'node:module'
 import path from 'node:path'
@@ -74,7 +75,7 @@ const buildInjectedPluginSubmodulesSource = (pluginCommandsByScope) => {
     const pluginPackageJson = require(path.join(REPO_ROOT, 'packages', `plugin-${scope}`, 'package.json'))
     for (const command of commands) {
       const variableName = `pluginCommand${importIndex++}`
-      const commandPath = path.join(REPO_ROOT, 'packages', `plugin-${scope}`, 'dist', 'commands', `${command}.js`)
+      const commandPath = path.join(REPO_ROOT, 'packages', `plugin-${scope}`, 'src', 'commands', `${command}.ts`)
       lines.push(`const ${variableName} = require(${JSON.stringify(commandPath)});`)
       commandEntries.push(`${JSON.stringify(command)}: ${variableName}`)
     }
@@ -142,6 +143,13 @@ export const createQuickjsWasmInlining = () => ({
     }
   },
 })
+
+// Rolldown can emit duplicate declarations when deconflicting identifiers, so fail the build if a bundle does not parse.
+export const assertBundlesParse = (outputPaths) => {
+  for (const outputPath of outputPaths) {
+    execFileSync(process.execPath, ['--check', outputPath], {stdio: 'inherit'})
+  }
+}
 
 export const createOutExtensions = (jsExtension) => () => ({js: jsExtension})
 
