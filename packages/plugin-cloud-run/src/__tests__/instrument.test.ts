@@ -297,12 +297,24 @@ describe('InstrumentCommand', () => {
       expect(context.stdout.toString()).not.toContain('cold-start delays')
     })
 
+    const ports = [{containerPort: 8080}]
+
     test.each([
-      ['', true],
-      ['app', false],
-    ])('prints the app container naming line for container name %j: %s', async (name, printed) => {
+      ['an unnamed app container', [{name: '', ports}], {}, true],
+      ['a named app container', [{name: 'app', ports}], {}, false],
+      [
+        'an unnamed app container after the tracer',
+        [{name: 'datadog-tracer'}, {name: '', ports}, {name: 'datadog-sidecar'}],
+        {dd_sls_injection_mode: 'single_language'},
+        true,
+      ],
+    ])('prints the app container naming line only for %s', async (_, containers, labels, printed) => {
       mockServicesClient.getService.mockResolvedValue([
-        {...service, template: {...service.template, containers: [{name, ports: [{containerPort: 8080}]}]}},
+        {
+          ...service,
+          labels,
+          template: {...service.template, containers},
+        },
       ])
 
       const {code, context} = await runCLI([

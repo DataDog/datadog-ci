@@ -69,7 +69,6 @@ export interface InstrumentServiceConfigOptions {
   readonly sidecarMemory: string
   readonly sharedVolumeName: string
   readonly sharedVolumePath: string
-  readonly onAppContainerNamed?: (name: string) => void
 }
 
 interface UninstrumentServiceConfigOptions {
@@ -139,13 +138,9 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
     )
     assertTracerMountPathAvailable(updatedMainContainer, getTracerMountPath(ssiConfig))
     assertInjectionEnvCanBeMerged(updatedMainContainer.env, ssiConfig)
-    const assignedName = updatedMainContainer.name
-      ? undefined
-      : freeAppContainerName(sourceTemplate.containers ?? [], options.sidecarName)
-    const namedMainContainer = assignedName ? {...updatedMainContainer, name: assignedName} : updatedMainContainer
-    if (assignedName) {
-      options.onAppContainerNamed?.(assignedName)
-    }
+    const namedMainContainer = updatedMainContainer.name
+      ? updatedMainContainer
+      : {...updatedMainContainer, name: freeAppContainerName(sourceTemplate.containers ?? [], options.sidecarName)}
     sourceTemplate = {
       ...sourceTemplate,
       containers: sourceTemplate.containers?.map((container) =>
