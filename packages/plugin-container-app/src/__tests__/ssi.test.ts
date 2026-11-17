@@ -662,6 +662,15 @@ describe('Agent port conflicts', () => {
       expect(() => createInstrumentedApp(config, appListeningOn(8080, 8126))).toThrow('Port 8126 on the ingress')
     })
 
+    test('rejects the health port set through --env-vars, and accepts the default it replaces', () => {
+      const withHealthPort = {...config, envVars: ['DD_HEALTH_PORT=9000']}
+
+      expect(() => createInstrumentedApp(withHealthPort, appListeningOn(9000))).toThrow(
+        "Port 9000 on the ingress of container app 'my-container-app' conflicts with Datadog Agent health port 9000."
+      )
+      expect(() => createInstrumentedApp(withHealthPort, appListeningOn(5555))).not.toThrow()
+    })
+
     test('accepts ingress ports the sidecar does not bind on TCP', () => {
       expect(() => createInstrumentedApp(config, appListeningOn(8080, 8125))).not.toThrow()
     })

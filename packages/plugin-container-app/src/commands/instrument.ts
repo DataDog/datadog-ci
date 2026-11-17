@@ -25,6 +25,7 @@ import {
   DD_SOURCE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   DEFAULT_HEALTH_CHECK_PORT,
+  HEALTH_PORT_ENV_VAR,
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
@@ -298,14 +299,6 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     // Unconditional, so that a tracer init container whose shape this release no longer recognizes
     // is still cleaned up rather than left beside the one the requested state rebuilds.
     const sourceApp = removeSsiState(containerApp)
-    const ingress = sourceApp.configuration?.ingress
-    // The sidecar shares the replica's network namespace with the app containers.
-    assertAppPortsAvoidSidecarPorts(
-      [ingress?.targetPort, ...(ingress?.additionalPortMappings ?? []).map(({targetPort}) => targetPort)].flatMap(
-        (port) => (port ? [{port, source: `the ingress of container app '${containerApp.name}'`}] : [])
-      ),
-      [{port: DEFAULT_HEALTH_CHECK_PORT, name: 'Datadog Agent health port'}, AGENT_TRACE_PORT]
-    )
     let targetIndex: number | undefined
     if (ssiConfig.kind === 'single-language' || ssiConfig.kind === 'multi-language') {
       targetIndex = selectApplicationContainer(
@@ -358,6 +351,18 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         volumeMountNameKey: 'volumeName',
       },
       envVarsByName
+    )
+    const ingress = sourceApp.configuration?.ingress
+    // The sidecar shares the replica's network namespace with the app containers, and serverless-init
+    // binds its health port from the DD_HEALTH_PORT it is given.
+    const healthPort = updatedTemplate.containers
+      .find(({name}) => name === config.sidecarName)
+      ?.env.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+    assertAppPortsAvoidSidecarPorts(
+      [ingress?.targetPort, ...(ingress?.additionalPortMappings ?? []).map(({targetPort}) => targetPort)].flatMap(
+        (port) => (port ? [{port, source: `the ingress of container app '${containerApp.name}'`}] : [])
+      ),
+      [{port: Number(healthPort), name: 'Datadog Agent health port'}, AGENT_TRACE_PORT]
     )
     const secrets = sourceApp.configuration?.secrets ?? []
     const hasApiKey = secrets.some(({name}) => name === DD_API_KEY_SECRET_NAME)
