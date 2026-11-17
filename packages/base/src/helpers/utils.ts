@@ -183,15 +183,16 @@ export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
   return (args: RequestConfig) => httpRequest(overrideArgs(args))
 }
 
-const proxyAgentCache = new Map<string, Agent>()
+const proxyAgentCache = new Map<string, Promise<Agent>>()
 
 export const getProxyAgent = async (proxyOpts?: ProxyConfiguration): Promise<Agent> => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
 
   let proxyAgent = proxyAgentCache.get(proxyUrlFromConfiguration)
   if (!proxyAgent) {
-    proxyAgent = await createProxyAgentForUrl(proxyUrlFromConfiguration)
+    proxyAgent = createProxyAgentForUrl(proxyUrlFromConfiguration)
     proxyAgentCache.set(proxyUrlFromConfiguration, proxyAgent)
+    proxyAgent.catch(() => proxyAgentCache.delete(proxyUrlFromConfiguration))
   }
 
   return proxyAgent

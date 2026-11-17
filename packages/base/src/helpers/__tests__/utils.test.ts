@@ -390,3 +390,19 @@ test('removeUndefinedValues', () => {
   // eslint-disable-next-line no-null/no-null
   expect(ciUtils.removeUndefinedValues({a: 'b', c: 'd', e: undefined, g: null})).toEqual({a: 'b', c: 'd', g: null})
 })
+
+describe('getProxyAgent', () => {
+  test('reuses the same agent for concurrent and later calls with the same proxy', async () => {
+    const proxyOpts = {protocol: 'http' as const, host: 'concurrent-proxy.example', port: 3128}
+
+    const agents = await Promise.all([1, 2, 3].map(() => ciUtils.getProxyAgent(proxyOpts)))
+    const laterAgent = await ciUtils.getProxyAgent(proxyOpts)
+
+    try {
+      expect(new Set(agents).size).toBe(1)
+      expect(laterAgent).toBe(agents[0])
+    } finally {
+      new Set([...agents, laterAgent]).forEach((agent) => agent.destroy())
+    }
+  })
+})
