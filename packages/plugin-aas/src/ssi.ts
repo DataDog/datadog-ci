@@ -21,8 +21,8 @@ export const FLEET_PACKAGE_VERSION_ANNOTATION = 'com.datadoghq.package.version'
 const SHA256_DIGEST = /^sha256:[a-f0-9]{64}$/
 const PACKAGE_VERSION = /^[a-zA-Z0-9][a-zA-Z0-9._+-]*$/
 // Kudu extracts files onto the Azure Files-backed /home mount at roughly 0.1 s each, so a whole
-// tracer (2,374 files for Node.js) can exceed the ~230 s App Service front-end request limit. A zip
-// of 400 files extracts in under a minute on a B1 plan.
+// tracer (2,374 files for Node.js) can exceed the ~230 s App Service front-end request limit. On B1,
+// a zip of 400 files extracts in at most 93 s, even with 6 uploads in flight.
 const FLEET_PACKAGE_ZIP_MAX_FILES = 400
 const NON_X64_ARCHITECTURE = /(?:^|-)(?:arm|arm64|ia32|ppc64|s390x|wasm32)$/
 
