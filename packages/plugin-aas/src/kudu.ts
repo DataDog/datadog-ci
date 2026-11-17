@@ -21,7 +21,6 @@ type PublishingCredentials = {
 }
 
 const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503, 504])
-const EXTRACTION_TIMEOUT_MS = 15 * 60_000
 
 export const getKuduClient = async (
   client: WebSiteManagementClient,
@@ -97,42 +96,12 @@ export const getKuduClient = async (
 
   return {
     publish: async (directory, archive) => {
-      // Extracting a tracer onto the Azure Files-backed /home mount can take longer than the
-      // ~230 s App Service front-end request limit, so a synchronous extraction request (such as
-      // PUT /api/zip) loses its response. Upload the archive as a file, extract it in a detached
-      // process, and poll for the exit status it writes. The VFS API creates missing parent
-      // directories (/home/data does not exist until the app runtime boots, which races staging
-      // on fresh apps). The paths are safe unquoted inside the detached script because the staged
-      // root is built from the PACKAGE_VERSION-validated version and the hex digest (see ssi.ts).
-      const archivePath = `${directory}.zip`
-      const statusPath = `${directory}.status`
-      await request('PUT', `/api/vfs/${archivePath.replace(/^\/home\//, '')}`, archive, {'If-Match': '*'}, 600_000)
-      const extract = `unzip -q -o ${archivePath} -d ${directory} && echo 0 > ${statusPath} || echo 1 > ${statusPath}`
-      if (
-        (await runCommand(`setsid nohup bash -c ${shellQuote(extract)} < /dev/null > /dev/null 2>&1 &`)).ExitCode !== 0
-      ) {
-        throw new Error(`Failed to start extracting ${archivePath} on the Web App.`)
-      }
-      const deadline = Date.now() + EXTRACTION_TIMEOUT_MS
-      for (;;) {
-        await new Promise((resolve) => setTimeout(resolve, 10_000))
-        // `cat` exits non-zero until the detached script writes the status file.
-        const result = await runCommand(`cat ${statusPath}`)
-        const status = result.ExitCode === 0 ? result.Output?.trim() : undefined
-        if (status === '0') {
-          await runCommand(`rm -f -- ${archivePath} ${statusPath}`)
-
-          return
-        }
-        if (status) {
-          throw new Error(`Failed to extract ${archivePath} on the Web App.`)
-        }
-        if (Date.now() > deadline) {
-          throw new Error(
-            `Extracting ${archivePath} on the Web App did not finish within ${EXTRACTION_TIMEOUT_MS / 60_000} minutes. Rerun the command to retry.`
-          )
-        }
-      }
+      // Plain zip extraction via the Kudu zip API. Unlike OneDeploy (/api/publish) this runs no
+      // Oryx build (which would compress node_modules into a tarball for Node apps), needs no
+      // deployment polling, and creates missing parent directories (/home/data does not exist
+      // until the app runtime boots, which races staging on fresh apps).
+      const relativePath = directory.replace(/^\/home\//, '')
+      await request('PUT', `/api/zip/${relativePath}/`, archive, {'Content-Type': 'application/zip'}, 600_000)
     },
     hasArtifacts: async (artifacts) => {
       // Parenthesize each alternative group: bash && and || are left-associative, so without
