@@ -119,8 +119,8 @@ export const createPluginInjections = ({pluginCommandsByScope}) => {
 }
 
 // tsdown emits CJS, where `import.meta` is `{}`, so pac-proxy-agent's `import.meta.resolve('quickjs-wasi/quickjs.wasm')` throws once a PAC proxy is used.
-// Inlining embeds the ~830 KB base64 WASM in every published tsdown bundle (CLI npm/SEA and each plugin's `dist/bundle.js`, since all bundle base),
-// about +0.2 MB versus 5.27.0 because `@tootallnate/quickjs-emscripten` already embedded its WASM.
+// Inlining embeds the ~830 KB base64 WASM in the CLI npm/SEA bundles and each plugin's main `dist/bundle.js` (all bundle base).
+// Versus 5.27.0 (`@tootallnate/quickjs-emscripten` already embedded its WASM): about +0.37 MB for the npm CLI, +0.2 MB per plugin.
 // The unbundled `@datadog/datadog-ci-base` is unaffected: Node resolves the `.wasm` from `node_modules`.
 const QUICKJS_WASM_LOADER = "readFile(new URL(import.meta.resolve('quickjs-wasi/quickjs.wasm')))"
 
