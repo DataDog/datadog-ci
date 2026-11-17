@@ -99,7 +99,7 @@ export class DsymsUploadCommand extends BaseCommand<DsymsUploadContext> {
 
     await this.loadConfig()
 
-    const {metricsLogger, apiKeyValidator} = this.createServices()
+    const {metricsLogger, apiKeyValidator} = await this.createServices()
     const initialTime = Date.now()
 
     try {
@@ -153,8 +153,8 @@ export class DsymsUploadCommand extends BaseCommand<DsymsUploadContext> {
     )
   }
 
-  private createServices() {
-    const metricsLogger = getMetricsLogger({
+  private async createServices() {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],

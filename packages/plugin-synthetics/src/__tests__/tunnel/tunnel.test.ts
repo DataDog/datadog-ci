@@ -68,7 +68,7 @@ describe('Tunnel', () => {
 
   test('use provided proxy agent', async () => {
     mockedWebSocket.mockImplementation(() => mockWebSocket as any)
-    const localProxyAgent = getProxyAgent({
+    const localProxyAgent = await getProxyAgent({
       host: '127.0.0.1',
       port: 8080,
       protocol: 'http',

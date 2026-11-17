@@ -5,9 +5,11 @@ import {allPluginCommands} from '../packages/datadog-ci/shims/plugin-commands.mj
 
 import {
   REPO_ROOT,
+  assertBundlesParse,
   createPluginInjections,
   createOutExtensions,
   createOutputOptions,
+  createQuickjsWasmInlining,
   formatBundleSizeMb,
   summarizeBundle,
   writeLegalFiles,
@@ -40,11 +42,15 @@ try {
       neverBundle: ['cpu-features'],
       onlyBundle: false,
     },
-    plugins: createPluginInjections({
-      pluginCommandsByScope: allPluginCommands,
-    }),
+    plugins: [
+      ...createPluginInjections({
+        pluginCommandsByScope: allPluginCommands,
+      }),
+      createQuickjsWasmInlining(),
+    ],
   })
 
+  assertBundlesParse([outputPath])
   await writeLegalFiles([outputPath], bundles)
 
   const summary = summarizeBundle(bundles)

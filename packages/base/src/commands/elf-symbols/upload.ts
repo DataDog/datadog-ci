@@ -196,8 +196,8 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
     }
   }
 
-  private getMetricsLogger() {
-    const metricsLogger = getMetricsLogger({
+  private async getMetricsLogger() {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`, 'platform:elf'],
@@ -316,7 +316,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
   }
 
   private async performElfSymbolsUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger()
+    const metricsLogger = await this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     let elfFilesMetadata = (

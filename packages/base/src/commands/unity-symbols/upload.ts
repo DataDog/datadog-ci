@@ -186,8 +186,8 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
     }
   }
 
-  private getMetricsLogger(tags: string[]) {
-    const metricsLogger = getMetricsLogger({
+  private async getMetricsLogger(tags: string[]) {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`, 'platform:unity', ...tags],
@@ -239,7 +239,7 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
   }
 
   private async performSoUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger(['platform:unity'])
+    const metricsLogger = await this.getMetricsLogger(['platform:unity'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const soFiles = globSync(buildPath(this.symbolsLocation!, '**/*.so'))
@@ -328,7 +328,7 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
       return 1
     }
 
-    const metricsLogger = this.getMetricsLogger(['platform:unity'])
+    const metricsLogger = await this.getMetricsLogger(['platform:unity'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const requestBuilder = getUnityRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)

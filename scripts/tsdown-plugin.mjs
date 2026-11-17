@@ -8,8 +8,10 @@ import {build} from 'tsdown'
 
 import {
   REPO_ROOT,
+  assertBundlesParse,
   createOutExtensions,
   createOutputOptions,
+  createQuickjsWasmInlining,
   formatBundleSizeMb,
   summarizeBundle,
   writeLegalFiles,
@@ -111,6 +113,7 @@ try {
       neverBundle: ['cpu-features'],
       onlyBundle: false,
     },
+    plugins: [createQuickjsWasmInlining()],
   }
 
   const mainBundles = await build({
@@ -126,7 +129,9 @@ try {
           ...buildOptions.deps,
           neverBundle: [
             ...buildOptions.deps.neverBundle,
-            ...extraBundleExternalPatterns.map((prefix) => new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)),
+            ...extraBundleExternalPatterns.map(
+              (prefix) => new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+            ),
           ],
         }
       : buildOptions.deps
@@ -156,6 +161,7 @@ try {
     )
   )
 
+  assertBundlesParse(outputPaths)
   await writeLegalFiles([outputPaths[0]], mainBundles)
   if (outputPaths.length > 1) {
     await writeLegalFiles(outputPaths.slice(1), extraBundles)

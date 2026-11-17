@@ -255,8 +255,8 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     }
   }
 
-  private getMetricsLogger(tags: string[]) {
-    const metricsLogger = getMetricsLogger({
+  private async getMetricsLogger(tags: string[]) {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [
@@ -312,7 +312,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
   }
 
   private async performAndroidMappingUpload(): Promise<UploadStatus> {
-    const metricsLogger = this.getMetricsLogger(['platform:android'])
+    const metricsLogger = await this.getMetricsLogger(['platform:android'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
@@ -371,7 +371,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
   }
 
   private async performDartSymbolsUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger(['platform:android'])
+    const metricsLogger = await this.getMetricsLogger(['platform:android'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const files = this.getFlutterSymbolFiles(this.dartSymbolsLocation!)

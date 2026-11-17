@@ -222,8 +222,8 @@ export class PeSymbolsUploadCommand extends BaseCommand {
     return 0
   }
 
-  private getMetricsLogger() {
-    const metricsLogger = getMetricsLogger({
+  private async getMetricsLogger() {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`, 'platform:pe'],
@@ -395,7 +395,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
     ).flat()
     peFilesMetadata = this.removeBuildIdDuplicates(peFilesMetadata)
 
-    const metricsLogger = this.getMetricsLogger()
+    const metricsLogger = await this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
     const requestBuilder = getPERequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
 

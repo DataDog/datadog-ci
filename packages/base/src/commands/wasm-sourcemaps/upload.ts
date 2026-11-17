@@ -210,7 +210,7 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
   }
 
   private async performUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger()
+    const metricsLogger = await this.getMetricsLogger()
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
@@ -276,7 +276,7 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
     }
   }
 
-  private getMetricsLogger(): MetricsLogger {
+  private getMetricsLogger(): Promise<MetricsLogger> {
     return getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,

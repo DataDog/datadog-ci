@@ -166,8 +166,8 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
     }
   }
 
-  private getMetricsLogger() {
-    const metricsLogger = getMetricsLogger({
+  private async getMetricsLogger() {
+    const metricsLogger = await getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`, 'platform:wasm'],
@@ -265,7 +265,7 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
   }
 
   private async performWasmSymbolsUpload(): Promise<UploadStatus[]> {
-    const metricsLogger = this.getMetricsLogger()
+    const metricsLogger = await this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     let wasmFilesMetadata = (
