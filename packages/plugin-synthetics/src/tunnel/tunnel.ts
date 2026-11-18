@@ -4,9 +4,11 @@ import {pipeline} from 'stream'
 
 import type {Agent} from 'http'
 import type {
+  AcceptConnection,
   AuthContext,
   Connection as SSHConnection,
   ParsedKey,
+  RejectConnection,
   ServerChannel as SSHServerChannel,
   ServerConfig,
 } from 'ssh2'
@@ -17,6 +19,7 @@ import {Server as SSHServer} from 'ssh2'
 import {Server as Multiplexer} from 'yamux-js'
 
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
+import {connectThroughProxy} from './proxy'
 import {WebSocket} from './websocket'
 
 /**
@@ -61,7 +64,8 @@ export class Tunnel {
     private url: string,
     private testIDs: string[],
     proxyAgent?: Agent,
-    private reporter?: TunnelReporter
+    private reporter?: TunnelReporter,
+    private proxyUrl?: string
   ) {
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()
@@ -186,67 +190,20 @@ export class Tunnel {
         })
       })
       .on('tcpip', (accept, reject, {destIP, destPort}) => {
-        // Forward packets
-        // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
-        let src: SSHServerChannel
+        if (this.proxyUrl) {
+          connectThroughProxy(this.proxyUrl, destIP, destPort, this.FORWARDING_TIMEOUT).then(
+            (socket) => this.forwardToDestination(socket, accept, reject, destIP, true),
+            (error: Error) => {
+              this.reporter?.warn(`Proxy connection error (${destIP}:${destPort}): ${error.message}`)
+              reject()
+            }
+          )
+
+          return
+        }
+
         const dest = new Socket()
-
-        dest.setTimeout(this.FORWARDING_TIMEOUT)
-        this.forwardedSockets.add(dest)
-
-        dest.on('timeout', () => {
-          debug(`Connection timeout (${destIP})`)
-          if (src) {
-            src.destroy()
-          } else {
-            reject()
-          }
-          this.forwardedSockets.delete(dest)
-          dest.end()
-          dest.destroy()
-        })
-
-        dest.on('connect', () => {
-          src = accept()
-          if (!src) {
-            return dest.end()
-          }
-
-          pipeline([dest, src], () => this.forwardedSockets.delete(dest))
-          pipeline([src, dest], () => this.forwardedSockets.delete(dest))
-
-          src.on('close', () => {
-            dest.end()
-            dest.destroy()
-          })
-        })
-        dest.on('error', (error: NodeJS.ErrnoException) => {
-          if (src) {
-            if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
-              debug(`Error on opened connection (${destIP}): ${error.code}`)
-            }
-            src.close()
-          } else {
-            if ('code' in error && error.code === 'ENOTFOUND') {
-              this.reporter?.warn(`Unable to resolve host (${destIP})`)
-            } else {
-              this.reporter?.warn(`Connection error (${destIP}): ${error.code}`)
-            }
-            reject()
-
-            this.forwardedSockets.delete(dest)
-            dest.end()
-            dest.destroy()
-          }
-        })
-        dest.on('close', () => {
-          if (src) {
-            src.close()
-          } else {
-            reject()
-          }
-          this.forwardedSockets.delete(dest)
-        })
+        this.forwardToDestination(dest, accept, reject, destIP, false)
         dest.connect(destPort, destIP)
       })
       .on('request', (accept, reject, name, info) => {
@@ -254,6 +211,81 @@ export class Tunnel {
           accept()
         }
       })
+  }
+
+  private forwardToDestination(
+    dest: Socket,
+    accept: AcceptConnection<SSHServerChannel>,
+    reject: RejectConnection,
+    destIP: string,
+    connected: boolean
+  ) {
+    // Forward packets
+    // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
+    let src: SSHServerChannel
+
+    dest.setTimeout(this.FORWARDING_TIMEOUT)
+    this.forwardedSockets.add(dest)
+
+    dest.on('timeout', () => {
+      debug(`Connection timeout (${destIP})`)
+      if (src) {
+        src.destroy()
+      } else {
+        reject()
+      }
+      this.forwardedSockets.delete(dest)
+      dest.end()
+      dest.destroy()
+    })
+
+    const onConnect = () => {
+      src = accept()
+      if (!src) {
+        return dest.end()
+      }
+
+      pipeline([dest, src], () => this.forwardedSockets.delete(dest))
+      pipeline([src, dest], () => this.forwardedSockets.delete(dest))
+
+      src.on('close', () => {
+        dest.end()
+        dest.destroy()
+      })
+    }
+    dest.on('error', (error: NodeJS.ErrnoException) => {
+      if (src) {
+        if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+          debug(`Error on opened connection (${destIP}): ${error.code}`)
+        }
+        src.close()
+      } else {
+        if ('code' in error && error.code === 'ENOTFOUND') {
+          this.reporter?.warn(`Unable to resolve host (${destIP})`)
+        } else {
+          this.reporter?.warn(`Connection error (${destIP}): ${error.code}`)
+        }
+        reject()
+
+        this.forwardedSockets.delete(dest)
+        dest.end()
+        dest.destroy()
+      }
+    })
+    dest.on('close', () => {
+      if (src) {
+        src.close()
+      } else {
+        reject()
+      }
+      this.forwardedSockets.delete(dest)
+    })
+
+    if (connected) {
+      onConnect()
+    } else {
+      dest.on('connect', onConnect)
+    }
   }
 
   private async forwardWebSocketToSSH(): Promise<TunnelInfo> {

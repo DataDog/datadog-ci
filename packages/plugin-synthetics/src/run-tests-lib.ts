@@ -18,7 +18,7 @@ import type {InitialSummary} from './utils/public'
 
 import {getCIMetadata} from '@datadog/datadog-ci-base/helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
-import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
+import {getProxyAgent, getProxyUrl} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {getApiHelper, isForbiddenError} from './api'
 import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
@@ -166,7 +166,15 @@ export const executeTests = async (
     try {
       const tunnelProxyAgent = await getProxyAgent(config.proxy)
       const tunnelReporter = getTunnelReporter(reporter)
-      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
+      const tunnelProxyUrl =
+        getProxyUrl(config.proxy) ||
+        process.env.HTTPS_PROXY ||
+        process.env.https_proxy ||
+        process.env.HTTP_PROXY ||
+        process.env.http_proxy ||
+        process.env.ALL_PROXY ||
+        process.env.all_proxy
+      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter, tunnelProxyUrl)
 
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {
