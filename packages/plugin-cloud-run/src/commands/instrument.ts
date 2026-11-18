@@ -10,13 +10,15 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {getBaseEnvVars, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
+  ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
@@ -43,6 +45,8 @@ interface InstrumentedServiceUpdate {
   serviceName: string
   preview: ServiceUpdatePreview
 }
+
+const TAG_ENV_VARS = [SERVICE_ENV_VAR, ENVIRONMENT_ENV_VAR, VERSION_ENV_VAR]
 
 export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
@@ -93,12 +97,25 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(chalk.yellow('Invalid or missing region. Please use the --region flag.\n'))
     }
 
-    const ddService = this.sanitizeTagValue(
-      this.serviceTag ? '--service-tag' : SERVICE_ENV_VAR,
-      this.serviceTag ?? process.env[SERVICE_ENV_VAR]
+    // Resolve each effective value with the precedence used for the env vars, then sanitize it once.
+    const overrides = parseEnvVars(this.envVars)
+    const ddService = this.resolveTagValue([
+      ['--env-vars DD_SERVICE', overrides[SERVICE_ENV_VAR]],
+      ['--service-tag', this.serviceTag],
+      [SERVICE_ENV_VAR, process.env[SERVICE_ENV_VAR]],
+    ])
+    this.environment = this.resolveTagValue([
+      ['--env', this.environment],
+      [`--env-vars ${ENVIRONMENT_ENV_VAR}`, overrides[ENVIRONMENT_ENV_VAR]],
+    ])
+    this.version = this.resolveTagValue([
+      ['--version', this.version],
+      [`--env-vars ${VERSION_ENV_VAR}`, overrides[VERSION_ENV_VAR]],
+    ])
+    // The sanitized values replace these overrides.
+    this.envVars = this.envVars?.filter(
+      (envVar) => !Object.keys(parseEnvVars([envVar])).some((name) => TAG_ENV_VARS.includes(name))
     )
-    this.environment = this.sanitizeTagValue('--env', this.environment)
-    this.version = this.sanitizeTagValue('--version', this.version)
     if (!ddService) {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
@@ -336,10 +353,15 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     return true
   }
 
-  // Cloud Run labels only accept a restricted character set. Sanitize once so that labels and `DD_*` env vars agree.
-  private sanitizeTagValue(source: string, value: string | undefined): string | undefined {
-    const sanitized = value === undefined ? undefined : toLabelValue(value)
-    if (value !== undefined && sanitized !== value) {
+  // Cloud Run labels only accept a restricted character set. The label and the matching `DD_*` env var share the
+  // sanitized value, so metrics, logs, and traces agree.
+  private resolveTagValue(candidates: [source: string, value: string | undefined][]): string | undefined {
+    const [source, value] = candidates.find(([, candidate]) => candidate !== undefined) ?? []
+    if (source === undefined || value === undefined) {
+      return undefined
+    }
+    const sanitized = toLabelValue(value)
+    if (sanitized !== value) {
       this.context.stdout.write(
         renderSoftWarning(
           `${source} value '${value}' is not a valid Cloud Run label value. Using '${sanitized}' instead for the label and the matching DD_* environment variable.\n`

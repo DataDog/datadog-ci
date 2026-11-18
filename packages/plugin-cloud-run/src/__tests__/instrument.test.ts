@@ -620,6 +620,42 @@ describe('InstrumentCommand', () => {
       expect(output).toContain(`--version value '1.2.3' is not a valid Cloud Run label value. Using '1_2_3'`)
     })
 
+    test('applies sanitized values over --env-vars overrides in labels and DD_* env vars', async () => {
+      mockServicesClient.getService.mockResolvedValue([
+        {
+          name: 'projects/test-project/locations/us-central1/services/test-service',
+          template: {containers: [{name: 'main', env: [], volumeMounts: []}], volumes: []},
+        },
+      ])
+
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--no-source-code-integration',
+        '--dry-run',
+        '--service-tag',
+        'My.Service',
+        '--env-vars',
+        'DD_SERVICE=My.Service',
+        '--env-vars',
+        'DD_ENV=Prod.1',
+      ])
+      const output = context.stdout.toString()
+
+      expect(code).toBe(0)
+      expect(output).toContain(`"service": "my_service"`)
+      expect(output).toContain(`"env": "prod_1"`)
+      expect(output).toContain(`"value": "my_service"`)
+      expect(output).toContain(`"value": "prod_1"`)
+      expect(output).not.toContain('My.Service"')
+      expect(output).not.toContain('Prod.1"')
+      expect(output).toContain(`--env-vars DD_SERVICE value 'My.Service' is not a valid Cloud Run label value`)
+    })
+
     test('preserves existing labels and adds service tag', () => {
       const service = {
         labels: {
