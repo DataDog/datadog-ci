@@ -614,10 +614,10 @@ describe('InstrumentCommand', () => {
       expect(output).toContain(`"value": "élan"`)
       expect(output).toContain(`"value": "1_2_3"`)
       expect(output).toContain(
-        `--service-tag value '東京.Service' is not a valid Cloud Run label value. Using '東京_service'`
+        `DD_SERVICE value '東京.Service' is not a valid Cloud Run label value. Using '東京_service'`
       )
-      expect(output).toContain(`--env value 'Élan' is not a valid Cloud Run label value. Using 'élan'`)
-      expect(output).toContain(`--version value '1.2.3' is not a valid Cloud Run label value. Using '1_2_3'`)
+      expect(output).toContain(`DD_ENV value 'Élan' is not a valid Cloud Run label value. Using 'élan'`)
+      expect(output).toContain(`DD_VERSION value '1.2.3' is not a valid Cloud Run label value. Using '1_2_3'`)
     })
 
     test('applies sanitized values over --env-vars overrides in labels and DD_* env vars', async () => {
@@ -643,6 +643,10 @@ describe('InstrumentCommand', () => {
         'DD_SERVICE=My.Service',
         '--env-vars',
         'DD_ENV=Prod.1',
+        '--version',
+        '',
+        '--env-vars',
+        'DD_VERSION=1.2',
       ])
       const output = context.stdout.toString()
 
@@ -651,9 +655,11 @@ describe('InstrumentCommand', () => {
       expect(output).toContain(`"env": "prod_1"`)
       expect(output).toContain(`"value": "my_service"`)
       expect(output).toContain(`"value": "prod_1"`)
+      expect(output).toContain(`"version": "1_2"`)
+      expect(output).toContain(`"value": "1_2"`)
       expect(output).not.toContain('My.Service"')
       expect(output).not.toContain('Prod.1"')
-      expect(output).toContain(`--env-vars DD_SERVICE value 'My.Service' is not a valid Cloud Run label value`)
+      expect(output).toContain(`DD_SERVICE value 'My.Service' is not a valid Cloud Run label value`)
     })
 
     test('preserves existing labels and adds service tag', () => {

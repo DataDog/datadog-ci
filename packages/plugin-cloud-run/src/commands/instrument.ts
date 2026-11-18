@@ -10,7 +10,7 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {getBaseEnvVars, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
@@ -54,6 +54,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
   private ssiConfig: SsiConfigResult | undefined
+  private warnings = new Set<string>()
 
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
@@ -97,25 +98,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(chalk.yellow('Invalid or missing region. Please use the --region flag.\n'))
     }
 
-    // Resolve each effective value with the precedence used for the env vars, then sanitize it once.
-    const overrides = parseEnvVars(this.envVars)
-    const ddService = this.resolveTagValue([
-      ['--env-vars DD_SERVICE', overrides[SERVICE_ENV_VAR]],
-      ['--service-tag', this.serviceTag],
-      [SERVICE_ENV_VAR, process.env[SERVICE_ENV_VAR]],
-    ])
-    this.environment = this.resolveTagValue([
-      ['--env', this.environment],
-      [`--env-vars ${ENVIRONMENT_ENV_VAR}`, overrides[ENVIRONMENT_ENV_VAR]],
-    ])
-    this.version = this.resolveTagValue([
-      ['--version', this.version],
-      [`--env-vars ${VERSION_ENV_VAR}`, overrides[VERSION_ENV_VAR]],
-    ])
-    // The sanitized values replace these overrides.
-    this.envVars = this.envVars?.filter(
-      (envVar) => !Object.keys(parseEnvVars([envVar])).some((name) => TAG_ENV_VARS.includes(name))
-    )
+    const ddService = this.serviceTag ?? process.env[SERVICE_ENV_VAR]
     if (!ddService) {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
@@ -253,19 +236,21 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
-    return instrumentServiceConfig(service, {
-      ssiConfig: this.getSsiConfig(),
-      ddService,
+    const envVarsByName = this.getEnvVarsByName({
+      service: ddService,
       environment: this.environment,
       version: this.version,
-      envVarsByName: this.getEnvVarsByName({
-        service: ddService,
-        environment: this.environment,
-        version: this.version,
-        logPath: this.logsPath,
-        extraTags: this.extraTags,
-        envVars: this.envVars,
-      }),
+      logPath: this.logsPath,
+      extraTags: this.extraTags,
+      envVars: this.envVars,
+    })
+
+    return instrumentServiceConfig(service, {
+      ssiConfig: this.getSsiConfig(),
+      ddService: envVarsByName[SERVICE_ENV_VAR].value!,
+      environment: envVarsByName[ENVIRONMENT_ENV_VAR]?.value ?? undefined,
+      version: envVarsByName[VERSION_ENV_VAR]?.value ?? undefined,
+      envVarsByName,
       healthCheckPort: this.healthCheckPort,
       tracerReadinessPort: this.tracerReadinessPort,
       sidecarName: this.sidecarName,
@@ -278,7 +263,12 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public getEnvVarsByName(config: ServerlessConfigOptions): Record<string, IEnvVar> {
-    const envVars = getBaseEnvVars(config)
+    const envVars = Object.fromEntries(
+      Object.entries(getBaseEnvVars(config)).map(([name, value]) => [
+        name,
+        TAG_ENV_VARS.includes(name) ? this.sanitizeTagValue(name, value) : value,
+      ])
+    )
 
     for (const [name, value] of [
       [DD_TRACE_ENABLED_ENV_VAR, getTracingEnvValue(this.tracing)],
@@ -353,20 +343,13 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     return true
   }
 
-  // Cloud Run labels only accept a restricted character set. The label and the matching `DD_*` env var share the
-  // sanitized value, so metrics, logs, and traces agree.
-  private resolveTagValue(candidates: [source: string, value: string | undefined][]): string | undefined {
-    const [source, value] = candidates.find(([, candidate]) => candidate !== undefined) ?? []
-    if (source === undefined || value === undefined) {
-      return undefined
-    }
+  // Cloud Run labels only accept a restricted character set. Sanitize once so that labels and `DD_*` env vars agree.
+  private sanitizeTagValue(name: string, value: string): string {
     const sanitized = toLabelValue(value)
-    if (sanitized !== value) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `${source} value '${value}' is not a valid Cloud Run label value. Using '${sanitized}' instead for the label and the matching DD_* environment variable.\n`
-        )
-      )
+    const warning = `${name} value '${value}' is not a valid Cloud Run label value. Using '${sanitized}' instead for the label and the environment variable.\n`
+    if (sanitized !== value && !this.warnings.has(warning)) {
+      this.warnings.add(warning)
+      this.context.stdout.write(renderSoftWarning(warning))
     }
 
     return sanitized
