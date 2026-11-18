@@ -301,9 +301,9 @@ const buildTracerContainer = (config: TracerContainerConfig): IContainer => ({
   startupProbe: {
     tcpSocket: {port: config.readinessPort},
     initialDelaySeconds: 0,
-    // Poll every 5 seconds (48 times) for Cloud Run's maximum 240-second startup window.
-    periodSeconds: 5,
-    failureThreshold: 48,
+    // Poll every second (240 times) for Cloud Run's maximum 240-second startup window.
+    periodSeconds: 1,
+    failureThreshold: 240,
     timeoutSeconds: 1,
   },
 })
