@@ -49,6 +49,19 @@ const UNIFIED_SERVICE_TAG_LABELS = {
   environment: 'env',
   version: 'version',
 } as const
+// GCP label values allow only lowercase or international letters, digits, `_`, and `-`, up to 63 characters
+// and 128 UTF-8 bytes.
+export const toLabelValue = (value: string): string =>
+  Array.from(value.toLowerCase().replace(/[^\p{Ll}\p{Lo}\p{N}_-]/gu, '_'))
+    .slice(0, 63)
+    .reduce(
+      (label, char) => {
+        const bytes = label.bytes + Buffer.byteLength(char)
+
+        return label.full || bytes > 128 ? {...label, full: true} : {value: label.value + char, bytes, full: false}
+      },
+      {value: '', bytes: 0, full: false}
+    ).value
 const INSTRUMENTATION_LABELS = new Set([
   ...Object.values(UNIFIED_SERVICE_TAG_LABELS),
   SERVERLESS_CLI_VERSION_TAG_NAME,

@@ -32,7 +32,7 @@ import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
-import {instrumentServiceConfig} from '../service-config'
+import {instrumentServiceConfig, toLabelValue} from '../service-config'
 import {previewServiceUpdate} from '../service-update'
 import {getTracingEnvValue, normalizeTracingMode, resolveSsiConfig} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs, updateServiceAndWait} from '../utils'
@@ -93,7 +93,12 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(chalk.yellow('Invalid or missing region. Please use the --region flag.\n'))
     }
 
-    const ddService = this.serviceTag ?? process.env[SERVICE_ENV_VAR]
+    const ddService = this.sanitizeTagValue(
+      this.serviceTag ? '--service-tag' : SERVICE_ENV_VAR,
+      this.serviceTag ?? process.env[SERVICE_ENV_VAR]
+    )
+    this.environment = this.sanitizeTagValue('--env', this.environment)
+    this.version = this.sanitizeTagValue('--version', this.version)
     if (!ddService) {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
@@ -329,5 +334,19 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     )
 
     return true
+  }
+
+  // Cloud Run labels only accept a restricted character set. Sanitize once so that labels and `DD_*` env vars agree.
+  private sanitizeTagValue(source: string, value: string | undefined): string | undefined {
+    const sanitized = value === undefined ? undefined : toLabelValue(value)
+    if (value !== undefined && sanitized !== value) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `${source} value '${value}' is not a valid Cloud Run label value. Using '${sanitized}' instead for the label and the matching DD_* environment variable.\n`
+        )
+      )
+    }
+
+    return sanitized
   }
 }

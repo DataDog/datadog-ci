@@ -140,6 +140,8 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 "
 [Dry Run] 🐶 Instrumenting Cloud Run service(s)
 
+[!] --version value '1.0.0' is not a valid Cloud Run label value. Using '1_0_0' instead for the label and the matching DD_* environment variable.
+
 [!] No DD_SERVICE env var found. Will default to the service name.
 ✔ Required flags verified
 
@@ -155,7 +157,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +     "dd_sls_ci": "v0_0_0",
 +     "env": "staging",
 +     "service": "test-service",
-+     "version": "1.0.0"
++     "version": "1_0_0"
 +   },
     "template": {
       "containers": [
@@ -195,7 +197,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +           },
 +           {
 +             "name": "DD_VERSION",
-+             "value": "1.0.0"
++             "value": "1_0_0"
 +           },
 +           {
 +             "name": "DD_SERVERLESS_LOG_PATH",
@@ -244,7 +246,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +           },
 +           {
 +             "name": "DD_VERSION",
-+             "value": "1.0.0"
++             "value": "1_0_0"
 +           },
 +           {
 +             "name": "DD_SERVERLESS_LOG_PATH",

@@ -580,6 +580,46 @@ describe('InstrumentCommand', () => {
       })
     })
 
+    test('uses sanitized service, env, and version values in labels and DD_* env vars and warns', async () => {
+      mockServicesClient.getService.mockResolvedValue([
+        {
+          name: 'projects/test-project/locations/us-central1/services/test-service',
+          template: {containers: [{name: 'main', env: [], volumeMounts: []}], volumes: []},
+        },
+      ])
+
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--no-source-code-integration',
+        '--dry-run',
+        '--service-tag',
+        '東京.Service',
+        '--env',
+        'Élan',
+        '--version',
+        '1.2.3',
+      ])
+      const output = context.stdout.toString()
+
+      expect(code).toBe(0)
+      expect(output).toContain(`"service": "東京_service"`)
+      expect(output).toContain(`"env": "élan"`)
+      expect(output).toContain(`"version": "1_2_3"`)
+      expect(output).toContain(`"value": "東京_service"`)
+      expect(output).toContain(`"value": "élan"`)
+      expect(output).toContain(`"value": "1_2_3"`)
+      expect(output).toContain(
+        `--service-tag value '東京.Service' is not a valid Cloud Run label value. Using '東京_service'`
+      )
+      expect(output).toContain(`--env value 'Élan' is not a valid Cloud Run label value. Using 'élan'`)
+      expect(output).toContain(`--version value '1.2.3' is not a valid Cloud Run label value. Using '1_2_3'`)
+    })
+
     test('preserves existing labels and adds service tag', () => {
       const service = {
         labels: {
