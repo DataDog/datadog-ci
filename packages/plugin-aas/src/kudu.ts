@@ -32,8 +32,8 @@ type PublishingCredentials = {
   scmUri?: string
 }
 
-// The SCM front end answers these when the SCM site doesn't respond, for example while it restarts
-// after a settings update (about 46 s on B1).
+// The SCM front end answered 503 while the SCM site restarted after a settings update (about 46 s
+// on B1), and 502 to an upload on a freshly created app.
 const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503, 504])
 
 export const isRetryableScmError = (error: unknown): boolean =>
@@ -97,6 +97,8 @@ export const getKuduClient = async (
   // `untilSuccess` also retries non-zero exits, and `once` makes a single attempt.
   const runCommand = async (script: string, retry: 'once' | 'untilReady' | 'untilSuccess'): Promise<boolean> => {
     const deadline = Date.now() + SCM_RETRY_DEADLINE_MS
+    // The next attempt starts after the retry interval, so it must not start after the deadline.
+    const canRetry = () => Date.now() + SCM_RETRY_INTERVAL_MS <= deadline
     for (;;) {
       try {
         const result = await request<{ExitCode?: number}>(
@@ -106,11 +108,11 @@ export const getKuduClient = async (
           {},
           COMMAND_TIMEOUT_MS
         )
-        if (result?.ExitCode === 0 || retry !== 'untilSuccess' || Date.now() >= deadline) {
+        if (result?.ExitCode === 0 || retry !== 'untilSuccess' || !canRetry()) {
           return result?.ExitCode === 0
         }
       } catch (error) {
-        if (retry === 'once' || !isRetryableScmError(error) || Date.now() >= deadline) {
+        if (retry === 'once' || !isRetryableScmError(error) || !canRetry()) {
           throw error
         }
       }

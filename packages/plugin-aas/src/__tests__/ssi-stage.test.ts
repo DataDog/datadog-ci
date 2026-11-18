@@ -142,13 +142,6 @@ describe('resolveAasTracerStaging publish', () => {
     expect(directories.has(ROOT)).toBe(false)
   })
 
-  test('replaces a partial root', async () => {
-    const directories = new Map<string, Tree>([[ROOT, 'partial']])
-
-    await expect(publish(createFakeKudu(directories))).resolves.toBe(true)
-    expect(directories.get(ROOT)).toBe('complete')
-  })
-
   test('keeps a root that a concurrent run completed first', async () => {
     const directories = new Map<string, Tree>()
     const kudu = createFakeKudu(directories, {onPublish: () => directories.set(ROOT, 'complete')})

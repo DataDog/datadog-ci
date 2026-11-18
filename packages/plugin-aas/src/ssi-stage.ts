@@ -81,12 +81,10 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
       }
       try {
         await kudu.rename(temporaryRoot, root)
-      } catch {
-        // A concurrent run may have completed `root` first, so keep it. Otherwise move the invalid
-        // `root` aside, which never deletes a tree another run just published, and retry.
+      } catch (error) {
+        // A concurrent run may have completed `root` first, so keep it.
         if (!(await kudu.hasArtifacts(spec.artifacts))) {
-          await kudu.rename(root, temporaryPath(root))
-          await kudu.rename(temporaryRoot, root)
+          throw error
         }
       }
       await removeLeftovers()
@@ -108,10 +106,9 @@ export const removeStagedTracers = async (kudu: KuduClient, warn: (message: stri
   await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn)
 }
 
-// The SCM front end can answer 502 to an upload even after a readiness check passed, for example
-// while a freshly created app's SCM site restarts. A late extraction could still be running, so
-// each retry uploads into a fresh temporary tree after another readiness check, and an abandoned tree
-// is never renamed.
+// The SCM front end answered 502 to an upload on a freshly created app after a readiness check
+// passed. A late extraction could still be running, so each retry uploads into a fresh temporary
+// tree after another readiness check, and an abandoned tree is never renamed.
 const uploadToTemporaryTree = async (
   kudu: KuduClient,
   root: string,
