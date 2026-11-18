@@ -22,7 +22,7 @@ jest.mock('../ssi', () => ({
   buildFleetPackageZip: jest.fn().mockResolvedValue(Buffer.from('zip')),
 }))
 
-const ROOT = `/home/data/datadog-tracer/published/nodejs/1.2.3-${'a'.repeat(64)}`
+const ROOT = `/home/data/datadog-tracer/nodejs/1.2.3-${'a'.repeat(64)}`
 const STARTUP_FILE = 'node_modules/dd-trace/init.js'
 
 type Tree = 'complete' | 'partial'
