@@ -10,8 +10,8 @@ import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 export interface KuduClient {
   /** Waits until the SCM site answers commands, up to the command deadline. */
   waitUntilReady(): Promise<void>
-  /** Extracts `archive` into `directory` with a single request, which is never replayed. `signal` aborts it. */
-  publish(directory: string, archive: Buffer, signal?: AbortSignal): Promise<void>
+  /** Extracts `archive` into `directory` with a single request, which is never replayed. */
+  publish(directory: string, archive: Buffer): Promise<void>
   /** Returns whether every artifact exists. With `waitUntilPresent`, rechecks until the command deadline. */
   hasArtifacts(artifacts: readonly (readonly string[])[], waitUntilPresent?: boolean): Promise<boolean>
   /** Atomically renames `source` to `target`. Fails if `source` is missing or `target` is a non-empty directory. */
@@ -71,8 +71,7 @@ export const getKuduClient = async (
     path: string,
     data: unknown,
     headers: Record<string, string>,
-    timeout: number,
-    signal?: AbortSignal
+    timeout: number
   ): Promise<T | undefined> => {
     const token = await azureCredential.getToken('https://management.azure.com/.default')
     if (!token) {
@@ -85,7 +84,6 @@ export const getKuduClient = async (
       data,
       dispatcher: getProxyDispatcher(),
       timeout,
-      signal,
     })
 
     return typeof response.data === 'string'
@@ -126,20 +124,13 @@ export const getKuduClient = async (
     waitUntilReady: async () => {
       await runCommand('true', 'untilReady')
     },
-    publish: async (directory, archive, signal) => {
+    publish: async (directory, archive) => {
       // Plain zip extraction via the Kudu zip API. Unlike OneDeploy (/api/publish) this runs no
       // Oryx build (which would compress node_modules into a tarball for Node apps), needs no
       // deployment polling, and creates missing parent directories (/home/data does not exist
       // until the app runtime boots, which races staging on fresh apps).
       const relativePath = directory.replace(/^\/home\//, '')
-      await request(
-        'PUT',
-        `/api/zip/${relativePath}/`,
-        archive,
-        {'Content-Type': 'application/zip'},
-        UPLOAD_TIMEOUT_MS,
-        signal
-      )
+      await request('PUT', `/api/zip/${relativePath}/`, archive, {'Content-Type': 'application/zip'}, UPLOAD_TIMEOUT_MS)
     },
     hasArtifacts: async (artifacts, waitUntilPresent = false) => {
       // Parenthesize each alternative group: bash && and || are left-associative, so without

@@ -76,6 +76,19 @@ describe('httpRequest', () => {
     expect(getLastFetchHeaders()['User-Agent']).toBe(`${getUserAgent()} datadog-ci-plugin-synthetics/9.9.9`)
   })
 
+  test('preserves response headers when a request fails', async () => {
+    mockedFetch.mockResolvedValue({
+      ...createResponse({'retry-after': '30'}),
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable',
+    } as Awaited<ReturnType<typeof fetch>>)
+
+    await expect(httpRequest({url: thirdParty('https://example.com')})).rejects.toMatchObject({
+      response: {status: 503, headers: {'retry-after': '30'}},
+    })
+  })
+
   describe('JSON response parsing', () => {
     test.each([
       ['application/json'],

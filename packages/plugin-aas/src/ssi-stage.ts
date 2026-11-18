@@ -3,7 +3,7 @@ import {randomBytes} from 'node:crypto'
 import type {LanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
-import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
+import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
 import {isRetryableScmError, type KuduClient} from './kudu'
@@ -26,6 +26,8 @@ const LEFTOVER_MIN_AGE_MINUTES = 30
 // SCM command deadline.
 const UPLOAD_ATTEMPTS = 3
 const UPLOAD_CONCURRENCY = 6
+const UPLOAD_RETRY_INTERVAL_MS = 10_000
+const MAX_UPLOAD_RETRY_DELAY_MS = 60_000
 
 export interface AasTracerStaging {
   readonly root: string
@@ -128,25 +130,36 @@ const uploadToTemporaryTree = async (
       if (!isRetryableScmError(error) || attempt >= UPLOAD_ATTEMPTS) {
         throw error
       }
+      const retryAfter = isRequestError(error) ? error.response?.headers?.['retry-after'] : undefined
+      const retryAfterMs =
+        retryAfter === undefined
+          ? 0
+          : /^\d+$/.test(retryAfter)
+            ? Number(retryAfter) * 1000
+            : Date.parse(retryAfter) - Date.now()
+      // SCM readiness does not mean abandoned extractions have stopped, so back off before retrying.
+      const delay = Math.min(
+        MAX_UPLOAD_RETRY_DELAY_MS,
+        Math.max(UPLOAD_RETRY_INTERVAL_MS * 2 ** (attempt - 1), retryAfterMs || 0)
+      )
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
     await kudu.waitUntilReady()
   }
 }
 
-// The first failure aborts the in-flight uploads and skips the queued ones. This waits for the aborted
-// requests to settle, so a retry never overlaps them and uploads never exceed UPLOAD_CONCURRENCY.
+// Skip queued uploads after a failure, but wait for in-flight requests before retrying so upload
+// attempts never overlap.
 const uploadZips = async (kudu: KuduClient, directory: string, zips: readonly Buffer[]): Promise<void> => {
-  const controller = new AbortController()
   const failures: unknown[] = []
   await doWithMaxConcurrency(UPLOAD_CONCURRENCY, zips, async (zip) => {
-    if (controller.signal.aborted) {
+    if (failures.length > 0) {
       return
     }
     try {
-      await kudu.publish(directory, zip, controller.signal)
+      await kudu.publish(directory, zip)
     } catch (error) {
       failures.push(error)
-      controller.abort()
     }
   })
   if (failures.length > 0) {

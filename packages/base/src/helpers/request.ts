@@ -20,7 +20,6 @@ export interface RequestConfig {
     | ((params: Record<string, unknown>) => string)
     | {serialize: (params: Record<string, unknown>) => string}
   responseType?: 'arraybuffer'
-  signal?: AbortSignal
   timeout?: number
   url?: DatadogRoute | ThirdParty
 }
@@ -36,9 +35,13 @@ export interface RequestResponse<T = any> {
 export class RequestError extends Error {
   public config: RequestConfig
   public isRequestError = true as const
-  public response?: {data: any; status: number; statusText: string}
+  public response?: {data: any; status: number; statusText: string; headers?: Record<string, string>}
 
-  constructor(message: string, config: RequestConfig, response?: {data: any; status: number; statusText: string}) {
+  constructor(
+    message: string,
+    config: RequestConfig,
+    response?: {data: any; status: number; statusText: string; headers?: Record<string, string>}
+  ) {
     super(message)
     this.name = 'RequestError'
     this.config = config
@@ -157,12 +160,7 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
     duplex: body !== undefined && isStream(config.data) ? 'half' : undefined,
   }
 
-  if (config.signal && config.timeout) {
-    // `AbortSignal.any` needs Node 20.3+, so only callers passing both a signal and a timeout use it.
-    fetchOptions.signal = AbortSignal.any([config.signal, AbortSignal.timeout(config.timeout)])
-  } else if (config.signal) {
-    fetchOptions.signal = config.signal
-  } else if (config.timeout) {
+  if (config.timeout) {
     fetchOptions.signal = AbortSignal.timeout(config.timeout)
   }
 
@@ -202,6 +200,7 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
       data,
       status: response.status,
       statusText: response.statusText,
+      headers: responseHeaders,
     })
   }
 

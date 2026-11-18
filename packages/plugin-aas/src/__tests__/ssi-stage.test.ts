@@ -41,6 +41,7 @@ const createFakeKudu = (
     stale = new Set<string>(),
     failedUploads = 0,
     failingZip = '',
+    retryAfter = '',
   } = {}
 ): KuduClient => {
   const move = (source: string, target: string) => {
@@ -66,7 +67,9 @@ const createFakeKudu = (
     publish: async (directory, zip) => {
       if (failuresLeft-- > 0) {
         directories.set(directory, 'partial')
-        throw getRequestError(502, {})
+        const error = getRequestError(502, {})
+        error.response!.headers = {'retry-after': retryAfter}
+        throw error
       }
       if (zip.toString() === failingZip) {
         directories.set(directory, 'partial')
@@ -114,6 +117,10 @@ const publish = async (kudu: KuduClient) => {
 }
 
 describe('resolveAasTracerStaging publish', () => {
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
   test('does not move a temporary tree without the startup files into the root', async () => {
     const directories = new Map<string, Tree>()
 
@@ -132,23 +139,35 @@ describe('resolveAasTracerStaging publish', () => {
     expect(directories.has(ROOT)).toBe(false)
   })
 
-  test('retries a gateway error into a new temporary tree and never renames the abandoned one', async () => {
+  test.each([
+    ['', 10_000],
+    ['30', 30_000],
+    ['Thu, 01 Jan 2026 00:00:30 GMT', 30_000],
+    ['invalid', 10_000],
+    ['999999', 60_000],
+  ])('retries into a fresh tree after backoff with Retry-After=%s', async (retryAfter, delay) => {
+    jest.useFakeTimers({now: new Date('2026-01-01T00:00:00Z')})
+    const started = Date.now()
     const directories = new Map<string, Tree>()
+    const result = publish(createFakeKudu(directories, {failedUploads: 1, retryAfter}))
 
-    await expect(publish(createFakeKudu(directories, {failedUploads: 1}))).resolves.toBe(true)
+    await jest.runAllTimersAsync()
+    await expect(result).resolves.toBe(true)
+
+    expect(Date.now() - started).toBe(delay)
     expect(directories.get(ROOT)).toBe('complete')
-    // Other chunks may still complete the abandoned tree, but it keeps its temporary name.
     expect([...directories.keys()].filter((directory) => directory.startsWith(`${ROOT}.tmp-`))).toHaveLength(1)
   })
 
-  test('aborts and waits for in-flight uploads before retrying after a gateway error', async () => {
+  test('waits for in-flight uploads before retrying after a gateway error', async () => {
+    jest.useFakeTimers()
     const directories = new Map<string, Tree>()
     const kudu = createFakeKudu(directories)
     const fakePublish = kudu.publish
     let active = 0
     let activeAtRetry: number | undefined
     let firstDirectory: string | undefined
-    kudu.publish = async (directory, zip, signal) => {
+    kudu.publish = async (directory, zip) => {
       firstDirectory ??= directory
       if (directory !== firstDirectory) {
         activeAtRetry ??= active
@@ -160,22 +179,28 @@ describe('resolveAasTracerStaging publish', () => {
         if (zip.toString() === 'zip-1') {
           throw getRequestError(502, {})
         }
-        await new Promise((_, reject) =>
-          signal?.addEventListener('abort', () => setTimeout(reject, 10, new Error('aborted')))
-        )
+        await new Promise((resolve) => setTimeout(resolve, 1_000))
       } finally {
         active--
       }
     }
 
-    await expect(publish(kudu)).resolves.toBe(true)
+    const result = publish(kudu)
+    await jest.runAllTimersAsync()
+    await expect(result).resolves.toBe(true)
     expect(activeAtRetry).toBe(0)
   })
 
-  test('fails when every upload attempt hits a gateway error', async () => {
+  test('fails after backing off between three failed upload attempts', async () => {
+    jest.useFakeTimers()
+    const started = Date.now()
     const directories = new Map<string, Tree>()
+    const result = publish(createFakeKudu(directories, {failedUploads: Infinity})).catch((error: unknown) => error)
 
-    await expect(publish(createFakeKudu(directories, {failedUploads: Infinity}))).rejects.toThrow()
+    await jest.runAllTimersAsync()
+    expect(await result).toBeInstanceOf(Error)
+
+    expect(Date.now() - started).toBe(30_000)
     expect(directories.has(ROOT)).toBe(false)
   })
 
