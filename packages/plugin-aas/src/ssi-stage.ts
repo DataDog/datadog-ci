@@ -77,9 +77,7 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
       // the /home mount, so `root` only ever holds a complete tree.
       // Uploading the zips concurrently overlaps the per-file latency of the /home mount. Any failed
       // upload rejects before the rename below, so `root` never receives a partial tree.
-      const temporaryRoot = await uploadToTemporaryTree(kudu, root, (directory) =>
-        doWithMaxConcurrency(UPLOAD_CONCURRENCY, zips, (zip) => kudu.publish(directory, zip))
-      )
+      const temporaryRoot = await uploadToTemporaryTree(kudu, root, (directory) => uploadZips(kudu, directory, zips))
       // The Azure Files-backed /home mount can lag on file enumeration right after extraction
       // (CIFS), so wait for the startup files before declaring the deploy incomplete.
       if (!(await kudu.hasArtifacts(getAasInjectionSpec(runtime, temporaryRoot).artifacts, true))) {
@@ -132,6 +130,27 @@ const uploadToTemporaryTree = async (
       }
     }
     await kudu.waitUntilReady()
+  }
+}
+
+// The first failure aborts the in-flight uploads and skips the queued ones. This waits for the aborted
+// requests to settle, so a retry never overlaps them and uploads never exceed UPLOAD_CONCURRENCY.
+const uploadZips = async (kudu: KuduClient, directory: string, zips: readonly Buffer[]): Promise<void> => {
+  const controller = new AbortController()
+  const failures: unknown[] = []
+  await doWithMaxConcurrency(UPLOAD_CONCURRENCY, zips, async (zip) => {
+    if (controller.signal.aborted) {
+      return
+    }
+    try {
+      await kudu.publish(directory, zip, controller.signal)
+    } catch (error) {
+      failures.push(error)
+      controller.abort()
+    }
+  })
+  if (failures.length > 0) {
+    throw failures[0]
   }
 }
 

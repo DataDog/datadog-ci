@@ -141,6 +141,37 @@ describe('resolveAasTracerStaging publish', () => {
     expect([...directories.keys()].filter((directory) => directory.startsWith(`${ROOT}.tmp-`))).toHaveLength(1)
   })
 
+  test('aborts and waits for in-flight uploads before retrying after a gateway error', async () => {
+    const directories = new Map<string, Tree>()
+    const kudu = createFakeKudu(directories)
+    const fakePublish = kudu.publish
+    let active = 0
+    let activeAtRetry: number | undefined
+    let firstDirectory: string | undefined
+    kudu.publish = async (directory, zip, signal) => {
+      firstDirectory ??= directory
+      if (directory !== firstDirectory) {
+        activeAtRetry ??= active
+
+        return fakePublish(directory, zip)
+      }
+      active++
+      try {
+        if (zip.toString() === 'zip-1') {
+          throw getRequestError(502, {})
+        }
+        await new Promise((_, reject) =>
+          signal?.addEventListener('abort', () => setTimeout(reject, 10, new Error('aborted')))
+        )
+      } finally {
+        active--
+      }
+    }
+
+    await expect(publish(kudu)).resolves.toBe(true)
+    expect(activeAtRetry).toBe(0)
+  })
+
   test('fails when every upload attempt hits a gateway error', async () => {
     const directories = new Map<string, Tree>()
 
