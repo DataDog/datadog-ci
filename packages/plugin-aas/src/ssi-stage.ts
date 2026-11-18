@@ -163,7 +163,7 @@ const uploadZips = async (kudu: KuduClient, directory: string, zips: readonly Bu
     }
   })
   if (failures.length > 0) {
-    throw failures[0]
+    throw failures.find((error) => !isRetryableScmError(error)) ?? failures[0]
   }
 }
 

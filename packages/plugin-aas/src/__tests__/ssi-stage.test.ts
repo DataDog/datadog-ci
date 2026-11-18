@@ -191,6 +191,26 @@ describe('resolveAasTracerStaging publish', () => {
     expect(activeAtRetry).toBe(0)
   })
 
+  test('does not retry when a concurrent upload fails with a nonretryable error', async () => {
+    jest.useFakeTimers()
+    const directories = new Map<string, Tree>()
+    const kudu = createFakeKudu(directories)
+    const denied = getRequestError(403, {})
+    jest
+      .spyOn(kudu, 'publish')
+      .mockRejectedValueOnce(getRequestError(502, {}))
+      .mockImplementationOnce(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1_000))
+        throw denied
+      })
+    const result = publish(kudu).catch((error: unknown) => error)
+
+    await jest.runAllTimersAsync()
+
+    expect(await result).toBe(denied)
+    expect(directories.has(ROOT)).toBe(false)
+  })
+
   test('fails after backing off between three failed upload attempts', async () => {
     jest.useFakeTimers()
     const started = Date.now()
