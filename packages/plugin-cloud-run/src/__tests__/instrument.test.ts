@@ -546,24 +546,44 @@ describe('InstrumentCommand', () => {
       })
     })
 
-    test('sanitizes service, env, and version label values without changing DD_SERVICE, DD_ENV, and DD_VERSION', () => {
-      ;(command as any).environment = 'Élan'
-      ;(command as any).version = '東'.repeat(63)
-
-      const service = {
-        template: {
-          containers: [{name: 'main', env: [], volumeMounts: []}],
-          volumes: [],
+    test('uses sanitized service, env, and version values in labels and DD_* env vars and warns', async () => {
+      mockServicesClient.getService.mockResolvedValue([
+        {
+          name: 'projects/test-project/locations/us-central1/services/test-service',
+          template: {containers: [{name: 'main', env: [], volumeMounts: []}], volumes: []},
         },
-      }
+      ])
 
-      const result = command.createInstrumentedServiceConfig(service, '東京.Service')
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--no-source-code-integration',
+        '--dry-run',
+        '--service-tag',
+        '東京.Service',
+        '--env',
+        'Élan',
+        '--version',
+        '1.2.3',
+      ])
+      const output = context.stdout.toString()
 
-      expect(result.labels).toMatchObject({service: '東京_service', env: 'élan', version: '東'.repeat(42)})
-      const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
-      expect(mainContainer?.env).toContainEqual({name: 'DD_SERVICE', value: '東京.Service'})
-      expect(mainContainer?.env).toContainEqual({name: 'DD_ENV', value: 'Élan'})
-      expect(mainContainer?.env).toContainEqual({name: 'DD_VERSION', value: '東'.repeat(63)})
+      expect(code).toBe(0)
+      expect(output).toContain(`"service": "東京_service"`)
+      expect(output).toContain(`"env": "élan"`)
+      expect(output).toContain(`"version": "1_2_3"`)
+      expect(output).toContain(`"value": "東京_service"`)
+      expect(output).toContain(`"value": "élan"`)
+      expect(output).toContain(`"value": "1_2_3"`)
+      expect(output).toContain(
+        `--service-tag value '東京.Service' is not a valid Cloud Run label value. Using '東京_service'`
+      )
+      expect(output).toContain(`--env value 'Élan' is not a valid Cloud Run label value. Using 'élan'`)
+      expect(output).toContain(`--version value '1.2.3' is not a valid Cloud Run label value. Using '1_2_3'`)
     })
 
     test('preserves existing labels and adds service tag', () => {
