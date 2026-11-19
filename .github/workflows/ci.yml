@@ -490,8 +490,8 @@ jobs:
   e2e-test-federation:
     # Runs a thin set of intake-based e2e tests on Linux, with the `e2e-test` setup, using a short-lived Datadog API key
     # from Workload Identity Federation (WIF) instead of stored Datadog secrets.
-    # Requires an intake mapping for DataDog/datadog-ci in the Synthetics E2E Testing Org. Tests that need an app key or
-    # another org's credentials are expected to fail here and are intentionally kept.
+    # Requires an intake mapping for DataDog/datadog-ci in the Synthetics E2E Testing Org. An intake mapping only provides
+    # an API key, so tests that need an app key are not run here (see the test step).
     # GitHub withholds the OIDC token from fork PRs and Dependabot, and no expression can detect that, so the first step
     # checks for the token at runtime and the remaining steps are skipped with a notice when it is missing.
     name: End-to-end test the package (Datadog WIF)
@@ -577,9 +577,9 @@ jobs:
           org_uuid: 3f39202f-00cc-11ea-a77b-83137c3778b3
       - name: Run e2e tests
         if: steps.oidc.outputs.available == 'true'
-        # Expected to fail without an app key: the junit and sourcemaps checks query the Datadog API to verify the upload,
-        # and sbom passes DD_APP_KEY. git-metadata and sarif only need the API key.
-        run: yarn jest --config jest.config-e2e.js --colors e2e/git-metadata.test.ts e2e/junit.test.ts e2e/sarif.test.ts e2e/sbom.test.ts e2e/sourcemaps.test.ts
+        # Only tests that work with an API key. Not run: junit and sourcemaps (their read-back checks need an app key) and
+        # sbom (the CLI requires an app key); they need an identity mapping or an app key.
+        run: yarn jest --config jest.config-e2e.js --colors e2e/git-metadata.test.ts e2e/sarif.test.ts
         env:
           # No Datadog secrets: the only Datadog credential is the WIF API key. App keys stay unset.
           DATADOG_API_KEY: ${{ steps.datadog-wif.outputs.api_key }}
