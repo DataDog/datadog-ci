@@ -1,28 +1,39 @@
-import type {KuduClient} from './kudu'
+import {randomBytes} from 'node:crypto'
+
 import type {LanguageInjectionSpec} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injection-spec'
 
-import {getProxyDispatcher, httpRequest} from '@datadog/datadog-ci-base/helpers/request'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
+import {isRetryableScmError, type KuduClient} from './kudu'
 import {
   OCI_INDEX_MEDIA_TYPE,
   OCI_MANIFEST_MEDIA_TYPE,
-  buildFleetPackageZip,
+  buildFleetPackageZips,
   getFleetRepository,
   resolveFleetPackage,
   selectFleetManifest,
   verifySha256,
   type AasCodeRuntime,
 } from './ssi'
-import {getAasInjectionSpec, getStagedRoot} from './ssi-env'
+import {AAS_SSI_STAGING_ROOT, getAasInjectionSpec, getStagedRoot} from './ssi-env'
 
 const FLEET_REGISTRY = 'https://install.datadoghq.com/v2'
+// A run uploads its temporary tree within minutes, so a tree this old belongs to no running staging.
+const LEFTOVER_MIN_AGE_MINUTES = 30
+// A full Node.js upload takes about 90 s on B1, so retries are counted rather than bounded by the
+// SCM command deadline.
+const UPLOAD_ATTEMPTS = 3
+const UPLOAD_CONCURRENCY = 6
+const UPLOAD_RETRY_INTERVAL_MS = 10_000
+const MAX_UPLOAD_RETRY_DELAY_MS = 60_000
 
 export interface AasTracerStaging {
   readonly root: string
   readonly spec: LanguageInjectionSpec
   /** Publishes the tracer unless already staged. Returns whether anything was uploaded. */
-  publish(kudu: KuduClient): Promise<boolean>
+  publish(kudu: KuduClient, warn: (message: string) => void): Promise<boolean>
 }
 
 // Resolution performs no app mutation, so callers can validate environment conflicts against
@@ -43,8 +54,15 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
   return {
     root,
     spec,
-    publish: async (kudu) => {
+    publish: async (kudu, warn) => {
+      const removeLeftovers = async () => {
+        await removeTemporaryTrees(kudu, root, warn, LEFTOVER_MIN_AGE_MINUTES)
+        await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn, LEFTOVER_MIN_AGE_MINUTES)
+      }
+      // This check also waits for the SCM site to be ready before anything is uploaded.
       if (await kudu.hasArtifacts(spec.artifacts)) {
+        await removeLeftovers()
+
         return false
       }
       const layer = await httpRequest<Uint8Array>({
@@ -55,20 +73,113 @@ export const resolveAasTracerStaging = async (runtime: AasCodeRuntime): Promise<
         dispatcher: getProxyDispatcher(),
         timeout: 120_000,
       })
-      const zip = await buildFleetPackageZip(layer.data, fleetPackage.layer.digest, runtime)
-      await kudu.publish(root, zip)
-      // The Azure Files-backed /home mount intermittently lags on file enumeration right after
-      // extraction (CIFS), so retry the startup-file check before declaring the deploy incomplete.
-      for (let attempt = 0; ; attempt++) {
-        if (await kudu.hasArtifacts(spec.artifacts)) {
-          return true
-        }
-        if (attempt >= 3) {
-          throw new Error('The tracer staging deployment completed without all required startup files.')
-        }
-        await new Promise((resolve) => setTimeout(resolve, 5_000))
+      const zips = await buildFleetPackageZips(layer.data, fleetPackage.layer.digest, runtime)
+      // Extraction continues on the Web App after the CLI exits, so an interrupted run can leave a
+      // partial tree. Extract to a temporary sibling and rename it into place, which is atomic on
+      // the /home mount, so `root` only ever holds a complete tree.
+      // Uploading the zips concurrently overlaps the per-file latency of the /home mount. Any failed
+      // upload rejects before the rename below, so `root` never receives a partial tree.
+      const temporaryRoot = await uploadToTemporaryTree(kudu, root, (directory) => uploadZips(kudu, directory, zips))
+      // The Azure Files-backed /home mount can lag on file enumeration right after extraction
+      // (CIFS), so wait for the startup files before declaring the deploy incomplete.
+      if (!(await kudu.hasArtifacts(getAasInjectionSpec(runtime, temporaryRoot).artifacts, true))) {
+        throw new Error('The tracer staging deployment completed without all required startup files.')
       }
+      try {
+        await kudu.rename(temporaryRoot, root)
+      } catch (error) {
+        // A concurrent run may have completed `root` first, so keep it.
+        if (!(await kudu.hasArtifacts(spec.artifacts))) {
+          throw error
+        }
+      }
+      await removeLeftovers()
+
+      return true
     },
+  }
+}
+
+/**
+ * Removes every staged tracer. Moving the staging root aside first is atomic, so a failed or
+ * interrupted delete never leaves part of a tree under a root that `publish` reads as staged.
+ */
+export const removeStagedTracers = async (kudu: KuduClient, warn: (message: string) => void): Promise<void> => {
+  if (!(await kudu.moveAside(AAS_SSI_STAGING_ROOT, temporaryPath(AAS_SSI_STAGING_ROOT)))) {
+    // The move can report success right after an SCM restart while the root stays in place.
+    warn(`Tracer staging directory ${AAS_SSI_STAGING_ROOT} is still present. The next run removes it.`)
+  }
+  await removeTemporaryTrees(kudu, AAS_SSI_STAGING_ROOT, warn)
+}
+
+// The SCM front end answered 502 to an upload on a freshly created app after a readiness check
+// passed. A late extraction could still be running, so each retry uploads into a fresh temporary
+// tree after another readiness check, and an abandoned tree is never renamed.
+const uploadToTemporaryTree = async (
+  kudu: KuduClient,
+  root: string,
+  upload: (directory: string) => Promise<unknown>
+): Promise<string> => {
+  for (let attempt = 1; ; attempt++) {
+    const temporaryRoot = temporaryPath(root)
+    try {
+      await upload(temporaryRoot)
+
+      return temporaryRoot
+    } catch (error) {
+      if (!isRetryableScmError(error) || attempt >= UPLOAD_ATTEMPTS) {
+        throw error
+      }
+      const retryAfter = isRequestError(error) ? error.response?.headers?.['retry-after'] : undefined
+      const retryAfterMs =
+        retryAfter === undefined
+          ? 0
+          : /^\d+$/.test(retryAfter)
+            ? Number(retryAfter) * 1000
+            : Date.parse(retryAfter) - Date.now()
+      // SCM readiness does not mean abandoned extractions have stopped, so back off before retrying.
+      const delay = Math.min(
+        MAX_UPLOAD_RETRY_DELAY_MS,
+        Math.max(UPLOAD_RETRY_INTERVAL_MS * 2 ** (attempt - 1), retryAfterMs || 0)
+      )
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+    await kudu.waitUntilReady()
+  }
+}
+
+// Skip queued uploads after a failure, but wait for in-flight requests before retrying so upload
+// attempts never overlap.
+const uploadZips = async (kudu: KuduClient, directory: string, zips: readonly Buffer[]): Promise<void> => {
+  const failures: unknown[] = []
+  await doWithMaxConcurrency(UPLOAD_CONCURRENCY, zips, async (zip) => {
+    if (failures.length > 0) {
+      return
+    }
+    try {
+      await kudu.publish(directory, zip)
+    } catch (error) {
+      failures.push(error)
+    }
+  })
+  if (failures.length > 0) {
+    throw failures.find((error) => !isRetryableScmError(error)) ?? failures[0]
+  }
+}
+
+const temporaryPath = (path: string): string => `${path}.tmp-${randomBytes(4).toString('hex')}`
+
+// Removes temporary trees left by earlier runs. Nothing runs from them, so a failure only warns.
+const removeTemporaryTrees = async (
+  kudu: KuduClient,
+  path: string,
+  warn: (message: string) => void,
+  olderThanMinutes?: number
+) => {
+  try {
+    await kudu.deleteTemporaryTrees(path, olderThanMinutes)
+  } catch {
+    warn(`Could not remove leftover tracer staging directories ${path}.tmp-*. The next run removes them.`)
   }
 }
 

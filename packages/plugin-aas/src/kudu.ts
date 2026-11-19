@@ -1,3 +1,5 @@
+import {posix} from 'node:path'
+
 import type {WebSiteManagementClient} from '@azure/arm-appservice'
 import type {WebApp} from '@datadog/datadog-ci-base/commands/aas/common'
 
@@ -6,9 +8,21 @@ import {getProxyDispatcher, httpRequest, isRequestError} from '@datadog/datadog-
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
 
 export interface KuduClient {
-  deleteDirectory(directory: string): Promise<void>
+  /** Waits until the SCM site answers commands, up to the command deadline. */
+  waitUntilReady(): Promise<void>
+  /** Extracts `archive` into `directory` with a single request, which is never replayed. */
   publish(directory: string, archive: Buffer): Promise<void>
-  hasArtifacts(artifacts: readonly (readonly string[])[]): Promise<boolean>
+  /** Returns whether every artifact exists. With `waitUntilPresent`, rechecks until the command deadline. */
+  hasArtifacts(artifacts: readonly (readonly string[])[], waitUntilPresent?: boolean): Promise<boolean>
+  /** Atomically renames `source` to `target`. Fails if `source` is missing or `target` is a non-empty directory. */
+  rename(source: string, target: string): Promise<void>
+  /**
+   * Atomically renames `source` to `target` if `source` exists, retrying until the command deadline,
+   * then checks once and returns whether `source` is gone.
+   */
+  moveAside(source: string, target: string): Promise<boolean>
+  /** Deletes the `<path>.tmp-*` siblings of `path`, optionally only those unmodified for `olderThanMinutes`. */
+  deleteTemporaryTrees(path: string, olderThanMinutes?: number): Promise<void>
 }
 
 type PublishingCredentials = {
@@ -18,7 +32,21 @@ type PublishingCredentials = {
   scmUri?: string
 }
 
+// The SCM front end answered 503 while the SCM site restarted after a settings update (about 46 s
+// on B1), and 502 to an upload on a freshly created app.
 const RETRYABLE_SCM_STATUSES = new Set([429, 502, 503, 504])
+
+export const isRetryableScmError = (error: unknown): boolean =>
+  isRequestError(error) && RETRYABLE_SCM_STATUSES.has(error.response?.status ?? 0)
+const SCM_RETRY_INTERVAL_MS = 10_000
+const SCM_RETRY_DEADLINE_MS = 180_000
+// Retrying every 10 s until a 3-minute deadline covers the SCM restart and the time the restarting
+// app holds files on /home with margin. Each command attempt allows 120 s, which covers the slowest
+// observed command (65 s to delete a Node.js tracer on B1).
+const COMMAND_TIMEOUT_MS = 120_000
+// Kudu keeps extracting after a lost response, so `publish` never replays an upload: a replay could
+// race the first extraction. On B1, a 400-file zip extracts in at most 93 s with 6 uploads in flight.
+const UPLOAD_TIMEOUT_MS = 180_000
 
 export const getKuduClient = async (
   client: WebSiteManagementClient,
@@ -41,86 +69,98 @@ export const getKuduClient = async (
   const request = async <T>(
     method: string,
     path: string,
-    data?: unknown,
-    headers: Record<string, string> = {},
-    timeout = 120_000
-  ): Promise<{data: T | undefined; headers: Record<string, string>}> => {
+    data: unknown,
+    headers: Record<string, string>,
+    timeout: number
+  ): Promise<T | undefined> => {
     const token = await azureCredential.getToken('https://management.azure.com/.default')
     if (!token) {
       throw new Error('Azure credentials could not access the SCM site.')
     }
-    // The SCM site answers 502/503/429 while it is still cold (for example right after an app
-    // restart), so retry those with backoff instead of failing the run.
-    let response
-    for (let attempt = 0; ; attempt++) {
+    const response = await httpRequest<string>({
+      method,
+      url: thirdParty(`${baseUrl}${path}`),
+      headers: {Authorization: `Bearer ${token.token}`, ...headers},
+      data,
+      dispatcher: getProxyDispatcher(),
+      timeout,
+    })
+
+    return typeof response.data === 'string'
+      ? response.data
+        ? (JSON.parse(response.data) as T)
+        : undefined
+      : (response.data as T)
+  }
+
+  // Runs `script` and returns whether it exited 0. `untilReady` retries retryable SCM statuses,
+  // `untilSuccess` also retries non-zero exits, and `once` makes a single attempt.
+  const runCommand = async (script: string, retry: 'once' | 'untilReady' | 'untilSuccess'): Promise<boolean> => {
+    const deadline = Date.now() + SCM_RETRY_DEADLINE_MS
+    // The next attempt starts after the retry interval, so it must not start after the deadline.
+    const canRetry = () => Date.now() + SCM_RETRY_INTERVAL_MS <= deadline
+    for (;;) {
       try {
-        response = await httpRequest<string>({
-          method,
-          url: thirdParty(`${baseUrl}${path}`),
-          headers: {Authorization: `Bearer ${token.token}`, ...headers},
-          data,
-          dispatcher: getProxyDispatcher(),
-          timeout,
-        })
-        break
-      } catch (error) {
-        const status = isRequestError(error) ? error.response?.status : undefined
-        if (attempt < 5 && status !== undefined && RETRYABLE_SCM_STATUSES.has(status)) {
-          await new Promise((resolve) => setTimeout(resolve, 10_000))
-          continue
+        const result = await request<{ExitCode?: number}>(
+          'POST',
+          '/api/command',
+          {command: `/bin/bash -c "${escapeBashArgument(script)}"`, dir: '/home'},
+          {},
+          COMMAND_TIMEOUT_MS
+        )
+        if (result?.ExitCode === 0 || retry !== 'untilSuccess' || !canRetry()) {
+          return result?.ExitCode === 0
         }
-        throw error
+      } catch (error) {
+        if (retry === 'once' || !isRetryableScmError(error) || !canRetry()) {
+          throw error
+        }
       }
+      await new Promise((resolve) => setTimeout(resolve, SCM_RETRY_INTERVAL_MS))
     }
-
-    const parsedData =
-      typeof response.data === 'string'
-        ? response.data
-          ? (JSON.parse(response.data) as T)
-          : undefined
-        : (response.data as T)
-
-    return {data: parsedData, headers: response.headers}
   }
 
   return {
+    waitUntilReady: async () => {
+      await runCommand('true', 'untilReady')
+    },
     publish: async (directory, archive) => {
       // Plain zip extraction via the Kudu zip API. Unlike OneDeploy (/api/publish) this runs no
       // Oryx build (which would compress node_modules into a tarball for Node apps), needs no
       // deployment polling, and creates missing parent directories (/home/data does not exist
       // until the app runtime boots, which races staging on fresh apps).
       const relativePath = directory.replace(/^\/home\//, '')
-      await request('PUT', `/api/zip/${relativePath}/`, archive, {'Content-Type': 'application/zip'}, 600_000)
+      await request('PUT', `/api/zip/${relativePath}/`, archive, {'Content-Type': 'application/zip'}, UPLOAD_TIMEOUT_MS)
     },
-    hasArtifacts: async (artifacts) => {
+    hasArtifacts: async (artifacts, waitUntilPresent = false) => {
       // Parenthesize each alternative group: bash && and || are left-associative, so without
       // grouping a passing later artifact would mask a failed earlier one.
       const checks = artifacts
         .map((alternatives) => `( ${alternatives.map((artifact) => `test -f ${shellQuote(artifact)}`).join(' || ')} )`)
         .join(' && ')
-      const result = await request<{ExitCode?: number}>('POST', '/api/command', {
-        command: `/bin/bash -c "${escapeBashArgument(checks)}"`,
-        dir: '/home',
-      })
 
-      return result.data?.ExitCode === 0
+      return runCommand(checks, waitUntilPresent ? 'untilSuccess' : 'untilReady')
     },
-    deleteDirectory: async (directory) => {
-      // Deleting onto the Azure Files-backed /home mount races directory enumeration on CIFS and
-      // fails while the app or sidecar still holds the files after the restart triggered by the
-      // settings update, so retry with backoff long enough for the restart to settle.
-      for (let attempt = 0; ; attempt++) {
-        const result = await request<{ExitCode?: number}>('POST', '/api/command', {
-          command: `/bin/bash -c "${escapeBashArgument(`rm -rf -- ${directory}`)}"`,
-          dir: '/home',
-        })
-        if (result.data?.ExitCode === 0) {
-          return
-        }
-        if (attempt >= 6) {
-          throw new Error(`Failed to delete ${directory} from the Web App.`)
-        }
-        await new Promise((resolve) => setTimeout(resolve, Math.min(5_000 * 2 ** attempt, 30_000)))
+    rename: async (source, target) => {
+      if (!(await runCommand(`mv -T -- ${shellQuote(source)} ${shellQuote(target)}`, 'untilReady'))) {
+        throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
+      }
+    },
+    moveAside: async (source, target) => {
+      // Renaming fails while the restarting app still holds files in `source`, so retry it.
+      const script = `test ! -e ${shellQuote(source)} || mv -T -- ${shellQuote(source)} ${shellQuote(target)}`
+      if (!(await runCommand(script, 'untilSuccess'))) {
+        throw new Error(`Failed to move ${source} to ${target} on the Web App.`)
+      }
+
+      return runCommand(`test ! -e ${shellQuote(source)}`, 'once')
+    },
+    deleteTemporaryTrees: async (path, olderThanMinutes) => {
+      const parent = shellQuote(posix.dirname(path))
+      const age = olderThanMinutes === undefined ? '' : ` -mmin +${olderThanMinutes}`
+      const script = `test ! -d ${parent} || find ${parent} -mindepth 1 -maxdepth 1 -name ${shellQuote(`${posix.basename(path)}.tmp-*`)}${age} -exec rm -rf {} +`
+      if (!(await runCommand(script, 'once'))) {
+        throw new Error(`Failed to delete ${path}.tmp-* from the Web App.`)
       }
     },
   }

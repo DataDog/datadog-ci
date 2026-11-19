@@ -26,7 +26,8 @@ import {
   type ProcessResult,
 } from '../common'
 import {getKuduClient} from '../kudu'
-import {AAS_SSI_STAGING_ROOT, AAS_SSI_TAG, removeAasSsiEnv} from '../ssi-env'
+import {AAS_SSI_TAG, removeAasSsiEnv} from '../ssi-env'
+import {removeStagedTracers} from '../ssi-stage'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -228,12 +229,14 @@ export class PluginCommand extends AasUninstrumentCommand {
     if (isLinuxContainer(site)) {
       return
     }
-    // Delete unconditionally rather than gating on env markers: `rm -rf` is idempotent, and stale
+    // Remove unconditionally rather than gating on env markers: removal is idempotent, and stale
     // markers would otherwise orphan the staged tree.
     this.context.stdout.write(`${this.dryRunPrefix}Removing any staged tracer files from ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
       try {
-        await (await getKuduClient(client, resourceGroup, webApp)).deleteDirectory(AAS_SSI_STAGING_ROOT)
+        await removeStagedTracers(await getKuduClient(client, resourceGroup, webApp), (message) =>
+          this.context.stdout.write(renderSoftWarning(message))
+        )
       } catch (error) {
         this.context.stdout.write(
           renderSoftWarning(
