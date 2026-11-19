@@ -23,7 +23,15 @@ import {JSONReporter} from '../reporters/json'
 import {JUnitReporter} from '../reporters/junit'
 import {planDryRun, executeTests, getDefaultConfig} from '../run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from '../utils/internal'
-import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
+import {
+  getExitReason,
+  getOrgSettings,
+  renderResults,
+  reportCiError,
+  toExitCode,
+  reportExitLogs,
+  getReporter,
+} from '../utils/public'
 
 export class PluginCommand extends SyntheticsRunTestsCommand {
   protected reporter!: MainReporter
@@ -91,7 +99,19 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
     let results: Result[]
     let summary: Summary
 
-    const orgSettings = await getOrgSettings(this.reporter, this.config)
+    let orgSettings: Awaited<ReturnType<typeof getOrgSettings>>
+    try {
+      // Throws a critical error when credentials are missing.
+      orgSettings = await getOrgSettings(this.reporter, this.config)
+    } catch (error) {
+      // Missing credentials always fail the command, whatever `failOnCriticalErrors` is.
+      if (error instanceof CiError) {
+        reportCiError(error, this.reporter)
+
+        return 1
+      }
+      throw error
+    }
 
     if (this.dryRun) {
       try {
