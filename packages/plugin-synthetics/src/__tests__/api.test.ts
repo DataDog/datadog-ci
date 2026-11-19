@@ -14,7 +14,6 @@ import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 import {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
-import {CriticalError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../test'
 import * as internalUtils from '../utils/internal'
@@ -563,10 +562,13 @@ describe('getApiHelper', () => {
   test('should throw an error if API or Application key are undefined', async () => {
     process.env = {}
 
-    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY', 'App key is required'))
+    expect(() => getApiHelper(ciConfig)).toThrow(
+      expect.objectContaining({code: 'MISSING_APP_KEY', message: expect.stringContaining('App key is required.')})
+    )
+    expect(() => getApiHelper(ciConfig)).toThrow('or an API key and an application key')
 
     expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
-      new CriticalError('MISSING_API_KEY', 'API key is required')
+      expect.objectContaining({code: 'MISSING_API_KEY', message: expect.stringContaining('API key is required.')})
     )
   })
 

@@ -503,14 +503,18 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
 export type APIHelper = ReturnType<typeof apiConstructor>
 
+const MISSING_CREDENTIALS_HINT =
+  'Set an access token (DD_ACCESS_TOKEN, `accessToken` or --accessToken) from a Workload Identity Federation identity mapping, ' +
+  'or an API key and an application key. An intake mapping only provides an API key.'
+
 export const getApiHelper = (config: APIHelperConfig): APIHelper => {
   // An access token replaces the API key and the application key.
   if (!config.accessToken) {
     if (!config.appKey) {
-      throw new CriticalError('MISSING_APP_KEY', 'App key is required')
+      throw new CriticalError('MISSING_APP_KEY', `App key is required. ${MISSING_CREDENTIALS_HINT}`)
     }
     if (!config.apiKey) {
-      throw new CriticalError('MISSING_API_KEY', 'API key is required')
+      throw new CriticalError('MISSING_API_KEY', `API key is required. ${MISSING_CREDENTIALS_HINT}`)
     }
   }
 

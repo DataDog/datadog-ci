@@ -1172,6 +1172,21 @@ describe('run-tests', () => {
     })
   })
 
+  describe('missing credentials', () => {
+    test('explains the access token alternative and exits with 1', async () => {
+      const writeMock = jest.fn()
+      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}})
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
+
+      expect(await command.execute()).toBe(1)
+
+      const output = writeMock.mock.calls.map((call) => String(call[0])).join('')
+      expect(output).toContain('Missing DATADOG_APP_KEY or DD_APP_KEY in your environment.')
+      expect(output).toContain('Synthetics commands need an access token (DD_ACCESS_TOKEN')
+      expect(output).toContain('An intake mapping only provides an API key')
+    })
+  })
+
   describe('exit code respects `failOnCriticalErrors`', () => {
     test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
       const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
