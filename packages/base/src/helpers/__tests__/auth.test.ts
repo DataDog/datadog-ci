@@ -2,8 +2,9 @@ import {
   AUTH_HELP,
   getAccessTokenFromEnv,
   getMissingOrgCredentialsMessage,
+  getCloudApiKeyAuthHelp,
+  getCloudCredentialsOnlyAuthHelp,
   getServerlessInstrumentAuthHelp,
-  getServerlessUninstrumentAuthHelp,
   resolveOrgCredentials,
 } from '../auth'
 
@@ -78,7 +79,8 @@ describe('auth', () => {
       for (const text of [
         ...Object.values(AUTH_HELP),
         getServerlessInstrumentAuthHelp('AWS credentials', 'a Datadog API key (DD_API_KEY)'),
-        getServerlessUninstrumentAuthHelp('AWS credentials'),
+        getCloudCredentialsOnlyAuthHelp('AWS credentials'),
+        getCloudApiKeyAuthHelp('AWS credentials'),
       ]) {
         expect(text).toMatch(/^Authentication: /)
       }

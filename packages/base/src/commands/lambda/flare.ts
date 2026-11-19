@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {getCloudApiKeyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -11,6 +12,7 @@ export class LambdaFlareCommand extends BaseCommand {
     category: 'Serverless',
     description:
       'Gather config, logs, tags, project files, and more from a Lambda function and sends them to Datadog support.',
+    details: getCloudApiKeyAuthHelp('AWS credentials'),
   })
 
   protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false, {

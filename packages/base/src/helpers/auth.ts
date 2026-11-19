@@ -43,7 +43,10 @@ export const hasOrgCredentials = (credentials: OrgCredentials): boolean =>
  * Explain which credentials an org-action command is missing, or return `undefined` when the credentials are enough:
  * an access token, or an API key and an application key.
  */
-export const getMissingOrgCredentialsMessage = (commandName: string, credentials: OrgCredentials): string | undefined => {
+export const getMissingOrgCredentialsMessage = (
+  commandName: string,
+  credentials: OrgCredentials
+): string | undefined => {
   if (hasOrgCredentials(credentials)) {
     return undefined
   }
@@ -100,8 +103,17 @@ export const getServerlessInstrumentAuthHelp = (cloudCredentials: string, datado
   `See ${AUTHENTICATION_DOCS_URL}`
 
 /**
- * Authentication note for Serverless `uninstrument` commands.
+ * Authentication note for commands that only call the cloud provider, such as Serverless `uninstrument` commands.
  * @param cloudCredentials - the cloud provider credentials the command uses, for example "AWS credentials".
  */
-export const getServerlessUninstrumentAuthHelp = (cloudCredentials: string): string =>
+export const getCloudCredentialsOnlyAuthHelp = (cloudCredentials: string): string =>
   `Authentication: this command uses your ${cloudCredentials} and does not need Datadog credentials.`
+
+/**
+ * Authentication note for commands that read from the cloud provider and send data to Datadog, such as flares.
+ * @param cloudCredentials - the cloud provider credentials the command uses, for example "AWS credentials".
+ */
+export const getCloudApiKeyAuthHelp = (cloudCredentials: string): string =>
+  `Authentication: this command uses your ${cloudCredentials} and needs a Datadog API key (DD_API_KEY). ` +
+  'With Workload Identity Federation, an intake mapping provides it. ' +
+  `See ${AUTHENTICATION_DOCS_URL}`

@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -12,6 +13,8 @@ export class SbomUploadCommand extends BaseCommand {
     description: 'Upload SBOM files to Datadog.',
     details: `
       This command uploads SBOM files to Datadog for dependency tracking, vulnerability analysis, and compliance auditing.
+
+      ${AUTH_HELP.orgAction}
     `,
     examples: [['Upload the SBOM file: sbom.json', 'datadog-ci sbom upload sbom.json']],
   })

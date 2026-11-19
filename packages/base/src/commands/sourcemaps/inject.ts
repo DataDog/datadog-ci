@@ -9,6 +9,8 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import {addDebugIdToPayloads, injectMissingDebugIds} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
@@ -22,6 +24,8 @@ export class SourcemapsInjectCommand extends BaseCommand {
     description: 'Inject debug IDs into JavaScript bundles and sourcemaps.',
     details: `
       This command modifies JavaScript bundles and their corresponding sourcemaps in place. Run it after building and before deploying or uploading the same artifacts to Datadog.
+
+      ${AUTH_HELP.none}
     `,
     examples: [
       ['Inject debug IDs into all bundles in a directory', 'datadog-ci sourcemaps inject ./dist'],

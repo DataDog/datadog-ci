@@ -3,6 +3,8 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 export class TerraformUploadCommand extends BaseCommand {
@@ -15,6 +17,8 @@ export class TerraformUploadCommand extends BaseCommand {
       This command uploads Terraform runtime artifacts (plan or state JSON) to Datadog
       for enhanced cloud-to-code mapping and policy evaluation.\n
       See README for details.
+
+      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Upload a Terraform plan file', 'datadog-ci terraform upload plan terraform-plan.json'],

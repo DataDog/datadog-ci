@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/terminal-link'
 
@@ -25,6 +26,8 @@ export class SyntheticsUploadApplicationCommand extends BaseCommand {
     details: `
       This command will upload a \`.apk\` or \`.ipa\` file as a new version for a given application, which already exists in Datadog.\n
       https://docs.datadoghq.com/mobile_app_testing/mobile_app_tests
+
+      ${AUTH_HELP.orgAction}
     `,
     examples: [
       [

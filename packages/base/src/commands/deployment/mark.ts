@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 /**
@@ -17,6 +19,8 @@ export class DeploymentMarkCommand extends BaseCommand {
     details: `
       This command will mark a CI job as a deployment.\n
       See README for details.
+
+      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Mark a CI job as a deployment', 'datadog-ci deployment mark'],

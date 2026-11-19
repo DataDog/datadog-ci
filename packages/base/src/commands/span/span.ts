@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import {CustomSpanCommand} from '../trace/helper'
 
 export class SpanCommand extends CustomSpanCommand {
@@ -13,6 +15,8 @@ export class SpanCommand extends CustomSpanCommand {
     details: `
       This command reports a span with custom name and custom duration to Datadog.\n
       See README for details.
+
+      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

@@ -2,6 +2,7 @@ import type {AasConfigOptions, WindowsRuntime} from './common'
 
 import {Command, Option} from 'clipanion'
 
+import {getServerlessInstrumentAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {SIDECAR_IMAGE} from '../../helpers/serverless/constants'
 
@@ -12,6 +13,7 @@ export class AasInstrumentCommand extends AasCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to an Azure Web App or slot.',
+    details: getServerlessInstrumentAuthHelp('Azure credentials', 'a Datadog API key (DD_API_KEY)'),
   })
 
   private service = Option.String('--service', {

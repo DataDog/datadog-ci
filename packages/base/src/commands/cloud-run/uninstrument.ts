@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/constants'
 
@@ -11,6 +12,7 @@ export class CloudRunUninstrumentCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Revert Datadog instrumentation in a Cloud Run app.',
+    details: getCloudCredentialsOnlyAuthHelp('Google Cloud credentials'),
   })
 
   protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {

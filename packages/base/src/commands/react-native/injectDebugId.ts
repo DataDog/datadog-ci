@@ -9,6 +9,8 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 /**
  * The Debug ID is injected in the bundle as a plain string, using this prefix.
  */
@@ -25,6 +27,8 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
         stack traces and error symbolication.
 
         Alternatively, use --bundle and --sourcemap to target specific files directly instead of scanning a directory.
+
+      ${AUTH_HELP.none}
     `,
     examples: [
       ['Inject Debug ID (scan directory)', 'datadog-ci react-native inject-debug-id ./dist'],

@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -10,7 +11,7 @@ export class StepfunctionsUninstrumentCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Remove Step Function log groups subscription filter created by datadog-ci.',
-    details: '--stepfunction expects a Step Function ARN',
+    details: `--stepfunction expects a Step Function ARN\n\n${getCloudCredentialsOnlyAuthHelp('AWS credentials')}`,
     examples: [
       [
         'View and apply changes to remove Step Functions log groups subscription filters created by datadog-ci',
