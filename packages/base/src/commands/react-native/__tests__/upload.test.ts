@@ -1,5 +1,7 @@
+import {readFileSync} from 'fs'
+
 import type {CommandContext} from '@datadog/datadog-ci-base'
-import type {MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
+import type {MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 import chalk from 'chalk'
 import {Cli} from 'clipanion'
@@ -50,6 +52,33 @@ describe('upload', () => {
       const eventValue = JSON.parse(event['value']) as {debug_id: string}
       expect(eventValue['debug_id']).toBe('a422b269-0dba-4341-93c2-73e1bcf71fbb')
     })
+
+    test('Vega metadata preserves the Debug ID shared by the bundle and sourcemap', async () => {
+      const sourcemap = new RNSourcemap(
+        'index.bundle',
+        'src/commands/react-native/__tests__/fixtures/basic-vega/index.bundle.map'
+      )
+
+      const payload = sourcemap.asMultipartPayload(
+        'cli-version',
+        'service',
+        'version',
+        'projectPath',
+        'vega',
+        'build',
+        createMockContext() as CommandContext
+      )
+
+      const event = payload.content.get('event') as MultipartStringValue
+      const eventValue = JSON.parse(event['value']) as {debug_id: string}
+      expect(eventValue).toMatchObject({
+        bundle_name: 'index.bundle',
+        debug_id: '80d40f87-66f0-4fb8-9d61-c79f55b4808f',
+        platform: 'vega',
+      })
+      const bundle = readFileSync('src/commands/react-native/__tests__/fixtures/basic-vega/index.bundle', 'utf8')
+      expect(bundle).toContain(`//# debugId=${eventValue.debug_id}`)
+    })
   })
 
   describe('addRepositoryDataToPayloads', () => {
@@ -93,9 +122,13 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   const runCLI = async (
     bundle: string,
-    options?: {configPath?: string; uploadBundle?: boolean; env?: Record<string, string>}
+    options?: {configPath?: string; uploadBundle?: boolean; env?: Record<string, string>; platform?: string}
   ) => {
     const cli = new Cli()
     cli.register(ReactNativeUploadCommand)
@@ -113,7 +146,7 @@ describe('execute', () => {
       '--sourcemap',
       `${bundle}.map`,
       '--platform',
-      'android',
+      options?.platform ?? 'android',
       '--dry-run',
     ]
     if (options?.configPath) {
@@ -233,6 +266,31 @@ describe('execute', () => {
     expect(output[2]).toContain(
       '⚠️ --bundle option was not provided. A default bundle name will be used. Please update @datadog/mobile-react-native or pass a --bundle option.'
     )
+  })
+
+  test.each([true, false])('uploads Vega sourcemap metadata (uploadBundle: %s)', async (uploadBundle) => {
+    const payloadSpy = jest.spyOn(RNSourcemap.prototype, 'asMultipartPayload')
+    const bundlePath = './src/commands/react-native/__tests__/fixtures/basic-vega/index.bundle'
+    const {context, code} = await runCLI(bundlePath, {platform: 'vega', uploadBundle})
+
+    expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain('for bundle index.bundle on platform vega')
+    expect(context.stdout.toString()).toContain(
+      'Extracted Debug ID from sourcemap: 80d40f87-66f0-4fb8-9d61-c79f55b4808f'
+    )
+    expect(context.stderr.toString()).toBe('')
+    expect(payloadSpy).toHaveBeenCalledTimes(1)
+    const payload = payloadSpy.mock.results[0].value as MultipartPayload
+    const event = payload.content.get('event') as MultipartStringValue
+    expect(JSON.parse(event.value)).toMatchObject({
+      bundle_name: 'index.bundle',
+      debug_id: '80d40f87-66f0-4fb8-9d61-c79f55b4808f',
+      platform: 'vega',
+      service: 'com.company.app',
+      version: '1.23.4',
+      build_number: '1023040',
+    })
+    expect(payload.content.get('source_map')).toMatchObject({type: 'file', path: `${bundlePath}.map`})
   })
 })
 

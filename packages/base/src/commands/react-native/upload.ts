@@ -1,4 +1,4 @@
-import type {RNPlatform} from './interfaces'
+import type {RNSourcemapPlatform} from './interfaces'
 import type {ApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -25,7 +25,7 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
+import {RNSourcemap, RN_SOURCEMAP_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -61,6 +61,10 @@ export class ReactNativeUploadCommand extends BaseCommand {
         'Upload android sourcemaps',
         'datadog-ci react-native upload --platform android --service com.company.app --bundle ./index.android.bundle --sourcemap ./index.android.bundle.map --release-version 1.23.4 --build-version 1234',
       ],
+      [
+        'Upload Vega sourcemaps',
+        'datadog-ci react-native upload --platform vega --service com.company.app --bundle ./build/lib/rn-bundles/Release/index.bundle --sourcemap ./build/debugging/Release/srcmap/index.bundle.map --release-version 0.1.0 --build-version 1234',
+      ],
     ],
   })
 
@@ -70,7 +74,7 @@ export class ReactNativeUploadCommand extends BaseCommand {
   private disableGit = Option.Boolean('--disable-git')
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  private platform?: RNPlatform = Option.String('--platform')
+  private platform?: RNSourcemapPlatform = Option.String('--platform')
   private projectPath = Option.String('--project-path', process.cwd() || '')
   private releaseVersion = Option.String('--release-version')
   private removeSourcesContent = Option.Boolean('--remove-sources-content', false)
@@ -116,9 +120,9 @@ export class ReactNativeUploadCommand extends BaseCommand {
       return 1
     }
 
-    if (!RN_SUPPORTED_PLATFORMS.includes(this.platform)) {
+    if (!RN_SOURCEMAP_SUPPORTED_PLATFORMS.includes(this.platform)) {
       this.context.stderr.write(
-        `Platform ${this.platform} is not supported.\nSupported platforms are ios and android.\n`
+        `Platform ${this.platform} is not supported.\nSupported platforms are ios, android, and vega.\n`
       )
 
       return 1

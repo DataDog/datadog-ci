@@ -1,0 +1,6 @@
+function throwVegaError() {
+  throw new Error('Vega example error');
+}
+throwVegaError();
+//# debugId=80d40f87-66f0-4fb8-9d61-c79f55b4808f
+//# sourceMappingURL=index.bundle.map
