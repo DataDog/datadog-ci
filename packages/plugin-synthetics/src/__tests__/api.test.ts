@@ -569,6 +569,24 @@ describe('getApiHelper', () => {
       new CriticalError('MISSING_API_KEY', 'API key is required')
     )
   })
+
+  test('should only send a bearer token when an access token is set', async () => {
+    process.env = {}
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      config: {},
+      data: getApiTest('123-456-789'),
+      headers: {},
+      status: 200,
+      statusText: 'OK',
+    })
+
+    const apiHelper = getApiHelper({...ciConfig, accessToken: 'access-token', apiKey: '', appKey: 'ignored-app-key'})
+    await apiHelper.getTest('123-456-789')
+
+    expect(jest.mocked(requestModule.httpRequest).mock.calls[0][0].headers).toStrictEqual({
+      Authorization: 'Bearer access-token',
+    })
+  })
 })
 
 describe('formatBackendErrors', () => {
