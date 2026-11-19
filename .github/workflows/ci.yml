@@ -253,15 +253,23 @@ jobs:
           AWS_ECS_LOG_GROUP: ${{ vars.AWS_ECS_LOG_GROUP_E2E }}
 
   e2e-test-federation:
-    # Runs the e2e suite with a short-lived Datadog API key obtained through Workload Identity Federation (WIF) for the
-    # Synthetics E2E Testing Org, instead of stored Datadog secrets. It shows which suites work with keyless auth.
+    # Runs the whole e2e suite with a short-lived Datadog API key obtained through Workload Identity Federation (WIF) for
+    # the Synthetics E2E Testing Org, instead of stored Datadog secrets. It shows which suites work with keyless auth.
     # Requires an intake mapping for DataDog/datadog-ci in that org. Tests that need an app key or another org's
-    # credentials are expected to fail here and are intentionally not skipped.
-    # Node 24 only: the auth path does not depend on the Node version, which `e2e-test` already covers.
+    # credentials are expected to fail here and are intentionally not skipped. Cloud logins for the serverless suites
+    # use OIDC and repo variables only, as in `e2e-test`.
+    # Node 24 only: the auth path does not depend on the Node version, which `e2e-test` already covers, and the
+    # serverless suites only run on Node 24.
     name: End-to-end test the package (Datadog WIF)
     runs-on: ubuntu-latest
     needs:
       - build-and-test
+      - check-container-app-changes
+      - check-aas-changes
+      - check-cloud-run-changes
+      - check-version-bump-only
+      - check-lambda-changes
+      - check-ecs-fargate-changes
     # GitHub issues no OIDC token to fork PRs or Dependabot.
     if: (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && github.actor != 'dependabot[bot]'
     permissions:
@@ -321,6 +329,36 @@ jobs:
           yarn set version stable
           yarn config set nodeLinker node-modules
           yarn install --no-immutable
+      - name: Azure login (OIDC)
+        if: (needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true')
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_E2E }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID_E2E }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+      - name: Export App Service access token
+        if: (needs.check-container-app-changes.outputs.should_run == 'true' || needs.check-aas-changes.outputs.should_run == 'true')
+        # `azure/login` only caches a management token. Getting a token for another audience later needs the federated
+        # login assertion, which expires after 5 minutes, so get the Kudu token now.
+        run: |
+          token=$(az account get-access-token --resource https://appservice.azure.com --query accessToken --output tsv)
+          echo "::add-mask::$token"
+          echo "AZURE_APP_SERVICE_ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
+      - name: Google Cloud auth (OIDC)
+        if: needs.check-cloud-run-changes.outputs.should_run == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER_E2E }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT_E2E }}
+      - name: Set up Google Cloud CLI
+        if: needs.check-cloud-run-changes.outputs.should_run == 'true'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Configure AWS credentials (OIDC)
+        if: (needs.check-lambda-changes.outputs.should_run == 'true' || needs.check-ecs-fargate-changes.outputs.should_run == 'true')
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN_E2E }}
+          aws-region: eu-central-1
       - name: Get Datadog API key (WIF)
         id: datadog-wif
         uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
@@ -328,18 +366,52 @@ jobs:
           org_uuid: ${{ vars.DD_ORG_UUID_E2E_FEDERATION }}
           site: ${{ vars.DD_SITE_E2E_FEDERATION || 'datadoghq.com' }}
       - name: Run e2e tests
-        run: yarn jest --config jest.config-e2e.js --colors
+        # The serverless suites (Node 24 only) mostly wait on cloud deployments, and Jest's default of CPU cores - 1
+        # (3 workers here) would queue them. Use one worker per running serverless test file, plus one for the rest,
+        # when that's more. Don't go higher: ts-jest type-checks every file, so extra workers just compete for CPU.
+        run: |
+          workers=1
+          for suite in container-app aas cloud-run lambda ecs-fargate; do
+            skip_var=SKIP_$(echo "$suite" | tr 'a-z-' 'A-Z_')_TESTS
+            [ "${!skip_var}" = true ] && continue
+            workers=$(( workers + $(find "e2e/serverless/$suite" -name '*.test.ts' | wc -l) ))
+          done
+          max_workers=
+          [ "$workers" -le $(( $(nproc) - 1 )) ] || max_workers=--maxWorkers=$workers
+          yarn jest --config jest.config-e2e.js --colors $max_workers
         env:
-          # No Datadog secrets: only the WIF API key. App keys stay unset.
+          # No Datadog secrets: the only Datadog credential is the WIF API key. App keys stay unset.
           DATADOG_API_KEY: ${{ steps.datadog-wif.outputs.api_key }}
           DD_API_KEY: ${{ steps.datadog-wif.outputs.api_key }}
+          DATADOG_SITE: ${{ vars.DD_SITE_E2E_FEDERATION || 'datadoghq.com' }}
+          DD_SITE: ${{ vars.DD_SITE_E2E_FEDERATION || 'datadoghq.com' }}
           GITHUB_SHA: ${{ github.sha }}
-          # The serverless suites need cloud OIDC logins and deployed resources from `e2e-test`; they are skipped here.
-          SKIP_CONTAINER_APP_TESTS: true
-          SKIP_AAS_TESTS: true
-          SKIP_CLOUD_RUN_TESTS: true
-          SKIP_LAMBDA_TESTS: true
-          SKIP_ECS_FARGATE_TESTS: true
+          SKIP_CONTAINER_APP_TESTS: ${{ needs.check-container-app-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_AAS_TESTS: ${{ needs.check-aas-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_CLOUD_RUN_TESTS: ${{ needs.check-cloud-run-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          SKIP_LAMBDA_TESTS: ${{ needs.check-lambda-changes.outputs.should_run != 'true' }}
+          SKIP_ECS_FARGATE_TESTS: ${{ needs.check-ecs-fargate-changes.outputs.should_run != 'true' || needs.check-version-bump-only.outputs.result == 'true' }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID_E2E }}
+          GCP_REGION: ${{ vars.GCP_REGION_E2E }}
+          GCP_CLOUD_RUN_APP_IMAGE_E2E: ${{ vars.GCP_CLOUD_RUN_APP_IMAGE_E2E }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID_E2E }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_E2E }}
+          AZURE_CONTAINER_APP_ENV: ${{ vars.AZURE_CONTAINER_APP_ENV_E2E }}
+          AZURE_CONTAINER_APP_SSI_ENV: ${{ vars.AZURE_CONTAINER_APP_SSI_ENV_E2E }}
+          AZURE_CONTAINER_APP_IMAGE_E2E: ${{ vars.AZURE_CONTAINER_APP_IMAGE_E2E }}
+          AZURE_AAS_LINUX_PLAN: ${{ vars.AZURE_AAS_LINUX_PLAN_E2E }}
+          AZURE_AAS_LINUX_SSI_PLAN: ${{ vars.AZURE_AAS_LINUX_SSI_PLAN_E2E }}
+          AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
+          AWS_REGION: eu-central-1
+          AWS_LAMBDA_EXECUTION_ROLE_ARN: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN_E2E }}
+          AWS_ECS_CLUSTER: ${{ vars.AWS_ECS_CLUSTER_E2E }}
+          AWS_ECS_SUBNETS: ${{ vars.AWS_ECS_SUBNETS_E2E }}
+          AWS_ECS_SECURITY_GROUP: ${{ vars.AWS_ECS_SECURITY_GROUP_E2E }}
+          AWS_ECS_EXECUTION_ROLE_ARN: ${{ vars.AWS_ECS_EXECUTION_ROLE_ARN_E2E }}
+          AWS_ECS_TASK_ROLE_ARN: ${{ vars.AWS_ECS_TASK_ROLE_ARN_E2E }}
+          AWS_ECS_APP_IMAGE_REGISTRY: ${{ vars.AWS_ECS_APP_IMAGE_REGISTRY_E2E }}
+          AWS_ECS_API_KEY_SECRET_ARN: ${{ vars.AWS_ECS_API_KEY_SECRET_ARN_E2E }}
+          AWS_ECS_LOG_GROUP: ${{ vars.AWS_ECS_LOG_GROUP_E2E }}
 
   check-container-app-changes:
     name: Check container-app changes
