@@ -3,9 +3,9 @@ import type {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} fro
 import type {RecursivePartial} from '../utils/internal'
 
 import {SyntheticsRunTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/run-tests'
-import {getAccessTokenFromEnv} from '@datadog/datadog-ci-base/helpers/auth'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
+import {getAccessTokenFromEnv} from '@datadog/datadog-ci-base/helpers/auth'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {

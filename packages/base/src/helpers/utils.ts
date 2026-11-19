@@ -165,11 +165,7 @@ export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
       headers: {
         ...(apiKey ? {'DD-API-KEY': apiKey} : {}),
         // An access token takes precedence over an application key: never send both.
-        ...(accessToken
-          ? {Authorization: `Bearer ${accessToken}`}
-          : appKey
-            ? {'DD-APPLICATION-KEY': appKey}
-            : {}),
+        ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
         ...args.headers,
       },
     }

@@ -1,5 +1,4 @@
 import {createCommand, getRequestError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
 import {PluginCommand as DeploymentCorrelateImageCommand} from '../commands/correlate-image'

@@ -1,11 +1,11 @@
 import fs from 'fs'
 
 import type {APIHelper, Configuration, GateEvaluationRequest, GateEvaluationStatusResponse} from '../interfaces'
+import type {OrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
 
 import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
-import type {OrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
 import {
   getAccessTokenFromEnv,
   getMissingOrgCredentialsMessage,
