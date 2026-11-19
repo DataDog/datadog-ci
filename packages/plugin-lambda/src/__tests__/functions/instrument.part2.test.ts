@@ -786,14 +786,18 @@ describe('instrument', () => {
       })
 
       test.each([
-        [31, 102, 'Datadog-Extension', Architecture.x86_64, true],
-        [31, 102, 'Datadog-Extension-ARM', Architecture.arm64, true],
-        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true],
-        [30, 102, 'Datadog-Extension', Architecture.x86_64, false],
-        [31, 101, 'Datadog-Extension', Architecture.x86_64, false],
+        [31, 102, 'Datadog-Extension', Architecture.x86_64, true, false],
+        [31, 102, 'Datadog-Extension-ARM', Architecture.arm64, true, false],
+        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, true],
+        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, false],
+        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, undefined],
+        [31, 102, 'Datadog-Extension-FIPS', Architecture.x86_64, true, false],
+        [30, 102, 'Datadog-Extension', Architecture.x86_64, false, false],
+        [31, 101, 'Datadog-Extension', Architecture.x86_64, false, false],
+        [31, 101, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, false, false],
       ])(
-        'uses retained layer %s / extension %s (%s)',
-        async (layer, extension, extensionName, architecture, tracer) => {
+        'uses retained layer %s / extension %s (%s, %s, tracer: %s, lambdaFips: %s)',
+        async (layer, extension, extensionName, architecture, tracer, lambdaFips) => {
           const retained = {
             ...config,
             Architectures: [architecture as Architecture],
@@ -805,7 +809,7 @@ describe('instrument', () => {
           }
           const update = await calculateUpdateRequest(
             retained,
-            {...settings, layerVersion: 'none', extensionVersion: 'none', lambdaFips: extensionName.endsWith('FIPS')},
+            {...settings, layerVersion: 'none', extensionVersion: 'none', lambdaFips},
             region,
             Runtime.java21
           )

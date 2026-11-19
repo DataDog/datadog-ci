@@ -376,7 +376,12 @@ export const calculateUpdateRequest = async (
         ? (layerOrTraceVersion ??
           retainedLayerVersion(getLayerArn(config, runtime as LayerKey, region, {...settings, lambdaFips: false})))
         : layerOrTraceVersion
-    const appsecExtensionVersion = extensionVersion ?? retainedLayerVersion(lambdaExtensionLayerArn)
+    const appsecExtensionVersion =
+      extensionVersion ??
+      retainedLayerVersion(lambdaExtensionLayerArn) ??
+      retainedLayerVersion(
+        getLayerArn(config, EXTENSION_LAYER_KEY, region, {...settings, lambdaFips: !settings.lambdaFips})
+      )
 
     if (supportsInTracerAppsec(runtime, appsecLayerVersion, appsecExtensionVersion)) {
       newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
