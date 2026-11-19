@@ -49,6 +49,8 @@ describe('gate', () => {
       process.env.DD_SITE = 'datadoghq.com'
       process.env.DD_API_KEY = 'test-api-key'
       process.env.DD_APP_KEY = 'test-app-key'
+      delete process.env.DATADOG_ACCESS_TOKEN
+      delete process.env.DD_ACCESS_TOKEN
 
       jest.useFakeTimers()
     })
@@ -78,7 +80,9 @@ describe('gate', () => {
 
         const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
         expect(code).toBe(1)
-        expect(context.stdout.toString()).toContain('Neither DATADOG_API_KEY nor DD_API_KEY are in your environment')
+        expect(context.stdout.toString()).toContain(
+          '`deployment gate` needs an API key (DD_API_KEY) to go with the application key, or an access token (DD_ACCESS_TOKEN).'
+        )
       })
 
       test('should fail if APP key is not provided', async () => {
@@ -87,7 +91,46 @@ describe('gate', () => {
 
         const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
         expect(code).toBe(1)
-        expect(context.stdout.toString()).toContain('Neither DATADOG_APP_KEY nor DD_APP_KEY are in your environment')
+        expect(context.stdout.toString()).toContain(
+          '`deployment gate` needs an application key (DD_APP_KEY) or an access token (DD_ACCESS_TOKEN).'
+        )
+        expect(context.stdout.toString()).toContain('An intake mapping only provides an API key')
+      })
+
+      test('should accept an access token instead of an API key and an APP key', async () => {
+        delete process.env.DD_API_KEY
+        delete process.env.DD_APP_KEY
+        process.env.DD_ACCESS_TOKEN = 'test-access-token'
+        const mockApi = {
+          requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+          getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('pass')),
+        }
+        const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+        const {code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
+
+        expect(code).toBe(0)
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          accessToken: 'test-access-token',
+          apiKey: undefined,
+        })
+      })
+
+      test('should drop the APP key when an access token is set', async () => {
+        process.env.DATADOG_ACCESS_TOKEN = 'test-access-token'
+        const mockApi = {
+          requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+          getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('pass')),
+        }
+        const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+        const {code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
+
+        expect(code).toBe(0)
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          accessToken: 'test-access-token',
+          apiKey: 'test-api-key',
+        })
       })
 
       test('should fail if timeout is invalid', async () => {
@@ -149,7 +192,10 @@ describe('gate', () => {
         expect(code).toBe(0)
         expect(context.stdout.toString()).toMatchSnapshot()
 
-        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
@@ -177,7 +223,10 @@ describe('gate', () => {
         expect(code).toBe(0)
         expect(context.stdout.toString()).toMatchSnapshot()
 
-        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
@@ -200,7 +249,10 @@ describe('gate', () => {
         expect(code).toBe(1)
         expect(context.stdout.toString()).toMatchSnapshot()
 
-        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
@@ -277,7 +329,10 @@ describe('gate', () => {
         expect(code).toBe(0)
         expect(context.stdout.toString()).toMatchSnapshot()
 
-        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(2)
         expect(mockApi.requestGateEvaluation).toHaveBeenNthCalledWith(1, {service: 'test-service', env: 'prod'})
         expect(mockApi.requestGateEvaluation).toHaveBeenNthCalledWith(2, {service: 'test-service', env: 'prod'})
@@ -317,7 +372,10 @@ describe('gate', () => {
           expect(code).toBe(1)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
@@ -345,7 +403,10 @@ describe('gate', () => {
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(6)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
@@ -374,7 +435,10 @@ describe('gate', () => {
           expect(code).toBe(1)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(6)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
@@ -404,7 +468,10 @@ describe('gate', () => {
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(5)
         })
@@ -432,7 +499,10 @@ describe('gate', () => {
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
@@ -468,7 +538,10 @@ describe('gate', () => {
           expect(code).toBe(1)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
@@ -504,7 +577,10 @@ describe('gate', () => {
           expect(code).toBe(1)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
@@ -529,7 +605,10 @@ describe('gate', () => {
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(2)
         })
@@ -561,7 +640,10 @@ describe('gate', () => {
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
-          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
+          apiKey: 'test-api-key',
+          appKey: 'test-app-key',
+        })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
           expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(1, 'test-evaluation-id')

@@ -5,6 +5,12 @@ import type {APIHelper, Configuration, GateEvaluationRequest, GateEvaluationStat
 import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
+import type {OrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
+import {
+  getAccessTokenFromEnv,
+  getMissingOrgCredentialsMessage,
+  resolveOrgCredentials,
+} from '@datadog/datadog-ci-base/helpers/auth'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
@@ -19,6 +25,7 @@ type CommandResult = 'PASS' | 'FAIL'
 
 export class PluginCommand extends DeploymentGateCommand {
   private config = {
+    accessToken: getAccessTokenFromEnv(),
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
@@ -55,22 +62,10 @@ export class PluginCommand extends DeploymentGateCommand {
     }
     const timeoutMilliseconds = timeoutSeconds * 1000
 
-    if (!this.config.apiKey) {
-      this.logger.error(
-        `${ICONS.FAILED} Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold(
-          'DD_API_KEY'
-        )} are in your environment.`
-      )
-
-      return 1
-    }
-
-    if (!this.config.appKey) {
-      this.logger.error(
-        `${ICONS.FAILED} Neither ${chalk.red.bold('DATADOG_APP_KEY')} nor ${chalk.red.bold(
-          'DD_APP_KEY'
-        )} are in your environment.`
-      )
+    const credentials = resolveOrgCredentials(this.config)
+    const missingCredentialsMessage = getMissingOrgCredentialsMessage('deployment gate', credentials)
+    if (missingCredentialsMessage) {
+      this.logger.error(`${ICONS.FAILED} ${missingCredentialsMessage}`)
 
       return 1
     }
@@ -105,7 +100,7 @@ export class PluginCommand extends DeploymentGateCommand {
     let result: CommandResult
 
     try {
-      const api = this.getApiHelper(this.config.apiKey, this.config.appKey)
+      const api = this.getApiHelper(credentials)
       const evaluationRequest = this.buildEvaluationRequest()
 
       const evaluationId = await this.requestGateEvaluation(api, evaluationRequest, this.evaluationRequestTimeout)
@@ -129,8 +124,8 @@ export class PluginCommand extends DeploymentGateCommand {
     return result === 'PASS' ? 0 : 1
   }
 
-  private getApiHelper(apiKey: string, appKey: string): APIHelper {
-    return apiConstructor(`https://${getApiHostForSite(getDatadogSite())}`, apiKey, appKey)
+  private getApiHelper(credentials: OrgCredentials): APIHelper {
+    return apiConstructor(`https://${getApiHostForSite(getDatadogSite())}`, credentials)
   }
 
   private buildEvaluationRequest(): GateEvaluationRequest {

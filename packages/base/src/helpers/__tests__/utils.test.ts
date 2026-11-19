@@ -110,6 +110,26 @@ describe('utils', () => {
       expect(capturedConfig!.headers).toStrictEqual({'DD-API-KEY': 'apiKey', 'DD-APPLICATION-KEY': 'applicationKey'})
     })
 
+    test('should send a bearer token instead of an application key when an access token is set', async () => {
+      const request = ciUtils.getRequestBuilder({
+        accessToken: 'accessToken',
+        apiKey: 'apiKey',
+        appKey: 'applicationKey',
+        baseUrl: 'http://fake-base.url/',
+      })
+      await request({})
+      expect(capturedConfig!.headers).toStrictEqual({'DD-API-KEY': 'apiKey', Authorization: 'Bearer accessToken'})
+    })
+
+    test('should only send a bearer token when no API key is set', async () => {
+      const request = ciUtils.getRequestBuilder({
+        accessToken: 'accessToken',
+        baseUrl: 'http://fake-base.url/',
+      })
+      await request({})
+      expect(capturedConfig!.headers).toStrictEqual({Authorization: 'Bearer accessToken'})
+    })
+
     describe('proxy configuration', () => {
       test('should use EnvHttpProxyAgent as dispatcher when no proxy is configured', async () => {
         const request = ciUtils.getRequestBuilder({

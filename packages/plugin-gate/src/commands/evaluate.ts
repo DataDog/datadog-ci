@@ -4,6 +4,11 @@ import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {GateEvaluateCommand} from '@datadog/datadog-ci-base/commands/gate/evaluate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {
+  getAccessTokenFromEnv,
+  getMissingOrgCredentialsMessage,
+  resolveOrgCredentials,
+} from '@datadog/datadog-ci-base/helpers/auth'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -12,7 +17,6 @@ import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-sp
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
-import chalk from 'chalk'
 
 import {apiConstructor} from '../api'
 import {
@@ -30,6 +34,7 @@ export class PluginCommand extends GateEvaluateCommand {
   private defaultTimeout = 600 // 10 min
 
   private config = {
+    accessToken: getAccessTokenFromEnv(),
     apiKey: process.env.DD_API_KEY,
     appKey: process.env.DD_APP_KEY,
     envVarTags: process.env.DD_TAGS,
@@ -79,17 +84,14 @@ export class PluginCommand extends GateEvaluateCommand {
   }
 
   private getApiHelper(): APIHelper {
-    if (!this.config.apiKey) {
-      this.context.stdout.write(`Missing ${chalk.red.bold('DD_API_KEY')} in your environment.\n`)
-      throw new Error('API key is missing')
+    const credentials = resolveOrgCredentials(this.config)
+    const missingCredentialsMessage = getMissingOrgCredentialsMessage('gate evaluate', credentials)
+    if (missingCredentialsMessage) {
+      this.context.stdout.write(`${missingCredentialsMessage}\n`)
+      throw new Error('Datadog credentials are missing')
     }
 
-    if (!this.config.appKey) {
-      this.context.stdout.write(`Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`)
-      throw new Error('App key is missing')
-    }
-
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey, this.config.appKey)
+    return apiConstructor(getBaseIntakeUrl(), credentials)
   }
 
   private async getSpanTags(): Promise<SpanTags> {

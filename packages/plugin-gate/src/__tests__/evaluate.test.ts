@@ -36,8 +36,10 @@ describe('evaluate', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
 
-      expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
-      expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
+      expect(command['getApiHelper'].bind(command)).toThrow('Datadog credentials are missing')
+      expect(write.mock.calls[0][0]).toContain(
+        '`gate evaluate` needs an access token (DD_ACCESS_TOKEN), or an API key (DD_API_KEY) and an application key (DD_APP_KEY).'
+      )
     })
 
     test('should throw an error if App key is undefined', () => {
@@ -45,8 +47,19 @@ describe('evaluate', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
 
-      expect(command['getApiHelper'].bind(command)).toThrow('App key is missing')
-      expect(write.mock.calls[0][0]).toContain('DD_APP_KEY')
+      expect(command['getApiHelper'].bind(command)).toThrow('Datadog credentials are missing')
+      expect(write.mock.calls[0][0]).toContain(
+        '`gate evaluate` needs an application key (DD_APP_KEY) or an access token (DD_ACCESS_TOKEN).'
+      )
+    })
+
+    test('should accept an access token without an API key or an App key', () => {
+      process.env = {DD_ACCESS_TOKEN: 'access-token'}
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}})
+
+      expect(command['getApiHelper'].bind(command)).not.toThrow()
+      expect(write).not.toHaveBeenCalled()
     })
   })
   describe('handleEvaluationSuccess', () => {
@@ -232,7 +245,7 @@ describe('evaluate', () => {
   })
   describe('evaluateRules', () => {
     process.env = {DD_API_KEY: 'PLACEHOLDER', DD_APP_KEY: 'PLACEHOLDER'}
-    const api = apiConstructor('', '', '')
+    const api = apiConstructor('', {apiKey: '', appKey: ''})
     const mockRequest = (): Payload => {
       return {
         requestId: '123',
