@@ -284,6 +284,75 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 - `upload`: Upload WebAssembly source maps (`*.wasm.map`) for Error Tracking, identified by service, version, and module URL.
 
+### Authentication
+
+`datadog-ci` reads Datadog credentials from environment variables:
+
+| Credential | Environment variables | Sent as |
+| --- | --- | --- |
+| API key | `DD_API_KEY` or `DATADOG_API_KEY` | `DD-API-KEY` header |
+| Application key | `DD_APP_KEY` or `DATADOG_APP_KEY` | `DD-APPLICATION-KEY` header |
+| Access token | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
+
+Commands fall into two groups, and each command's `--help` states which credentials it needs:
+
+- **Data uploads** need an **API key**. With [Workload Identity Federation (WIF)][wif-action], an **intake mapping** provides a short-lived API key. This covers `coverage upload`, `dora deployment`, `dsyms upload`, `elf-symbols upload`, `flutter-symbols upload`, `pe-symbols upload`, `ppdb-symbols upload`, `unity-symbols upload`, `wasm-symbols upload`, `wasm-sourcemaps upload`, `sourcemaps upload`, `react-native upload`, `react-native codepush`, `react-native xcode`, `git-metadata upload`, `junit upload`, `sarif upload`, `terraform upload`, `deployment mark`, `deployment correlate`, `tag`, `measure`, `trace`, `trace span`, `lambda flare`, and `cloud-run flare`.
+- **Org actions** act on behalf of a user or service account in your organization. They need an **access token**, or an **API key and an application key**. With WIF, an **identity mapping** provides the access token; an intake mapping alone is not enough. This covers `synthetics run-tests`, `synthetics deploy-tests`, `synthetics import-tests`, `synthetics upload-application`, `sbom upload`, `deployment gate`, `deployment correlate-image`, and `gate evaluate`. Note that `sbom upload` is an upload that needs these credentials.
+
+When an access token is set, org actions send it instead of the application key (the application key is ignored), and the API key becomes optional. API key and application key setups keep working unchanged. Synthetics commands also accept the access token through `--accessToken` or the `accessToken` key of the [global configuration file][synthetics-config].
+
+The Serverless `instrument` commands store the Datadog API key in the instrumented service so it can send telemetry. Use a long-lived API key (or a secret) there: a short-lived intake mapping key would expire. The `uninstrument` commands, `stepfunctions`, and `lambda cloudwatch` only use your cloud provider credentials. Local commands such as `plugin`, `version`, `ci-env read`, `sourcemaps find`, `sourcemaps inject`, and `react-native inject-debug-id` need no Datadog credentials.
+
+#### GitHub Actions with Workload Identity Federation
+
+The [`datadog-workload-identity-federation-github-action`][wif-action] exchanges the workflow's GitHub OIDC token for Datadog credentials, so no Datadog keys are stored as GitHub secrets. Its `intake` action returns an API key (`api_key` output) and its `identity` action returns an access token (`access_token` output). Both need the `id-token: write` permission and the UUID of your Datadog organization.
+
+Before using it, a Datadog organization administrator must create the matching WIF mappings, trusting the GitHub OIDC token's audience (`datadog/<org_uuid>`) and the repository, workflow, or branch claims you want to allow.
+
+```yaml
+jobs:
+  datadog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Needed to get the GitHub OIDC token.
+    steps:
+      - uses: actions/checkout@v6
+
+      # Intake mapping: a short-lived API key for data uploads.
+      - name: Get a Datadog API key
+        id: datadog-intake
+        uses: DataDog/datadog-workload-identity-federation-github-action/intake@v1
+        with:
+          org_uuid: <your-org-uuid>
+          site: datadoghq.com
+
+      # Identity mapping: an access token for org actions.
+      - name: Get a Datadog access token
+        id: datadog-identity
+        uses: DataDog/datadog-workload-identity-federation-github-action/identity@v1
+        with:
+          org_uuid: <your-org-uuid>
+          site: datadoghq.com
+
+      - name: Upload git metadata (API key)
+        run: npx @datadog/datadog-ci git-metadata upload
+        env:
+          DD_API_KEY: ${{ steps.datadog-intake.outputs.api_key }}
+          DD_SITE: datadoghq.com
+
+      - name: Upload an SBOM and run Synthetic tests (access token)
+        run: |
+          npx @datadog/datadog-ci sbom upload sbom.json
+          npx @datadog/datadog-ci synthetics run-tests
+        env:
+          DD_ACCESS_TOKEN: ${{ steps.datadog-identity.outputs.access_token }}
+          DD_SITE: datadoghq.com
+```
+
+[wif-action]: https://github.com/DataDog/datadog-workload-identity-federation-github-action
+[synthetics-config]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration#global-configuration-file
+
 ### FIPS support
 
 The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provider if the OpenSSL library installed on the host system provides it.
