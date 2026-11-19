@@ -666,7 +666,6 @@ export const getMobileTest = (
 export const getMockApiConfiguration = (): APIConfiguration => ({
   apiKey: '123',
   appKey: '123',
-  baseIntakeUrl: 'http://baseIntake',
   baseUnstableUrl: 'http://baseUnstable',
   baseV1Url: 'http://baseV1',
   baseV2Url: 'http://baseV2',

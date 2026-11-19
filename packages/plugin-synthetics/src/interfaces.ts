@@ -736,7 +736,6 @@ export interface TestSearchResult {
 export interface APIConfiguration {
   apiKey: string
   appKey: string
-  baseIntakeUrl: string
   baseUnstableUrl: string
   baseV1Url: string
   baseV2Url: string
