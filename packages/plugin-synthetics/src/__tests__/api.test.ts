@@ -569,6 +569,43 @@ describe('getApiHelper', () => {
       new CriticalError('MISSING_API_KEY', 'API key is required')
     )
   })
+
+  describe('trigger and tunnel requests', () => {
+    const config = {...ciConfig, apiKey: 'fakeapikey', appKey: 'fakeappkey'}
+
+    const getRequestedUrls = async (datadogSite: string) => {
+      const httpRequestMock = jest.mocked(requestModule.httpRequest)
+      httpRequestMock.mockClear()
+      httpRequestMock.mockResolvedValue({data: {}, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+
+      const api = getApiHelper({...config, datadogSite})
+      await api.triggerTests({tests: [{public_id: 'abc-def-ghi', executionRule: ExecutionRule.BLOCKING}]})
+      await api.getTunnelPresignedURL(['abc-def-ghi'])
+
+      return httpRequestMock.mock.calls.map(([args]) => `${args.baseURL}${args.url}`)
+    }
+
+    test.each(['datadoghq.com', 'datad0g.com', 'datadoghq.eu'])(
+      'should use the api host on %s',
+      async (datadogSite) => {
+        process.env = {}
+
+        expect(await getRequestedUrls(datadogSite)).toEqual([
+          `https://api.${datadogSite}/api/v1/synthetics/tests/trigger/ci`,
+          `https://api.${datadogSite}/api/v1/synthetics/ci/tunnel`,
+        ])
+      }
+    )
+
+    test('should use DD_API_HOST_OVERRIDE', async () => {
+      process.env = {DD_API_HOST_OVERRIDE: 'https://foobar'}
+
+      expect(await getRequestedUrls('datadoghq.com')).toEqual([
+        'https://foobar/api/v1/synthetics/tests/trigger/ci',
+        'https://foobar/api/v1/synthetics/ci/tunnel',
+      ])
+    })
+  })
 })
 
 describe('formatBackendErrors', () => {

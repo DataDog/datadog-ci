@@ -522,12 +522,8 @@ export const toExitCode = (reason: ExitReason) => {
   return reason === 'passed' ? 0 : 1
 }
 
-export const getDatadogHost = (hostConfig: {
-  apiVersion: 'v1' | 'v2' | 'unstable'
-  config: APIHelperConfig
-  useIntake: boolean
-}) => {
-  const {useIntake, apiVersion, config} = hostConfig
+export const getDatadogHost = (hostConfig: {apiVersion: 'v1' | 'v2' | 'unstable'; config: APIHelperConfig}) => {
+  const {apiVersion, config} = hostConfig
 
   const apiPath = (() => {
     switch (apiVersion) {
@@ -542,14 +538,7 @@ export const getDatadogHost = (hostConfig: {
     }
   })()
 
-  let host = `https://api.${config.datadogSite}`
-  const hostOverride = process.env.DD_API_HOST_OVERRIDE
-
-  if (hostOverride) {
-    host = hostOverride
-  } else if (useIntake && (config.datadogSite === 'datadoghq.com' || config.datadogSite === 'datad0g.com')) {
-    host = `https://intake.synthetics.${config.datadogSite}`
-  }
+  const host = process.env.DD_API_HOST_OVERRIDE || `https://api.${config.datadogSite}`
 
   return `${host}/${apiPath}`
 }
