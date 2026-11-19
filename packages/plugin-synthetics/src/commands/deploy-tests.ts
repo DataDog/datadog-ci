@@ -3,6 +3,7 @@ import type {DeployTestsCommandConfig, MainReporter} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
 
 import {SyntheticsDeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests'
+import {getAccessTokenFromEnv} from '@datadog/datadog-ci-base/helpers/auth'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -87,6 +88,7 @@ export class PluginCommand extends SyntheticsDeployTestsCommand {
     return {
       // ...super.resolveConfigFromEnv(),
       // BASE COMMAND START
+      accessToken: getAccessTokenFromEnv(),
       apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
       appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
       configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
@@ -103,6 +105,7 @@ export class PluginCommand extends SyntheticsDeployTestsCommand {
     return {
       // ...super.resolveConfigFromCli(),
       // BASE COMMAND START
+      accessToken: this.accessToken,
       apiKey: this.apiKey,
       appKey: this.appKey,
       configPath: this.configPath,

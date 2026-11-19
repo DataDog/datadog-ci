@@ -15,6 +15,27 @@ describe('upload-application', () => {
   })
 
   describe('resolveConfig', () => {
+    test('resolves accessToken with the precedence config file < ENV < CLI', async () => {
+      const resolveAccessToken = async (env: NodeJS.ProcessEnv, cliAccessToken?: string) => {
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+          ...baseConfig,
+          accessToken: 'config_file_access_token',
+        }))
+        process.env = env
+        const command = createCommand(UploadApplicationCommand)
+        command['accessToken'] = cliAccessToken
+        await command['resolveConfig']()
+
+        return command['config'].accessToken
+      }
+
+      expect(await resolveAccessToken({})).toBe('config_file_access_token')
+      expect(await resolveAccessToken({DD_ACCESS_TOKEN: 'env_access_token'})).toBe('env_access_token')
+      expect(await resolveAccessToken({DD_ACCESS_TOKEN: 'env_access_token'}, 'cli_access_token')).toBe(
+        'cli_access_token'
+      )
+    })
+
     beforeEach(() => {
       process.env = {}
     })
