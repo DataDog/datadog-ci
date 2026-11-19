@@ -1,5 +1,7 @@
 import {createCommand, getRequestError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
+
 import {PluginCommand as DeploymentCorrelateImageCommand} from '../commands/correlate-image'
 
 describe('execute', () => {
@@ -101,6 +103,39 @@ describe('execute', () => {
       "CI_PIPELINE_ID": "1",
       "CI_JOB_ID": "1"
     }`)
+  })
+
+  const validArgs = [
+    '--commit-sha',
+    'abcdef',
+    '--repository-url',
+    'https://github.com/DataDog/example',
+    '--image',
+    'my-image:latest',
+  ]
+
+  test('missing application key and access token', async () => {
+    const {context, code} = await runCLI(validArgs, {DD_APP_KEY: '', DATADOG_APP_KEY: ''})
+    expect(code).toBe(1)
+    expect(context.stdout.toString()).toContain(
+      '`deployment correlate-image` needs an application key (DD_APP_KEY) or an access token (DD_ACCESS_TOKEN).'
+    )
+  })
+
+  test('sends a bearer token and no application key when an access token is set', async () => {
+    const httpRequestSpy = jest
+      .spyOn(requestModule, 'httpRequest')
+      .mockResolvedValue({config: {}, data: {}, headers: {}, status: 202, statusText: 'Accepted'})
+
+    try {
+      const {code} = await runCLI(validArgs, {DD_API_KEY: '', DD_APP_KEY: '', DD_ACCESS_TOKEN: 'access-token'})
+
+      expect(code).toBe(0)
+      expect(httpRequestSpy).toHaveBeenCalledTimes(1)
+      expect(httpRequestSpy.mock.calls[0][0].headers).toStrictEqual({Authorization: 'Bearer access-token'})
+    } finally {
+      httpRequestSpy.mockRestore()
+    }
   })
 
   test('handleError', async () => {

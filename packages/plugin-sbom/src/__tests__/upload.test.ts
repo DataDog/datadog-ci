@@ -1,4 +1,5 @@
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
 import {PluginCommand as SbomUploadCommand} from '../commands/upload'
 
@@ -102,6 +103,71 @@ describe('execute', () => {
       } finally {
         process.env = originalEnv
       }
+    })
+  })
+
+  describe('credentials', () => {
+    let originalEnv: NodeJS.ProcessEnv
+
+    beforeEach(() => {
+      originalEnv = {...process.env}
+      for (const name of [
+        'GITHUB_EVENT_NAME',
+        'CI_PIPELINE_SOURCE',
+        'BUILD_REASON',
+        'DATADOG_API_KEY',
+        'DD_API_KEY',
+        'DATADOG_APP_KEY',
+        'DD_APP_KEY',
+        'DATADOG_ACCESS_TOKEN',
+        'DD_ACCESS_TOKEN',
+      ]) {
+        delete process.env[name]
+      }
+    })
+
+    afterEach(() => {
+      process.env = originalEnv
+      jest.restoreAllMocks()
+    })
+
+    test('should explain that an API key alone is not enough', async () => {
+      process.env.DD_API_KEY = 'intake-api-key'
+      const httpRequestSpy = jest.spyOn(requestModule, 'httpRequest')
+
+      const context = createSimpleMockContext()
+      const command = createCommand(SbomUploadCommand, context)
+      command['basePath'] = './src/__tests__/fixtures/sbom-python.json'
+
+      const code = await command.execute()
+      const output = context.stderr.toString()
+
+      expect(code).toBe(1)
+      expect(output).toContain('`sbom upload` needs an application key (DD_APP_KEY) or an access token (DD_ACCESS_TOKEN)')
+      expect(output).toContain('An intake mapping only provides an API key')
+      expect(output).toContain('identity mapping')
+      expect(httpRequestSpy).not.toHaveBeenCalled()
+    })
+
+    test('should upload with only an access token, sent as a bearer token', async () => {
+      process.env.DD_ACCESS_TOKEN = 'access-token'
+      const httpRequestSpy = jest
+        .spyOn(requestModule, 'httpRequest')
+        .mockResolvedValue({config: {}, data: {}, headers: {}, status: 200, statusText: 'OK'})
+
+      const context = createSimpleMockContext()
+      const command = createCommand(SbomUploadCommand, context)
+      command['basePath'] = './src/__tests__/fixtures/sbom-python.json'
+
+      const code = await command.execute()
+
+      expect(context.stderr.toString()).toBe('')
+      expect(code).toBe(0)
+      expect(httpRequestSpy).toHaveBeenCalledTimes(1)
+      const headers = httpRequestSpy.mock.calls[0][0].headers
+      expect(headers).toMatchObject({Authorization: 'Bearer access-token'})
+      expect(headers).not.toHaveProperty('DD-API-KEY')
+      expect(headers).not.toHaveProperty('DD-APPLICATION-KEY')
     })
   })
 })

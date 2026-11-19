@@ -5,6 +5,7 @@ import type {
   GateEvaluationRequestResponse,
   GateEvaluationStatusResponse,
 } from './interfaces'
+import type {OrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
@@ -59,8 +60,8 @@ const getGateEvaluationResult =
     })
   }
 
-export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string): APIHelper => {
-  const requestBuilder = getRequestBuilder({baseUrl, apiKey, appKey})
+export const apiConstructor = (baseUrl: string, credentials: OrgCredentials): APIHelper => {
+  const requestBuilder = getRequestBuilder({baseUrl, ...credentials})
 
   return {
     requestGateEvaluation: requestGateEvaluation(requestBuilder),

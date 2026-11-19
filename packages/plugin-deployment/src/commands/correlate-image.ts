@@ -1,6 +1,11 @@
 import {DeploymentCorrelateImageCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-image'
 import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
+import {
+  getAccessTokenFromEnv,
+  getMissingOrgCredentialsMessage,
+  resolveOrgCredentials,
+} from '@datadog/datadog-ci-base/helpers/auth'
 import {getCISpanTags, getGithubJobIDFromLogs, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -13,6 +18,7 @@ import chalk from 'chalk'
 
 export class PluginCommand extends DeploymentCorrelateImageCommand {
   private config = {
+    accessToken: getAccessTokenFromEnv(),
     apiKey: process.env.DD_API_KEY,
     appKey: process.env.DD_APP_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
@@ -22,14 +28,10 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
   public async execute(): Promise<number> {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    if (!this.config.apiKey) {
-      this.logger.error(`Missing ${chalk.red.bold('DD_API_KEY')} in your environment.`)
-
-      return 1
-    }
-
-    if (!this.config.appKey) {
-      this.logger.error(`Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.`)
+    const credentials = resolveOrgCredentials(this.config)
+    const missingCredentialsMessage = getMissingOrgCredentialsMessage('deployment correlate-image', credentials)
+    if (missingCredentialsMessage) {
+      this.logger.error(missingCredentialsMessage)
 
       return 1
     }
@@ -53,7 +55,7 @@ export class PluginCommand extends DeploymentCorrelateImageCommand {
     }
 
     const baseAPIURL = `https://${getApiHostForSite(getDatadogSite())}`
-    const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey, appKey: this.config.appKey})
+    const request = getRequestBuilder({baseUrl: baseAPIURL, ...credentials})
 
     const realGithubJobName = getGithubJobNameFromLogs(this.context)
     const realGithubJobID = process.env.JOB_CHECK_RUN_ID ?? getGithubJobIDFromLogs(this.context)
