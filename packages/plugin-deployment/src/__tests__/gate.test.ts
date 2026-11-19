@@ -373,9 +373,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
@@ -404,9 +404,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(6)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
@@ -436,9 +436,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(6)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
@@ -469,9 +469,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(5)
         })
@@ -500,9 +500,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
@@ -539,9 +539,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
@@ -578,9 +578,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
@@ -606,9 +606,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(2)
         })
@@ -641,9 +641,9 @@ describe('gate', () => {
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', {
-          apiKey: 'test-api-key',
-          appKey: 'test-app-key',
-        })
+            apiKey: 'test-api-key',
+            appKey: 'test-app-key',
+          })
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
           expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(1, 'test-evaluation-id')

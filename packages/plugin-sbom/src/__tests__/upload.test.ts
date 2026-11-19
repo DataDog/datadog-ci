@@ -143,7 +143,9 @@ describe('execute', () => {
       const output = context.stderr.toString()
 
       expect(code).toBe(1)
-      expect(output).toContain('`sbom upload` needs an application key (DD_APP_KEY) or an access token (DD_ACCESS_TOKEN)')
+      expect(output).toContain(
+        '`sbom upload` needs an application key (DD_APP_KEY) or an access token (DD_ACCESS_TOKEN)'
+      )
       expect(output).toContain('An intake mapping only provides an API key')
       expect(output).toContain('identity mapping')
       expect(httpRequestSpy).not.toHaveBeenCalled()
