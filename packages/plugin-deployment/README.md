@@ -114,8 +114,9 @@ Example configuration file:
 
 ### Environment variables
 
-- `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_APP_KEY` (**required** for `correlate-image` and `gate`): APP key used to authenticate the requests.
+- `DD_API_KEY` (**required**, except for `correlate-image` and `gate` when `DD_ACCESS_TOKEN` is set): API key used to authenticate the requests.
+- `DD_APP_KEY` (**required** for `correlate-image` and `gate`, unless `DD_ACCESS_TOKEN` is set): APP key used to authenticate the requests.
+- `DD_ACCESS_TOKEN`: for `correlate-image` and `gate`, an access token sent as an `Authorization: Bearer` header instead of the APP key, for example from a Workload Identity Federation identity mapping. A Workload Identity Federation intake mapping only provides an API key, which is enough for `mark` and `correlate` only. See [Authentication](https://github.com/DataDog/datadog-ci#authentication).
 - `DD_SITE`: choose your Datadog site. For example, datadoghq.com or datadoghq.eu.
 
 ## Further reading
