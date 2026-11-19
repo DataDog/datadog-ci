@@ -1,6 +1,6 @@
 import {v2} from '@datadog/datadog-api-client'
 
-import {createE2EConfiguration} from './api-client'
+import {createE2EConfiguration, getE2EAuthMethods} from './api-client'
 
 const CHECK_INTERVAL_SECONDS = 10
 const MAX_NUM_ATTEMPTS = 10
@@ -19,7 +19,14 @@ const waitFor = (waitSeconds: number): Promise<void> => {
 export const checkJunitUpload = async (options: CheckJunitUploadOptions): Promise<void> => {
   const {service, commitSha, testLevel, extraFilter} = options
 
-  const configuration = createE2EConfiguration()
+  // JUnit reports are uploaded with the DD_* credentials (CI Visibility org).
+  const configuration = createE2EConfiguration(
+    getE2EAuthMethods({
+      accessToken: process.env.DD_ACCESS_TOKEN,
+      apiKey: process.env.DD_API_KEY,
+      appKey: process.env.DD_APP_KEY,
+    })
+  )
   const apiInstance = new v2.CIVisibilityTestsApi(configuration)
 
   const baseFilterQuery = `@test.service:${service} @git.commit.sha:${commitSha}`

@@ -1,6 +1,6 @@
 import {v2} from '@datadog/datadog-api-client'
 
-import {createE2EConfiguration} from './api-client'
+import {createE2EConfiguration, getE2EAuthMethods} from './api-client'
 
 const CHECK_INTERVAL_SECONDS = 10
 const MAX_NUM_ATTEMPTS = 10
@@ -18,10 +18,13 @@ export const checkSourcemapsUpload = async (options: CheckSourcemapsUploadOption
   const {service, version} = options
 
   // Sourcemaps are uploaded with the DATADOG_* keys (e2e org), whereas DD_* keys point to the CI Visibility org.
-  const configuration = createE2EConfiguration({
-    apiKeyAuth: process.env.DATADOG_API_KEY,
-    appKeyAuth: process.env.DATADOG_APP_KEY,
-  })
+  const configuration = createE2EConfiguration(
+    getE2EAuthMethods({
+      accessToken: process.env.DATADOG_ACCESS_TOKEN,
+      apiKey: process.env.DATADOG_API_KEY,
+      appKey: process.env.DATADOG_APP_KEY,
+    })
+  )
   configuration.unstableOperations['v2.listSourcemaps'] = true
   const apiInstance = new v2.RUMApi(configuration)
 
