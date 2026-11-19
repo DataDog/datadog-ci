@@ -257,7 +257,8 @@ jobs:
     # the Synthetics E2E Testing Org, instead of stored Datadog secrets. It shows which suites work with keyless auth.
     # Requires an intake mapping for DataDog/datadog-ci in that org. Tests that need an app key or another org's
     # credentials are expected to fail here and are intentionally not skipped. Cloud logins for the serverless suites
-    # use OIDC and repo variables only, as in `e2e-test`.
+    # use OIDC and repo variables only, as in `e2e-test`. The only Datadog credential is the WIF API key: no stored
+    # Datadog API or app key is passed, directly or through a cloud secret reference.
     # Node 24 only: the auth path does not depend on the Node version, which `e2e-test` already covers, and the
     # serverless suites only run on Node 24.
     name: End-to-end test the package (Datadog WIF)
@@ -404,13 +405,14 @@ jobs:
           AZURE_AAS_WINDOWS_PLAN: ${{ vars.AZURE_AAS_WINDOWS_PLAN_E2E }}
           AWS_REGION: eu-central-1
           AWS_LAMBDA_EXECUTION_ROLE_ARN: ${{ vars.AWS_LAMBDA_EXECUTION_ROLE_ARN_E2E }}
+          # AWS_ECS_API_KEY_SECRET_ARN is not set: it points the ECS tasks at the stored Datadog API key in AWS Secrets
+          # Manager, which would bypass WIF. The ECS Fargate tests are expected to fail here until they can take a federated key.
           AWS_ECS_CLUSTER: ${{ vars.AWS_ECS_CLUSTER_E2E }}
           AWS_ECS_SUBNETS: ${{ vars.AWS_ECS_SUBNETS_E2E }}
           AWS_ECS_SECURITY_GROUP: ${{ vars.AWS_ECS_SECURITY_GROUP_E2E }}
           AWS_ECS_EXECUTION_ROLE_ARN: ${{ vars.AWS_ECS_EXECUTION_ROLE_ARN_E2E }}
           AWS_ECS_TASK_ROLE_ARN: ${{ vars.AWS_ECS_TASK_ROLE_ARN_E2E }}
           AWS_ECS_APP_IMAGE_REGISTRY: ${{ vars.AWS_ECS_APP_IMAGE_REGISTRY_E2E }}
-          AWS_ECS_API_KEY_SECRET_ARN: ${{ vars.AWS_ECS_API_KEY_SECRET_ARN_E2E }}
           AWS_ECS_LOG_GROUP: ${{ vars.AWS_ECS_LOG_GROUP_E2E }}
 
   check-container-app-changes:
