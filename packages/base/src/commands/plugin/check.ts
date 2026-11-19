@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import {messageBox} from '../../helpers/message-box'
 import {checkPlugin, scopeToPackageName} from '../../helpers/plugin'
 
@@ -11,6 +12,7 @@ export class PluginCheckCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Plugins',
     description: 'Check and troubleshoot the installation of a plugin.',
+    details: AUTH_HELP.none,
     examples: [
       ['Check the plugin by passing its package name', 'datadog-ci plugin check @datadog/datadog-ci-plugin-synthetics'],
       ['Check the plugin by passing its scope', 'datadog-ci plugin check synthetics'],

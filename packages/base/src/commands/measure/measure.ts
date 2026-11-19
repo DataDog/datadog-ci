@@ -13,6 +13,7 @@ import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import type {RequestError} from '../../helpers/request'
 import {datadogRoute} from '../../helpers/request/datadog-route'
 
@@ -43,6 +44,8 @@ export class MeasureCommand extends BaseCommand {
     details: `
             This command when run from a supported CI provider sends an arbitrary set of key:value
             numeric tags to Datadog to include in the CI Visibility traces.
+
+      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Add a binary size to the current pipeline', 'datadog-ci measure --level pipeline --measures binary.size:500'],

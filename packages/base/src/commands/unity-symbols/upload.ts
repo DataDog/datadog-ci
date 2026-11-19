@@ -32,6 +32,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import * as elf from '../elf-symbols/elf'
 
 import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
@@ -67,6 +69,8 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
     details: `
             This command will upload all iOS symbol files for Unity applications in order to symbolicate errors and
             crash reports received by Datadog. This includes uploading dSYMs and IL2CPP mapping files.
+
+      ${AUTH_HELP.apiKey}
         `,
     examples: [['Upload all symbol files from the default location', 'datadog-ci unity-symbols upload']],
   })

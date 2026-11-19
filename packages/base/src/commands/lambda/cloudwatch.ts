@@ -1,6 +1,7 @@
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
+import {getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -11,6 +12,7 @@ export class LambdaCloudwatchCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Disable or Re-Enable CloudWatch Logs for Lambda functions by managing IAM deny policies.',
+    details: getCloudCredentialsOnlyAuthHelp('AWS credentials'),
   })
 
   public action = Option.String({validator: t.isEnum(['disable', 'enable'] as const)})

@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {getCloudApiKeyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -10,6 +11,7 @@ export class CloudRunFlareCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Gather Cloud Run service configuration and sends it to Datadog.',
+    details: getCloudApiKeyAuthHelp('Google Cloud credentials'),
   })
 
   protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false, {

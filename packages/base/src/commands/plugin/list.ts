@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import {listAllPlugins} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -13,6 +14,8 @@ export class PluginListCommand extends BaseCommand {
     description: 'List the available plugins.',
     details: `
       This command lists the plugins that can be installed with the \`datadog-ci plugin install\` command.
+
+      ${AUTH_HELP.none}
     `,
     examples: [
       ['List the available plugins', 'datadog-ci plugin list'],

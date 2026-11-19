@@ -28,6 +28,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import {CompressedDsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -61,6 +63,8 @@ export class DsymsUploadCommand extends BaseCommand<DsymsUploadContext> {
     details: `
       This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.\n
       See README for details.
+
+      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Upload all dSYM files in Derived Data path', 'datadog-ci dsyms upload ~/Library/Developer/Xcode/DerivedData'],

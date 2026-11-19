@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/terminal-link'
 import * as validation from '../../helpers/validation'
@@ -39,6 +40,8 @@ export class SyntheticsRunTestsCommand extends BaseCommand {
     details: `
       This command will run Synthetic tests with Datadog, wait for the results and report a summary.\n
       https://docs.datadoghq.com/continuous_testing/cicd_integrations
+
+      ${AUTH_HELP.orgAction}
     `,
     examples: [
       [

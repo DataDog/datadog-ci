@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
+import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/terminal-link'
 
@@ -26,6 +27,8 @@ export class SyntheticsDeployTestsCommand extends BaseCommand {
     description: 'Deploy Local Test Definitions as Main Test Definitions in Datadog.',
     details: `
       This command deploys Local Test Definitions as Main Test Definitions in Datadog, usually when a feature branch is merged or during a deployment.
+
+      ${AUTH_HELP.orgAction}
     `,
     examples: [
       [

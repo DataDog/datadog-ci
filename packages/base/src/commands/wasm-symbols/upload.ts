@@ -30,6 +30,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {AUTH_HELP} from '../../helpers/auth'
+
 import {getWasmRequestBuilder, uploadMultipartHelper} from './helpers'
 import {TYPE_WASM_DEBUG_INFOS, VALUE_NAME_WASM_DEBUG_INFOS, WASM_DEBUG_INFOS_FILENAME} from './interfaces'
 import {
@@ -55,6 +57,8 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
     details: `
             This command will upload debug info from all WebAssembly (.wasm) files found recursively in the given
             location in order to symbolicate WASM stack traces reported by the Datadog Browser SDK.
+
+      ${AUTH_HELP.apiKey}
         `,
     examples: [['Upload debug infos for all WASM files in the current directory', 'datadog-ci wasm-symbols upload .']],
   })

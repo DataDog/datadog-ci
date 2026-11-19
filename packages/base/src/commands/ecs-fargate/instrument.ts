@@ -3,6 +3,7 @@ import type {EcsFargateConfigOptions} from './common'
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
+import {getServerlessInstrumentAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {AGENT_IMAGE, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import {DEFAULT_TRACER_LIBC, LIBCS} from '../../helpers/serverless/ssi/injection-spec'
@@ -21,6 +22,10 @@ export class EcsFargateInstrumentCommand extends EcsFargateCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to an Amazon ECS Fargate task definition.',
+    details: getServerlessInstrumentAuthHelp(
+      'AWS credentials',
+      'a Datadog API key (DD_API_KEY, or a secret passed with --api-key-secret-arn)'
+    ),
   })
 
   private apiKeySecretArn = Option.String('--api-key-secret-arn,--apiKeySecretArn', {
