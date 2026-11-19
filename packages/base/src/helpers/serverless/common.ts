@@ -15,6 +15,8 @@ import {
   LOGS_PATH_ENV_VAR,
   ENV_VAR_REGEX,
   DEFAULT_HEALTH_CHECK_PORT,
+  DOGSTATSD_PORT,
+  SIDECAR_PORT,
 } from './constants'
 /**
  * Parses environment variables from array format (KEY=VALUE) to object format.
@@ -311,5 +313,57 @@ export const createInstrumentedTemplate = (
     ...template,
     containers: updatedContainers,
     volumes: updatedVolumes as Volume[], // we can assume any input volumes are valid
+  }
+}
+
+export type PortProtocol = 'tcp' | 'udp'
+
+/** A port a Datadog sidecar binds in the network namespace it shares with the application. */
+export interface SidecarPort {
+  readonly port: number
+  /** Defaults to `tcp`. */
+  readonly protocol?: PortProtocol
+  readonly name: string
+  /** The flag that changes this port, when the command has one. */
+  readonly flag?: string
+}
+
+export const AGENT_TRACE_PORT: SidecarPort = {port: SIDECAR_PORT, name: 'Datadog Agent trace port'}
+// DogStatsD has no TCP listener; the Agent binds it on UDP only.
+export const AGENT_DOGSTATSD_PORT: SidecarPort = {
+  port: DOGSTATSD_PORT,
+  protocol: 'udp',
+  name: 'Datadog Agent DogStatsD UDP port',
+}
+
+/** The ports an application listens on, and where they are declared, such as `container 'app'`. */
+export interface AppPort {
+  readonly port: number
+  /** The last port of a range that starts at `port`. */
+  readonly lastPort?: number
+  /** Defaults to `tcp`. */
+  readonly protocol?: PortProtocol
+  readonly source: string
+}
+
+/** Rejects an application port that a sidecar also binds, since only one of them can listen on it. */
+export const assertAppPortsAvoidSidecarPorts = (
+  appPorts: readonly AppPort[],
+  sidecarPorts: readonly SidecarPort[]
+): void => {
+  for (const {port, lastPort = port, protocol = 'tcp', source} of appPorts) {
+    const sidecarPort = sidecarPorts.find(
+      (candidate) => (candidate.protocol ?? 'tcp') === protocol && port <= candidate.port && candidate.port <= lastPort
+    )
+    if (sidecarPort) {
+      const isRange = lastPort !== port
+      throw new Error(
+        `${isRange ? `Port range ${port}-${lastPort}` : `Port ${port}`} on ${source} conflicts with ${
+          sidecarPort.name
+        } ${sidecarPort.port}. Change the ${isRange ? 'port range' : 'port'} on ${source}${
+          sidecarPort.flag ? ` or ${sidecarPort.flag}` : ''
+        }.`
+      )
+    }
   }
 }

@@ -14,7 +14,12 @@ import type {Libc} from '@datadog/datadog-ci-base/helpers/serverless/ssi/injecti
 import type {TracingMode} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracing'
 
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
+  AGENT_DOGSTATSD_PORT,
+  AGENT_TRACE_PORT,
+  assertAppPortsAvoidSidecarPorts,
+  sortedEqual,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   AGENT_IMAGE,
   API_KEY_ENV_VAR,
@@ -881,6 +886,19 @@ export const instrumentTaskDefinition = (
   // still cleaned up rather than left running beside the one the requested state rebuilds.
   const source = removeSsiState(taskDefinition)
   const containers = source.containerDefinitions ?? []
+  // Every container in a Fargate task shares one network namespace with the Agent.
+  assertAppPortsAvoidSidecarPorts(
+    containers
+      .filter((container) => !isSidecar(container))
+      .flatMap((container) =>
+        (container.portMappings ?? []).flatMap(({containerPort, containerPortRange, protocol}) => {
+          const [port, lastPort] = containerPortRange?.split('-').map(Number) ?? [containerPort, containerPort]
+
+          return port ? [{port, lastPort, protocol, source: `container '${container.name}'`}] : []
+        })
+      ),
+    [AGENT_TRACE_PORT, AGENT_DOGSTATSD_PORT]
+  )
   if (isInjection(ssiConfig)) {
     // Asked of the task definition as it was described, before this run merges its own environment:
     // that merge resolves duplicate names to the last one, which would hide the duplicate this reports.
