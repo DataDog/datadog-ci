@@ -8,8 +8,8 @@ import {
   FLEET_PACKAGE_VERSION_ANNOTATION,
   OCI_INDEX_MEDIA_TYPE,
   OCI_MANIFEST_MEDIA_TYPE,
-  buildFleetPackageZip,
-  buildFleetPackageZipFromTar,
+  buildFleetPackageZips,
+  buildFleetPackageZipsFromTar,
   getFleetRepository,
   parseLinuxFxVersion,
   resolveFleetPackage,
@@ -202,7 +202,7 @@ describe('Fleet OCI package', () => {
 
 describe('Fleet package ZIP', () => {
   test('verifies and decompresses a zstd Fleet layer', async () => {
-    const contents = await buildFleetPackageZip(
+    const [contents] = await buildFleetPackageZips(
       COMPRESSED_JAVA_PACKAGE,
       COMPRESSED_JAVA_PACKAGE_DIGEST,
       parseLinuxFxVersion('JAVA|17-java17')
@@ -321,7 +321,7 @@ describe('Fleet package ZIP', () => {
 
   test('rejects a selected slice without every required startup artifact', async () => {
     await expect(
-      buildFleetPackageZipFromTar(
+      buildFleetPackageZipsFromTar(
         createTar([file('continuousprofiler/Datadog.Linux.ApiWrapper.x64.so')]),
         parseLinuxFxVersion('DOTNETCORE|8.0')
       )
@@ -330,7 +330,7 @@ describe('Fleet package ZIP', () => {
 })
 
 const loadZip = async (entries: TarEntry[], runtime: AasCodeRuntime): Promise<JSZip> =>
-  JSZip.loadAsync(await buildFleetPackageZipFromTar(createTar(entries), runtime))
+  JSZip.loadAsync((await buildFleetPackageZipsFromTar(createTar(entries), runtime))[0])
 
 const createTar = (entries: TarEntry[]): Buffer =>
   Buffer.concat([...entries.flatMap((entry) => tarEntry(entry)), Buffer.alloc(1024)])

@@ -35,9 +35,13 @@ export interface RequestResponse<T = any> {
 export class RequestError extends Error {
   public config: RequestConfig
   public isRequestError = true as const
-  public response?: {data: any; status: number; statusText: string}
+  public response?: {data: any; status: number; statusText: string; headers?: Record<string, string>}
 
-  constructor(message: string, config: RequestConfig, response?: {data: any; status: number; statusText: string}) {
+  constructor(
+    message: string,
+    config: RequestConfig,
+    response?: {data: any; status: number; statusText: string; headers?: Record<string, string>}
+  ) {
     super(message)
     this.name = 'RequestError'
     this.config = config
@@ -196,6 +200,7 @@ export const httpRequest = async <T = any>(config: RequestConfig): Promise<Reque
       data,
       status: response.status,
       statusText: response.statusText,
+      headers: responseHeaders,
     })
   }
 

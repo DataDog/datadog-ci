@@ -19,7 +19,9 @@ jest.mock('../ssi', () => ({
     manifestDigest: `sha256:${'a'.repeat(64)}`,
     layer: {digest: 'sha256:layer', mediaType: 'application/octet-stream'},
   }),
-  buildFleetPackageZip: jest.fn().mockResolvedValue(Buffer.from('zip')),
+  buildFleetPackageZips: jest
+    .fn()
+    .mockResolvedValue([Buffer.from('zip-1'), Buffer.from('zip-2'), Buffer.from('zip-3')]),
 }))
 
 const ROOT = `/home/data/datadog-tracer/nodejs/1.2.3-${'a'.repeat(64)}`
@@ -38,6 +40,8 @@ const createFakeKudu = (
     stuck = false,
     stale = new Set<string>(),
     failedUploads = 0,
+    failingZip = '',
+    retryAfter = '',
   } = {}
 ): KuduClient => {
   const move = (source: string, target: string) => {
@@ -60,10 +64,16 @@ const createFakeKudu = (
 
   return {
     waitUntilReady: async () => {},
-    publish: async (directory) => {
+    publish: async (directory, zip) => {
       if (failuresLeft-- > 0) {
         directories.set(directory, 'partial')
-        throw getRequestError(502, {})
+        const error = getRequestError(502, {})
+        error.response!.headers = {'retry-after': retryAfter}
+        throw error
+      }
+      if (zip.toString() === failingZip) {
+        directories.set(directory, 'partial')
+        throw new Error('upload failed')
       }
       directories.set(directory, extracts)
       onPublish()
@@ -107,6 +117,10 @@ const publish = async (kudu: KuduClient) => {
 }
 
 describe('resolveAasTracerStaging publish', () => {
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
   test('does not move a temporary tree without the startup files into the root', async () => {
     const directories = new Map<string, Tree>()
 
@@ -125,20 +139,95 @@ describe('resolveAasTracerStaging publish', () => {
     expect(directories.has(ROOT)).toBe(false)
   })
 
-  test('retries a gateway error into a new temporary tree and never renames the abandoned one', async () => {
+  test.each([
+    ['', 10_000],
+    ['30', 30_000],
+    ['Thu, 01 Jan 2026 00:00:30 GMT', 30_000],
+    ['invalid', 10_000],
+    ['999999', 60_000],
+  ])('retries into a fresh tree after backoff with Retry-After=%s', async (retryAfter, delay) => {
+    jest.useFakeTimers({now: new Date('2026-01-01T00:00:00Z')})
+    const started = Date.now()
     const directories = new Map<string, Tree>()
+    const result = publish(createFakeKudu(directories, {failedUploads: 1, retryAfter}))
 
-    await expect(publish(createFakeKudu(directories, {failedUploads: 1}))).resolves.toBe(true)
+    await jest.runAllTimersAsync()
+    await expect(result).resolves.toBe(true)
+
+    expect(Date.now() - started).toBe(delay)
     expect(directories.get(ROOT)).toBe('complete')
-    expect([...directories].filter(([directory]) => directory.startsWith(`${ROOT}.tmp-`))).toEqual([
-      [expect.any(String), 'partial'],
-    ])
+    expect([...directories.keys()].filter((directory) => directory.startsWith(`${ROOT}.tmp-`))).toHaveLength(1)
   })
 
-  test('fails after three gateway errors', async () => {
+  test('waits for in-flight uploads before retrying after a gateway error', async () => {
+    jest.useFakeTimers()
+    const directories = new Map<string, Tree>()
+    const kudu = createFakeKudu(directories)
+    const fakePublish = kudu.publish
+    let active = 0
+    let activeAtRetry: number | undefined
+    let firstDirectory: string | undefined
+    kudu.publish = async (directory, zip) => {
+      firstDirectory ??= directory
+      if (directory !== firstDirectory) {
+        activeAtRetry ??= active
+
+        return fakePublish(directory, zip)
+      }
+      active++
+      try {
+        if (zip.toString() === 'zip-1') {
+          throw getRequestError(502, {})
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1_000))
+      } finally {
+        active--
+      }
+    }
+
+    const result = publish(kudu)
+    await jest.runAllTimersAsync()
+    await expect(result).resolves.toBe(true)
+    expect(activeAtRetry).toBe(0)
+  })
+
+  test('does not retry when a concurrent upload fails with a nonretryable error', async () => {
+    jest.useFakeTimers()
+    const directories = new Map<string, Tree>()
+    const kudu = createFakeKudu(directories)
+    const denied = getRequestError(403, {})
+    jest
+      .spyOn(kudu, 'publish')
+      .mockRejectedValueOnce(getRequestError(502, {}))
+      .mockImplementationOnce(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1_000))
+        throw denied
+      })
+    const result = publish(kudu).catch((error: unknown) => error)
+
+    await jest.runAllTimersAsync()
+
+    expect(await result).toBe(denied)
+    expect(directories.has(ROOT)).toBe(false)
+  })
+
+  test('fails after backing off between three failed upload attempts', async () => {
+    jest.useFakeTimers()
+    const started = Date.now()
+    const directories = new Map<string, Tree>()
+    const result = publish(createFakeKudu(directories, {failedUploads: Infinity})).catch((error: unknown) => error)
+
+    await jest.runAllTimersAsync()
+    expect(await result).toBeInstanceOf(Error)
+
+    expect(Date.now() - started).toBe(30_000)
+    expect(directories.has(ROOT)).toBe(false)
+  })
+
+  test('does not move a temporary tree into the root when one zip fails to upload', async () => {
     const directories = new Map<string, Tree>()
 
-    await expect(publish(createFakeKudu(directories, {failedUploads: 3}))).rejects.toThrow()
+    await expect(publish(createFakeKudu(directories, {failingZip: 'zip-2'}))).rejects.toThrow('upload failed')
     expect(directories.has(ROOT)).toBe(false)
   })
 
