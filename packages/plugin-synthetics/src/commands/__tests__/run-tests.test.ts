@@ -915,7 +915,7 @@ describe('run-tests', () => {
       ): Parameters<(typeof testUtils)['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
-          apiHelper as unknown as api.APIHelper,
+          apiHelper,
           [{suite: 'Suite 1', id: 'aaa-bbb-ccc', testOverrides}],
 
           // Ignore the rest of the parameters.

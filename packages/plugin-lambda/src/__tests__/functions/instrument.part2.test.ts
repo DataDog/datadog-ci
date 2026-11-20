@@ -1030,7 +1030,7 @@ describe('instrument', () => {
             tracingEnabled: false,
           }
 
-          const updateRequest = await calculateUpdateRequest(config, settings, 'us-east-1', test.runtime as any)
+          const updateRequest = await calculateUpdateRequest(config, settings, 'us-east-1', test.runtime)
 
           expect(updateRequest?.Handler).toBe(expected)
         })

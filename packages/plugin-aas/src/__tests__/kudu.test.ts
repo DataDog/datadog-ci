@@ -21,7 +21,7 @@ const client = {
 describe('getKuduClient publish', () => {
   test('does not replay an upload whose response the gateway lost', async () => {
     jest.mocked(httpRequest).mockRejectedValue(getRequestError(504, {}))
-    const kudu = await getKuduClient(client, 'my-resource-group', {name: 'my-web-app'} as never)
+    const kudu = await getKuduClient(client, 'my-resource-group', {name: 'my-web-app'})
 
     await expect(kudu.publish('/home/data/tracer.tmp-1', Buffer.from('zip'))).rejects.toThrow()
     expect(httpRequest).toHaveBeenCalledTimes(1)

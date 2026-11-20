@@ -357,7 +357,7 @@ export const calculateUpdateRequest = async (
     }
   }
 
-  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
+  const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY, region, settings)
   let fullExtensionLayerARN: string | undefined
   let extensionVersion: number | undefined
 

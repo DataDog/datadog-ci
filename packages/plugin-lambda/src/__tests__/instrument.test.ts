@@ -1694,9 +1694,9 @@ describe('lambda', () => {
         command['printPlannedActions']([
           {
             functionARN: 'my-func',
-            lambdaConfig: {} as any,
+            lambdaConfig: {},
             logGroupConfiguration: {
-              createLogGroupCommandInput: {logGroupName: 'my-log-group'} as any,
+              createLogGroupCommandInput: {logGroupName: 'my-log-group'},
               deleteSubscriptionFilterCommandInput: {filterName: 'my-filter'} as any,
               logGroupName: 'my-log-group',
               putSubscriptionFilterCommandInput: {filterName: 'my-filter'} as any,

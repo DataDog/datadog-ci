@@ -340,22 +340,21 @@ const serviceConfigOptions = (
   sharedVolumePath: '/shared-volume',
 })
 
-const serviceWithWorker = (): IService =>
-  ({
-    template: {
-      containers: [
-        {
-          name: 'app',
-          ports: [{containerPort: 8080}],
-          env: [{name: 'NODE_OPTIONS', value: '--inspect'}],
-          volumeMounts: [],
-        },
-        {name: 'worker', env: [{name: 'WORKER', value: 'true'}], volumeMounts: []},
-      ],
-      volumes: [],
-      revision: 'service-1',
-    },
-  }) as IService
+const serviceWithWorker = (): IService => ({
+  template: {
+    containers: [
+      {
+        name: 'app',
+        ports: [{containerPort: 8080}],
+        env: [{name: 'NODE_OPTIONS', value: '--inspect'}],
+        volumeMounts: [],
+      },
+      {name: 'worker', env: [{name: 'WORKER', value: 'true'}], volumeMounts: []},
+    ],
+    volumes: [],
+    revision: 'service-1',
+  },
+})
 
 describe('SSI service preparation', () => {
   test('rejects invalid configuration', () => {
@@ -628,7 +627,7 @@ describe('SSI service preparation', () => {
     service.template!.containers!.push({
       name: 'datadog-sidecar',
       env: [{name: 'DD_HEALTH_PORT', value: String(TRACER_READINESS_PORT)}],
-    } as IContainer)
+    })
 
     expect(() => instrumentServiceConfig(service, serviceConfigOptions())).toThrow(
       /Datadog Agent health port 18999.*container 'datadog-sidecar'/
@@ -675,7 +674,7 @@ describe('SSI service preparation', () => {
     service.template!.containers!.push({
       name: 'datadog-sidecar',
       env: [{name: 'DD_HEALTH_PORT', value: '8128'}],
-    } as IContainer)
+    })
 
     const result = instrumentServiceConfig(service, {...serviceConfigOptions(), healthCheckPort: 8127})
     const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
@@ -689,7 +688,7 @@ describe('SSI service preparation', () => {
     service.template!.containers!.push({
       name: 'datadog-sidecar',
       env: [{name: 'DD_HEALTH_PORT', value: '8127'}],
-    } as IContainer)
+    })
 
     const result = instrumentServiceConfig(service, serviceConfigOptions())
     const sidecar = result.template?.containers?.find((container) => container.name === 'datadog-sidecar')
@@ -713,7 +712,7 @@ describe('SSI service preparation', () => {
   ])('names an unnamed main container when other containers are named %j', (otherNames, expectedName) => {
     const service = serviceWithWorker()
     service.template!.containers![0].name = ''
-    service.template!.containers!.push(...otherNames.map((name) => ({name, image: 'other'}) as IContainer))
+    service.template!.containers!.push(...otherNames.map((name) => ({name, image: 'other'})))
 
     const injected = instrumentServiceConfig(service, serviceConfigOptions())
     const main = injected.template?.containers?.[0]
@@ -751,7 +750,7 @@ describe('SSI service preparation', () => {
 
   test('rejects an unowned tracer container', () => {
     const service = serviceWithWorker()
-    service.template!.containers!.push({name: TRACER_CONTAINER_NAME, image: 'customer-image'} as IContainer)
+    service.template!.containers!.push({name: TRACER_CONTAINER_NAME, image: 'customer-image'})
 
     expect(() => instrumentServiceConfig(service, serviceConfigOptions('python'))).toThrow(
       "the service already has a container named 'datadog-tracer' that is not managed by datadog-ci"

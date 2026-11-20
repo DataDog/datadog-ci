@@ -21,7 +21,6 @@ import type {
   UserConfigOverride,
   LocalTestPayload,
 } from '../interfaces'
-import type {StringMap} from '@datadog/datadog-ci-base/helpers/env'
 
 import {toBoolean, toNumber} from '@datadog/datadog-ci-base/helpers/env'
 import {pick} from '@datadog/datadog-ci-base/helpers/utils'
@@ -340,7 +339,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         case 'variables':
           if (subKey) {
             acc[key] = acc[key] ?? {}
-            ;(acc[key] as StringMap)[subKey] = value
+            acc[key][subKey] = value
           } else {
             throw new Error(`No subkey found for ${key}`)
           }

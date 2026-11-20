@@ -53,7 +53,7 @@ const mockLstatSequence = (sizes: number[]) => {
     mockFsPromises.lstat.mockResolvedValueOnce({size, isFile: () => true} as any)
   }
 }
-const mockReadFile = (content: string) => mockFsPromises.readFile.mockResolvedValue(content as any)
+const mockReadFile = (content: string) => mockFsPromises.readFile.mockResolvedValue(content)
 
 describe('generateFileFixes', () => {
   beforeEach(() => {

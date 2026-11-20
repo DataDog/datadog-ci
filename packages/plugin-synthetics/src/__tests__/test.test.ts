@@ -213,7 +213,7 @@ describe('getTestAndOverrideConfig', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
@@ -274,7 +274,7 @@ describe('getTestAndOverrideConfig', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
@@ -289,7 +289,7 @@ describe('getTestAndOverrideConfig', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
@@ -309,7 +309,7 @@ describe('getTestAndOverrideConfig', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
@@ -331,7 +331,7 @@ describe('getTestAndOverrideConfig', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).rejects.toThrow(
@@ -351,7 +351,7 @@ describe('getTestAndOverrideConfig', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).rejects.toThrow(

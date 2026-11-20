@@ -118,7 +118,7 @@ describe('dd-api', () => {
   test('should get results from api', async () => {
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: RAW_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: RAW_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}})
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)
@@ -127,7 +127,7 @@ describe('dd-api', () => {
   test('should get mobile results from api', async () => {
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: MOBILE_RAW_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: MOBILE_RAW_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}})
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)
@@ -136,7 +136,7 @@ describe('dd-api', () => {
   test('should trigger tests using api', async () => {
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: TRIGGER_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: TRIGGER_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}})
     const api = apiConstructor(apiConfiguration)
     const {triggerTests} = api
     const tests: TestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
@@ -318,7 +318,7 @@ describe('dd-api', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
     const api = apiConstructor(apiConfiguration)
     const {getMobileApplicationPresignedURLs} = api
     const result = await getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS)
@@ -328,7 +328,7 @@ describe('dd-api', () => {
   test('should get a tunnel presigned URL from api', async () => {
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: PRESIGNED_URL_PAYLOAD, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: PRESIGNED_URL_PAYLOAD, status: 200, statusText: 'OK', headers: {}, config: {}})
     const api = apiConstructor(apiConfiguration)
     const {getTunnelPresignedURL} = api
     const {url} = await getTunnelPresignedURL([TRIGGERED_TEST_ID])
@@ -343,7 +343,7 @@ describe('dd-api', () => {
       headers: {etag: '"123"'},
       statusText: 'OK',
       config: {},
-    } as any)
+    })
     const api = apiConstructor(apiConfiguration)
     const {uploadMobileApplicationPart} = api
     const result = await uploadMobileApplicationPart(
@@ -363,7 +363,7 @@ describe('dd-api', () => {
 
   test('should return empty ETag when doing azure part upload', async () => {
     const httpRequestMock = jest.mocked(requestModule.httpRequest)
-    httpRequestMock.mockResolvedValue({data: {}, status: 200, headers: {}, statusText: 'OK', config: {}} as any)
+    httpRequestMock.mockResolvedValue({data: {}, status: 200, headers: {}, statusText: 'OK', config: {}})
     const api = apiConstructor(apiConfiguration)
     const {uploadMobileApplicationPart} = api
 
@@ -392,7 +392,7 @@ describe('dd-api', () => {
     const jobId = 'fake_job_id'
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: {job_id: jobId}, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: {job_id: jobId}, status: 200, statusText: 'OK', headers: {}, config: {}})
     const api = apiConstructor(apiConfiguration)
     const {completeMultipartMobileApplicationUpload} = api
 
@@ -417,7 +417,7 @@ describe('dd-api', () => {
   test('should poll for app upload validation', async () => {
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: APP_UPLOAD_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: APP_UPLOAD_POLL_RESULTS, status: 200, statusText: 'OK', headers: {}, config: {}})
     const api = apiConstructor(apiConfiguration)
     const {pollMobileApplicationUploadResponse} = api
 
@@ -436,7 +436,7 @@ describe('dd-api', () => {
       statusText: 'OK',
       headers: {},
       config: {},
-    } as any)
+    })
 
     const {searchTests} = apiConstructor(apiConfiguration)
 
@@ -455,7 +455,7 @@ describe('dd-api', () => {
     const settings = {onDemandConcurrencyCap: 10}
     jest
       .mocked(requestModule.httpRequest)
-      .mockResolvedValue({data: settings, status: 200, statusText: 'OK', headers: {}, config: {}} as any)
+      .mockResolvedValue({data: settings, status: 200, statusText: 'OK', headers: {}, config: {}})
 
     const {getSyntheticsOrgSettings: getSettings} = apiConstructor(apiConfiguration)
 
