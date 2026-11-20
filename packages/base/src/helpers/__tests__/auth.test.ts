@@ -93,7 +93,7 @@ describe('auth', () => {
       ]) {
         expect(stripVTControlCharacters(text)).toMatch(/^This command /)
         expect(stripVTControlCharacters(text)).toMatch(
-          /\n\nSee\nhttps:\/\/github\.com\/DataDog\/datadog-ci#authentication$/
+          /\n\nSee https:\/\/github\.com\/DataDog\/datadog-ci#authentication$/
         )
         expect(stripVTControlCharacters(text)).not.toMatch(/\*\*|`/)
       }

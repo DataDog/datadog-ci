@@ -87,11 +87,11 @@ export const WORKLOAD_IDENTITY_FEDERATION_DOCS_URL =
   'https://docs.datadoghq.com/account_management/workload_identity_federation/'
 
 const wif = makeTerminalLink(WORKLOAD_IDENTITY_FEDERATION_DOCS_URL)`Workload Identity Federation`
-const seeReadme = `See\n${AUTHENTICATION_DOCS_URL}`
+const seeReadme = `See ${AUTHENTICATION_DOCS_URL}`
 
 /**
  * Bodies of the "Authentication" section of `--help`. Paragraphs are separated by a blank line, and a single newline is
- * a hard line break.
+ * a hard line break. Each body ends with "See <README URL>" on its own short line, so the wrapper never splits it.
  */
 export const AUTH_HELP = {
   apiKey:
