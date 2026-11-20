@@ -1442,7 +1442,7 @@ describe('lambda', () => {
       describe('low-memory warning', () => {
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const lowMemoryWarning = (memorySize: number) =>
-          `Function lambda-hello-world has ${memorySize} MB of memory, below the recommended minimum of 256 MB (lambda_low_memory). The Datadog Lambda Extension and tracer add memory overhead (about 69 MB for Python), which can cause out-of-memory errors and timeouts. Increase the function's memory to at least 256 MB, or pass --suppress-low-memory-warning to silence this warning.`
+          `Function lambda-hello-world has ${memorySize} MB of memory, below the recommended minimum of 256 MB (lambda_low_memory). The Datadog Lambda Extension and tracer add memory overhead (about 70 MB for Python), which can cause out-of-memory errors and timeouts. Increase the function's memory to at least 256 MB, or pass --suppress-low-memory-warning to silence this warning.`
         const baseArgs = [
           '-f',
           functionARN,
