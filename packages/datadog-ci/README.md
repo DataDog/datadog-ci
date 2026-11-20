@@ -309,14 +309,13 @@ The [`datadog-workload-identity-federation-github-action`](https://github.com/Da
 
 Before using it, a Datadog organization administrator must create the matching [WIF mappings](https://docs.datadoghq.com/account_management/workload_identity_federation/), with the GitHub OIDC token claims you want to allow. For example, to allow any branch of a workflow in your repository:
 
-```
-sub
-repo:<owner>/<repo>:ref:refs/heads/.*
-job_workflow_ref
-<owner>/<repo>/\.github/workflows/<workflow>\.yml@.*
-repository
-<owner>/<repo>
-```
+Provider: **GitHub**, source pattern: `repo:<owner>/<repo>:ref:refs/heads/.*`
+
+| Claim | Pattern |
+| --- | --- |
+| `sub` | `repo:<owner>/<repo>:ref:refs/heads/.*` |
+| `job_workflow_ref` | `<owner>/<repo>/\.github/workflows/<workflow>\.yml@.*` |
+| `repository` | `<owner>/<repo>` |
 
 Then get the credentials in your workflow:
 
