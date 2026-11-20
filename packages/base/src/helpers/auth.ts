@@ -1,4 +1,10 @@
-import type {CommandClass} from 'clipanion'
+import {stripVTControlCharacters} from 'util'
+
+import type {BaseContext, CommandClass} from 'clipanion'
+
+import {Cli, Command} from 'clipanion'
+
+import {makeTerminalLink} from './terminal-link'
 
 /**
  * Shared Datadog credential handling.
@@ -77,48 +83,51 @@ export const getMissingOrgCredentialsMessage = (
   )
 }
 
+export const WORKLOAD_IDENTITY_FEDERATION_DOCS_URL =
+  'https://docs.datadoghq.com/account_management/workload_identity_federation/'
+
+const wif = makeTerminalLink(WORKLOAD_IDENTITY_FEDERATION_DOCS_URL)`Workload Identity Federation`
+const seeReadme = `See\n${AUTHENTICATION_DOCS_URL}`
+
 /**
- * One-paragraph authentication notes appended to each command's `--help` details.
- * They all start with `Authentication:`.
+ * Bodies of the "Authentication" section of `--help`. Paragraphs are separated by a blank line, and a single newline is
+ * a hard line break.
  */
 export const AUTH_HELP = {
   apiKey:
-    'Authentication: this command needs a Datadog API key (DD_API_KEY). ' +
-    'With Workload Identity Federation, an intake mapping provides it. ' +
-    `See ${AUTHENTICATION_DOCS_URL}`,
+    'This command sends telemetry to your org. ' +
+    `As such, it requires an API key (DD_API_KEY), which a ${wif} intake mapping can provide.\n\n${seeReadme}`,
   orgAction:
-    'Authentication: this command needs an access token (DD_ACCESS_TOKEN) from a Workload Identity Federation identity mapping, ' +
-    'or a Datadog API key (DD_API_KEY) and an application key (DD_APP_KEY). ' +
-    'An access token takes precedence over an application key. An intake mapping alone is not enough. ' +
-    `See ${AUTHENTICATION_DOCS_URL}`,
-  none: 'Authentication: this command does not need Datadog credentials.',
-} as const
+    'This command calls Datadog API endpoints. ' +
+    'As such, it requires either an API key (DD_API_KEY) and an application key (DD_APP_KEY), ' +
+    `or an access token (DD_ACCESS_TOKEN) from a ${wif} identity mapping.\n\n${seeReadme}`,
+  none: `This command does not need Datadog credentials.\n\n${seeReadme}`,
+}
 
 /**
- * Authentication note for Serverless `instrument` commands, which store Datadog credentials in the instrumented service.
+ * Authentication help for Serverless `instrument` commands, which save the Datadog API key in the instrumented service.
  * @param cloudCredentials - the cloud provider credentials the command uses, for example "AWS credentials".
  * @param datadogCredentials - how the command reads the Datadog API key, for example "a Datadog API key (DD_API_KEY)".
  */
 export const getServerlessInstrumentAuthHelp = (cloudCredentials: string, datadogCredentials: string): string =>
-  `Authentication: this command uses your ${cloudCredentials} and ${datadogCredentials}, which is stored in the instrumented service ` +
-  'so it can send telemetry. A short-lived key from a Workload Identity Federation intake mapping expires and is not suited for this. ' +
-  `See ${AUTHENTICATION_DOCS_URL}`
+  `This command uses your ${cloudCredentials} and saves ${datadogCredentials} in the instrumented service, ` +
+  'which uses it to send telemetry. ' +
+  `As such, it requires a long-lived API key: a short-lived key from a ${wif} intake mapping would expire.\n\n${seeReadme}`
 
 /**
- * Authentication note for commands that only call the cloud provider, such as Serverless `uninstrument` commands.
+ * Authentication help for commands that only call the cloud provider, such as Serverless `uninstrument` commands.
  * @param cloudCredentials - the cloud provider credentials the command uses, for example "AWS credentials".
  */
 export const getCloudCredentialsOnlyAuthHelp = (cloudCredentials: string): string =>
-  `Authentication: this command uses your ${cloudCredentials} and does not need Datadog credentials.`
+  `This command uses your ${cloudCredentials}. It does not need Datadog credentials.\n\n${seeReadme}`
 
 /**
- * Authentication note for commands that read from the cloud provider and send data to Datadog, such as flares.
+ * Authentication help for the Serverless `flare` commands, which read from the cloud provider and send a flare to Datadog.
  * @param cloudCredentials - the cloud provider credentials the command uses, for example "AWS credentials".
  */
-export const getCloudApiKeyAuthHelp = (cloudCredentials: string): string =>
-  `Authentication: this command uses your ${cloudCredentials} and needs a Datadog API key (DD_API_KEY). ` +
-  'With Workload Identity Federation, an intake mapping provides it. ' +
-  `See ${AUTHENTICATION_DOCS_URL}`
+export const getFlareAuthHelp = (cloudCredentials: string): string =>
+  `This command uses your ${cloudCredentials} and sends a flare to Datadog support. ` +
+  `As such, it requires an API key (DD_API_KEY), which a ${wif} intake mapping can provide.\n\n${seeReadme}`
 
 export type AuthRequirement =
   | {kind: 'orgAction' | 'apiKey' | 'none'}
@@ -138,7 +147,7 @@ export const AUTH_REQUIREMENTS: Record<string, AuthRequirement> = {
   'aas instrument': serverless(getServerlessInstrumentAuthHelp('Azure credentials', 'a Datadog API key (DD_API_KEY)')),
   'aas uninstrument': serverless(getCloudCredentialsOnlyAuthHelp('Azure credentials')),
   'ci-env read': none,
-  'cloud-run flare': serverless(getCloudApiKeyAuthHelp('Google Cloud credentials')),
+  'cloud-run flare': serverless(getFlareAuthHelp('Google Cloud credentials')),
   'cloud-run instrument': serverless(
     getServerlessInstrumentAuthHelp('Google Cloud credentials', 'a Datadog API key (DD_API_KEY)')
   ),
@@ -167,7 +176,7 @@ export const AUTH_REQUIREMENTS: Record<string, AuthRequirement> = {
   'git-metadata upload': apiKeyOnly,
   'junit upload': apiKeyOnly,
   'lambda cloudwatch': serverless(getCloudCredentialsOnlyAuthHelp('AWS credentials')),
-  'lambda flare': serverless(getCloudApiKeyAuthHelp('AWS credentials')),
+  'lambda flare': serverless(getFlareAuthHelp('AWS credentials')),
   'lambda instrument': serverless(
     getServerlessInstrumentAuthHelp(
       'AWS credentials',
@@ -210,39 +219,71 @@ export const getAuthHelp = (requirement: AuthRequirement): string =>
   requirement.kind === 'serverless' ? requirement.help : AUTH_HELP[requirement.kind]
 
 /**
- * Append a paragraph to Clipanion `details`, indented like the existing text so Clipanion's dedent renders it the same
- * way as if it had been written inline.
+ * The authentication help of a command, from `AUTH_REQUIREMENTS` and its first command path.
  */
-const appendParagraph = (details: string | undefined, paragraph: string): string => {
-  if (!details?.trim()) {
-    return paragraph
-  }
-
-  const indents = details
-    .split('\n')
-    .filter((line) => /\S/.test(line))
-    .map((line) => line.length - line.trimStart().length)
-  const indent = ' '.repeat(Math.min(...indents))
-
-  return `${details}\n\n${indent}${paragraph}\n`
-}
-
-/**
- * Append the command's "Authentication:" paragraph (from `AUTH_REQUIREMENTS`) to its `--help` details.
- * Commands without an entry are left unchanged. Calling it again on the same command does nothing.
- */
-export const withAuthHelp = <T extends CommandClass<any>>(commandClass: T): T => {
+export const getAuthHelpForCommand = (commandClass: CommandClass<any>): string | undefined => {
   const path = commandClass.paths?.[0]?.join(' ')
   const requirement = path !== undefined ? AUTH_REQUIREMENTS[path] : undefined
-  if (!requirement) {
-    return commandClass
-  }
 
-  const paragraph = getAuthHelp(requirement)
-  const usage = commandClass.usage ?? {}
-  if (!usage.details?.includes(paragraph)) {
-    commandClass.usage = {...usage, details: appendParagraph(usage.details, paragraph)}
-  }
+  return requirement ? getAuthHelp(requirement) : undefined
+}
 
-  return commandClass
+const HELP_WIDTH = 80
+// A terminal hyperlink (OSC 8) is one unbreakable word, so its escape sequence never gets split.
+const WORD_REGEX = /\u001B\]8;;[^\u0007]*\u0007[^\u001B]*\u001B\]8;;\u0007\S*|\S+/g
+
+/** Wrap a line at 80 visible characters, like Clipanion does for `Details`, without splitting terminal links. */
+const wrapLine = (line: string): string => {
+  const lines: string[] = []
+  let current = ''
+  for (const word of line.match(WORD_REGEX) ?? []) {
+    const candidate = current ? `${current} ${word}` : word
+    if (current && stripVTControlCharacters(candidate).length > HELP_WIDTH) {
+      lines.push(current)
+      current = word
+    } else {
+      current = candidate
+    }
+  }
+  lines.push(current)
+
+  return lines.join('\n')
+}
+
+/** Format an authentication help text: paragraphs separated by a blank line, single newlines kept as line breaks. */
+export const formatAuthHelp = (text: string): string =>
+  `${text
+    .split('\n\n')
+    .map((paragraph) => paragraph.split('\n').map(wrapLine).join('\n'))
+    .join('\n\n')}\n`
+
+/**
+ * A Clipanion `Cli` whose detailed `--help` has an "Authentication" section, after "Details" and before "Examples",
+ * for every command with an `AUTH_REQUIREMENTS` entry. The section is rendered with Clipanion's own header style.
+ *
+ * Every help route goes through `Cli.usage()`: `<command> --help` and `-h` (through the builtin `HelpCommand`) and
+ * `Cli.run` for a command with `help` set. The command's `usage.details` is left unchanged.
+ */
+export class CliWithAuthHelp<Context extends BaseContext = BaseContext> extends Cli<Context> {
+  public usage(
+    // Same signature as `Cli.usage()`, where `null` means the general usage.
+    // eslint-disable-next-line no-null/no-null
+    command: CommandClass<Context> | Command<Context> | null = null,
+    opts: {colored?: boolean; detailed?: boolean; prefix?: string} = {}
+  ): string {
+    const result = super.usage(command, opts)
+    const commandClass = command instanceof Command ? (command.constructor as CommandClass<Context>) : command
+    const help = opts.detailed && commandClass ? getAuthHelpForCommand(commandClass) : undefined
+    if (!help) {
+      return result
+    }
+
+    const format = this.format(opts.colored)
+    const section = `\n${format.header('Authentication')}\n\n${formatAuthHelp(help)}`
+    const examplesIndex = result.indexOf(`\n${format.header('Examples')}\n`)
+
+    return examplesIndex === -1
+      ? `${result}${section}`
+      : `${result.slice(0, examplesIndex)}${section}${result.slice(examplesIndex)}`
+  }
 }

@@ -1,9 +1,11 @@
-import type {CommandClass} from 'clipanion'
+import {stripVTControlCharacters} from 'util'
 
-import {Cli, Command} from 'clipanion'
+import type {CommandClass, Cli} from 'clipanion'
+
+import {Command} from 'clipanion'
 
 import {commands} from '../cli'
-import {AUTH_HELP, AUTH_REQUIREMENTS, withAuthHelp} from '../helpers/auth'
+import {AUTH_HELP, AUTH_REQUIREMENTS, CliWithAuthHelp, formatAuthHelp} from '../helpers/auth'
 
 const allCommands: CommandClass[] = Object.values(commands).flat() as CommandClass[]
 
@@ -20,21 +22,23 @@ const ORG_ACTION_COMMANDS = [
 
 const getPath = (commandClass: CommandClass) => (commandClass.paths?.[0] ?? []).join(' ')
 
-const renderHelp = (commandClass: CommandClass) => {
-  const cli = new Cli()
+const renderHelp = (commandClass: CommandClass, cli: Cli = new CliWithAuthHelp()) => {
   cli.register(commandClass)
 
-  // The rendered help wraps lines at 80 characters, so normalize whitespace before matching.
-  return cli.usage(commandClass, {detailed: true}).replace(/\s+/g, ' ')
+  return stripVTControlCharacters(cli.usage(commandClass, {colored: false, detailed: true}))
 }
+
+const getAuthenticationSection = (help: string) => help.split('\nAuthentication\n\n')[1]?.split('\nExamples\n')[0]
 
 describe('authentication in --help', () => {
   test.each(allCommands.map((commandClass) => [getPath(commandClass), commandClass]))(
-    '%s has an authentication requirement and shows it in --help',
+    '%s has an authentication requirement and shows it in an Authentication section',
     (path, commandClass) => {
       expect(AUTH_REQUIREMENTS[path]).toBeDefined()
 
-      expect(renderHelp(withAuthHelp(commandClass))).toContain('Authentication: ')
+      const section = getAuthenticationSection(renderHelp(commandClass))
+      expect(section).toMatch(/^This command /)
+      expect(section).toContain('See\nhttps://github.com/DataDog/datadog-ci#authentication')
     }
   )
 
@@ -42,42 +46,45 @@ describe('authentication in --help', () => {
     const commandClass = allCommands.find((c) => getPath(c) === path)!
 
     expect(AUTH_REQUIREMENTS[path]).toStrictEqual({kind: 'orgAction'})
-    expect(withAuthHelp(commandClass).usage?.details).toContain(AUTH_HELP.orgAction)
+    expect(getAuthenticationSection(renderHelp(commandClass))).toBe(
+      stripVTControlCharacters(formatAuthHelp(AUTH_HELP.orgAction))
+    )
   })
 
-  test('withAuthHelp appends the paragraph once', () => {
-    class SbomLikeCommand extends Command {
-      public static paths = [['sbom', 'upload']]
-      public static usage = Command.Usage({details: 'Uploads SBOM files.'})
-      public async execute() {}
-    }
+  test('the section comes after Details and before Examples, with Clipanion header style', () => {
+    const sbomUpload = allCommands.find((c) => getPath(c) === 'sbom upload')!
+    const cli = new CliWithAuthHelp()
+    cli.register(sbomUpload)
+    const help = cli.usage(sbomUpload, {colored: true, detailed: true})
 
-    withAuthHelp(SbomLikeCommand)
-    withAuthHelp(SbomLikeCommand)
-
-    expect(SbomLikeCommand.usage.details).toBe(`Uploads SBOM files.\n\n${AUTH_HELP.orgAction}\n`)
+    expect(help).toContain(cli.format(true).header('Authentication'))
+    const plain = stripVTControlCharacters(help)
+    expect(plain.indexOf('━━━ Details')).toBeLessThan(plain.indexOf('━━━ Authentication'))
+    expect(plain.indexOf('━━━ Authentication')).toBeLessThan(plain.indexOf('━━━ Examples'))
   })
 
-  test('withAuthHelp creates the usage when a command has none', () => {
-    class VersionLikeCommand extends Command {
-      public static paths = [['version']]
-      public async execute() {}
-    }
-
-    withAuthHelp(VersionLikeCommand)
-
-    expect(VersionLikeCommand.usage?.details).toBe(AUTH_HELP.none)
-  })
-
-  test('withAuthHelp leaves commands without a requirement unchanged', () => {
+  test('the section is not added to non-detailed usage or to commands without a requirement', () => {
     class UnknownCommand extends Command {
       public static paths = [['unknown', 'command']]
       public static usage = Command.Usage({details: 'Something else.'})
       public async execute() {}
     }
+    const sbomUpload = allCommands.find((c) => getPath(c) === 'sbom upload')!
+    const cli = new CliWithAuthHelp()
+    cli.register(sbomUpload)
 
-    withAuthHelp(UnknownCommand)
+    expect(renderHelp(UnknownCommand)).not.toContain('Authentication')
+    expect(stripVTControlCharacters(cli.usage(sbomUpload, {colored: false}))).not.toContain('Authentication')
+    expect(sbomUpload.usage?.details).not.toContain('Authentication')
+  })
 
-    expect(UnknownCommand.usage.details).toBe('Something else.')
+  test('long lines wrap at 80 characters without splitting a terminal link', () => {
+    const link =
+      '\u001B]8;;https://docs.datadoghq.com/account_management/workload_identity_federation/\u0007WIF\u001B]8;;\u0007'
+    const text = `${'word '.repeat(15)}${link} ${'word '.repeat(5)}`
+    const lines = formatAuthHelp(text).trimEnd().split('\n')
+
+    expect(lines.every((line) => stripVTControlCharacters(line).length <= 80)).toBe(true)
+    expect(lines.some((line) => line.includes(link))).toBe(true)
   })
 })

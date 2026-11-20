@@ -1,9 +1,11 @@
+import {stripVTControlCharacters} from 'util'
+
 import {
   AUTH_HELP,
   getAccessTokenFromEnv,
   getMissingOrgCredentialsMessage,
-  getCloudApiKeyAuthHelp,
   getCloudCredentialsOnlyAuthHelp,
+  getFlareAuthHelp,
   getServerlessInstrumentAuthHelp,
   resolveOrgCredentials,
 } from '../auth'
@@ -75,14 +77,25 @@ describe('auth', () => {
   })
 
   describe('help texts', () => {
-    test('all start with "Authentication:"', () => {
+    test('link Workload Identity Federation to its docs', () => {
+      for (const text of [AUTH_HELP.apiKey, AUTH_HELP.orgAction]) {
+        expect(stripVTControlCharacters(text)).toContain('Workload Identity Federation')
+        expect(text).toContain('https://docs.datadoghq.com/account_management/workload_identity_federation/')
+      }
+    })
+
+    test('all start with "This command" and end with the README link', () => {
       for (const text of [
         ...Object.values(AUTH_HELP),
         getServerlessInstrumentAuthHelp('AWS credentials', 'a Datadog API key (DD_API_KEY)'),
         getCloudCredentialsOnlyAuthHelp('AWS credentials'),
-        getCloudApiKeyAuthHelp('AWS credentials'),
+        getFlareAuthHelp('AWS credentials'),
       ]) {
-        expect(text).toMatch(/^Authentication: /)
+        expect(stripVTControlCharacters(text)).toMatch(/^This command /)
+        expect(stripVTControlCharacters(text)).toMatch(
+          /\n\nSee\nhttps:\/\/github\.com\/DataDog\/datadog-ci#authentication$/
+        )
+        expect(stripVTControlCharacters(text)).not.toMatch(/\*\*|`/)
       }
     })
   })
