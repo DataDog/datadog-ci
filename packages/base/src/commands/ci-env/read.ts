@@ -3,7 +3,6 @@ import * as t from 'typanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
-import {AUTH_HELP} from '../../helpers/auth'
 import {getCISpanTags} from '../../helpers/ci'
 import {
   CI_ENV_VARS,
@@ -152,8 +151,6 @@ export class CiEnvReadCommand extends BaseCommand {
       This command reads CI-specific environment variables from various CI providers
       and outputs them as normalized \`DD_CI_*\` and \`DD_GIT_*\` environment variables.
       Supports bash (default), json, and tags output formats.
-
-      ${AUTH_HELP.none}
     `,
     examples: [
       ['Set variables in current shell', 'eval "$(datadog-ci ci-env read)"'],

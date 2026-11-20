@@ -34,8 +34,6 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {SourcemapsUploadCommand} from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
@@ -77,8 +75,6 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
             This command will upload all symbol files for Flutter applications in order to symbolicate errors and
             crash reports received by Datadog. This includes uploading iOS dSYMs, Proguard mapping files, and Dart
             symbol files.
-
-      ${AUTH_HELP.apiKey}
         `,
     examples: [
       [

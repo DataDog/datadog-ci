@@ -3,8 +3,6 @@ import os from 'os'
 
 import {Command, Option} from 'clipanion'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {CustomSpanCommand} from './helper'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
@@ -19,8 +17,6 @@ export class TraceCommand extends CustomSpanCommand {
     details: `
       This command wraps another command, which it will launch, and report a custom span to Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

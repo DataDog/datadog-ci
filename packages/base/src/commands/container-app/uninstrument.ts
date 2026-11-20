@@ -2,7 +2,6 @@ import type {ContainerAppConfigOptions, ContainerAppBySubscriptionAndGroup} from
 
 import {Command, Option} from 'clipanion'
 
-import {getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/constants'
 
@@ -13,7 +12,6 @@ export class ContainerAppUninstrumentCommand extends ContainerAppCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Revert Datadog instrumentation in an Azure Container App.',
-    details: getCloudCredentialsOnlyAuthHelp('Azure credentials'),
   })
 
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {

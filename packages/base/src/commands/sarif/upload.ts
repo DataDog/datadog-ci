@@ -1,6 +1,5 @@
 import {Command, Option} from 'clipanion'
 
-import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {isInteger} from '../../helpers/validation'
 
@@ -15,8 +14,6 @@ export class SarifUploadCommand extends BaseCommand {
     details: `
       This command will upload SARIF reports files to Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload .'],

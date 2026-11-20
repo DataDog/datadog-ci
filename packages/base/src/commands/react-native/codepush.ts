@@ -9,8 +9,6 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RN_CODEPUSH_SUPPORTED_PLATFORMS} from './interfaces'
 import {ReactNativeUploadCommand} from './upload'
@@ -25,8 +23,6 @@ export class ReactNativeCodepushCommand extends BaseCommand {
     details: `
       This command will upload React Native Codepush sourcemaps and their corresponding JavaScript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

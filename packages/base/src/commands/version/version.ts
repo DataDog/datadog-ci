@@ -2,7 +2,6 @@ import {Command} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
-import {AUTH_HELP} from '../../helpers/auth'
 import {cliVersion} from '../../version'
 
 export class VersionCommand extends BaseCommand {
@@ -13,7 +12,6 @@ export class VersionCommand extends BaseCommand {
     // that the user is going to run `datadog-ci version --help`. This description will show in `datadog-ci --help` instead.
     description:
       'Get the current version of datadog-ci. This command outputs a prefixed version, e.g. `v1.0.0`. If you want the raw version, use `datadog-ci --version`.',
-    details: AUTH_HELP.none,
   })
 
   public async execute() {

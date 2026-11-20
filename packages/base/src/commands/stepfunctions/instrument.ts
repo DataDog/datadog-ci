@@ -1,6 +1,5 @@
 import {Command, Option} from 'clipanion'
 
-import {getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -11,7 +10,7 @@ export class StepfunctionsInstrumentCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Subscribe Step Function log groups to a Datadog Forwarder.',
-    details: `--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN\n\n${getCloudCredentialsOnlyAuthHelp('AWS credentials')}`,
+    details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
     examples: [
       [
         'View and apply changes to subscribe a Step Function Log Group to a Datadog Forwarder',

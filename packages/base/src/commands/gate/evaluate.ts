@@ -3,8 +3,6 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {BaseCommand} from '../..'
 
 export class GateEvaluateCommand extends BaseCommand {
@@ -16,8 +14,6 @@ export class GateEvaluateCommand extends BaseCommand {
     details: `
       This command will evaluate the matching quality gate rules in Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.orgAction}
     `,
     examples: [
       ['Evaluate matching quality gate rules in Datadog', 'datadog-ci gate evaluate'],

@@ -30,8 +30,6 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {getPpdbSymbolsRequestBuilder, uploadMultipartHelper} from './helpers'
 import {PORTABLE_PDB_FILENAME, TYPE_PORTABLE_PDB, VALUE_NAME_PORTABLE_PDB} from './interfaces'
 import {AmbiguousManifestEntryError, lookupDebugId, readDebugIdManifest} from './manifest'
@@ -62,8 +60,6 @@ export class PpdbSymbolsUploadCommand extends BaseCommand {
       This command uploads Portable PDB debug info for first-party/project .NET MAUI assemblies found
       recursively in the given location(s), correlated by the debug ID manifest generated at build time
       by dd-sdk-maui, in order to symbolicate managed exception stack traces.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

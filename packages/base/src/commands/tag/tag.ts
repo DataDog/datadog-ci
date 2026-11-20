@@ -3,7 +3,6 @@ import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
-import {AUTH_HELP} from '../../helpers/auth'
 import {getCIEnv, parseLevels, processLevels} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
@@ -24,8 +23,6 @@ export class TagCommand extends BaseCommand {
     details: `
             This command when run from a supported CI provider sends an arbitrary set of key:value
             tags to Datadog to include in the CI Visibility traces.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],

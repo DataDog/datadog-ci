@@ -32,8 +32,6 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {addDebugIdToPayloads, extractDebugId, filterExistingDebugIds} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
@@ -66,8 +64,6 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
     details: `
       This command will upload all JavaScript sourcemaps and their corresponding JavaScript file to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [
