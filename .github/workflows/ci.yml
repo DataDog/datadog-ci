@@ -337,12 +337,11 @@ jobs:
       - name: Run e2e tests
         run: yarn jest --config jest.config-e2e.js --colors
         env:
-          # No Datadog secrets and no application key: the only Datadog credentials are the WIF API key and access token.
-          # Both the DATADOG_* and DD_* variables point to the Synthetics E2E Testing Org here. The org-action suites
-          # (synthetics, sbom) drop the API key from the CLI's env when a token is set, so they run token-only.
-          DATADOG_API_KEY: ${{ steps.datadog-wif-intake.outputs.api_key }}
+          # No Datadog secrets and no application key: the only Datadog credentials are the WIF API key and access token,
+          # both for the Synthetics E2E Testing Org. Only the DD_* variables are set; the e2e tests that read DATADOG_*
+          # fall back to DD_*. The org-action suites (synthetics, sbom) drop the API key from the CLI's env when a token
+          # is set, so they run token-only.
           DD_API_KEY: ${{ steps.datadog-wif-intake.outputs.api_key }}
-          DATADOG_ACCESS_TOKEN: ${{ steps.datadog-wif-identity.outputs.access_token }}
           DD_ACCESS_TOKEN: ${{ steps.datadog-wif-identity.outputs.access_token }}
           GITHUB_SHA: ${{ github.sha }}
           SKIP_CONTAINER_APP_TESTS: true

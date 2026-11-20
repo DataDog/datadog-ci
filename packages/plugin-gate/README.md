@@ -39,9 +39,7 @@ datadog-ci gate evaluate --scope team:backend --scope team:frontend --fail-on-em
 
 Additionally, you can configure the `gate` command with the following environment variables:
 
-- `DD_API_KEY` (**required** unless `DD_ACCESS_TOKEN` is set): The API key used to authenticate the requests.
-- `DD_APP_KEY` (**required** unless `DD_ACCESS_TOKEN` is set): The application key used to authenticate the requests.
-- `DD_ACCESS_TOKEN`: An access token sent as an `Authorization: Bearer` header instead of the application key, for example from a Workload Identity Federation identity mapping. A Workload Identity Federation intake mapping only provides an API key, which is not enough. See [Authentication](https://github.com/DataDog/datadog-ci#authentication).
+- Either `DD_ACCESS_TOKEN` or `DD_API_KEY` and `DD_APP_KEY`: See [authentication](https://github.com/DataDog/datadog-ci#authentication).
 - `DD_TAGS`: Sets global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
 - `DD_SITE`: Your Datadog site, for example, datadoghq.com or datadoghq.eu.
 

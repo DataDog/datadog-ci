@@ -294,22 +294,20 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 | Application key | `DD_APP_KEY` or `DATADOG_APP_KEY` | `DD-APPLICATION-KEY` header |
 | Access token | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
 
-When both forms of a variable are set, `DATADOG_*` is read first. This is always the case for the access token; for the keys, most commands follow this order and a few (such as `gate evaluate` and `deployment correlate-image`) only read the `DD_*` form.
+When both forms of a variable are set, `DATADOG_*` takes precedence. A few commands, such as `gate evaluate` and `deployment correlate-image`, only read the `DD_*` keys.
 
-Commands fall into two groups, and each command's `--help` states which credentials it needs:
+Commands fall into two groups. To see which credentials a command needs, run `datadog-ci <command> --help`:
 
-- **Data uploads** need an **API key**. With [Workload Identity Federation (WIF)][wif-action], an **intake mapping** provides a short-lived API key. This covers `coverage upload`, `dora deployment`, `dsyms upload`, `elf-symbols upload`, `flutter-symbols upload`, `pe-symbols upload`, `ppdb-symbols upload`, `unity-symbols upload`, `wasm-symbols upload`, `wasm-sourcemaps upload`, `sourcemaps upload`, `react-native upload`, `react-native codepush`, `react-native xcode`, `git-metadata upload`, `junit upload`, `sarif upload`, `terraform upload`, `deployment mark`, `deployment correlate`, `tag`, `measure`, `trace`, `trace span`, `lambda flare`, and `cloud-run flare`.
-- **Org actions** act on behalf of a user or service account in your organization. They need an **access token**, or an **API key and an application key**. With WIF, an **identity mapping** provides the access token; an intake mapping alone is not enough. This covers `synthetics run-tests`, `synthetics deploy-tests`, `synthetics import-tests`, `synthetics upload-application`, `sbom upload`, `deployment gate`, `deployment correlate-image`, and `gate evaluate`. Note that `sbom upload` is an upload that needs these credentials.
-
-When an access token is set, org actions send it instead of the application key (the application key is ignored), and the API key becomes optional. API key and application key setups keep working unchanged. Synthetics commands also accept the access token through `--accessToken` or the `accessToken` key of the [global configuration file][synthetics-config].
+- **Data uploads** need an **API key**. With [Workload Identity Federation (WIF)](https://github.com/DataDog/datadog-workload-identity-federation-github-action), an **intake mapping** provides a short-lived API key.
+- **Org actions** act on behalf of a user or service account in your organization. They use either an **API key and an application key**, or an **access token**. An intake mapping does not provide these; with WIF, an **identity mapping** provides the access token.
 
 The Serverless `instrument` commands store the Datadog API key in the instrumented service so it can send telemetry. Use a long-lived API key (or a secret) there: a short-lived intake mapping key would expire. The `uninstrument` commands, `stepfunctions`, and `lambda cloudwatch` only use your cloud provider credentials. Local commands such as `plugin`, `version`, `ci-env read`, `sourcemaps find`, `sourcemaps inject`, and `react-native inject-debug-id` need no Datadog credentials.
 
 #### GitHub Actions with Workload Identity Federation
 
-The [`datadog-workload-identity-federation-github-action`][wif-action] exchanges the workflow's GitHub OIDC token for Datadog credentials, so no Datadog keys are stored as GitHub secrets. Its `intake` action returns an API key (`api_key` output) and its `identity` action returns an access token (`access_token` output). Both need the `id-token: write` permission and the UUID of your Datadog organization.
+The [`datadog-workload-identity-federation-github-action`](https://github.com/DataDog/datadog-workload-identity-federation-github-action) exchanges the workflow's GitHub OIDC token for Datadog credentials, so no Datadog keys are stored as GitHub secrets. Its `intake` action returns an API key (`api_key` output) and its `identity` action returns an access token (`access_token` output). Both need the `id-token: write` permission and the UUID of your Datadog organization.
 
-Before using it, a Datadog organization administrator must create the matching WIF mappings, trusting the GitHub OIDC token's audience (`datadog/<org_uuid>`) and the repository, workflow, or branch claims you want to allow.
+Before using it, a Datadog organization administrator must create the matching [WIF mappings](https://docs.datadoghq.com/account_management/workload_identity_federation/), trusting the GitHub OIDC token's audience (`datadog/<org_uuid>`) and the repository, workflow, or branch claims you want to allow.
 
 ```yaml
 jobs:
@@ -343,17 +341,12 @@ jobs:
           DD_API_KEY: ${{ steps.datadog-intake.outputs.api_key }}
           DD_SITE: datadoghq.com
 
-      - name: Upload an SBOM and run Synthetic tests (access token)
-        run: |
-          npx @datadog/datadog-ci sbom upload sbom.json
-          npx @datadog/datadog-ci synthetics run-tests
+      - name: Run Synthetic tests (access token)
+        run: npx @datadog/datadog-ci synthetics run-tests
         env:
           DD_ACCESS_TOKEN: ${{ steps.datadog-identity.outputs.access_token }}
           DD_SITE: datadoghq.com
 ```
-
-[wif-action]: https://github.com/DataDog/datadog-workload-identity-federation-github-action
-[synthetics-config]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration#global-configuration-file
 
 ### FIPS support
 

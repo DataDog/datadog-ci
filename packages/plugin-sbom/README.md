@@ -27,11 +27,7 @@ datadog-ci sbom upload [--env] [--no-ci-tags] [--git-repository] [--debug] <path
 The following environment variables must be defined:
 
  - `DD_SITE`: the [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
- - `DD_ACCESS_TOKEN`: an access token, for example from a Workload Identity Federation identity mapping, sent as an `Authorization: Bearer` header. Or, instead of an access token:
-   - `DD_API_KEY`: the API key to use
-   - `DD_APP_KEY`: the App key to use
-
-A Workload Identity Federation intake mapping only provides an API key, which is not enough for `sbom upload`. When both an access token and an App key are set, the access token is used. See [Authentication](https://github.com/DataDog/datadog-ci#authentication).
+ - Either `DD_ACCESS_TOKEN` or `DD_API_KEY` and `DD_APP_KEY`: See [authentication](https://github.com/DataDog/datadog-ci#authentication).
 
 Optional environment variables:
  - `DD_SUBDOMAIN`: If you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, set this variable to your subdomain. This ensures that the link to the Datadog Application, which the library logs after uploading, points to the correct location.
