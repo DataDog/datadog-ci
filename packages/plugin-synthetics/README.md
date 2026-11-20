@@ -492,6 +492,19 @@ To troubleshoot tests failing due to the tunnel, you can enable debug logs with 
 * ENV variable: `DATADOG_SYNTHETICS_TUNNEL=true`
 * CLI param: `-t` / `--tunnel` / `--no-tunnel`
 
+#### `tunnelAllowedDomains`
+
+Hosts the tests can reach through the tunnel, such as `example.com` or `*.example.com`. Connections to any other host are blocked. If no value is provided, all hosts are allowed.
+
+An entry matches a host name exactly, ignoring case. A `*.` prefix matches any subdomain, but not the domain itself: `*.example.com` matches `api.example.com`, not `example.com`. IP addresses only match when listed. With `build-and-test`, the local dev server host is added automatically.
+
+**Configuration options**
+
+* Default: none (all hosts are allowed)
+* Global Config: `"tunnelAllowedDomains": ["example.com", "*.example.com"]`
+* ENV variable: `DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS="example.com;*.example.com"`
+* CLI param: `--tunnelAllowedDomains example.com --tunnelAllowedDomains "*.example.com"`
+
 ### Test overrides
 
 <!--
