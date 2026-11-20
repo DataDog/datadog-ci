@@ -21,6 +21,7 @@ import {DefaultReporter} from '../reporters/default'
 import {JSONReporter} from '../reporters/json'
 import {JUnitReporter} from '../reporters/junit'
 import {planDryRun, executeTests, getDefaultConfig} from '../run-tests-lib'
+import {getInvalidAllowedDomains} from '../tunnel/allowed-domains'
 import {toExecutionRule, validateAndParseOverrides} from '../utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
 
@@ -130,6 +131,9 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
           resourceUrlSubstitutionRegexes,
         },
       })
+      if (this.config.tunnelAllowedDomains.length > 0) {
+        this.config.tunnelAllowedDomains = [...this.config.tunnelAllowedDomains, new URL(devServerUrl).hostname]
+      }
     }
 
     try {
@@ -224,6 +228,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       subdomain: process.env.DATADOG_SUBDOMAIN,
       testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
       tunnel: toBoolean(process.env.DATADOG_SYNTHETICS_TUNNEL),
+      tunnelAllowedDomains: process.env.DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS?.split(';'),
     }
   }
 
@@ -301,6 +306,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       subdomain: this.subdomain,
       testSearchQuery: this.testSearchQuery,
       tunnel: this.tunnel,
+      tunnelAllowedDomains: this.tunnelAllowedDomains,
     }
   }
 
@@ -338,6 +344,16 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       !this.config.defaultTestOverrides.setCookies.value
     ) {
       throw new CiError('INVALID_CONFIG', 'SetCookies value cannot be empty.')
+    }
+
+    const invalidAllowedDomains = getInvalidAllowedDomains(this.config.tunnelAllowedDomains)
+    if (invalidAllowedDomains.length > 0) {
+      throw new CiError(
+        'INVALID_CONFIG',
+        `Invalid \`tunnelAllowedDomains\` entries: ${invalidAllowedDomains
+          .map((domain) => JSON.stringify(domain))
+          .join(', ')}. Use a host name (\`example.com\`), a wildcard (\`*.example.com\`) or an IP address.`
+      )
     }
   }
 
