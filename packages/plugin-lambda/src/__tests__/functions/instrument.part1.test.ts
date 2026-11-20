@@ -263,6 +263,54 @@ describe('instrument', () => {
         }
       `)
     })
+
+    test('does not log a low-memory warning for functions below 256 MB (used by remote instrumentation)', async () => {
+      const functionConfiguration: LFunctionConfiguration = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
+        FunctionName: 'autoinstrument',
+        Handler: 'index.handler',
+        MemorySize: 128,
+        Runtime: 'python3.12',
+      }
+      mockLambdaConfigurations(lambdaClientMock, {
+        'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
+          config: functionConfiguration,
+        },
+      })
+
+      const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true)
+      const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true)
+      const consoleSpies = (['log', 'warn', 'error', 'info', 'debug'] as const).map((method) =>
+        jest.spyOn(console, method).mockImplementation(() => undefined)
+      )
+      try {
+        const result = await getInstrumentedFunctionConfig(
+          lambdaClientMock as any,
+          cloudWatchLogsClientMock as any,
+          functionConfiguration,
+          'us-east-1',
+          {
+            extensionVersion: 'none' as const,
+            flushMetricsToLogs: false,
+            layerVersion: 'none' as const,
+            mergeXrayTraces: false,
+            tracingEnabled: false,
+            lambdaFips: false,
+          }
+        )
+        expect(result).toBeDefined()
+
+        for (const spy of [stdoutSpy, stderrSpy, ...consoleSpies]) {
+          const output = spy.mock.calls.map((args) => args.map(String).join(' ')).join('\n')
+          expect(output).not.toContain('lambda_low_memory')
+          expect(output).not.toContain('suppress-low-memory-warning')
+        }
+      } finally {
+        stdoutSpy.mockRestore()
+        stderrSpy.mockRestore()
+        consoleSpies.forEach((spy) => spy.mockRestore())
+      }
+    })
   })
   describe('getInstrumentedFunctionConfigs', () => {
     const OLD_ENV = process.env
