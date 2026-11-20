@@ -12,6 +12,7 @@ import chalk from 'chalk'
 import ora from 'ora'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
+import {LOW_MEMORY_REASON, LOW_MEMORY_THRESHOLD_MB} from '../constants'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.
@@ -82,6 +83,20 @@ export const renderFailureDuringUpdateError = (error: unknown) => renderError(`F
  * ```
  */
 export const renderWarning = (warning: string) => `${warningTag} ${warning}\n`
+
+/**
+ * @param functionName the name of the low-memory Lambda function.
+ * @param memorySize the memory configured for the function, in MB.
+ * @returns a warning message indicating that the function's memory is below the recommended minimum.
+ *
+ * ```txt
+ * [Warning] Function my-function has 128 MB of memory, below the recommended minimum of 256 MB (lambda_low_memory). ...
+ * ```
+ */
+export const renderLowMemoryWarning = (functionName: string, memorySize: number) =>
+  renderWarning(
+    `Function ${functionName} has ${memorySize} MB of memory, below the recommended minimum of ${LOW_MEMORY_THRESHOLD_MB} MB (${LOW_MEMORY_REASON}). The Datadog Lambda Extension and tracer add memory overhead (about 70 MB for Python), which can cause out-of-memory errors and timeouts. Increase the function's memory to at least ${LOW_MEMORY_THRESHOLD_MB} MB, or pass --suppress-low-memory-warning to silence this warning.`
+  )
 
 /**
  * @param message the message to set with the success tag.
