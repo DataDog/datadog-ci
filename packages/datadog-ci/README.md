@@ -307,7 +307,18 @@ The Serverless `instrument` commands store the Datadog API key in the instrument
 
 The [`datadog-workload-identity-federation-github-action`](https://github.com/DataDog/datadog-workload-identity-federation-github-action) exchanges the workflow's GitHub OIDC token for Datadog credentials, so no Datadog keys are stored as GitHub secrets. Its `intake` action returns an API key (`api_key` output) and its `identity` action returns an access token (`access_token` output). Both need the `id-token: write` permission and the UUID of your Datadog organization.
 
-Before using it, a Datadog organization administrator must create the matching [WIF mappings](https://docs.datadoghq.com/account_management/workload_identity_federation/), trusting the GitHub OIDC token's audience (`datadog/<org_uuid>`) and the repository, workflow, or branch claims you want to allow.
+Before using it, a Datadog organization administrator must create the matching [WIF mappings](https://docs.datadoghq.com/account_management/workload_identity_federation/), with the GitHub OIDC token claims you want to allow. For example, to allow any branch of a workflow in your repository:
+
+```
+sub
+repo:<owner>/<repo>:ref:refs/heads/.*
+job_workflow_ref
+<owner>/<repo>/\.github/workflows/<workflow>\.yml@.*
+repository
+<owner>/<repo>
+```
+
+Then get the credentials in your workflow:
 
 ```yaml
 jobs:
