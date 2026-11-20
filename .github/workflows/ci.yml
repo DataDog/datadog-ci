@@ -15,13 +15,13 @@ on:
       - '**'
 
 jobs:
-  build-and-test:
+  lint-and-test:
     strategy:
       fail-fast: false
       matrix:
         version: [20, 22, 24]
 
-    name: Build and test
+    name: Lint and test
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,8 @@ jobs:
       - run: yarn install --immutable
       - run: yarn lint:packages
       - run: yarn lint:readme-usage
-      - run: yarn build
+      # ESLint and Jest resolve workspace packages to `src/`, so this job doesn't need `yarn build`.
+      # `build-and-pack` takes care of it.
       - name: Run yarn lint:ci
         run: |
           if ! yarn lint:ci ; then
@@ -58,6 +59,32 @@ jobs:
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
           NODE_OPTIONS: -r dd-trace/ci/init
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
+        with:
+          name: sarif-datadog-ci-${{ matrix.version }}.sarif
+          path: sarif-datadog-ci.sarif
+          if-no-files-found: error
+
+  # Builds and packs the tarballs used by the e2e jobs, in parallel with lint and unit tests.
+  build-and-pack:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [20, 22, 24]
+
+    name: Build and pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Install node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ matrix.version }}
+          cache: yarn
+      - run: yarn install --immutable
+      - run: yarn build
       - run: |
           mkdir artifacts
           # `--topological-dev` packs `@datadog/datadog-ci` after the workspaces it bundles (its devDependencies),
@@ -67,12 +94,6 @@ jobs:
         with:
           name: artifacts-${{ matrix.version }}
           path: artifacts/
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        if: always()
-        with:
-          name: sarif-datadog-ci-${{ matrix.version }}.sarif
-          path: sarif-datadog-ci.sarif
-          if-no-files-found: error
 
   unit-tests-windows:
     strategy:
@@ -111,7 +132,8 @@ jobs:
     name: End-to-end test the package
     runs-on: ubuntu-latest
     needs:
-      - build-and-test
+      - lint-and-test
+      - build-and-pack
       - check-container-app-changes
       - check-aas-changes
       - check-cloud-run-changes
@@ -419,7 +441,7 @@ jobs:
 
     name: End-to-end test the package (Windows)
     runs-on: windows-latest
-    needs: build-and-test
+    needs: [lint-and-test, build-and-pack]
     env:
       FORCE_COLOR: 1
 
@@ -491,7 +513,7 @@ jobs:
   test-plugin-auto-install-during-npx:
     name: Test plugin auto-install during npx
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [lint-and-test, build-and-pack]
     env:
       FORCE_COLOR: 1
 
@@ -534,7 +556,7 @@ jobs:
   test-plugin-auto-install-in-project-npm:
     name: Test plugin auto-install in existing project (NPM)
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [lint-and-test, build-and-pack]
     env:
       FORCE_COLOR: 1
 
@@ -611,7 +633,7 @@ jobs:
   test-plugin-auto-install-in-project-yarn:
     name: Test plugin auto-install in existing project (Yarn)
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [lint-and-test, build-and-pack]
     env:
       FORCE_COLOR: 1
 
