@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import chalk from 'chalk'
-// eslint-disable-next-line import-x/no-extraneous-dependencies
+// eslint-disable-next-line import-x-js/no-extraneous-dependencies
 import {Cli} from 'clipanion'
 import {diff} from 'jest-diff'
 

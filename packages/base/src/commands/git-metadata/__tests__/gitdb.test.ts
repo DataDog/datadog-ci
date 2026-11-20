@@ -239,6 +239,7 @@ describe('gitdb', () => {
           return param.output
         })
       })
+      /* eslint-disable jest/no-standalone-expect -- called from tests through expectCalls() */
       this.httpRequestMetExpectations = () => {
         expect(this.httpRequest.mock.calls).toHaveLength(mockParams.httpRequest.length)
         mockParams.httpRequest.forEach((param, i) => {
@@ -251,6 +252,7 @@ describe('gitdb', () => {
           }
         })
       }
+      /* eslint-enable jest/no-standalone-expect */
     }
 
     public expectCalls() {

@@ -199,7 +199,7 @@ const formatBasePackageCliFile = () => {
     })),
   ].sort((a, b) => a.importPath.localeCompare(b.importPath))
 
-  const newContent = `/* eslint-disable quote-props */
+  const newContent = `/* eslint-disable eslint-js/quote-props */
 import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 
 // DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
@@ -585,7 +585,7 @@ const formatCommandList = (plugin: PluginPackage) => {
 TO_APPLY.push(
   replaceWholeFile(
     'packages/datadog-ci/shims/plugin-commands.mjs',
-    `/* eslint-disable quote-props */
+    `/* eslint-disable eslint-js/quote-props */
 export const builtinPluginCommands = {
 ${builtinPlugins.map(formatCommandList).join('\n')}
 }

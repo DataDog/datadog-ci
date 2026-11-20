@@ -45,7 +45,8 @@ with `yarn workspace @datadog/datadog-ci-plugin-lambda prepack`.
 ### Framework and libraries used
 
 - [clipanion](https://github.com/arcanis/clipanion): CLI library to handle the different commands.
-- [eslint](https://github.com/eslint/eslint): Linting ([.eslintrc.js](/.eslintrc.js)).
+- [oxlint](https://oxc.rs/docs/guide/usage/linter): Linting ([.oxlintrc.json](/.oxlintrc.json)). ESLint only lints YAML files ([eslint.config.mjs](/eslint.config.mjs)).
+- [prettier](https://prettier.io): Formatting ([.prettierrc.yml](/.prettierrc.yml)).
 - [jest](https://github.com/facebook/jest): Tests are written in Jest.
 - [volta](https://github.com/volta-cli/volta): Node.js and yarn versioning.
 

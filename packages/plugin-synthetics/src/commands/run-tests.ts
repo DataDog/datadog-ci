@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/member-ordering */
+/* eslint-disable @typescript-eslint-js/member-ordering */
 import type {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from '../interfaces'
 import type {RecursivePartial} from '../utils/internal'
 

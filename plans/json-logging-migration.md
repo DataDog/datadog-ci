@@ -90,9 +90,9 @@ Files:
   must default `env` to a defined (empty) object; clipanion's `{env}` option reads
   `context.env[...]` and would crash on `undefined`. Production is unaffected
   (clipanion merges its `Cli.defaultContext.env = process.env`).
-- `eslint.config.mjs` — `no-restricted-syntax` selectors forbidding direct
+- `.oxlintrc.json` — `eslint-js/no-restricted-syntax` selectors forbidding direct
   `this.context.stdout/stderr` and `process.stdout/stderr`, steering everyone to
-  `this.logger`. Scoped to a `noDirectStreamWriteFiles` allowlist that **grows as
+  `this.logger`. Scoped to an override `files` allowlist that **grows as
   commands migrate**; becomes repo-wide in the final PR. The `BaseCommand` getter
   carries an `eslint-disable` as the sanctioned sink.
 - Migrate the ~11 `Logger`-using commands onto the inherited `this.logger`
@@ -113,7 +113,7 @@ as-is (they return strings); only change the sink and pick a level by semantics:
 - warnings (`renderSoftWarning`, dry-run, yellow) → `this.logger.warn(...)`
 - errors (`renderError`, red, failures) → `this.logger.error(...)`
 
-Then add the plugin's files to the eslint `noDirectStreamWriteFiles` allowlist.
+Then add the plugin's files to the `eslint-js/no-restricted-syntax` override allowlist in `.oxlintrc.json`.
 
 **Important nuance:** lines that are *primary data output* (a command printing a
 JSON result or a value meant for piping) must **stay** as direct
