@@ -41,7 +41,7 @@ export class SyntheticsImportTestsCommand extends BaseCommand {
 
   // BASE COMMAND START
   protected accessToken = Option.String('--accessToken', {
-    description: `A Datadog access token, sent as a Bearer token instead of the application key, for example from a Workload Identity Federation identity mapping. When set, the API key and the application key are not required. This token should be stored as a secret.`,
+    description: `A Datadog access token, sent as a Bearer token instead of the application key, for example from a Workload Identity Federation identity mapping. When set, the API key and the application key are not required. This token is a short-lived secret.`,
   })
   protected apiKey = Option.String('--apiKey', {
     description: `Your Datadog API key. This key is ${$B1`created in your Datadog organization`} and should be stored as a secret.`,

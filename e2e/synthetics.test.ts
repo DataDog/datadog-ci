@@ -7,8 +7,8 @@ describe('synthetics', () => {
     const result = await execPromise(
       `${DATADOG_CI_COMMAND} synthetics run-tests --config e2e/fixtures/global.config.json`,
       getOrgActionEnv({
-        DATADOG_API_KEY: process.env.DATADOG_API_KEY,
-        DATADOG_APP_KEY: process.env.DATADOG_APP_KEY,
+        DATADOG_API_KEY: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+        DATADOG_APP_KEY: process.env.DATADOG_APP_KEY ?? process.env.DD_APP_KEY,
       })
     )
 

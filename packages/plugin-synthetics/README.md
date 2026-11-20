@@ -39,7 +39,7 @@ For more information about plugins, see [Installing a plugin](/packages/datadog-
 
 ### Setup the client
 
-To setup the client, your Datadog API and application keys, or a Datadog access token, need to be configured. These credentials can be defined in three different ways:
+To setup the client, configure either a Datadog access token, or your Datadog API and application keys. These credentials can be defined in three different ways:
 
 1. Defined in a [global configuration file](#global-configuration-file):
 
@@ -63,7 +63,7 @@ To setup the client, your Datadog API and application keys, or a Datadog access 
     yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
     ```
 
-Instead of the API and application keys, you can set an access token, for example from a [Workload Identity Federation identity mapping][wif-auth], with `accessToken`, `DD_ACCESS_TOKEN`, or `--accessToken`. When both are set, the access token is used instead of the application key. See [Authentication][wif-auth] for the credentials each datadog-ci command needs.
+To use an access token instead, see [Authentication][wif-auth].
 
 ### Global configuration file
 
@@ -278,7 +278,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
 
 #### `accessToken`
 
-A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. When it is set, `apiKey` and `appKey` are not required, and `appKey` is ignored. This token should be stored as a secret.
+A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
 
 **Configuration options**
 
@@ -286,7 +286,7 @@ A Datadog access token, sent as an `Authorization: Bearer` header instead of the
 * ENV variable: `DD_ACCESS_TOKEN="<ACCESS_TOKEN>"`
 * CLI param: `--accessToken "<ACCESS_TOKEN>"`
 
-#### `apiKey` (Required unless `accessToken` is set)
+#### `apiKey`
 
 Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -296,7 +296,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 * ENV variable: `DD_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
-#### `appKey` (Required unless `accessToken` is set)
+#### `appKey`
 
 Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -891,7 +891,7 @@ This command uploads a new version to an **existing** mobile application.
 
 #### `accessToken`
 
-A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. When it is set, `apiKey` and `appKey` are not required, and `appKey` is ignored. This token should be stored as a secret.
+A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
 
 **Configuration options**
 
@@ -899,7 +899,7 @@ A Datadog access token, sent as an `Authorization: Bearer` header instead of the
 * ENV variable: `DD_ACCESS_TOKEN="<ACCESS_TOKEN>"`
 * CLI param: `--accessToken "<ACCESS_TOKEN>"`
 
-#### `apiKey` (Required unless `accessToken` is set)
+#### `apiKey`
 
 Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -909,7 +909,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 * ENV variable: `DD_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
-#### `appKey` (Required unless `accessToken` is set)
+#### `appKey`
 
 Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
