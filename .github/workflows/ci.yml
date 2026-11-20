@@ -258,11 +258,11 @@ jobs:
     # `Authorization: Bearer`) from an identity mapping. No application key is set.
     # Requires an intake mapping and an identity mapping for DataDog/datadog-ci in the Synthetics E2E Testing Org.
     # The serverless suites are skipped: they deploy cloud resources and are covered by the `e2e-test` job.
-    # Only runs in this repository: a fork's own push gets an OIDC token, but the WIF mappings do not trust it.
-    # GitHub also withholds the OIDC token from Dependabot runs, and no expression can detect that, so the first step
-    # checks for the token at runtime and the remaining steps are skipped with a notice when it is missing.
+    # The job is skipped (shown as "skipped") in the two cases where it cannot get WIF credentials: a fork's own push,
+    # whose OIDC token the WIF mappings do not trust, and Dependabot runs, which GitHub gives no OIDC token. If the OIDC
+    # token is missing for any other reason, the WIF actions fail loudly, as they should for a blocking job.
     name: End-to-end test the package (Datadog WIF)
-    if: github.repository == 'DataDog/datadog-ci'
+    if: github.repository == 'DataDog/datadog-ci' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     needs: build-and-test
     permissions:
@@ -272,37 +272,23 @@ jobs:
       FORCE_COLOR: 1
 
     steps:
-      - name: Check for a GitHub OIDC token
-        id: oidc
-        # Only checks whether the variables are set; never prints them.
-        run: |
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No GitHub OIDC token (fork PR, Dependabot, or missing id-token permission); skipping the Datadog WIF e2e job."
-          fi
       # Keep the setup steps below in sync with the `e2e-test` job.
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        if: steps.oidc.outputs.available == 'true'
         with:
           sparse-checkout: |
             e2e/
             jest.config-e2e.js
           sparse-checkout-cone-mode: false
       - name: Install node
-        if: steps.oidc.outputs.available == 'true'
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 24
       - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
-        if: steps.oidc.outputs.available == 'true'
         with:
           name: artifacts-24
           path: artifacts/
       # Force all dependencies to be installed from the artifacts
       - name: Create e2e project
-        if: steps.oidc.outputs.available == 'true'
         run: |
           echo '{
             "name": "datadog-ci-e2e-tests",
@@ -338,20 +324,17 @@ jobs:
           yarn install --no-immutable
       - name: Get Datadog API key (WIF intake mapping)
         id: datadog-wif-intake
-        if: steps.oidc.outputs.available == 'true'
         uses: DataDog/datadog-workload-identity-federation-github-action/intake@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
         with:
           # UUID of the Synthetics E2E Testing Org: an identifier, not a secret.
           org_uuid: 3f39202f-00cc-11ea-a77b-83137c3778b3
       - name: Get Datadog access token (WIF identity mapping)
         id: datadog-wif-identity
-        if: steps.oidc.outputs.available == 'true'
         uses: DataDog/datadog-workload-identity-federation-github-action/identity@c9456387851248e0a5452f99085b16ad14fc3acb # v1.0.0
         with:
           # UUID of the Synthetics E2E Testing Org: an identifier, not a secret.
           org_uuid: 3f39202f-00cc-11ea-a77b-83137c3778b3
       - name: Run e2e tests
-        if: steps.oidc.outputs.available == 'true'
         run: yarn jest --config jest.config-e2e.js --colors
         env:
           # No Datadog secrets and no application key: the only Datadog credentials are the WIF API key and access token.
