@@ -294,22 +294,25 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 | Application key | `DD_APP_KEY` or `DATADOG_APP_KEY` | `DD-APPLICATION-KEY` header |
 | Access token | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
 
-When both forms of a variable are set, `DATADOG_*` takes precedence. A few commands, such as `gate evaluate` and `deployment correlate-image`, only read the `DD_*` keys.
+When both forms of a variable are set, `DATADOG_*` takes precedence.
 
-Commands fall into two groups. To see which credentials a command needs, run `datadog-ci <command> --help`:
+All `datadog-ci` commands that communicate with Datadog are either only **Sending telemetry to your org**, or **Calling Datadog API endpoints** (and optionally sending telemetry to your org).
 
-- **Data uploads** need an **API key**. With [Workload Identity Federation (WIF)](https://github.com/DataDog/datadog-workload-identity-federation-github-action), an **intake mapping** provides a short-lived API key.
-- **Org actions** act on behalf of a user or service account in your organization. They use either an **API key and an application key**, or an **access token**. An intake mapping does not provide these; with WIF, an **identity mapping** provides the access token.
+- Sending telemetry requires an **API key** only.
+  - With [Workload Identity Federation][wif-docs], use an **intake mapping** to produce short-lived API keys.
+- Calling Datadog API endpoints requires to authenticate as a Datadog user or service account. This requires either an **API key and an application key**, or an **access token**.
+  - With [Workload Identity Federation][wif-docs], use an **identity mapping** to produce short-lived access tokens.
 
-The Serverless `instrument` commands store the Datadog API key in the instrumented service so it can send telemetry. Use a long-lived API key (or a secret) there: a short-lived intake mapping key would expire. The `uninstrument` commands, `stepfunctions`, and `lambda cloudwatch` only use your cloud provider credentials. Local commands such as `plugin`, `version`, `ci-env read`, `sourcemaps find`, `sourcemaps inject`, and `react-native inject-debug-id` need no Datadog credentials.
+> [!NOTE]
+> Use a long-lived API key with Serverless `instrument` commands: they save it in the instrumented service to send telemetry.
+
+[wif-docs]: https://docs.datadoghq.com/account_management/workload_identity_federation/
 
 #### GitHub Actions with Workload Identity Federation
 
 The [`datadog-workload-identity-federation-github-action`](https://github.com/DataDog/datadog-workload-identity-federation-github-action) exchanges the workflow's GitHub OIDC token for Datadog credentials, so no Datadog keys are stored as GitHub secrets. Its `intake` action returns an API key (`api_key` output) and its `identity` action returns an access token (`access_token` output). Both need the `id-token: write` permission and the UUID of your Datadog organization.
 
-Before using it, a Datadog organization administrator must create the matching [WIF mappings](https://docs.datadoghq.com/account_management/workload_identity_federation/), with the GitHub OIDC token claims you want to allow. For example, to allow any branch of a workflow in your repository:
-
-Provider: **GitHub**, source pattern: `repo:<owner>/<repo>:ref:refs/heads/.*`
+Before using it, an administrator on your Datadog organization must create mappings with the GitHub OIDC token claims you want to allow. For example, to allow any branch of a workflow in your repository:
 
 | Claim | Pattern |
 | --- | --- |
@@ -325,7 +328,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # Needed to get the GitHub OIDC token.
+      id-token: write # Needed to federate the GitHub OIDC token.
     steps:
       - uses: actions/checkout@v6
 
