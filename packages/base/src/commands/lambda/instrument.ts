@@ -19,7 +19,7 @@ export class LambdaInstrumentCommand extends BaseCommand {
     description: 'Apply Datadog instrumentation to a Lambda.',
     details: getServerlessInstrumentAuthHelp(
       'AWS credentials',
-      'a Datadog API key (DATADOG_API_KEY, or DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN)'
+      'a Datadog API key (DATADOG_API_KEY or DD_API_KEY, or DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN)'
     ),
   })
 

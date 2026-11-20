@@ -258,9 +258,11 @@ jobs:
     # `Authorization: Bearer`) from an identity mapping. No application key is set.
     # Requires an intake mapping and an identity mapping for DataDog/datadog-ci in the Synthetics E2E Testing Org.
     # The serverless suites are skipped: they deploy cloud resources and are covered by the `e2e-test` job.
-    # GitHub withholds the OIDC token from fork PRs and Dependabot, and no expression can detect that, so the first step
+    # Only runs in this repository: a fork's own push gets an OIDC token, but the WIF mappings do not trust it.
+    # GitHub also withholds the OIDC token from Dependabot runs, and no expression can detect that, so the first step
     # checks for the token at runtime and the remaining steps are skipped with a notice when it is missing.
     name: End-to-end test the package (Datadog WIF)
+    if: github.repository == 'DataDog/datadog-ci'
     runs-on: ubuntu-latest
     needs: build-and-test
     permissions:
@@ -353,7 +355,8 @@ jobs:
         run: yarn jest --config jest.config-e2e.js --colors
         env:
           # No Datadog secrets and no application key: the only Datadog credentials are the WIF API key and access token.
-          # Both the DATADOG_* and DD_* variables point to the Synthetics E2E Testing Org here.
+          # Both the DATADOG_* and DD_* variables point to the Synthetics E2E Testing Org here. The org-action suites
+          # (synthetics, sbom) drop the API key from the CLI's env when a token is set, so they run token-only.
           DATADOG_API_KEY: ${{ steps.datadog-wif-intake.outputs.api_key }}
           DD_API_KEY: ${{ steps.datadog-wif-intake.outputs.api_key }}
           DATADOG_ACCESS_TOKEN: ${{ steps.datadog-wif-identity.outputs.access_token }}

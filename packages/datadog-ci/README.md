@@ -294,6 +294,8 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 | Application key | `DD_APP_KEY` or `DATADOG_APP_KEY` | `DD-APPLICATION-KEY` header |
 | Access token | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
 
+When both forms of a variable are set, `DATADOG_*` is read first. This is always the case for the access token; for the keys, most commands follow this order and a few (such as `gate evaluate` and `deployment correlate-image`) only read the `DD_*` form.
+
 Commands fall into two groups, and each command's `--help` states which credentials it needs:
 
 - **Data uploads** need an **API key**. With [Workload Identity Federation (WIF)][wif-action], an **intake mapping** provides a short-lived API key. This covers `coverage upload`, `dora deployment`, `dsyms upload`, `elf-symbols upload`, `flutter-symbols upload`, `pe-symbols upload`, `ppdb-symbols upload`, `unity-symbols upload`, `wasm-symbols upload`, `wasm-sourcemaps upload`, `sourcemaps upload`, `react-native upload`, `react-native codepush`, `react-native xcode`, `git-metadata upload`, `junit upload`, `sarif upload`, `terraform upload`, `deployment mark`, `deployment correlate`, `tag`, `measure`, `trace`, `trace span`, `lambda flare`, and `cloud-run flare`.

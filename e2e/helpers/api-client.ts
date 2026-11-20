@@ -14,7 +14,8 @@ interface E2ECredentials {
 
 /**
  * Auth methods for the read-back checks, matching datadog-ci's own precedence: an access token (for example from a
- * Workload Identity Federation identity mapping, sent as `Authorization: Bearer`) replaces the application key.
+ * Workload Identity Federation identity mapping, sent as `Authorization: Bearer`) replaces the application key, and the
+ * API key is still sent when set.
  * `appKeyAuth` is always set explicitly so the api-client does not fall back to `DD_APP_KEY` from the environment.
  */
 export const getE2EAuthMethods = ({accessToken, apiKey, appKey}: E2ECredentials): client.AuthMethodsConfiguration =>

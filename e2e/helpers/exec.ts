@@ -11,6 +11,16 @@ export interface ExecResult {
 // in e2e/.env.local (gitignored) to run from source via tsx.
 export const DATADOG_CI_COMMAND = process.env.DATADOG_CI_COMMAND ?? 'yarn datadog-ci'
 
+/**
+ * Child env for org-action commands (synthetics, sbom upload). When an access token is set, as in the WIF e2e job, run
+ * the command with the token only: the API keys and application keys are removed from the child env, so the documented
+ * token-only setup is what gets tested. Without a token, the given keys are used unchanged.
+ */
+export const getOrgActionEnv = (keys: Record<string, string | undefined>): Record<string, string | undefined> =>
+  process.env.DATADOG_ACCESS_TOKEN || process.env.DD_ACCESS_TOKEN
+    ? {DATADOG_API_KEY: undefined, DD_API_KEY: undefined, DATADOG_APP_KEY: undefined, DD_APP_KEY: undefined}
+    : keys
+
 export const execPromise = async (command: string, env?: Record<string, string | undefined>): Promise<ExecResult> => {
   return new Promise((resolve) => {
     child_process.exec(command, {env: {...process.env, ...env}}, (error, stdout, stderr) => {

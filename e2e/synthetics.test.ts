@@ -1,4 +1,4 @@
-import {DATADOG_CI_COMMAND, execPromise} from './helpers/exec'
+import {DATADOG_CI_COMMAND, execPromise, getOrgActionEnv} from './helpers/exec'
 
 const describeOrSkip = process.env.IS_STANDALONE_BINARY === 'true' ? describe.skip : describe
 
@@ -6,10 +6,10 @@ describe('synthetics', () => {
   it('run-tests completes successfully', async () => {
     const result = await execPromise(
       `${DATADOG_CI_COMMAND} synthetics run-tests --config e2e/fixtures/global.config.json`,
-      {
+      getOrgActionEnv({
         DATADOG_API_KEY: process.env.DATADOG_API_KEY,
         DATADOG_APP_KEY: process.env.DATADOG_APP_KEY,
-      }
+      })
     )
 
     // Assert the 2 tests defined in `e2e/fixtures/tests.synthetics.json` were resolved
