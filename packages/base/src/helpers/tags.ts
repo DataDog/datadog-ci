@@ -232,7 +232,7 @@ export const REQUIRED_GIT_TAGS: SpanTag[] = [
  */
 export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
   const missingTags = REQUIRED_GIT_TAGS.reduce((acc: string[], tag: SpanTag) => {
-    if (!tags[tag] || (tags[tag] as string).trim() === '') {
+    if (!tags[tag] || tags[tag].trim() === '') {
       acc.push(tag)
     }
 

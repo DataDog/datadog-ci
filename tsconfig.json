@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "isolatedModules": true // Used by ts-jest to transpile test files without type checking
   },
   // All plugins are listed here so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
   "references": [
