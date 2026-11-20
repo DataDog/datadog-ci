@@ -8,8 +8,6 @@ import * as ci from '@datadog/datadog-ci-base/helpers/ci'
 
 type RunCLIType = ReturnType<typeof makeRunCLI>
 
-/* eslint-disable jest/no-export */
-
 export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) => {
   describe('execute', () => {
     beforeEach(() => {

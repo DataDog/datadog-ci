@@ -6,6 +6,7 @@ repos:
         entry: yarn format
         language: system
         types: [ts]
+        pass_filenames: false
       - id: lint-packages
         name: lint packages
         entry: yarn lint:packages --fix

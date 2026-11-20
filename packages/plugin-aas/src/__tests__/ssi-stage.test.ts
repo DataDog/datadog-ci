@@ -33,6 +33,7 @@ type Tree = 'complete' | 'partial'
 const createFakeKudu = (
   directories: Map<string, Tree>,
   {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- required by TypeScript 6
     extracts = 'complete' as Tree,
     onPublish = () => {},
     onVerified = () => {},

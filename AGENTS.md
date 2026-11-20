@@ -38,7 +38,7 @@ File config -> environment variables -> CLI args (highest priority).
 
 ## Code style
 
-Prettier + ESLint enforce formatting and style. Run `yarn format` to auto-fix, `yarn lint` to check. A post-commit hook runs lint automatically.
+Prettier and Oxlint enforce formatting and style ([`.oxlintrc.json`](.oxlintrc.json)); ESLint only lints YAML files (`yarn lint:yaml`). Run `yarn format` to auto-fix, `yarn lint` to check. A post-commit hook runs lint automatically.
 
 Not enforced by lint -- follow manually:
 - Use `getRequestBuilder()` from `helpers/utils` or `httpRequest()` from `helpers/request` for HTTP -- not raw fetch or axios
