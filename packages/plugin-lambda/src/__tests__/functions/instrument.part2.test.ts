@@ -6,6 +6,7 @@ import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/help
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
+import * as commons from '../../functions/commons'
 import {calculateUpdateRequest} from '../../functions/instrument'
 import type {InstrumentationSettings} from '../../interfaces'
 
@@ -690,6 +691,161 @@ describe('instrument', () => {
           ],
         }
       `)
+    })
+
+    describe('Java AppSec', () => {
+      const region = 'us-east-1'
+      const settings: InstrumentationSettings = {
+        appsecEnabled: true,
+        flushMetricsToLogs: false,
+        mergeXrayTraces: false,
+        tracingEnabled: true,
+        layerVersion: 31,
+        extensionVersion: 102,
+        layerAWSAccount: mockAwsAccount,
+      }
+      const config = {
+        FunctionArn: `arn:aws:lambda:${region}:${mockAwsAccount}:function:java-appsec`,
+        Runtime: Runtime.java21,
+        Handler: 'example.Handler::handleRequest',
+        Layers: [{Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:customer-layer:1`}],
+        Environment: {
+          Variables: {
+            DD_API_KEY: MOCK_DATADOG_API_KEY,
+            DD_APPSEC_ENABLED: 'true',
+            DD_SERVERLESS_APPSEC_ENABLED: 'true',
+            CUSTOMER_SETTING: 'keep',
+          },
+        },
+      }
+
+      test.each([Runtime.java8, Runtime.java8al2, Runtime.java11, Runtime.java17, Runtime.java21, Runtime.java25])(
+        'enables tracer AppSec and keeps the Java wrapper for %s',
+        async (runtime) => {
+          const update = await calculateUpdateRequest({...config, Runtime: runtime}, settings, region, runtime)
+          expect(update!.Environment!.Variables).toMatchObject({
+            DD_APPSEC_ENABLED: 'true',
+            AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper',
+            CUSTOMER_SETTING: 'keep',
+          })
+          expect(update!.Environment!.Variables).not.toHaveProperty('DD_SERVERLESS_APPSEC_ENABLED')
+          expect(update!.Layers).toContain(config.Layers[0].Arn)
+        }
+      )
+
+      test('enables tracer AppSec on a function with no previous AppSec settings', async () => {
+        const update = await calculateUpdateRequest(
+          {...config, Environment: {Variables: {DD_API_KEY: MOCK_DATADOG_API_KEY}}},
+          settings,
+          region,
+          Runtime.java21
+        )
+        expect(update!.Environment!.Variables).toMatchObject({
+          DD_APPSEC_ENABLED: 'true',
+          AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper',
+        })
+        expect(update!.Environment!.Variables).not.toHaveProperty('DD_SERVERLESS_APPSEC_ENABLED')
+      })
+
+      test.each([
+        [30, 102, false],
+        [31, 101, false],
+        [31, 102, true],
+        [32, 103, true],
+        ['none', 'none', false],
+      ] as const)('selects AppSec mode for layer %s / extension %s', async (layerVersion, extensionVersion, tracer) => {
+        const update = await calculateUpdateRequest(
+          config,
+          {...settings, layerVersion, extensionVersion},
+          region,
+          Runtime.java21
+        )
+        const variables = update!.Environment!.Variables!
+        expect(variables[tracer ? 'DD_APPSEC_ENABLED' : 'DD_SERVERLESS_APPSEC_ENABLED']).toBe('true')
+        expect(variables).not.toHaveProperty(tracer ? 'DD_SERVERLESS_APPSEC_ENABLED' : 'DD_APPSEC_ENABLED')
+      })
+
+      test.each([30, 31])('resolves latest layer version %s before selecting AppSec mode', async (layerVersion) => {
+        const latestVersion = jest
+          .spyOn(commons, 'getLatestLayerVersion')
+          .mockImplementation((layer) => (layer === 'extension' ? 103 : layerVersion))
+        try {
+          const update = await calculateUpdateRequest(
+            config,
+            {...settings, layerVersion: 'latest', extensionVersion: 'latest'},
+            region,
+            Runtime.java21
+          )
+          expect(update!.Environment!.Variables).toHaveProperty(
+            layerVersion === 31 ? 'DD_APPSEC_ENABLED' : 'DD_SERVERLESS_APPSEC_ENABLED',
+            'true'
+          )
+        } finally {
+          latestVersion.mockRestore()
+        }
+      })
+
+      test.each([
+        [31, 102, 'Datadog-Extension', Architecture.x86_64, true, false],
+        [31, 102, 'Datadog-Extension-ARM', Architecture.arm64, true, false],
+        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, true],
+        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, false],
+        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, undefined],
+        [31, 102, 'Datadog-Extension-FIPS', Architecture.x86_64, true, false],
+        [30, 102, 'Datadog-Extension', Architecture.x86_64, false, false],
+        [31, 101, 'Datadog-Extension', Architecture.x86_64, false, false],
+        [31, 101, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, false, false],
+      ])(
+        'uses retained layer %s / extension %s (%s, %s, tracer: %s, lambdaFips: %s)',
+        async (layer, extension, extensionName, architecture, tracer, lambdaFips) => {
+          const retained = {
+            ...config,
+            Architectures: [architecture as Architecture],
+            Layers: [
+              ...config.Layers,
+              {Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:dd-trace-java:${layer}`},
+              {Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:${extensionName}:${extension}`},
+            ],
+          }
+          const update = await calculateUpdateRequest(
+            retained,
+            {...settings, layerVersion: 'none', extensionVersion: 'none', lambdaFips},
+            region,
+            Runtime.java21
+          )
+          expect(update!.Layers).toBeUndefined()
+          expect(update!.Environment!.Variables).toHaveProperty(
+            tracer ? 'DD_APPSEC_ENABLED' : 'DD_SERVERLESS_APPSEC_ENABLED',
+            'true'
+          )
+          expect(update!.Environment!.Variables).not.toHaveProperty(
+            tracer ? 'DD_SERVERLESS_APPSEC_ENABLED' : 'DD_APPSEC_ENABLED'
+          )
+          expect(update!.Environment!.Variables!.AWS_LAMBDA_EXEC_WRAPPER).toBe('/opt/datadog_wrapper')
+        }
+      )
+
+      test.each([undefined, false])('preserves legacy flags when appsecEnabled is %s', async (appsecEnabled) => {
+        const legacy = {
+          ...config,
+          Environment: {Variables: {DD_API_KEY: MOCK_DATADOG_API_KEY, DD_SERVERLESS_APPSEC_ENABLED: 'true'}},
+        }
+        const update = await calculateUpdateRequest(legacy, {...settings, appsecEnabled}, region, Runtime.java21)
+        expect(update!.Environment!.Variables).toHaveProperty('DD_SERVERLESS_APPSEC_ENABLED', 'true')
+        expect(update!.Environment!.Variables).not.toHaveProperty('DD_APPSEC_ENABLED')
+      })
+
+      test('repeating instrumentation preserves the desired environment and layers', async () => {
+        const first = (await calculateUpdateRequest(config, settings, region, Runtime.java21))!
+        const second = await calculateUpdateRequest(
+          {...config, Environment: first.Environment, Layers: first.Layers!.map((Arn) => ({Arn}))},
+          settings,
+          region,
+          Runtime.java21
+        )
+        expect(second?.Layers).toBeUndefined()
+        expect(second!.Environment).toEqual(first.Environment)
+      })
     })
 
     describe('test universal instrumentation workflow for Java and .Net', () => {
