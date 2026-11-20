@@ -180,6 +180,13 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
         interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
       })
     )
+    const envPageLevelVrt = deepExtend(
+      this.config.pageLevelVrt ?? {},
+      removeUndefinedValues({
+        captureScreenshots: toBoolean(process.env.DATADOG_SYNTHETICS_PAGE_LEVEL_VRT_CAPTURE_SCREENSHOTS),
+        recordNetwork: toBoolean(process.env.DATADOG_SYNTHETICS_PAGE_LEVEL_VRT_RECORD_NETWORK),
+      })
+    )
 
     return {
       // ...super.resolveConfigFromEnv(),
@@ -219,6 +226,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
       jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
       jsonReport: process.env.DATADOG_SYNTHETICS_JSON_REPORT,
+      pageLevelVrt: Object.keys(envPageLevelVrt).length > 0 ? envPageLevelVrt : undefined,
       publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
       selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
       subdomain: process.env.DATADOG_SUBDOMAIN,
@@ -255,6 +263,13 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       removeUndefinedValues({
         count: validatedOverrides.retry?.count,
         interval: validatedOverrides.retry?.interval,
+      })
+    )
+    const cliPageLevelVrt = deepExtend(
+      this.config.pageLevelVrt ?? {},
+      removeUndefinedValues({
+        captureScreenshots: this.pageLevelVrtCaptureScreenshots,
+        recordNetwork: this.pageLevelVrtRecordNetwork,
       })
     )
 
@@ -296,6 +311,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       files: this.files,
       jUnitReport: this.jUnitReport,
       jsonReport: this.jsonReport,
+      pageLevelVrt: Object.keys(cliPageLevelVrt).length > 0 ? cliPageLevelVrt : undefined,
       publicIds: this.publicIds,
       selectiveRerun: this.selectiveRerun,
       subdomain: this.subdomain,

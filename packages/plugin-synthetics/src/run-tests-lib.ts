@@ -154,6 +154,13 @@ export const executeTests = async (
 
   const publicIdsToTrigger = tests.flatMap(({public_id}) => (public_id ? [public_id] : []))
 
+  const pageLevelVrt = config.pageLevelVrt
+  if (pageLevelVrt && Object.values(pageLevelVrt).some(Boolean)) {
+    overriddenTestsToTrigger.forEach((testToTrigger) => {
+      testToTrigger.pageLevelVrt = pageLevelVrt
+    })
+  }
+
   if (config.tunnel) {
     let presignedURL: string
     try {
