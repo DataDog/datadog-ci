@@ -32,6 +32,11 @@ export const uploadTerraformArtifact =
       event.repo_id = payload.repoId
     }
 
+    // Add expected_plan_count if provided (plan uploads only)
+    if (payload.expectedPlanCount !== undefined) {
+      event.expected_plan_count = payload.expectedPlanCount
+    }
+
     // Append event JSON
     form.append('event', JSON.stringify(event), {filename: 'event.json'})
 

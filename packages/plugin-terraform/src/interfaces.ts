@@ -9,6 +9,7 @@ export interface TerraformArtifactPayload {
   artifactSizeBytes: number
   spanTags: SpanTags
   repoId?: string
+  expectedPlanCount?: number
 }
 
 export interface APIHelper {
