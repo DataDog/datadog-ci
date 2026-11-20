@@ -1,3 +1,5 @@
+import {stripVTControlCharacters} from 'util'
+
 import type {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 import type {CommandClass} from 'clipanion'
 
@@ -72,8 +74,12 @@ describe('cli', () => {
       expect(command.usage?.category?.charAt(0)).toStrictEqual(command.usage?.category?.charAt(0).toUpperCase())
       expect(command.usage?.description?.charAt(0)).toStrictEqual(command.usage?.description?.charAt(0).toUpperCase())
 
-      // The CLI adds the authentication requirements from `AUTH_REQUIREMENTS` to every command's `--help`.
-      expect(command.usage?.details).toContain('Authentication: ')
+      // The CLI adds an "Authentication" section from `AUTH_REQUIREMENTS` to every command's detailed `--help`.
+      expect(
+        stripVTControlCharacters(
+          cli.usage(command as Parameters<typeof cli.usage>[0], {colored: false, detailed: true})
+        )
+      ).toContain('\nAuthentication\n\nThis command ')
     })
   })
 
