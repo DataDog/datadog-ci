@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
-import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/terminal-link'
 
@@ -30,8 +29,6 @@ export class SyntheticsImportTestsCommand extends BaseCommand {
     description: 'Import the Main Test Definition from a Datadog scheduled test as a Local Test Definition.',
     details: `
       This command imports a Main Test Definition from a Datadog scheduled test as a Local Test Definition to be used in local development.
-
-      ${AUTH_HELP.orgAction}
     `,
     examples: [
       [

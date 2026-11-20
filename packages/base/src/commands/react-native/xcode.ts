@@ -10,8 +10,6 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {parsePlist} from '@datadog/datadog-ci-base/helpers/plist'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {ReactNativeUploadCommand} from './upload'
 import {getReactNativeVersion} from './utils'
 
@@ -78,8 +76,6 @@ export class ReactNativeXcodeCommand extends BaseCommand {
     details: `
       This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding JavaScript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

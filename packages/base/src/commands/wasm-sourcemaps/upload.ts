@@ -29,8 +29,6 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {getWasmSourcemapRequestBuilder, uploadMultipartHelper} from './helpers'
 import {SOURCE_MAP_FILE_NAME, TYPE_WASM_SOURCEMAP, VALUE_NAME_SOURCE_MAP} from './interfaces'
 import {
@@ -55,8 +53,6 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
     details: `
       This command uploads *.wasm.map files and associates each one with the public URL of its corresponding
       WebAssembly module. Datadog uses the sourcemaps to deobfuscate WASM stack frames.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

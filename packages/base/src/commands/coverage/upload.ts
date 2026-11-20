@@ -2,8 +2,6 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {BaseCommand} from '../..'
 
 export class CoverageUploadCommand extends BaseCommand {
@@ -15,8 +13,6 @@ export class CoverageUploadCommand extends BaseCommand {
     details: `
       This command will upload code coverage report files to Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Upload all code coverage report files in current directory and its subfolders', 'datadog-ci coverage upload .'],

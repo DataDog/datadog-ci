@@ -3,8 +3,6 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {BaseCommand} from '../..'
 
 export class DoraDeploymentCommand extends BaseCommand {
@@ -16,8 +14,6 @@ export class DoraDeploymentCommand extends BaseCommand {
     details: `
     This command sends details to Datadog about a deployment of a service.\n
     See README for more details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

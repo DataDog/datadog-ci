@@ -14,8 +14,6 @@ import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {isValidDebugId} from './debugId'
 import {
   renderDiscoveryWarning,
@@ -33,8 +31,6 @@ export class SourcemapsFindCommand extends BaseCommand {
     description: 'Find local JavaScript sourcemaps by debug ID.',
     details: `
       This read-only command finds local sourcemaps by their top-level debug_id field or reports sourcemaps without one.
-
-      ${AUTH_HELP.none}
     `,
     examples: [
       ['Find a debug ID', 'datadog-ci sourcemaps find ./dist --debug-id 12345678-1234-1234-1234-123456789abc'],

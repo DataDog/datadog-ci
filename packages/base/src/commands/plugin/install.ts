@@ -1,6 +1,5 @@
 import {Command, Option} from 'clipanion'
 
-import {AUTH_HELP} from '../../helpers/auth'
 import {messageBox} from '../../helpers/message-box'
 import {installPlugin, scopeToPackageName} from '../../helpers/plugin'
 
@@ -16,8 +15,6 @@ export class PluginInstallCommand extends BaseCommand {
       This command will install or upgrade a plugin, matching the currently running version of datadog-ci.
 
       You may override the plugin version with \`PLUGIN_INSTALL_VERSION_OVERRIDE\`.
-
-      ${AUTH_HELP.none}
     `,
     examples: [
       [

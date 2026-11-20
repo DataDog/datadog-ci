@@ -3,8 +3,6 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {BaseCommand} from '../..'
 
 /**
@@ -21,8 +19,6 @@ export class DeploymentGateCommand extends BaseCommand {
     details: `
       This command allows to evaluate a deployment gate in Datadog.
       The command will exit with status 0 when the gate passes and status 1 otherwise.
-
-      ${AUTH_HELP.orgAction}
     `,
     examples: [
       [

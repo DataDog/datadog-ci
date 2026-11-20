@@ -25,8 +25,6 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {RNSourcemap, RN_SOURCEMAP_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -53,8 +51,6 @@ export class ReactNativeUploadCommand extends BaseCommand {
     details: `
       This command will upload React Native sourcemaps and their corresponding JavaScript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       [

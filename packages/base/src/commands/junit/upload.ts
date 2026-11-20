@@ -4,7 +4,6 @@ import * as t from 'typanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
-import {AUTH_HELP} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 export class JunitUploadCommand extends BaseCommand {
@@ -16,8 +15,6 @@ export class JunitUploadCommand extends BaseCommand {
     details: `
       This command will upload to jUnit XML test reports files to Datadog.\n
       See README for details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],

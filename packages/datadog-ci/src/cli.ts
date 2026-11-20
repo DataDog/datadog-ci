@@ -5,6 +5,7 @@ import type {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
+import {withAuthHelp} from '@datadog/datadog-ci-base/helpers/auth'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
@@ -45,7 +46,7 @@ Object.entries(commandDeclarations).forEach(([scope, commands]) => {
     return
   }
 
-  commands.forEach((command) => cli.register(command))
+  commands.forEach((command) => cli.register(withAuthHelp(command)))
 })
 
 // `__getInjectedPlugins` is injected by tsdown.

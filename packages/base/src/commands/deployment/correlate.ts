@@ -2,8 +2,6 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-import {AUTH_HELP} from '../../helpers/auth'
-
 import {BaseCommand} from '../..'
 
 /**
@@ -20,8 +18,6 @@ export class DeploymentCorrelateCommand extends BaseCommand {
     details: `
       This command will correlate the pipeline with a GitOps CD deployment.\n
       See README for additional details.
-
-      ${AUTH_HELP.apiKey}
     `,
     examples: [
       ['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd'],

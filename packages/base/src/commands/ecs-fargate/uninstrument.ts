@@ -2,7 +2,6 @@ import type {EcsFargateConfigOptions} from './common'
 
 import {Command, Option} from 'clipanion'
 
-import {getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {EcsFargateCommand} from './common'
@@ -13,7 +12,6 @@ export class EcsFargateUninstrumentCommand extends EcsFargateCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Revert Datadog instrumentation from an Amazon ECS Fargate task definition.',
-    details: getCloudCredentialsOnlyAuthHelp('AWS credentials'),
   })
 
   private envVars = Option.Array('-e,--env-vars', {

@@ -1,6 +1,5 @@
 import {Command, Option} from 'clipanion'
 
-import {getServerlessInstrumentAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {LAMBDA_LAYER_VERSIONS} from '../../helpers/serverless/lambda-layer-versions'
 
@@ -17,10 +16,6 @@ export class LambdaInstrumentCommand extends BaseCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to a Lambda.',
-    details: getServerlessInstrumentAuthHelp(
-      'AWS credentials',
-      'a Datadog API key (DATADOG_API_KEY or DD_API_KEY, or DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN)'
-    ),
   })
 
   protected apmFlushDeadline = Option.String('--apm-flush-deadline', {
