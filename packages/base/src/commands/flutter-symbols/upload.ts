@@ -35,6 +35,7 @@ import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {SourcemapsUploadCommand} from '../sourcemaps/upload'
+import {WasmSourcemapsUploadCommand} from '../wasm-sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
@@ -147,7 +148,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     }
     if (this.webSourceMapsLocation) {
       uploadInfo.push({
-        fileType: 'JavaScript Source Maps',
+        fileType: 'JavaScript and WebAssembly Source Maps',
         location: this.webSourceMapsLocation,
         platform: 'Browser',
       })
@@ -196,6 +197,10 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       }
       if (this.webSourceMapsLocation) {
         callResults.push(await this.performSourceMapUpload())
+        const wasmSourcemaps = globSync(buildPath(this.webSourceMapsLocation, '**/*.wasm.map'), {dot: true})
+        if (wasmSourcemaps.length > 0) {
+          callResults.push(await this.performSourceMapUpload(WasmSourcemapsUploadCommand))
+        }
       }
 
       const totalTime = (Date.now() - initialTime) / 1000
@@ -206,7 +211,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       return 1
     }
 
-    return 0
+    return callResults.some((status) => status === UploadStatus.Failure) ? 1 : 0
   }
 
   private getAndroidMetadata(): MappingMetadata {
@@ -470,10 +475,11 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     return UploadStatus.Success
   }
 
-  private async performSourceMapUpload() {
+  private async performSourceMapUpload(
+    command: typeof SourcemapsUploadCommand | typeof WasmSourcemapsUploadCommand = SourcemapsUploadCommand
+  ) {
     const sourceMapUploadCommand = [
-      'sourcemaps',
-      'upload',
+      ...command.paths[0],
       this.webSourceMapsLocation!,
       `--service=${this.serviceName}`,
       `--release-version=${this.version}`,
@@ -487,7 +493,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       sourceMapUploadCommand.push('--disable-git')
     }
 
-    const exitCode = await performSubCommand(SourcemapsUploadCommand, sourceMapUploadCommand, {
+    const exitCode = await performSubCommand(command, sourceMapUploadCommand, {
       ...this.context,
       repositoryData: this.gitData,
     })
