@@ -38,7 +38,7 @@ describe('authentication in --help', () => {
 
       const section = getAuthenticationSection(renderHelp(commandClass))
       expect(section).toMatch(/^This command /)
-      expect(section).toContain('See\nhttps://github.com/DataDog/datadog-ci#authentication')
+      expect(section).toMatch(/\n\nSee https:\/\/github\.com\/DataDog\/datadog-ci#authentication\n$/)
     }
   )
 
