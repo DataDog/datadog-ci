@@ -44,7 +44,7 @@ describe('import-tests', () => {
           return Promise.resolve(mockTest)
         }),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
       jest.spyOn(tests, 'getTestConfigs').mockImplementation(async () => [])
 
       await importTests(mockReporter, config)
@@ -87,7 +87,7 @@ describe('import-tests', () => {
           .mockReturnValueOnce(Promise.resolve(mockTest))
           .mockReturnValueOnce(Promise.resolve({...mockTest, public_id: config['publicIds'][1]})),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
       jest.spyOn(tests, 'getTestConfigs').mockImplementation(async () => [])
 
       await importTests(mockReporter, config)
@@ -129,7 +129,7 @@ describe('import-tests', () => {
           .mockReturnValueOnce(Promise.resolve({...mockTest, name: 'Some name'}))
           .mockReturnValueOnce(Promise.resolve({...mockTest, name: 'Some browser test'})),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
       jest.spyOn(tests, 'getTestConfigs').mockImplementation(async () => [])
 
       await importTests(mockReporter, config)
@@ -195,7 +195,7 @@ describe('import-tests', () => {
           .mockReturnValueOnce(Promise.resolve({...mockTest, name: 'Some other name'}))
           .mockReturnValueOnce(Promise.resolve({...mockTest, public_id: config['publicIds'][1]})),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
       jest.spyOn(tests, 'getTestConfigs').mockResolvedValue(mockTriggerConfig)
 
       await importTests(mockReporter, config)

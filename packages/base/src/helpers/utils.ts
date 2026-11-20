@@ -98,7 +98,7 @@ export const resolveConfigFromFile = async <T extends object>(
   }
   const parsedConfig = await getConfig(resolvedConfigPath)
 
-  return deepExtend(baseConfig, parsedConfig ?? {}) as unknown as T
+  return deepExtend(baseConfig, parsedConfig ?? {})
 }
 
 type ProxyType =

@@ -83,7 +83,7 @@ describe('commons', () => {
       const region = 'sa-east-1'
       const lambdaLibraryLayerName = LAYER_LOOKUP[runtime]
       const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
-      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region) + ':11'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY, region) + ':11'
       layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
       layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
@@ -106,7 +106,7 @@ describe('commons', () => {
       const region = 'sa-east-1'
       const lambdaLibraryLayerName = LAYER_LOOKUP[runtime]
       const fullLambdaLibraryLayerArn = getLayerArn(config, config.Runtime, region) + ':49'
-      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region) + ':11'
+      const fullExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY, region) + ':11'
       layerARNs = addLayerArn(fullLambdaLibraryLayerArn, lambdaLibraryLayerName, layerARNs)
       layerARNs = addLayerArn(fullExtensionLayerArn, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
@@ -370,7 +370,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerKey, region, settings)
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension`)
     })
 
@@ -388,7 +388,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension-ARM`)
     })
 
@@ -403,7 +403,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerKey, region, settings)
+      const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`)
     })
 
@@ -421,7 +421,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY, region, settings)
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension-ARM`
       )
@@ -441,7 +441,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node20-x`)
     })
 
@@ -460,7 +460,7 @@ describe('commons', () => {
         tracingEnabled: false,
       }
       const region = 'sa-east-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
 
@@ -479,7 +479,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python312`)
     })
 
@@ -499,7 +499,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'us-gov-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime, region, settings)
       expect(layerArn).toEqual(
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )
@@ -521,7 +521,7 @@ describe('commons', () => {
         lambdaFips: false,
       }
       const region = 'us-east-1'
-      const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
+      const layerArn = getLayerArn(config, config.Runtime, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:dd-trace-dotnet-ARM`)
     })
   })
@@ -827,19 +827,19 @@ describe('commons', () => {
 
   describe('getLatestLayerVersionFromFile', () => {
     it('returns correct version for extension layer', () => {
-      const version = getLatestLayerVersion('extension' as LayerKey)
+      const version = getLatestLayerVersion('extension')
       expect(typeof version).toBe('number')
       expect(version).toBeGreaterThan(0)
     })
 
     it('returns correct version for python runtime', () => {
-      const version = getLatestLayerVersion('python3.9' as LayerKey)
+      const version = getLatestLayerVersion('python3.9')
       expect(typeof version).toBe('number')
       expect(version).toBeGreaterThan(0)
     })
 
     it('returns correct version for nodejs runtime', () => {
-      const version = getLatestLayerVersion('nodejs20.x' as LayerKey)
+      const version = getLatestLayerVersion('nodejs20.x')
       expect(typeof version).toBe('number')
       expect(version).toBeGreaterThan(0)
     })

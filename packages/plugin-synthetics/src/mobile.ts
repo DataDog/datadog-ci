@@ -228,7 +228,7 @@ export const uploadMobileApplicationVersion = async (
     originalFileName: config.mobileApplicationVersionFilePath,
     versionName: config.versionName,
     isLatest: config.latest,
-  } as MobileApplicationNewVersionParams
+  }
 
   const appRenderingInfo = {
     appId: config.mobileApplicationId,

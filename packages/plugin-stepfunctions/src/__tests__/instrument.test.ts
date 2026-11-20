@@ -233,7 +233,7 @@ describe('stepfunctions instrument test', () => {
         includeExecutionData: false,
       }
       const stepFunction = describeStateMachineFixture({loggingConfiguration})
-      jest.spyOn(aws, 'describeStateMachine').mockResolvedValue(stepFunction as any)
+      jest.spyOn(aws, 'describeStateMachine').mockResolvedValue(stepFunction)
 
       const {code} = await runCLI([
         '--forwarder',
@@ -289,7 +289,7 @@ describe('stepfunctions instrument test', () => {
         ],
       }
       const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
-      jest.spyOn(aws, 'describeStateMachine').mockResolvedValue(describeStateMachineCommandOutput as any)
+      jest.spyOn(aws, 'describeStateMachine').mockResolvedValue(describeStateMachineCommandOutput)
 
       const {code} = await runCLI([
         '--forwarder',
@@ -357,7 +357,7 @@ describe('stepfunctions instrument test', () => {
         ],
       }
       const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
-      jest.spyOn(aws, 'describeStateMachine').mockResolvedValue(describeStateMachineCommandOutput as any)
+      jest.spyOn(aws, 'describeStateMachine').mockResolvedValue(describeStateMachineCommandOutput)
 
       const {code} = await runCLI([
         '--forwarder',

@@ -36,7 +36,7 @@ const MIME_TYPES = {
 } as const
 type Extension = keyof typeof MIME_TYPES
 const isMIMEType = (mime: string): mime is Extension => {
-  return Object.keys(MIME_TYPES).includes(mime as Extension)
+  return Object.keys(MIME_TYPES).includes(mime)
 }
 
 type File =

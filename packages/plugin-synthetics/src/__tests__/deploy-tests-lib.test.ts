@@ -30,7 +30,7 @@ describe('deploy-tests', () => {
         }),
         editTest: jest.fn(),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
 
       await deployTests(mockReporter, config)
 
@@ -65,7 +65,7 @@ describe('deploy-tests', () => {
         }),
         editTest: jest.fn(),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
 
       await deployTests(mockReporter, config)
 
@@ -124,7 +124,7 @@ describe('deploy-tests', () => {
         getTest: jest.fn(async () => existingRemoteTest),
         editTest: jest.fn(),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
 
       await deployTests(mockReporter, config)
 
@@ -183,7 +183,7 @@ describe('deploy-tests', () => {
         getTest: jest.fn(async () => existingRemoteTest),
         editTest: jest.fn(),
       })
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper)
 
       await deployTests(mockReporter, config)
 

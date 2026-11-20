@@ -90,7 +90,7 @@ export const getKuduClient = async (
       ? response.data
         ? (JSON.parse(response.data) as T)
         : undefined
-      : (response.data as T)
+      : response.data
   }
 
   // Runs `script` and returns whether it exited 0. `untilReady` retries retryable SCM statuses,

@@ -251,7 +251,7 @@ describe('waitForResults', () => {
         ...deepExtend({}, batch),
         results: [{...getPassedResultInBatch(), test_name: 'Member test', test_public_id: 'member-pid'}],
       }),
-      pollResultsImplementation: async () => [{...deepExtend({}, pollResult), test: {}} as PollResult],
+      pollResultsImplementation: async () => [{...deepExtend({}, pollResult), test: {}}],
     })
 
     const suiteTest: Test = {
@@ -259,7 +259,7 @@ describe('waitForResults', () => {
       public_id: 'suite-pid',
       type: 'suite',
       memberPublicIds: ['member-pid'],
-    } as Test
+    }
 
     const results = await waitForResults(
       api,

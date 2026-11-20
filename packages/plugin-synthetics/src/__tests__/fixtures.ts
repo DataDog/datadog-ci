@@ -670,7 +670,7 @@ export const getMockApiConfiguration = (): APIConfiguration => ({
   baseUnstableUrl: 'http://baseUnstable',
   baseV1Url: 'http://baseV1',
   baseV2Url: 'http://baseV2',
-  proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+  proxyOpts: {protocol: 'http'},
 })
 
 export const getApiHelper = () => {

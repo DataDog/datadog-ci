@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import type {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
-import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
+import type {RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
@@ -250,7 +250,7 @@ describe('evaluate', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as RequestConfig,
+        config: {},
         data: {
           data: {
             attributes: {
@@ -268,7 +268,7 @@ describe('evaluate', () => {
       status: 200,
       statusText: 'OK',
       headers: {},
-      config: {} as RequestConfig,
+      config: {},
       data: {
         data: {
           attributes: {

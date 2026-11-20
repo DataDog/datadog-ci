@@ -202,7 +202,7 @@ describe('uninstrument', () => {
           Runtime: Runtime.dotnet6,
         }
 
-        const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
+        const updateRequest = calculateUpdateRequest(config, config.Runtime)
         expect(updateRequest).toMatchInlineSnapshot(`
           {
             "Environment": {
@@ -234,7 +234,7 @@ describe('uninstrument', () => {
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:java',
           Runtime: Runtime.java11,
         }
-        const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
+        const updateRequest = calculateUpdateRequest(config, config.Runtime)
         expect(updateRequest).toMatchInlineSnapshot(`
           {
             "Environment": {
@@ -256,7 +256,7 @@ describe('uninstrument', () => {
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom',
           Runtime: Runtime.dotnet6,
         }
-        const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
+        const updateRequest = calculateUpdateRequest(config, config.Runtime)
         expect(updateRequest).toMatchInlineSnapshot(`
           {
             "Environment": {

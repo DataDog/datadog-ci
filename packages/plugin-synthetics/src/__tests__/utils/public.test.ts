@@ -874,14 +874,14 @@ describe('utils', () => {
       expect(
         utils.getDatadogHost({
           apiVersion: 'v1',
-          config: {...ciConfig, datadogSite: 'datadoghq.com' as string},
+          config: {...ciConfig, datadogSite: 'datadoghq.com'},
           useIntake: true,
         })
       ).toBe('https://intake.synthetics.datadoghq.com/api/v1')
       expect(
         utils.getDatadogHost({
           apiVersion: 'v1',
-          config: {...ciConfig, datadogSite: 'datad0g.com' as string},
+          config: {...ciConfig, datadogSite: 'datad0g.com'},
           useIntake: true,
         })
       ).toBe('https://intake.synthetics.datad0g.com/api/v1')
