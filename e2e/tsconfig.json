@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": ["es2020"],
     "target": "es6",
-    "module": "commonjs",
+    "module": "node16",
     "moduleResolution": "node16",
     "declaration": true,
     "sourceMap": true,
@@ -12,7 +12,8 @@
     "useUnknownInCatchVariables": false,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "rootDir": ".."
+    "rootDir": "..",
+    "types": ["node", "jest"]
   },
   "include": ["."]
 }

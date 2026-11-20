@@ -39,7 +39,7 @@ const mockDwarfdumpAndLipoIfNotMacOS = () => {
 
       if (fixture !== undefined) {
         const outputLines = fixture.dwarf.map((dwarf) => {
-          const objectPathInDsym = upath.relative(fixture!.bundle, dwarf.object)
+          const objectPathInDsym = upath.relative(fixture.bundle, dwarf.object)
           const objectPathInMockedDSYM = buildPath(dsymPath, objectPathInDsym)
 
           return `UUID: ${dwarf.uuid} (${dwarf.arch}) ${objectPathInMockedDSYM}`

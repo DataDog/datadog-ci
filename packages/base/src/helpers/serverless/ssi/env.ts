@@ -186,7 +186,7 @@ const findRanges = (currentValue: string, fragment: PositionedEnvFragment): Rang
   const pattern = new RegExp(`(^|${escapeRegExp(separator)})(${escapeRegExp(fragment.value)})(?=${separator}|$)`, 'g')
 
   return [...currentValue.matchAll(pattern)].map((match): Range => {
-    const start = match.index! + match[1].length
+    const start = match.index + match[1].length
 
     return [start, start + fragment.value.length]
   })
