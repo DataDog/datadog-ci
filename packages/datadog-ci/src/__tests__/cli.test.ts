@@ -71,6 +71,9 @@ describe('cli', () => {
       // Please uppercase the first letter of the category and description.
       expect(command.usage?.category?.charAt(0)).toStrictEqual(command.usage?.category?.charAt(0).toUpperCase())
       expect(command.usage?.description?.charAt(0)).toStrictEqual(command.usage?.description?.charAt(0).toUpperCase())
+
+      // The CLI adds the authentication requirements from `AUTH_REQUIREMENTS` to every command's `--help`.
+      expect(command.usage?.details).toContain('Authentication: ')
     })
   })
 
