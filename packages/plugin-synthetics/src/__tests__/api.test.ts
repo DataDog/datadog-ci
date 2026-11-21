@@ -360,6 +360,46 @@ describe('dd-api', () => {
     expect(httpRequestMock).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
   })
 
+  test.each<[string, {accessToken?: string; apiKey: string; appKey: string}]>([
+    ['an access token only', {apiKey: '', appKey: '', accessToken: 'access-token'}],
+    ['an API key and an application key', {apiKey: 'api-key', appKey: 'app-key'}],
+  ])('should not send Datadog credentials to presigned upload URLs with %s', async (_, credentials) => {
+    const httpRequestMock = jest.mocked(requestModule.httpRequest)
+    httpRequestMock.mockResolvedValue({
+      data: {},
+      status: 200,
+      headers: {etag: '"123"'},
+      statusText: 'OK',
+      config: {},
+    } as any)
+    const proxyOpts = {protocol: 'http', host: '127.0.0.1', port: 8126} as const
+    const api = apiConstructor({...apiConfiguration, ...credentials, proxyOpts})
+
+    await api.uploadMobileApplicationPart(
+      MOBILE_PRESIGNED_UPLOAD_PARTS,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
+    )
+    await api.getTest('abc-def-ghi')
+
+    const uploadCalls = httpRequestMock.mock.calls
+      .slice(0, MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+      .map(([config]) => config)
+    const datadogCall = httpRequestMock.mock.calls[MOBILE_PRESIGNED_UPLOAD_PARTS.length][0]
+    for (const config of uploadCalls) {
+      expect(config.headers).not.toHaveProperty('Authorization')
+      expect(config.headers).not.toHaveProperty('DD-API-KEY')
+      expect(config.headers).not.toHaveProperty('DD-APPLICATION-KEY')
+      expect(config.headers).toHaveProperty('Content-MD5')
+      // Same proxy settings as the Datadog API requests.
+      expect(config.dispatcher).toBeDefined()
+      expect(config.dispatcher).toBe(datadogCall.dispatcher)
+    }
+    // The Datadog API requests still authenticate.
+    expect(Object.keys(datadogCall.headers ?? {})).toEqual(
+      expect.arrayContaining(credentials.accessToken ? ['Authorization'] : ['DD-API-KEY', 'DD-APPLICATION-KEY'])
+    )
+  })
+
   test('should return empty ETag when doing azure part upload', async () => {
     const httpRequestMock = jest.mocked(requestModule.httpRequest)
     httpRequestMock.mockResolvedValue({data: {}, status: 200, headers: {}, statusText: 'OK', config: {}} as any)

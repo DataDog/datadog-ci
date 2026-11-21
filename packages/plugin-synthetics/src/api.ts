@@ -481,6 +481,8 @@ export const apiConstructor = (configuration: APIConfiguration) => {
   const requestV2 = getRequestBuilder({...baseOptions, baseUrl: baseV2Url})
   const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
+  // Presigned storage URLs (S3, Azure) must not receive Datadog credentials: no API key, application key or access token.
+  const requestPresignedStorage = getRequestBuilder({baseUrl: baseV1Url, proxyOpts})
 
   return {
     getBatch: getBatch(requestV1),
@@ -495,7 +497,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     pollResults: pollResults(requestV2),
     searchTests: searchTests(requestV1),
     triggerTests: triggerTests(requestIntake),
-    uploadMobileApplicationPart: uploadMobileApplicationPart(requestV1),
+    uploadMobileApplicationPart: uploadMobileApplicationPart(requestPresignedStorage),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
