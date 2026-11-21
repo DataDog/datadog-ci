@@ -734,6 +734,8 @@ export interface TestSearchResult {
 }
 
 export interface APIConfiguration {
+  /** Sent as a Bearer token. Takes precedence over `appKey`. */
+  accessToken?: string
   apiKey: string
   appKey: string
   baseIntakeUrl: string
@@ -744,6 +746,8 @@ export interface APIConfiguration {
 }
 
 export interface APIHelperConfig {
+  /** Sent as a Bearer token. When set, `apiKey` and `appKey` are not required. */
+  accessToken?: string
   apiKey: string
   appKey: string
   datadogSite: string

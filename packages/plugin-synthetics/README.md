@@ -39,7 +39,7 @@ For more information about plugins, see [Installing a plugin](/packages/datadog-
 
 ### Setup the client
 
-To setup the client, your Datadog API and application keys need to be configured. These keys can be defined in three different ways:
+To setup the client, configure either a Datadog access token, or your Datadog API and application keys. These credentials can be defined in three different ways:
 
 1. Defined in a [global configuration file](#global-configuration-file):
 
@@ -62,6 +62,8 @@ To setup the client, your Datadog API and application keys need to be configured
     ```bash
     yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
     ```
+
+To use an access token instead, see [Authentication][wif-auth].
 
 ### Global configuration file
 
@@ -274,7 +276,17 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
   For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
 -->
 
-#### `apiKey` (Required)
+#### `accessToken`
+
+A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
+
+**Configuration options**
+
+* Global Config: `"accessToken": "<ACCESS_TOKEN>"`
+* ENV variable: `DD_ACCESS_TOKEN="<ACCESS_TOKEN>"`
+* CLI param: `--accessToken "<ACCESS_TOKEN>"`
+
+#### `apiKey`
 
 Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -284,7 +296,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 * ENV variable: `DD_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
-#### `appKey` (Required)
+#### `appKey`
 
 Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -877,7 +889,17 @@ This command uploads a new version to an **existing** mobile application.
   For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
 -->
 
-#### `apiKey` (Required)
+#### `accessToken`
+
+A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
+
+**Configuration options**
+
+* Global Config: `"accessToken": "<ACCESS_TOKEN>"`
+* ENV variable: `DD_ACCESS_TOKEN="<ACCESS_TOKEN>"`
+* CLI param: `--accessToken "<ACCESS_TOKEN>"`
+
+#### `apiKey`
 
 Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -887,7 +909,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 * ENV variable: `DD_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
-#### `appKey` (Required)
+#### `appKey`
 
 Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -1137,6 +1159,7 @@ Additional helpful documentation, links, and articles:
 [18]: https://docs.datadoghq.com/synthetics/mobile_app_testing/
 [19]: https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/src/interfaces.ts#L223-L254
 [20]: https://docs.datadoghq.com/synthetics/test_suites/
+[wif-auth]: https://github.com/DataDog/datadog-ci#authentication
 
 <!--
   This page is single-sourced:

@@ -20,6 +20,27 @@ describe('run-tests', () => {
   })
 
   describe('resolveConfig', () => {
+    test('resolves accessToken with the precedence config file < ENV < CLI', async () => {
+      const resolveAccessToken = async (env: NodeJS.ProcessEnv, cliAccessToken?: string) => {
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+          ...baseConfig,
+          accessToken: 'config_file_access_token',
+        }))
+        process.env = env
+        const command = createCommand(RunTestsCommand)
+        command['accessToken'] = cliAccessToken
+        await command['resolveConfig']()
+
+        return command['config'].accessToken
+      }
+
+      expect(await resolveAccessToken({})).toBe('config_file_access_token')
+      expect(await resolveAccessToken({DD_ACCESS_TOKEN: 'env_access_token'})).toBe('env_access_token')
+      expect(await resolveAccessToken({DD_ACCESS_TOKEN: 'env_access_token'}, 'cli_access_token')).toBe(
+        'cli_access_token'
+      )
+    })
+
     beforeEach(() => {
       process.env = {}
     })
@@ -1088,6 +1109,21 @@ describe('run-tests', () => {
 
       await expect(command.execute()).resolves.toBe(1)
       expect(writeMock).toHaveBeenCalledWith('\n ERROR: invalid config \nConfig file not found\n\n')
+    })
+  })
+
+  describe('missing credentials', () => {
+    test('explains the access token alternative and exits with 1', async () => {
+      const writeMock = jest.fn()
+      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}})
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
+
+      expect(await command.execute()).toBe(1)
+
+      const output = writeMock.mock.calls.map((call) => String(call[0])).join('')
+      expect(output).toContain('Missing DATADOG_APP_KEY or DD_APP_KEY in your environment.')
+      expect(output).toContain('Synthetics commands need an access token (DD_ACCESS_TOKEN')
+      expect(output).toContain('An intake mapping only provides an API key')
     })
   })
 

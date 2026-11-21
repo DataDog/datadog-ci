@@ -142,7 +142,9 @@ export const getProxyUrl = (options?: ProxyConfiguration): string => {
 }
 
 export interface RequestOptions {
-  apiKey: string
+  /** Bearer access token, for example from a Datadog Workload Identity Federation identity mapping. */
+  accessToken?: string
+  apiKey?: string
   appKey?: string
   baseUrl: string
   headers?: Map<string, string>
@@ -151,7 +153,7 @@ export interface RequestOptions {
 }
 
 export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
-  const {apiKey, appKey, baseUrl, overrideUrl, proxyOpts} = options
+  const {accessToken, apiKey, appKey, baseUrl, overrideUrl, proxyOpts} = options
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
   const dispatcher = getProxyDispatcher(proxyUrlFromConfiguration)
 
@@ -161,8 +163,9 @@ export const getRequestBuilder = (options: RequestOptions): RequestBuilder => {
       baseURL: baseUrl,
       dispatcher,
       headers: {
-        'DD-API-KEY': apiKey,
-        ...(appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
+        ...(apiKey ? {'DD-API-KEY': apiKey} : {}),
+        // An access token takes precedence over an application key: never send both.
+        ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
         ...args.headers,
       },
     }

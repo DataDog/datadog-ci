@@ -7,6 +7,11 @@ import type Ajv from 'ajv'
 
 import {SbomUploadCommand} from '@datadog/datadog-ci-base/commands/sbom/upload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {
+  getAccessTokenFromEnv,
+  getMissingOrgCredentialsMessage,
+  resolveOrgCredentials,
+} from '@datadog/datadog-ci-base/helpers/auth'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
@@ -41,6 +46,7 @@ import {
 
 export class PluginCommand extends SbomUploadCommand {
   private config = {
+    accessToken: getAccessTokenFromEnv(),
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY || '',
     env: process.env.DD_ENV,
@@ -107,24 +113,16 @@ export class PluginCommand extends SbomUploadCommand {
       return 1
     }
 
-    if (!this.config.apiKey) {
-      this.context.stderr.write('API key not defined, define the environment variable DD_API_KEY.\n')
-
-      return 1
-    }
-
-    if (!this.config.appKey) {
-      this.context.stderr.write('APP key not defined, define the environment variable DD_APP_KEY.\n')
+    const credentials = resolveOrgCredentials(this.config)
+    const missingCredentialsMessage = getMissingOrgCredentialsMessage('sbom upload', credentials)
+    if (missingCredentialsMessage) {
+      this.context.stderr.write(`${missingCredentialsMessage}\n`)
 
       return 1
     }
 
     // Get the API helper to send the payload
-    const api: (sbomPayload: ScaRequest) => Promise<RequestResponse> = getApiHelper(
-      this.config.apiKey,
-      this.config.appKey,
-      this.source
-    )
+    const api: (sbomPayload: ScaRequest) => Promise<RequestResponse> = getApiHelper(credentials, this.source)
 
     const tags = await getSpanTags(this.config, this.tags, !this.noCiTags, this.gitPath)
 

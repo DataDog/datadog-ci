@@ -284,6 +284,85 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 - `upload`: Upload WebAssembly source maps (`*.wasm.map`) for Error Tracking, identified by service, version, and module URL.
 
+### Authentication
+
+`datadog-ci` reads Datadog credentials from environment variables:
+
+| Credential | Environment variables | Sent as |
+| --- | --- | --- |
+| API key | `DD_API_KEY` or `DATADOG_API_KEY` | `DD-API-KEY` header |
+| Application key | `DD_APP_KEY` or `DATADOG_APP_KEY` | `DD-APPLICATION-KEY` header |
+| Access token | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
+
+When both forms of a variable are set, `DATADOG_*` takes precedence.
+
+All `datadog-ci` commands that communicate with Datadog are either only **Sending telemetry to your org**, or **Calling Datadog API endpoints** (and optionally sending telemetry to your org).
+
+Run `datadog-ci <command> --help` to see which credentials a command needs.
+
+- Sending telemetry requires an **API key** only.
+  - With [Workload Identity Federation][wif-docs], use an **intake mapping** to produce short-lived API keys.
+- Calling Datadog API endpoints requires to authenticate as a Datadog user or service account. This requires either an **API key and an application key**, or an **access token**.
+  - With [Workload Identity Federation][wif-docs], use an **identity mapping** to produce short-lived access tokens.
+
+> [!NOTE]
+> Use a long-lived API key with Serverless `instrument` commands: they save it in the instrumented service to send telemetry.
+
+[wif-docs]: https://docs.datadoghq.com/account_management/workload_identity_federation/
+
+#### GitHub Actions with Workload Identity Federation
+
+The [`datadog-workload-identity-federation-github-action`](https://github.com/DataDog/datadog-workload-identity-federation-github-action) exchanges the workflow's GitHub OIDC token for Datadog credentials, so no Datadog keys are stored as GitHub secrets. Its `intake` action returns an API key (`api_key` output) and its `identity` action returns an access token (`access_token` output). Both need the `id-token: write` permission and the UUID of your Datadog organization.
+
+Before using it, an administrator on your Datadog organization must create mappings with the GitHub OIDC token claims you want to allow. For example, to allow any branch of a workflow in your repository:
+
+| Claim | Pattern |
+| --- | --- |
+| `sub` | `repo:<owner>/<repo>:ref:refs/heads/.*` |
+| `job_workflow_ref` | `<owner>/<repo>/\.github/workflows/<workflow>\.yml@.*` |
+| `repository` | `<owner>/<repo>` |
+
+Then get the credentials in your workflow:
+
+```yaml
+jobs:
+  datadog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Needed to federate the GitHub OIDC token.
+    steps:
+      - uses: actions/checkout@v6
+
+      # Intake mapping: a short-lived API key for data uploads.
+      - name: Get a Datadog API key
+        id: datadog-intake
+        uses: DataDog/datadog-workload-identity-federation-github-action/intake@v1
+        with:
+          org_uuid: <your-org-uuid>
+          site: datadoghq.com
+
+      # Identity mapping: an access token for org actions.
+      - name: Get a Datadog access token
+        id: datadog-identity
+        uses: DataDog/datadog-workload-identity-federation-github-action/identity@v1
+        with:
+          org_uuid: <your-org-uuid>
+          site: datadoghq.com
+
+      - name: Upload git metadata (API key)
+        run: npx @datadog/datadog-ci git-metadata upload
+        env:
+          DD_API_KEY: ${{ steps.datadog-intake.outputs.api_key }}
+          DD_SITE: datadoghq.com
+
+      - name: Run Synthetic tests (access token)
+        run: npx @datadog/datadog-ci synthetics run-tests
+        env:
+          DD_ACCESS_TOKEN: ${{ steps.datadog-identity.outputs.access_token }}
+          DD_SITE: datadoghq.com
+```
+
 ### FIPS support
 
 The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provider if the OpenSSL library installed on the host system provides it.

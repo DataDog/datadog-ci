@@ -23,6 +23,7 @@ import type {
 } from '../interfaces'
 
 import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
+import {AUTHENTICATION_DOCS_URL} from '@datadog/datadog-ci-base/helpers/auth'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import chalk from 'chalk'
 import upath from 'upath'
@@ -556,6 +557,11 @@ export const getDatadogHost = (hostConfig: {
 
 export const pluralize = (word: string, count: number): string => (count === 1 ? word : `${word}s`)
 
+const SYNTHETICS_CREDENTIALS_HINT =
+  'Synthetics commands need an access token (DD_ACCESS_TOKEN, `accessToken` or --accessToken) from a Workload Identity Federation identity mapping, ' +
+  'or an API key and an application key. An intake mapping only provides an API key, which is not enough. ' +
+  `See ${AUTHENTICATION_DOCS_URL}\n`
+
 export const reportCiError = (error: CiError, reporter: MainReporter) => {
   switch (error.code) {
     case 'NO_TESTS_TO_RUN':
@@ -573,7 +579,9 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
     // Critical command errors
     case 'AUTHORIZATION_ERROR':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${error.message}\n\n`)
-      reporter.log('Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
+      reporter.log(
+        'Credentials refused, make sure `apiKey`, `appKey` (or `accessToken`) and `datadogSite` are correct.\n'
+      )
       break
     case 'INVALID_CONFIG':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
@@ -582,11 +590,13 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       reporter.error(
         `Missing ${chalk.red.bold('DATADOG_APP_KEY')} or ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`
       )
+      reporter.log(SYNTHETICS_CREDENTIALS_HINT)
       break
     case 'MISSING_API_KEY':
       reporter.error(
         `Missing ${chalk.red.bold('DATADOG_API_KEY')} or ${chalk.red.bold('DD_API_KEY')} in your environment.\n`
       )
+      reporter.log(SYNTHETICS_CREDENTIALS_HINT)
       break
     case 'POLL_RESULTS_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)

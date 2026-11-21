@@ -14,7 +14,6 @@ import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 import {RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
-import {CriticalError} from '../errors'
 import {ExecutionRule} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../test'
 import * as internalUtils from '../utils/internal'
@@ -361,6 +360,46 @@ describe('dd-api', () => {
     expect(httpRequestMock).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
   })
 
+  test.each<[string, {accessToken?: string; apiKey: string; appKey: string}]>([
+    ['an access token only', {apiKey: '', appKey: '', accessToken: 'access-token'}],
+    ['an API key and an application key', {apiKey: 'api-key', appKey: 'app-key'}],
+  ])('should not send Datadog credentials to presigned upload URLs with %s', async (_, credentials) => {
+    const httpRequestMock = jest.mocked(requestModule.httpRequest)
+    httpRequestMock.mockResolvedValue({
+      data: {},
+      status: 200,
+      headers: {etag: '"123"'},
+      statusText: 'OK',
+      config: {},
+    } as any)
+    const proxyOpts = {protocol: 'http', host: '127.0.0.1', port: 8126} as const
+    const api = apiConstructor({...apiConfiguration, ...credentials, proxyOpts})
+
+    await api.uploadMobileApplicationPart(
+      MOBILE_PRESIGNED_UPLOAD_PARTS,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
+    )
+    await api.getTest('abc-def-ghi')
+
+    const uploadCalls = httpRequestMock.mock.calls
+      .slice(0, MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+      .map(([config]) => config)
+    const datadogCall = httpRequestMock.mock.calls[MOBILE_PRESIGNED_UPLOAD_PARTS.length][0]
+    for (const config of uploadCalls) {
+      expect(config.headers).not.toHaveProperty('Authorization')
+      expect(config.headers).not.toHaveProperty('DD-API-KEY')
+      expect(config.headers).not.toHaveProperty('DD-APPLICATION-KEY')
+      expect(config.headers).toHaveProperty('Content-MD5')
+      // Same proxy settings as the Datadog API requests.
+      expect(config.dispatcher).toBeDefined()
+      expect(config.dispatcher).toBe(datadogCall.dispatcher)
+    }
+    // The Datadog API requests still authenticate.
+    expect(Object.keys(datadogCall.headers ?? {})).toEqual(
+      expect.arrayContaining(credentials.accessToken ? ['Authorization'] : ['DD-API-KEY', 'DD-APPLICATION-KEY'])
+    )
+  })
+
   test('should return empty ETag when doing azure part upload', async () => {
     const httpRequestMock = jest.mocked(requestModule.httpRequest)
     httpRequestMock.mockResolvedValue({data: {}, status: 200, headers: {}, statusText: 'OK', config: {}} as any)
@@ -563,11 +602,32 @@ describe('getApiHelper', () => {
   test('should throw an error if API or Application key are undefined', async () => {
     process.env = {}
 
-    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY', 'App key is required'))
+    expect(() => getApiHelper(ciConfig)).toThrow(
+      expect.objectContaining({code: 'MISSING_APP_KEY', message: expect.stringContaining('App key is required.')})
+    )
+    expect(() => getApiHelper(ciConfig)).toThrow('or an API key and an application key')
 
     expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
-      new CriticalError('MISSING_API_KEY', 'API key is required')
+      expect.objectContaining({code: 'MISSING_API_KEY', message: expect.stringContaining('API key is required.')})
     )
+  })
+
+  test('should only send a bearer token when an access token is set', async () => {
+    process.env = {}
+    jest.mocked(requestModule.httpRequest).mockResolvedValue({
+      config: {},
+      data: getApiTest('123-456-789'),
+      headers: {},
+      status: 200,
+      statusText: 'OK',
+    })
+
+    const apiHelper = getApiHelper({...ciConfig, accessToken: 'access-token', apiKey: '', appKey: 'ignored-app-key'})
+    await apiHelper.getTest('123-456-789')
+
+    expect(jest.mocked(requestModule.httpRequest).mock.calls[0][0].headers).toStrictEqual({
+      Authorization: 'Bearer access-token',
+    })
   })
 })
 

@@ -23,6 +23,7 @@ import type {
 } from './interfaces'
 import type {RequestConfig, RequestResponse, RequestError} from '@datadog/datadog-ci-base/helpers/request'
 
+import {resolveOrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
 import {isRequestError} from '@datadog/datadog-ci-base/helpers/request'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {thirdParty} from '@datadog/datadog-ci-base/helpers/request/third-party'
@@ -474,12 +475,14 @@ const retryRequest = <T>(
   )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
-  const {baseV1Url, baseV2Url, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
-  const baseOptions = {apiKey, appKey, proxyOpts}
+  const {baseV1Url, baseV2Url, baseIntakeUrl, baseUnstableUrl, accessToken, apiKey, appKey, proxyOpts} = configuration
+  const baseOptions = {...resolveOrgCredentials({accessToken, apiKey, appKey}), proxyOpts}
   const requestV1 = getRequestBuilder({...baseOptions, baseUrl: baseV1Url})
   const requestV2 = getRequestBuilder({...baseOptions, baseUrl: baseV2Url})
   const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
+  // Presigned storage URLs (S3, Azure) must not receive Datadog credentials: no API key, application key or access token.
+  const requestPresignedStorage = getRequestBuilder({baseUrl: baseV1Url, proxyOpts})
 
   return {
     getBatch: getBatch(requestV1),
@@ -494,7 +497,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     pollResults: pollResults(requestV2),
     searchTests: searchTests(requestV1),
     triggerTests: triggerTests(requestIntake),
-    uploadMobileApplicationPart: uploadMobileApplicationPart(requestV1),
+    uploadMobileApplicationPart: uploadMobileApplicationPart(requestPresignedStorage),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
@@ -502,15 +505,23 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
 export type APIHelper = ReturnType<typeof apiConstructor>
 
+const MISSING_CREDENTIALS_HINT =
+  'Set an access token (DD_ACCESS_TOKEN, `accessToken` or --accessToken) from a Workload Identity Federation identity mapping, ' +
+  'or an API key and an application key. An intake mapping only provides an API key.'
+
 export const getApiHelper = (config: APIHelperConfig): APIHelper => {
-  if (!config.appKey) {
-    throw new CriticalError('MISSING_APP_KEY', 'App key is required')
-  }
-  if (!config.apiKey) {
-    throw new CriticalError('MISSING_API_KEY', 'API key is required')
+  // An access token replaces the API key and the application key.
+  if (!config.accessToken) {
+    if (!config.appKey) {
+      throw new CriticalError('MISSING_APP_KEY', `App key is required. ${MISSING_CREDENTIALS_HINT}`)
+    }
+    if (!config.apiKey) {
+      throw new CriticalError('MISSING_API_KEY', `API key is required. ${MISSING_CREDENTIALS_HINT}`)
+    }
   }
 
   return apiConstructor({
+    accessToken: config.accessToken,
     apiKey: config.apiKey,
     appKey: config.appKey,
     baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),

@@ -1,4 +1,5 @@
 import type {EvaluationResponsePayload, Payload} from './interfaces'
+import type {OrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 import type {Writable} from 'stream'
 
@@ -36,8 +37,8 @@ export const evaluateGateRules =
     })
   }
 
-export const apiConstructor = (baseIntakeUrl: string, apiKey: string, appKey: string) => {
-  const serviceRequest = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey, appKey})
+export const apiConstructor = (baseIntakeUrl: string, credentials: OrgCredentials) => {
+  const serviceRequest = getRequestBuilder({baseUrl: baseIntakeUrl, ...credentials})
 
   return {
     evaluateGateRules: evaluateGateRules(serviceRequest),

@@ -5,6 +5,7 @@ import type {RecursivePartial} from '../utils/internal'
 import {SyntheticsRunTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/run-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
+import {getAccessTokenFromEnv} from '@datadog/datadog-ci-base/helpers/auth'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {
@@ -22,7 +23,15 @@ import {JSONReporter} from '../reporters/json'
 import {JUnitReporter} from '../reporters/junit'
 import {planDryRun, executeTests, getDefaultConfig} from '../run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from '../utils/internal'
-import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
+import {
+  getExitReason,
+  getOrgSettings,
+  renderResults,
+  reportCiError,
+  toExitCode,
+  reportExitLogs,
+  getReporter,
+} from '../utils/public'
 
 export class PluginCommand extends SyntheticsRunTestsCommand {
   protected reporter!: MainReporter
@@ -90,7 +99,19 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
     let results: Result[]
     let summary: Summary
 
-    const orgSettings = await getOrgSettings(this.reporter, this.config)
+    let orgSettings: Awaited<ReturnType<typeof getOrgSettings>>
+    try {
+      // Throws a critical error when credentials are missing.
+      orgSettings = await getOrgSettings(this.reporter, this.config)
+    } catch (error) {
+      // Missing credentials always fail the command, whatever `failOnCriticalErrors` is.
+      if (error instanceof CiError) {
+        reportCiError(error, this.reporter)
+
+        return 1
+      }
+      throw error
+    }
 
     if (this.dryRun) {
       try {
@@ -184,6 +205,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
     return {
       // ...super.resolveConfigFromEnv(),
       // BASE COMMAND START
+      accessToken: getAccessTokenFromEnv(),
       apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
       appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
       configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
@@ -261,6 +283,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
     return {
       // ...super.resolveConfigFromCli(),
       // BASE COMMAND START
+      accessToken: this.accessToken,
       apiKey: this.apiKey,
       appKey: this.appKey,
       configPath: this.configPath,
