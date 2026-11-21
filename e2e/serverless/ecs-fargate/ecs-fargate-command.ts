@@ -11,9 +11,7 @@ export const apiKey = (): string | undefined => process.env.DATADOG_API_KEY ?? p
 
 const site = (): string | undefined => process.env.DATADOG_SITE ?? process.env.DD_SITE
 
-/** The commands are in beta, so every run has to opt in. */
 export const commandEnv = (): Record<string, string | undefined> => ({
-  DD_BETA_COMMANDS_ENABLED: '1',
   DATADOG_API_KEY: apiKey(),
   DD_API_KEY: apiKey(),
   DD_SITE: site(),

@@ -4,13 +4,9 @@ You can use the CLI to instrument your AWS ECS Fargate task definitions with Dat
 
 ### `instrument`
 
-**Warning:** The `ecs-fargate instrument` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
-
 Run `datadog-ci ecs-fargate instrument` to add the Datadog Agent sidecar to an ECS Fargate task definition. The command reads the task definitions you name, adds the `datadog-agent` container to each of them, and registers the result as a new revision. Running tasks do not change until the new revision is deployed. Pass `--ecs-service` to have the command update the service for you.
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=1
-
 # Instrument a task definition, reading the API key from an AWS Secrets Manager secret
 datadog-ci ecs-fargate instrument --task-definition my-app -r us-east-1 --api-key-secret-arn <secret-arn>
 
@@ -116,13 +112,9 @@ A task definition and the services running it are instrumented and deployed on t
 
 ### `uninstrument`
 
-**Warning:** The `ecs-fargate uninstrument` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
-
 Run `datadog-ci ecs-fargate uninstrument` to remove Datadog instrumentation from an ECS Fargate task definition. The command reads the task definitions you name, removes what `instrument` added, and registers the result as a new revision. As with `instrument`, running tasks do not change until the new revision is deployed. Pass `--ecs-service` to have the command update the service for you.
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=1
-
 # Revert a task definition
 datadog-ci ecs-fargate uninstrument --task-definition my-app -r us-east-1
 
@@ -165,7 +157,6 @@ The Agent collects ECS task metadata, which is what tags your telemetry with the
 
 #### Environment variables
 
-- `DD_BETA_COMMANDS_ENABLED`: set to `1` to enable these commands while they are in beta.
 - `DD_API_KEY` (or `DATADOG_API_KEY`): the Datadog API key to write into the task definition, used by `instrument` only when `--api-key-secret-arn` is not passed.
 - `DD_SITE` (or `DATADOG_SITE`): the [Datadog site](https://docs.datadoghq.com/getting_started/site/) to send data to. Defaults to `datadoghq.com`.
 - `AWS_REGION` (or `AWS_DEFAULT_REGION`): the region to use when `--region` is not passed.
