@@ -302,7 +302,7 @@ Run `datadog-ci <command> --help` to see which credentials a command needs.
 
 - Sending telemetry requires an **API key** only.
   - With [Workload Identity Federation][wif-docs], use an **intake mapping** to produce short-lived API keys.
-- Calling Datadog API endpoints requires to authenticate as a Datadog user or service account. This requires either an **API key and an application key**, or an **access token**.
+- Calling Datadog API endpoints requires you to authenticate as a Datadog user or service account. This requires either an **API key and an application key**, or an **access token**.
   - With [Workload Identity Federation][wif-docs], use an **identity mapping** to produce short-lived access tokens.
 
 > [!NOTE]
