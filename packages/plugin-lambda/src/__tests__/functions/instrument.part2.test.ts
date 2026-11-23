@@ -765,6 +765,20 @@ describe('instrument', () => {
         expect(variables).not.toHaveProperty(tracer ? 'DD_SERVERLESS_APPSEC_ENABLED' : 'DD_APPSEC_ENABLED')
       })
 
+      test('enables tracer AppSec with the default latest layer catalog', async () => {
+        const update = await calculateUpdateRequest(
+          config,
+          {...settings, layerVersion: 'latest', extensionVersion: 'latest'},
+          region,
+          Runtime.java21
+        )
+        expect(update!.Environment!.Variables).toMatchObject({
+          DD_APPSEC_ENABLED: 'true',
+          AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper',
+        })
+        expect(update!.Environment!.Variables).not.toHaveProperty('DD_SERVERLESS_APPSEC_ENABLED')
+      })
+
       test.each([30, 31])('resolves latest layer version %s before selecting AppSec mode', async (layerVersion) => {
         const latestVersion = jest
           .spyOn(commons, 'getLatestLayerVersion')
