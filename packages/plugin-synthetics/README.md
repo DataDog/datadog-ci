@@ -496,7 +496,7 @@ To troubleshoot tests failing due to the tunnel, you can enable debug logs with 
 
 Hosts the tests can reach through the tunnel, such as `example.com` or `*.example.com`. Connections to any other host are blocked. If no value is provided, all hosts are allowed.
 
-An entry matches a host name exactly, ignoring case. A `*.` prefix matches any subdomain, but not the domain itself: `*.example.com` matches `api.example.com`, not `example.com`. IP addresses only match when listed. With `build-and-test`, the local dev server host is added automatically.
+An entry matches a host name exactly, ignoring case. A `*.` prefix matches any subdomain, but not the domain itself: `*.example.com` matches `api.example.com`, not `example.com`. IP addresses only match when listed.
 
 **Configuration options**
 
