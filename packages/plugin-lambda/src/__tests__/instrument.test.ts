@@ -1438,6 +1438,187 @@ describe('lambda', () => {
         expect(code).toBe(1)
         expect(context.stdout.toString()).toMatchSnapshot()
       })
+
+      describe('low-memory warning', () => {
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        const lowMemoryWarning = (memorySize: number) =>
+          `Function lambda-hello-world has ${memorySize} MB of memory, below the recommended minimum of 256 MB (lambda_low_memory). The Datadog Lambda Extension and tracer add memory overhead (about 70 MB for Python), which can cause out-of-memory errors and timeouts. Increase the function's memory to at least 256 MB, or pass --suppress-low-memory-warning to silence this warning.`
+        const baseArgs = [
+          '-f',
+          functionARN,
+          '--layerVersion',
+          '10',
+          '--extensionVersion',
+          'none',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ]
+
+        const mockFunctionWithMemory = (memorySize?: number) => {
+          ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+          mockLambdaConfigurations(lambdaClientMock, {
+            [functionARN]: {
+              config: {
+                FunctionArn: functionARN,
+                FunctionName: 'lambda-hello-world',
+                Handler: 'index.handler',
+                Runtime: 'nodejs22.x',
+                ...(memorySize !== undefined ? {MemorySize: memorySize} : {}),
+              },
+            },
+          })
+        }
+
+        test('warns but still instruments functions below 256 MB', async () => {
+          mockFunctionWithMemory(128)
+          const {code, context} = await runCLI(baseArgs)
+          const output = context.stdout.toString()
+
+          expect(code).toBe(0)
+          expect(output).toContain(`[Warning] ${lowMemoryWarning(128)}\n`)
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('warns for functions just below 256 MB', async () => {
+          mockFunctionWithMemory(255)
+          const {code, context} = await runCLI(baseArgs)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toContain(lowMemoryWarning(255))
+        })
+
+        test('does not warn for functions with exactly 256 MB', async () => {
+          mockFunctionWithMemory(256)
+          const {code, context} = await runCLI(baseArgs)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('does not warn when MemorySize is missing', async () => {
+          mockFunctionWithMemory(undefined)
+          const {code, context} = await runCLI(baseArgs)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+        })
+
+        test('does not warn for an already-instrumented function with no planned configuration update', async () => {
+          // First run instruments the function, so we can replay the resulting configuration.
+          mockFunctionWithMemory(128)
+          await runCLI(baseArgs)
+          const appliedUpdate = lambdaClientMock.commandCalls(UpdateFunctionConfigurationCommand)[0].args[0].input
+
+          lambdaClientMock.reset()
+          mockLambdaConfigurations(lambdaClientMock, {
+            [functionARN]: {
+              config: {
+                FunctionArn: functionARN,
+                FunctionName: 'lambda-hello-world',
+                Handler: appliedUpdate.Handler ?? 'index.handler',
+                Runtime: 'nodejs22.x',
+                MemorySize: 128,
+                Environment: appliedUpdate.Environment,
+                Layers: appliedUpdate.Layers?.map((arn) => ({Arn: arn})),
+              },
+            },
+          })
+          const {code, context} = await runCLI(baseArgs)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+          expect(lambdaClientMock).not.toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('does not warn when no Datadog layers are added', async () => {
+          mockFunctionWithMemory(128)
+          const args = [...baseArgs]
+          args[args.indexOf('--layerVersion') + 1] = 'none'
+          const {code, context} = await runCLI(args)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+          // The run still applies the environment variable changes.
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+          expect(
+            lambdaClientMock.commandCalls(UpdateFunctionConfigurationCommand)[0].args[0].input.Layers
+          ).toBeUndefined()
+        })
+
+        test('still warns in dry-run mode', async () => {
+          mockFunctionWithMemory(128)
+          const {code, context} = await runCLI([...baseArgs, '--dry-run'])
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toContain(lowMemoryWarning(128))
+          expect(lambdaClientMock).not.toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('--suppress-low-memory-warning silences the warning but still instruments', async () => {
+          mockFunctionWithMemory(128)
+          const {code, context} = await runCLI([...baseArgs, '--suppress-low-memory-warning'])
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('suppressLowMemoryWarning in the config file silences the warning', async () => {
+          mockFunctionWithMemory(128)
+          const command = createCommand(InstrumentCommand)
+          command['functions'] = [functionARN]
+          command['sourceCodeIntegration'] = false
+          command['config']['layerVersion'] = '10'
+          command['config']['extensionVersion'] = 'none'
+          command['config']['suppressLowMemoryWarning'] = true
+
+          const code = await command['execute']()
+
+          expect(code).toBe(0)
+          expect(command.context.stdout.toString()).not.toContain('lambda_low_memory')
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('warns before asking for confirmation in interactive mode', async () => {
+          mockFunctionWithMemory(128)
+          mockLambdaLayers(lambdaClientMock, {
+            [`arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x:10`]: {
+              LayerName: `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`,
+              VersionNumber: 10,
+            },
+          })
+          process.env[AWS_DEFAULT_REGION_ENV_VAR] = 'us-east-1'
+          process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+
+          const command = createCommand(InstrumentCommand)
+          command['interactive'] = true
+          command['functions'] = [functionARN]
+          command['sourceCodeIntegration'] = false
+          command['layerVersion'] = '10'
+          command['extensionVersion'] = 'none'
+
+          let outputAtConfirmation: string | undefined
+          ;(requestConfirmation as any).mockImplementation(() => {
+            outputAtConfirmation = command.context.stdout.toString()
+
+            return true
+          })
+
+          const code = await command['execute']()
+
+          expect(code).toBe(0)
+          expect(requestConfirmation).toHaveBeenCalled()
+          expect(outputAtConfirmation).toContain(lowMemoryWarning(128))
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+      })
     })
 
     describe('getSettings', () => {
@@ -1615,12 +1796,10 @@ describe('lambda', () => {
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appsecEnabled'>)[] = [
-          'flushMetricsToLogs',
-          'logging',
-          'mergeXrayTraces',
-          'tracing',
-        ]
+        const stringBooleans: (keyof Omit<
+          LambdaConfigOptions,
+          'functions' | 'interactive' | 'appsecEnabled' | 'suppressLowMemoryWarning'
+        >)[] = ['flushMetricsToLogs', 'logging', 'mergeXrayTraces', 'tracing']
         for (const option of stringBooleans) {
           let command = createCommand(InstrumentCommand)
           command['config'][option] = 'NotBoolean'

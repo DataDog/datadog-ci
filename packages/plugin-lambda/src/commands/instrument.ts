@@ -26,7 +26,12 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serv
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from '../constants'
+import {
+  AWS_DEFAULT_REGION_ENV_VAR,
+  EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+  LAMBDA_FIPS_ENV_VAR,
+  LOW_MEMORY_THRESHOLD_MB,
+} from '../constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -296,6 +301,9 @@ export class PluginCommand extends LambdaInstrumentCommand {
     }
 
     this.printPlannedActions(configList)
+    // Printed before the dry-run exit and before the interactive confirmation prompt, so users see it either way.
+    // This only warns: functions are still instrumented exactly as before.
+    this.printLowMemoryWarnings(configList)
     if (this.dryRun || configList.length === 0) {
       return 0
     }
@@ -495,6 +503,35 @@ export class PluginCommand extends LambdaInstrumentCommand {
           )}\n`
         )
       }
+    }
+  }
+
+  /**
+   * Warns about functions configured with less memory than {@link LOW_MEMORY_THRESHOLD_MB}.
+   *
+   * Only functions that get Datadog layers in this run are checked: the planned update sets `Layers`
+   * only when it adds the Datadog library layer or extension (or changes their version). Functions that
+   * are already instrumented, or runs with `--layerVersion none --extensionVersion none`, stay silent.
+   *
+   * This lives in the command layer on purpose: `getInstrumentedFunctionConfig` is also used by
+   * remote instrumentation, which must not log this warning.
+   */
+  private printLowMemoryWarnings(configs: FunctionConfiguration[]): void {
+    if (this.suppressLowMemoryWarning || this.config.suppressLowMemoryWarning === true) {
+      return
+    }
+
+    for (const {functionARN, lambdaConfig, updateFunctionConfigurationCommandInput} of configs) {
+      if (updateFunctionConfigurationCommandInput?.Layers === undefined) {
+        continue
+      }
+      const memorySize = lambdaConfig.MemorySize
+      if (memorySize === undefined || memorySize >= LOW_MEMORY_THRESHOLD_MB) {
+        continue
+      }
+      this.context.stdout.write(
+        instrumentRenderer.renderLowMemoryWarning(lambdaConfig.FunctionName ?? functionARN, memorySize)
+      )
     }
   }
 

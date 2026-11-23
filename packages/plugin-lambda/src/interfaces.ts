@@ -35,6 +35,7 @@ export interface LambdaConfigOptions {
   profile?: string
   region?: string
   service?: string
+  suppressLowMemoryWarning?: boolean
   tracing?: string
   version?: string
   llmobs?: string

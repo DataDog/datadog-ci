@@ -36,6 +36,8 @@ datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-
 datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 81 -e 49 --dry-run
 ```
 
+**Note**: The Datadog Lambda Extension and tracer add memory overhead (about 70 MB for Python). If `instrument` adds the Datadog library layer or extension to a function with less than 256 MB of memory, it prints a `lambda_low_memory` warning but still instruments the function. The warning also appears in dry-run and interactive modes. Functions that already have these layers, and runs with `--layerVersion none --extensionVersion none`, don't get the warning. To silence the warning, increase the function's memory to at least 256 MB, pass `--suppress-low-memory-warning`, or set `"suppressLowMemoryWarning": true` in the configuration file.
+
 ### `uninstrument`
 
 Run `datadog-ci lambda uninstrument` to revert Datadog instrumentation in a Lambda. This command automatically removes the Datadog configuration, such as the Datadog Lambda Library and the Datadog Lambda Extension layers, as well as other configurations applied by the datadog-ci.
@@ -138,6 +140,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--functions-regex` or `--functionsRegex` |  | A regex pattern to match with the Lambda function name |  |
 | `--region` | `-r` | Default region to use, when --function is specified by the function name instead of the ARN |  |
 | `--service` |  | Use --service to group related functions belonging to similar workloads. Learn more about the service tag here: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag |  |
+| `--suppress-low-memory-warning` |  | Suppress the warning printed when instrumenting a Lambda function with less than 256 MB of memory. The Datadog Lambda Extension and tracer add memory overhead, which can cause out-of-memory errors and timeouts on low-memory functions. | `false` |
 | `--source-code-integration` or `--sourceCodeIntegration` | `-s` | Whether to enable Datadog Source Code Integration (https://docs.datadoghq.com/integrations/guide/source-code-integration). This will tag your lambda(s) with the Git repository URL and the latest commit hash of the current local directory. Note: Git repository must not be ahead of remote, and must not be dirty. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` | `-u` | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. | `true` |
 | `--tracing` |  | Whether to enable dd-trace tracing on your Lambda. | `true` |
@@ -187,7 +190,8 @@ Instead of supplying arguments, you can create a configuration file in your proj
         "version": "b17s47h3w1n",
         "profile": "my-credentials",
         "environment": "staging",
-        "extraTags": "layer:api,team:intake"
+        "extraTags": "layer:api,team:intake",
+        "suppressLowMemoryWarning": false
     }
 }
 ```

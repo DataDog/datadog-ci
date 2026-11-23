@@ -79,6 +79,9 @@ export class LambdaInstrumentCommand extends BaseCommand {
   protected service = Option.String('--service', {
     description: `Use --service to group related functions belonging to similar workloads. Learn more about the service tag here: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag`,
   })
+  protected suppressLowMemoryWarning = Option.Boolean('--suppress-low-memory-warning', false, {
+    description: `Suppress the warning printed when instrumenting a Lambda function with less than 256 MB of memory. The Datadog Lambda Extension and tracer add memory overhead, which can cause out-of-memory errors and timeouts on low-memory functions. Defaults to 'false'`,
+  })
   protected sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true, {
     description: `Whether to enable Datadog Source Code Integration (https://docs.datadoghq.com/integrations/guide/source-code-integration). This will tag your lambda(s) with the Git repository URL and the latest commit hash of the current local directory. Note: Git repository must not be ahead of remote, and must not be dirty. Defaults to 'true'`,
   })
