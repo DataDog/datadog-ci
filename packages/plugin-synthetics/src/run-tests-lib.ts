@@ -71,6 +71,7 @@ export const getDefaultConfig = (): RunTestsCommandConfig => {
     subdomain: 'app',
     testSearchQuery: '',
     tunnel: false,
+    tunnelAllowedDomains: [],
   }
 }
 
@@ -166,7 +167,13 @@ export const executeTests = async (
     try {
       const tunnelProxyAgent = await getProxyAgent(config.proxy)
       const tunnelReporter = getTunnelReporter(reporter)
-      tunnel = new Tunnel(presignedURL, publicIdsToTrigger, tunnelProxyAgent, tunnelReporter)
+      tunnel = new Tunnel(
+        presignedURL,
+        publicIdsToTrigger,
+        tunnelProxyAgent,
+        tunnelReporter,
+        config.tunnelAllowedDomains
+      )
 
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {

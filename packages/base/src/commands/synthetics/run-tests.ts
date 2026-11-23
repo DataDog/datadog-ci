@@ -129,6 +129,10 @@ export class SyntheticsRunTestsCommand extends BaseCommand {
   public tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$5`Continuous Testing tunnel`} to launch tests against internal environments.`,
   })
+  public tunnelAllowedDomains = Option.Array('--tunnelAllowedDomains', {
+    description:
+      'Hosts the tests can reach through the tunnel, such as `example.com` or `*.example.com`. Connections to any other host are blocked. If no value is provided, all hosts are allowed.',
+  })
 
   public buildCommand = Option.String('--buildCommand', {
     description: 'The build command to generate the assets to run the tests against.',

@@ -5,9 +5,11 @@ import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import {getApiTest, getTestSuite, mockApi, mockServerTriggerResponse} from '../../__tests__/fixtures'
 import * as api from '../../api'
+import * as buildAndTest from '../../build-and-test'
 import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
-import type {RunTestsCommandConfig, UserConfigOverride, CookiesObject, ServerTest} from '../../interfaces'
+import type {RunTestsCommandConfig, UserConfigOverride, CookiesObject, ServerTest, Summary} from '../../interfaces'
 import {ExecutionRule} from '../../interfaces'
+import * as runTestsLib from '../../run-tests-lib'
 import {getDefaultConfig} from '../../run-tests-lib'
 import * as testUtils from '../../test'
 import {toExecutionRule} from '../../utils/internal'
@@ -43,6 +45,7 @@ describe('run-tests', () => {
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
         DATADOG_SYNTHETICS_TUNNEL: 'false',
+        DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS: 'env.example.org;*.env.example.org',
         DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password',
         DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username',
@@ -126,6 +129,7 @@ describe('run-tests', () => {
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
         testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
         tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
+        tunnelAllowedDomains: overrideEnv.DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS.split(';'),
       })
     })
 
@@ -204,6 +208,7 @@ describe('run-tests', () => {
         subdomain: 'ppa',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+        tunnelAllowedDomains: ['config-file.example.org'],
       }
 
       const command = createCommand(RunTestsCommand)
@@ -232,6 +237,7 @@ describe('run-tests', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+        tunnelAllowedDomains: ['cli.example.org'],
       }
       /** Values passed to `--override`. */
       const defaultTestOverrides: UserConfigOverride = {
@@ -283,6 +289,7 @@ describe('run-tests', () => {
       command['selectiveRerun'] = overrideCLI.selectiveRerun
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
+      command['tunnelAllowedDomains'] = overrideCLI.tunnelAllowedDomains
       command['testSearchQuery'] = overrideCLI.testSearchQuery
       command['overrides'] = [
         `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
@@ -367,6 +374,7 @@ describe('run-tests', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+        tunnelAllowedDomains: ['cli.example.org'],
       })
     })
 
@@ -425,6 +433,7 @@ describe('run-tests', () => {
         subdomain: 'subdomain_from_config_file',
         testSearchQuery: 'a-search-query-from-config-file',
         tunnel: false,
+        tunnelAllowedDomains: ['config-file.example.org'],
       }
 
       test('config file < ENV', async () => {
@@ -451,6 +460,7 @@ describe('run-tests', () => {
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
           DATADOG_SYNTHETICS_TUNNEL: 'true',
+          DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS: 'env.example.org;*.env.example.org',
           DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username-from-env',
@@ -539,6 +549,7 @@ describe('run-tests', () => {
           subdomain: overrideEnv.DATADOG_SUBDOMAIN,
           testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
           tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
+          tunnelAllowedDomains: overrideEnv.DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS.split(';'),
 
           // XXX: Added to make the test pass as we use well-known ENV variables to configure the proxy.
           proxy: configFile.proxy,
@@ -576,6 +587,7 @@ describe('run-tests', () => {
           subdomain: 'subdomain-from-cli',
           testSearchQuery: 'a-search-query-from-cli',
           tunnel: true,
+          tunnelAllowedDomains: ['cli.example.org'],
         }
         const defaultTestOverrides: UserConfigOverride = {
           allowInsecureCertificates: false,
@@ -634,6 +646,7 @@ describe('run-tests', () => {
         command['selectiveRerun'] = overrideCLI.selectiveRerun
         command['subdomain'] = overrideCLI.subdomain
         command['tunnel'] = overrideCLI.tunnel
+        command['tunnelAllowedDomains'] = overrideCLI.tunnelAllowedDomains
         command['testSearchQuery'] = overrideCLI.testSearchQuery
         command['overrides'] = [
           `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
@@ -705,6 +718,7 @@ describe('run-tests', () => {
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
           DATADOG_SYNTHETICS_TUNNEL: 'false',
+          DATADOG_SYNTHETICS_TUNNEL_ALLOWED_DOMAINS: 'env.example.org;*.env.example.org',
           DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username-from-env',
@@ -751,6 +765,7 @@ describe('run-tests', () => {
           subdomain: 'subdomain-from-cli',
           testSearchQuery: 'a-search-query-from-cli',
           tunnel: true,
+          tunnelAllowedDomains: ['cli.example.org'],
         }
         const defaultTestOverrides: UserConfigOverride = {
           allowInsecureCertificates: false,
@@ -811,6 +826,7 @@ describe('run-tests', () => {
         command['selectiveRerun'] = overrideCLI.selectiveRerun
         command['subdomain'] = overrideCLI.subdomain
         command['tunnel'] = overrideCLI.tunnel
+        command['tunnelAllowedDomains'] = overrideCLI.tunnelAllowedDomains
         command['testSearchQuery'] = overrideCLI.testSearchQuery
         command['overrides'] = [
           `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
@@ -1088,6 +1104,50 @@ describe('run-tests', () => {
 
       await expect(command.execute()).resolves.toBe(1)
       expect(writeMock).toHaveBeenCalledWith('\n ERROR: invalid config \nConfig file not found\n\n')
+    })
+  })
+
+  describe('`tunnelAllowedDomains`', () => {
+    test('rejects an entry that is not a host name', async () => {
+      const write = jest.fn()
+      const command = createCommand(RunTestsCommand, {stdout: {write}})
+      command['tunnelAllowedDomains'] = ['example.org', 'https://example.org']
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
+      const executeTests = jest.spyOn(runTestsLib, 'executeTests')
+
+      expect(await command.execute()).toBe(1)
+      expect(executeTests).not.toHaveBeenCalled()
+      expect(write).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid `tunnelAllowedDomains` entries: "https://example.org"')
+      )
+    })
+
+    test.each([
+      [['example.org'], ['example.org', '127.0.0.1']],
+      [undefined, ['127.0.0.1']],
+    ])('build-and-test with %j allows %j', async (tunnelAllowedDomains, expected) => {
+      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
+      command.path = ['synthetics', 'build-and-test']
+      command['buildCommand'] = 'yarn build'
+      command['tunnelAllowedDomains'] = tunnelAllowedDomains
+      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
+      jest.spyOn(utils, 'getOrgSettings').mockResolvedValue(undefined)
+      jest.spyOn(utils, 'renderResults').mockImplementation(() => undefined)
+      jest.spyOn(buildAndTest, 'buildAssets').mockResolvedValue({
+        builds: [{outputDirectory: 'dist', publicPath: 'public/'}],
+        devServerUrl: 'http://127.0.0.1:4242',
+        stop: jest.fn(),
+      })
+      const executeTests = jest
+        .spyOn(runTestsLib, 'executeTests')
+        .mockResolvedValue({results: [], summary: {} as Summary})
+
+      await command.execute()
+
+      expect(executeTests).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({tunnel: true, tunnelAllowedDomains: expected})
+      )
     })
   })
 

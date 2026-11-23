@@ -16,6 +16,7 @@ import type {Config as MultiplexerConfig} from 'yamux-js'
 import {Server as SSHServer} from 'ssh2'
 import {Server as Multiplexer} from 'yamux-js'
 
+import {isAllowedHost} from './allowed-domains'
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'
 
@@ -56,12 +57,14 @@ export class Tunnel {
   private ws: WebSocket
   private multiplexer?: Multiplexer
   private forwardedSockets: Set<Socket> = new Set()
+  private blockedHosts: Set<string> = new Set()
 
   constructor(
     private url: string,
     private testIDs: string[],
     proxyAgent?: Agent,
-    private reporter?: TunnelReporter
+    private reporter?: TunnelReporter,
+    private allowedDomains: string[] = []
   ) {
     // Setup SSH
     const {privateKey: hostPrivateKey} = generateOpenSSHKeys()
@@ -105,6 +108,13 @@ export class Tunnel {
     process.addListener('SIGINT', this.handleSIGINT)
 
     this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
+    if (this.allowedDomains.length > 0) {
+      this.reporter?.log(`Tunnel connections are restricted to: ${this.allowedDomains.join(', ')}`)
+    } else {
+      this.reporter?.warn(
+        'Tunnel connections are not restricted: tests can reach any host this machine can reach. Use `tunnelAllowedDomains` to restrict them.'
+      )
+    }
     this.reporter?.log('Generating encryption key, setting up SSH and opening WebSocket connection…')
     try {
       // Establish a WebSocket connection to the tunnel service
@@ -186,6 +196,17 @@ export class Tunnel {
         })
       })
       .on('tcpip', (accept, reject, {destIP, destPort}) => {
+        if (this.allowedDomains.length > 0 && !isAllowedHost(destIP, this.allowedDomains)) {
+          if (!this.blockedHosts.has(destIP)) {
+            this.blockedHosts.add(destIP)
+            this.reporter?.warn(
+              `Blocked connection to ${JSON.stringify(destIP)}: host is not in \`tunnelAllowedDomains\``
+            )
+          }
+
+          return reject()
+        }
+
         // Forward packets
         // See https://github.com/mscdex/ssh2/issues/479#issuecomment-250416559
         let src: SSHServerChannel

@@ -82,6 +82,7 @@ export const ciConfig: RunTestsCommandConfig = {
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
+  tunnelAllowedDomains: [],
 }
 
 export const getApiLocalTestDefinition = (

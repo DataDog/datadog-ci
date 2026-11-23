@@ -775,6 +775,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+  tunnelAllowedDomains: string[]
 }
 
 export type WrapperConfig = Partial<RunTestsCommandConfig>
