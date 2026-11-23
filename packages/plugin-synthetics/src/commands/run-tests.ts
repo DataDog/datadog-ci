@@ -131,9 +131,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
           resourceUrlSubstitutionRegexes,
         },
       })
-      if (this.config.tunnelAllowedDomains.length > 0) {
-        this.config.tunnelAllowedDomains = [...this.config.tunnelAllowedDomains, new URL(devServerUrl).hostname]
-      }
+      this.config.tunnelAllowedDomains = [...this.config.tunnelAllowedDomains, new URL(devServerUrl).hostname]
     }
 
     try {
