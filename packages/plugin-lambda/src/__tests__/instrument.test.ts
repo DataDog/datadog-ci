@@ -1509,6 +1509,48 @@ describe('lambda', () => {
           expect(context.stdout.toString()).not.toContain('lambda_low_memory')
         })
 
+        test('does not warn for an already-instrumented function with no planned configuration update', async () => {
+          // First run instruments the function, so we can replay the resulting configuration.
+          mockFunctionWithMemory(128)
+          await runCLI(baseArgs)
+          const appliedUpdate = lambdaClientMock.commandCalls(UpdateFunctionConfigurationCommand)[0].args[0].input
+
+          lambdaClientMock.reset()
+          mockLambdaConfigurations(lambdaClientMock, {
+            [functionARN]: {
+              config: {
+                FunctionArn: functionARN,
+                FunctionName: 'lambda-hello-world',
+                Handler: appliedUpdate.Handler ?? 'index.handler',
+                Runtime: 'nodejs22.x',
+                MemorySize: 128,
+                Environment: appliedUpdate.Environment,
+                Layers: appliedUpdate.Layers?.map((arn) => ({Arn: arn})),
+              },
+            },
+          })
+          const {code, context} = await runCLI(baseArgs)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+          expect(lambdaClientMock).not.toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+        })
+
+        test('does not warn when no Datadog layers are added', async () => {
+          mockFunctionWithMemory(128)
+          const args = [...baseArgs]
+          args[args.indexOf('--layerVersion') + 1] = 'none'
+          const {code, context} = await runCLI(args)
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).not.toContain('lambda_low_memory')
+          // The run still applies the environment variable changes.
+          expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
+          expect(
+            lambdaClientMock.commandCalls(UpdateFunctionConfigurationCommand)[0].args[0].input.Layers
+          ).toBeUndefined()
+        })
+
         test('still warns in dry-run mode', async () => {
           mockFunctionWithMemory(128)
           const {code, context} = await runCLI([...baseArgs, '--dry-run'])

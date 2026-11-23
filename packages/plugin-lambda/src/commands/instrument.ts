@@ -509,6 +509,10 @@ export class PluginCommand extends LambdaInstrumentCommand {
   /**
    * Warns about functions configured with less memory than {@link LOW_MEMORY_THRESHOLD_MB}.
    *
+   * Only functions that get Datadog layers in this run are checked: the planned update sets `Layers`
+   * only when it adds the Datadog library layer or extension (or changes their version). Functions that
+   * are already instrumented, or runs with `--layerVersion none --extensionVersion none`, stay silent.
+   *
    * This lives in the command layer on purpose: `getInstrumentedFunctionConfig` is also used by
    * remote instrumentation, which must not log this warning.
    */
@@ -517,7 +521,10 @@ export class PluginCommand extends LambdaInstrumentCommand {
       return
     }
 
-    for (const {functionARN, lambdaConfig} of configs) {
+    for (const {functionARN, lambdaConfig, updateFunctionConfigurationCommandInput} of configs) {
+      if (updateFunctionConfigurationCommandInput?.Layers === undefined) {
+        continue
+      }
       const memorySize = lambdaConfig.MemorySize
       if (memorySize === undefined || memorySize >= LOW_MEMORY_THRESHOLD_MB) {
         continue

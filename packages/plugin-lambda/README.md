@@ -36,7 +36,7 @@ datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-
 datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 81 -e 49 --dry-run
 ```
 
-**Note**: The Datadog Lambda Extension and tracer add memory overhead (about 70 MB for Python). When a function has less than 256 MB of memory, `instrument` prints a `lambda_low_memory` warning, including in dry-run and interactive mode, but still instruments the function. Increase the function's memory to at least 256 MB, or pass `--suppress-low-memory-warning` (or set `"suppressLowMemoryWarning": true` in the configuration file) to silence this warning.
+**Note**: The Datadog Lambda Extension and tracer add memory overhead (about 70 MB for Python). When `instrument` adds the Datadog library layer or extension to a function with less than 256 MB of memory, it prints a `lambda_low_memory` warning, including in dry-run and interactive mode, but still instruments the function. Functions that already have these layers, or runs with `--layerVersion none --extensionVersion none`, do not get the warning. Increase the function's memory to at least 256 MB, or pass `--suppress-low-memory-warning` (or set `"suppressLowMemoryWarning": true` in the configuration file) to silence this warning.
 
 ### `uninstrument`
 
