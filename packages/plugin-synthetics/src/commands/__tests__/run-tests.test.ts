@@ -1124,7 +1124,7 @@ describe('run-tests', () => {
 
     test.each([
       [['example.org'], ['example.org', '127.0.0.1']],
-      [undefined, []],
+      [undefined, ['127.0.0.1']],
     ])('build-and-test with %j allows %j', async (tunnelAllowedDomains, expected) => {
       const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
       command.path = ['synthetics', 'build-and-test']
