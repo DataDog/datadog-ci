@@ -12,7 +12,7 @@ import {AdaptiveRetryStrategy, ConfiguredRetryStrategy} from '@smithy/util-retry
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 
 // Functions with less memory than this (in MB) are considered low-memory. The Datadog Lambda Extension and
-// tracer add memory overhead, which can cause out-of-memory errors and timeouts on such functions (IR-63469).
+// tracer add memory overhead, which can cause out-of-memory errors and timeouts on such functions.
 export const LOW_MEMORY_THRESHOLD_MB = 256
 export const LOW_MEMORY_REASON = 'lambda_low_memory'
 
