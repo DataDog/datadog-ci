@@ -786,42 +786,33 @@ describe('instrument', () => {
       })
 
       test.each([
-        [31, 102, 'Datadog-Extension', Architecture.x86_64, true, false],
-        [31, 102, 'Datadog-Extension-ARM', Architecture.arm64, true, false],
-        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, true],
-        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, false],
-        [31, 102, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, true, undefined],
-        [31, 102, 'Datadog-Extension-FIPS', Architecture.x86_64, true, false],
-        [30, 102, 'Datadog-Extension', Architecture.x86_64, false, false],
-        [31, 101, 'Datadog-Extension', Architecture.x86_64, false, false],
-        [31, 101, 'Datadog-Extension-ARM-FIPS', Architecture.arm64, false, false],
-      ])(
-        'uses retained layer %s / extension %s (%s, %s, tracer: %s, lambdaFips: %s)',
-        async (layer, extension, extensionName, architecture, tracer, lambdaFips) => {
+        ['none', 'none'],
+        ['none', 102],
+        [31, 'none'],
+      ] as const)(
+        'uses legacy AppSec with requested layer %s / extension %s even when compatible layers are attached',
+        async (layerVersion, extensionVersion) => {
           const retained = {
             ...config,
-            Architectures: [architecture as Architecture],
             Layers: [
               ...config.Layers,
-              {Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:dd-trace-java:${layer}`},
-              {Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:${extensionName}:${extension}`},
+              {Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:dd-trace-java:31`},
+              {Arn: `arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Extension:102`},
             ],
           }
           const update = await calculateUpdateRequest(
             retained,
-            {...settings, layerVersion: 'none', extensionVersion: 'none', lambdaFips},
+            {...settings, layerVersion, extensionVersion},
             region,
             Runtime.java21
           )
           expect(update!.Layers).toBeUndefined()
-          expect(update!.Environment!.Variables).toHaveProperty(
-            tracer ? 'DD_APPSEC_ENABLED' : 'DD_SERVERLESS_APPSEC_ENABLED',
-            'true'
-          )
-          expect(update!.Environment!.Variables).not.toHaveProperty(
-            tracer ? 'DD_SERVERLESS_APPSEC_ENABLED' : 'DD_APPSEC_ENABLED'
-          )
-          expect(update!.Environment!.Variables!.AWS_LAMBDA_EXEC_WRAPPER).toBe('/opt/datadog_wrapper')
+          expect(update!.Environment!.Variables).toMatchObject({
+            DD_SERVERLESS_APPSEC_ENABLED: 'true',
+            AWS_LAMBDA_EXEC_WRAPPER: '/opt/datadog_wrapper',
+            CUSTOMER_SETTING: 'keep',
+          })
+          expect(update!.Environment!.Variables).not.toHaveProperty('DD_APPSEC_ENABLED')
         }
       )
 

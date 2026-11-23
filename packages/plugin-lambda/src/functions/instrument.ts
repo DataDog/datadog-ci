@@ -363,32 +363,9 @@ export const calculateUpdateRequest = async (
 
   // Enable App and API Protection
   if (settings['appsecEnabled'] === true) {
-    // 'none' retains installed layers. Inspect their versions for Java AppSec without
-    // changing the existing version resolution used by universal instrumentation.
-    const retainedLayerVersion = (layerArn: string): number | undefined => {
-      const arn = layerARNs.find((layer) => layer.startsWith(`${layerArn}:`))
-      const version = arn?.slice(layerArn.length + 1)
-
-      return version && /^\d+$/.test(version) ? Number(version) : undefined
-    }
-    const appsecLayerVersion =
-      runtimeType === RuntimeType.JAVA
-        ? (layerOrTraceVersion ??
-          retainedLayerVersion(getLayerArn(config, runtime as LayerKey, region, {...settings, lambdaFips: false})))
-        : layerOrTraceVersion
-    const appsecExtensionVersion =
-      extensionVersion ??
-      retainedLayerVersion(lambdaExtensionLayerArn) ??
-      retainedLayerVersion(
-        getLayerArn(config, EXTENSION_LAYER_KEY, region, {...settings, lambdaFips: !settings.lambdaFips})
-      )
-
-    if (supportsInTracerAppsec(runtime, appsecLayerVersion, appsecExtensionVersion)) {
+    if (supportsInTracerAppsec(runtime, layerOrTraceVersion, extensionVersion)) {
       newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
       delete newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR]
-      if (runtimeType === RuntimeType.JAVA) {
-        newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
-      }
     } else {
       delete newEnvVars[APPSEC_ENABLED_ENV_VAR]
       newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
