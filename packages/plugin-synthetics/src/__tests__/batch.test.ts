@@ -40,7 +40,6 @@ import {
 const apiConfiguration = {
   apiKey: '123',
   appKey: '123',
-  baseIntakeUrl: 'baseintake',
   baseUnstableUrl: 'baseUnstable',
   baseV1Url: 'baseV1',
   baseV2Url: 'baseV2',

@@ -474,12 +474,11 @@ const retryRequest = <T>(
   )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
-  const {baseV1Url, baseV2Url, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
+  const {baseV1Url, baseV2Url, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const requestV1 = getRequestBuilder({...baseOptions, baseUrl: baseV1Url})
   const requestV2 = getRequestBuilder({...baseOptions, baseUrl: baseV2Url})
   const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
-  const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
     getBatch: getBatch(requestV1),
@@ -490,10 +489,10 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getLocalTestDefinition: getLocalTestDefinition(requestV1),
     editTest: editTest(requestV1),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(requestV1),
-    getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
+    getTunnelPresignedURL: getTunnelPresignedURL(requestV1),
     pollResults: pollResults(requestV2),
     searchTests: searchTests(requestV1),
-    triggerTests: triggerTests(requestIntake),
+    triggerTests: triggerTests(requestV1),
     uploadMobileApplicationPart: uploadMobileApplicationPart(requestV1),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
@@ -513,10 +512,9 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
   return apiConstructor({
     apiKey: config.apiKey,
     appKey: config.appKey,
-    baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
-    baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
-    baseV1Url: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
-    baseV2Url: getDatadogHost({useIntake: false, apiVersion: 'v2', config}),
+    baseUnstableUrl: getDatadogHost({apiVersion: 'unstable', config}),
+    baseV1Url: getDatadogHost({apiVersion: 'v1', config}),
+    baseV2Url: getDatadogHost({apiVersion: 'v2', config}),
     proxyOpts: config.proxy,
   })
 }
