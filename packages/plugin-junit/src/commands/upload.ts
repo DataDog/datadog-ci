@@ -27,6 +27,7 @@ import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
+import {fetchExcusedTests, judge} from '../quarantine'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -88,6 +89,7 @@ export class PluginCommand extends JunitUploadCommand {
   }
 
   private xpathTags?: Record<string, string>
+  private invalidReports: string[] = []
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -171,6 +173,42 @@ export class PluginCommand extends JunitUploadCommand {
     if (!this.dryRun) {
       this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
     }
+
+    if (this.testExitCode !== undefined) {
+      return this.testVerdict(this.testExitCode, payloads, spanTags, customTags)
+    }
+  }
+
+  /**
+   * Exit 0 when the tests failed only because of quarantined or disabled tests, else keep the test command's exit code.
+   * See ../quarantine.ts: anything the reports cannot explain keeps it red.
+   */
+  private async testVerdict(
+    exitCode: number,
+    payloads: Payload[],
+    spanTags: SpanTags,
+    customTags: Record<string, string>
+  ): Promise<number> {
+    const verdict = await judge({
+      exitCode,
+      testFailureExitCode: this.testFailureExitCode,
+      reports: payloads.map((p) => ({path: p.xmlPath, xml: String(fs.readFileSync(p.xmlPath))})),
+      invalidReports: this.invalidReports,
+      git: {
+        repositoryUrl: spanTags['git.repository_url'],
+        sha: spanTags['git.commit.sha'],
+        branch: spanTags['git.branch'],
+        commitMessage: spanTags['git.commit.message'],
+      },
+      xpathTags: this.xpathTags,
+      customTags,
+      fetch: (git) => fetchExcusedTests(getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!}), git),
+    })
+    for (const line of verdict.lines) {
+      this.context.stdout.write(`${line}\n`)
+    }
+
+    return verdict.exitCode
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
@@ -228,14 +266,19 @@ export class PluginCommand extends JunitUploadCommand {
       filterFile = (file) => upath.extname(file) === '.xml'
     }
 
+    const invalidReports: string[] = []
     const validUniqueFiles = findFiles(
       basePaths,
       searchFoldersRecursively,
       parsePathsList(this.ignoredPaths),
       filterFile,
       validateXml,
-      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+      (filePath: string, errorMessage: string) => {
+        invalidReports.push(filePath)
+        this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+      }
     )
+    this.invalidReports = invalidReports
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
       hostname: os.hostname(),

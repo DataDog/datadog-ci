@@ -39,6 +39,45 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 - `--skip-git-metadata-upload` (default: `false`): Pass this flag if you want to skip uploading git metadata.
 - `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
+- `--test-exit-code` is the exit code of your test command. See [Quarantined and disabled tests](#quarantined-and-disabled-tests).
+- `--test-failure-exit-code` (default: `1`) is the exit code your test runner uses when tests failed, used with `--test-exit-code`.
+
+#### Quarantined and disabled tests
+
+With `--test-exit-code`, the command exits `0` instead of your test command's exit code when every failing testcase in
+the uploaded reports is quarantined or disabled in [Flaky Test Management](https://docs.datadoghq.com/tests/flaky_management/).
+Otherwise it exits with that code. Make the test step non-fatal and let the upload decide:
+
+```bash
+code=0; go test ./... || code=$?
+datadog-ci junit upload --service my-service --test-exit-code "$code" reports/
+```
+
+The job stays red, with the reason printed, when:
+- the exit code is not the runner's "tests failed" code (`1` by default), because other codes mean the runner itself
+  failed or the job was killed;
+- a report can't be read;
+- there is no failing testcase in the reports, for example after a crash or a build error;
+- the commit is unknown, or Flaky Test Management can't be reached;
+- a failing testcase is not quarantined or disabled.
+
+For this to be safe:
+- **Pass your test runner's own exit code**, not one that includes other steps such as lint or coverage thresholds.
+  Failures that aren't in the reports can't be checked.
+- **Don't stop at the first failure.** Without Maven's `--fail-at-end`, Gradle's `--continue`, or with `pytest -x`,
+  `jest --bail` or `go test -failfast`, tests after a quarantined failure never run.
+- **Tell it your runner's "tests failed" exit code** when it isn't `1`:
+
+  | Runner | Setting |
+  |---|---|
+  | Most runners (Go, Maven, Gradle, pytest, Jest, Vitest, Playwright, RSpec, `dotnet test`) | nothing (`1`) |
+  | Bazel | `--test-failure-exit-code 3`, and upload with `--auto-discovery bazel-testlogs/` |
+  | cargo-nextest | `--test-failure-exit-code 100`, and run with `--no-fail-fast` |
+  | ctest | `--test-failure-exit-code 8` |
+  | Mocha, Cypress (they exit with the number of failures) | run them with `--posix-exit-codes` |
+- For Go reports, which carry the `go.version` property: a quarantined subtest also excuses its failing parent, and
+  quarantining a parent covers its subtests. The last rerun of a test counts. A parent that also fails on its own
+  assertion is not detected. A panic or timeout keeps the job red.
 
 #### Environment variables
 

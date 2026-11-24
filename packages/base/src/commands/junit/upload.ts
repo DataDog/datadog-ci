@@ -39,6 +39,14 @@ export class JunitUploadCommand extends BaseCommand {
         'datadog-ci junit upload --service my-service --measures key1:123 --measures key2:321 .',
       ],
       [
+        'Upload the reports and pass CI when every failing test is quarantined or disabled in Flaky Test Management',
+        'code=0; npm test || code=$?; datadog-ci junit upload --service my-service --test-exit-code "$code" .',
+      ],
+      [
+        'Same with Bazel, whose "tests failed" exit code is 3',
+        'code=0; bazel test //... || code=$?; datadog-ci junit upload --service my-service --test-exit-code "$code" --test-failure-exit-code 3 --auto-discovery bazel-testlogs/',
+      ],
+      [
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
         'DD_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
       ],
@@ -87,6 +95,16 @@ export class JunitUploadCommand extends BaseCommand {
     tolerateBoolean: true,
   })
   public ignoredPaths = Option.String('--ignored-paths')
+  public testExitCode = Option.String('--test-exit-code', {
+    description:
+      "Exit code of the test command. When it is the runner's 'tests failed' code (see --test-failure-exit-code), exit 0 instead if every failing testcase in the reports is quarantined or disabled in Flaky Test Management. Otherwise exit with this code. Pass the test runner's own exit code, and run it without fail-fast options.",
+    validator: validation.isInteger(),
+  })
+  public testFailureExitCode = Option.String('--test-failure-exit-code', '1', {
+    description:
+      'Exit code the test runner uses when tests failed, used with --test-exit-code. Defaults to 1. For example 3 for Bazel, 100 for cargo-nextest, 8 for ctest.',
+    validator: t.cascade(t.isNumber(), [t.isInteger(), t.isInInclusiveRange(1, 127)]),
+  })
 
   public fips = Option.Boolean('--fips', false)
   public fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

@@ -24,6 +24,7 @@ export const DATADOG_ROUTE_PATHS = [
   '/api/unstable/sourcemaps/check_exists',
   '/api/v2/srcmap',
   '/api/v2/static-analysis-sca/dependencies',
+  '/api/v2/test/libraries/test-management/tests',
   '/synthetics/ci/batch/:batchId',
   '/synthetics/ci/tunnel',
   '/synthetics/mobile/applications/:applicationId/multipart-presigned-urls',
