@@ -404,6 +404,7 @@ describe('SSI service preparation', () => {
       image: 'gcr.io/datadoghq/dd-lib-js-init:latest',
       command: ['/bin/sh'],
       volumeMounts: [{name: 'datadog-tracer', mountPath: '/datadog-lib'}],
+      resources: {limits: {memory: '512Mi'}},
       startupProbe: {
         tcpSocket: {port: 18999},
         initialDelaySeconds: 0,
@@ -423,7 +424,25 @@ describe('SSI service preparation', () => {
     )
     expect(result.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toEqual({
       name: 'datadog-tracer',
-      emptyDir: {medium: 1, sizeLimit: '500Mi'},
+      emptyDir: {medium: 1, sizeLimit: '256Mi'},
+    })
+  })
+
+  test.each([
+    ['java', '256Mi', '512Mi'],
+    ['nodejs', '256Mi', '512Mi'],
+    ['csharp', '256Mi', '512Mi'],
+    ['ruby', '256Mi', '512Mi'],
+    ['python', '500Mi', '1Gi'],
+    ['php', '500Mi', '1Gi'],
+  ] as const)('sizes the %s tracer volume as %s within a %s tracer memory limit', (language, volumeSize, memory) => {
+    const result = instrumentServiceConfig(serviceWithWorker(), serviceConfigOptions(language))
+    const tracer = result.template?.containers?.find((container) => container.name === TRACER_CONTAINER_NAME)
+
+    expect(tracer?.resources).toEqual({limits: {memory}})
+    expect(result.template?.volumes?.find((volume) => volume.name === TRACER_CONTAINER_NAME)?.emptyDir).toEqual({
+      medium: 1,
+      sizeLimit: volumeSize,
     })
   })
 
@@ -446,7 +465,7 @@ describe('SSI service preparation', () => {
     expect(tracer).toMatchObject({
       image: COMPOSITE_TRACER_IMAGE,
       volumeMounts: [{name: TRACER_CONTAINER_NAME, mountPath: COMPOSITE_TRACER_MOUNT_PATH}],
-      resources: {limits: {memory: '2Gi'}},
+      resources: {limits: {memory: '3Gi'}},
     })
     expect(tracer?.args?.slice(2)).toEqual([
       TRACER_CONTAINER_NAME,
@@ -489,6 +508,9 @@ describe('SSI service preparation', () => {
 
     const result = instrumentServiceConfig(service, serviceConfigOptions('nodejs', 'disk'))
 
+    expect(
+      result.template?.containers?.find((container) => container.name === TRACER_CONTAINER_NAME)?.resources
+    ).toBeUndefined()
     expect(result.launchStage).toBe(expectedLaunchStage)
     expect(result.description).toBe('keep me')
     expect(result.template).toMatchObject({
@@ -512,7 +534,7 @@ describe('SSI service preparation', () => {
     })
     expect(retry).toEqual(disk)
     expect(memoryAgain.template?.volumes?.find((volume) => volume.name === 'datadog-tracer')).toMatchObject({
-      emptyDir: {medium: 1, sizeLimit: '500Mi'},
+      emptyDir: {medium: 1, sizeLimit: '256Mi'},
     })
     expect(memoryAgain.launchStage).toBe('BETA')
     expect(memoryAgain.template?.executionEnvironment).toBe(2)

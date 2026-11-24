@@ -32,7 +32,7 @@ Go tracers cannot be injected. Install `dd-trace-go` in the application, and use
 
 `--language` without `--tracing inject` continues to set `DD_SOURCE` for log parsing. `--tracer-version` and `--tracer-libc` require both `--tracing inject` and `--language`. `--tracer-volume-medium` requires `--tracing inject`.
 
-Automatic language detection uses a 1.5 GiB memory-backed volume and sets the tracer container's memory limit to 2 GiB. Explicit `--language` uses a 500 MiB memory-backed volume. Set `--tracer-volume-medium disk` to use a 10 GiB disk-backed volume in either mode. Disk volumes are a Preview feature that requires the BETA launch stage and second generation execution environment. The command sets those requirements when needed, preserves an existing ALPHA launch stage, and does not fall back to memory if Cloud Run rejects the disk configuration.
+Automatic language detection uses a 1.5 GiB memory-backed volume and sets the tracer container's memory limit to 3 GiB. Explicit `--language` uses a 256 MiB memory-backed volume and a 512 MiB tracer memory limit for Java, Node.js, .NET, and Ruby, and a 500 MiB volume and a 1 GiB limit for Python and PHP. Set `--tracer-volume-medium disk` to use a 10 GiB disk-backed volume in either mode. Disk volumes are a Preview feature that requires the BETA launch stage and second generation execution environment. The command sets those requirements when needed, preserves an existing ALPHA launch stage, and does not fall back to memory if Cloud Run rejects the disk configuration.
 
 Automatic instrumentation targets the main Cloud Run container. The command fails without changing the service when multiple containers make main-container selection ambiguous.
 
