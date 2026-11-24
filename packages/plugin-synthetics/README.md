@@ -904,7 +904,7 @@ This command uploads a new version to an **existing** mobile application.
 
 #### `accessToken`
 
-A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][21]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
+A Datadog access token to use instead of an application key. For example, use the short-lived access token from a [Workload Identity Federation identity mapping][21]. Set either `accessToken`, or both `apiKey` and `appKey`. Store the token as a secret.
 
 **Configuration options**
 
@@ -1172,7 +1172,7 @@ Additional helpful documentation, links, and articles:
 [18]: https://docs.datadoghq.com/synthetics/mobile_app_testing/
 [19]: https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/src/interfaces.ts#L223-L254
 [20]: https://docs.datadoghq.com/synthetics/test_suites/
-[21]: https://github.com/DataDog/datadog-ci#authentication
+[21]: https://docs.datadoghq.com/account_management/workload_identity_federation/
 
 <!--
   This page is single-sourced:
