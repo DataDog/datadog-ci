@@ -1,6 +1,6 @@
 {
   "name": "@datadog/ci-visibility",
-  "version": "5.28.0",
+  "version": "5.29.0",
   "description": "Lightweight programmatic CI Visibility recording for GitHub Actions",
   "license": "Apache-2.0",
   "keywords": [
