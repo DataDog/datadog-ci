@@ -278,7 +278,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
 
 #### `accessToken`
 
-A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
+A Datadog access token to use instead of an application key. For example, use the short-lived access token from a [Workload Identity Federation identity mapping][21]. Set either `accessToken`, or both `apiKey` and `appKey`. Store the token as a secret.
 
 **Configuration options**
 
@@ -904,7 +904,7 @@ This command uploads a new version to an **existing** mobile application.
 
 #### `accessToken`
 
-A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][wif-auth]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
+A Datadog access token, sent as an `Authorization: Bearer` header instead of the application key, for example the access token from a [Workload Identity Federation identity mapping][21]. Set either `accessToken`, or `apiKey` and `appKey`. This token is a short-lived secret.
 
 **Configuration options**
 
