@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {orgActionAuth} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -15,6 +16,8 @@ export class SbomUploadCommand extends BaseCommand {
     `,
     examples: [['Upload the SBOM file: sbom.json', 'datadog-ci sbom upload sbom.json']],
   })
+
+  public static authRequirement = orgActionAuth
 
   // BASE COMMAND START
   protected fips = Option.Boolean('--fips', false)

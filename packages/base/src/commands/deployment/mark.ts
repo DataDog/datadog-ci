@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 /**
@@ -29,6 +31,8 @@ export class DeploymentMarkCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   protected noFail = Option.Boolean('--no-fail', false)
   protected isRollback = Option.Boolean('--is-rollback', false)

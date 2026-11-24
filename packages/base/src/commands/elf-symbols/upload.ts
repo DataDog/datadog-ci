@@ -32,6 +32,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {
   getElfFileMetadata,
   isSupportedElfType,
@@ -67,6 +69,8 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
         `,
     examples: [['Upload debug infos for all Elf files in the current directory', 'datadog-ci elf-symbols upload .']],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private disableGit = Option.Boolean('--disable-git', false)
   private dryRun = Option.Boolean('--dry-run', false)

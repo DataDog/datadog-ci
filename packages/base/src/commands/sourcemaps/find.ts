@@ -14,6 +14,8 @@ import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {noAuth} from '../../helpers/auth'
+
 import {isValidDebugId} from './debugId'
 import {
   renderDiscoveryWarning,
@@ -38,6 +40,8 @@ export class SourcemapsFindCommand extends BaseCommand {
       ['Return machine-readable output', 'datadog-ci sourcemaps find ./dist --missing-debug-id --json'],
     ],
   })
+
+  public static authRequirement = noAuth
 
   private basePath = Option.String({required: true})
   private debugId = Option.String('--debug-id')

@@ -34,6 +34,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {SourcemapsUploadCommand} from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
@@ -83,6 +85,8 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private androidMapping = Option.Boolean('--android-mapping', false)
   private androidMappingLocation = Option.String('--android-mapping-location')

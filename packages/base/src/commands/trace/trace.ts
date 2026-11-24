@@ -3,6 +3,8 @@ import os from 'os'
 
 import {Command, Option} from 'clipanion'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {CustomSpanCommand} from './helper'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
@@ -37,6 +39,8 @@ export class TraceCommand extends CustomSpanCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private command = Option.Rest({required: 1})
   private name = Option.String('--name')

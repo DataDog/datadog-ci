@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {customAuth, seeReadme, wifLink} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {LAMBDA_LAYER_VERSIONS} from '../../helpers/serverless/lambda-layer-versions'
 
@@ -17,6 +18,13 @@ export class LambdaInstrumentCommand extends BaseCommand {
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to a Lambda.',
   })
+
+  public static authRequirement = customAuth(
+    'This command uses your AWS credentials. It saves the Datadog API key you provide ' +
+      '(DATADOG_API_KEY or DD_API_KEY, or DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN) in the function, ' +
+      'which uses it to send telemetry. The key is required when the command adds the Datadog Lambda Extension. ' +
+      `Use a long-lived key: a short-lived key from a ${wifLink} intake mapping would expire.\n\n${seeReadme}`
+  )
 
   protected apmFlushDeadline = Option.String('--apm-flush-deadline', {
     description: `Used to determine when to submit spans before a timeout occurs, in milliseconds. When the remaining time in an AWS Lambda invocation is less than the value set, the tracer attempts to submit the current active spans and all finished spans. Supported for NodeJS and Python. Defaults to '100'`,

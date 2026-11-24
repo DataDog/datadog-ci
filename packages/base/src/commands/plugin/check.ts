@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {noAuth} from '../../helpers/auth'
 import {messageBox} from '../../helpers/message-box'
 import {checkPlugin, scopeToPackageName} from '../../helpers/plugin'
 
@@ -17,6 +18,8 @@ export class PluginCheckCommand extends BaseCommand {
       ['Check the plugin by passing its scope and one of its commands', 'datadog-ci plugin check synthetics run-tests'],
     ],
   })
+
+  public static authRequirement = noAuth
 
   // Positional
   public packageOrScope = Option.String()

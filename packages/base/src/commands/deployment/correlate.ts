@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 /**
@@ -31,6 +33,8 @@ export class DeploymentCorrelateCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   protected cdProviderParam = Option.String('--provider')
   protected configurationRepo = Option.String('--config-repo')

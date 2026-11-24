@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {customAuth, getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -26,6 +27,8 @@ export class StepfunctionsUninstrumentCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = customAuth(getCloudCredentialsOnlyAuthHelp('AWS credentials'))
 
   protected dryRun = Option.Boolean('-d,--dry-run', false)
   protected stepFunctionArns = Option.Array('-s,--step-function')

@@ -2,6 +2,7 @@ import type {ContainerAppConfigOptions, ContainerAppBySubscriptionAndGroup} from
 
 import {Command, Option} from 'clipanion'
 
+import {customAuth, getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/constants'
 
@@ -13,6 +14,8 @@ export class ContainerAppUninstrumentCommand extends ContainerAppCommand {
     category: 'Serverless',
     description: 'Revert Datadog instrumentation in an Azure Container App.',
   })
+
+  public static authRequirement = customAuth(getCloudCredentialsOnlyAuthHelp('Azure credentials'))
 
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
     description: `The name of the sidecar container to remove. Specify if you have a different sidecar name. Defaults to '${DEFAULT_SIDECAR_NAME}'`,

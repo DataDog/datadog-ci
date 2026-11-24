@@ -3,6 +3,8 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {orgActionAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 /**
@@ -43,6 +45,8 @@ export class DeploymentGateCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = orgActionAuth
 
   // Required parameters
   protected service = Option.String('--service', {

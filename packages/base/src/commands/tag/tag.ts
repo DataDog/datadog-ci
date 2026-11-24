@@ -3,6 +3,7 @@ import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getDatadogSite} from '../../helpers/api'
+import {apiKeyAuth} from '../../helpers/auth'
 import {getCIEnv, parseLevels, processLevels} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
@@ -31,6 +32,8 @@ export class TagCommand extends BaseCommand {
       ['Add tags in bulk using a JSON file', 'datadog-ci tag --level job --tags-file my_tags.json'],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private level = Option.String('--level')
   private noFail = Option.Boolean('--no-fail')

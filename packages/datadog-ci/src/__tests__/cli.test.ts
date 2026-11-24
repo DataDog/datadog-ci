@@ -74,7 +74,7 @@ describe('cli', () => {
       expect(command.usage?.category?.charAt(0)).toStrictEqual(command.usage?.category?.charAt(0).toUpperCase())
       expect(command.usage?.description?.charAt(0)).toStrictEqual(command.usage?.description?.charAt(0).toUpperCase())
 
-      // The CLI adds an "Authentication" section from `AUTH_REQUIREMENTS` to every command's detailed `--help`.
+      // The CLI adds an "Authentication" section from each command's `authRequirement` to its detailed `--help`.
       expect(
         stripVTControlCharacters(
           cli.usage(command as Parameters<typeof cli.usage>[0], {colored: false, detailed: true})

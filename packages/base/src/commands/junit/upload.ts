@@ -4,6 +4,7 @@ import * as t from 'typanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {apiKeyAuth} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 export class JunitUploadCommand extends BaseCommand {
@@ -60,6 +61,8 @@ export class JunitUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   public basePaths = Option.Rest({required: 1})
   public verbose = Option.Boolean('--verbose', false)

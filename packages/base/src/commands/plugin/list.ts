@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {noAuth} from '../../helpers/auth'
 import {listAllPlugins} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -19,6 +20,8 @@ export class PluginListCommand extends BaseCommand {
       ['List all plugins, including built-in plugins', 'datadog-ci plugin list --all'],
     ],
   })
+
+  public static authRequirement = noAuth
 
   // Positional
   public json = Option.Boolean('--json', {required: false})

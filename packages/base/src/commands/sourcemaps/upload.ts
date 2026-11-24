@@ -32,6 +32,8 @@ import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/uti
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {addDebugIdToPayloads, extractDebugId, filterExistingDebugIds} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
@@ -76,6 +78,8 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private basePath = Option.String({required: true})
   private disableGit = Option.Boolean('--disable-git')

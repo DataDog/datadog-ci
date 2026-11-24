@@ -3,6 +3,8 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 export class DoraDeploymentCommand extends BaseCommand {
@@ -42,6 +44,8 @@ export class DoraDeploymentCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   protected serviceParam = Option.String('--service', {env: 'DD_SERVICE'})
   protected env = Option.String('--env', {env: 'DD_ENV'})

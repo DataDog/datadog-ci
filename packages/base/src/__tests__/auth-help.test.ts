@@ -5,7 +5,8 @@ import type {CommandClass, Cli} from 'clipanion'
 import {Command} from 'clipanion'
 
 import {commands} from '../cli'
-import {AUTH_HELP, AUTH_REQUIREMENTS, CliWithAuthHelp, formatAuthHelp} from '../helpers/auth'
+import {SbomUploadCommand} from '../commands/sbom/upload'
+import {AUTH_HELP, CliWithAuthHelp, formatAuthHelp, getAuthRequirement, orgActionAuth} from '../helpers/auth'
 
 const allCommands: CommandClass[] = Object.values(commands).flat() as CommandClass[]
 
@@ -32,9 +33,9 @@ const getAuthenticationSection = (help: string) => help.split('\nAuthentication\
 
 describe('authentication in --help', () => {
   test.each(allCommands.map((commandClass) => [getPath(commandClass), commandClass]))(
-    '%s has an authentication requirement and shows it in an Authentication section',
-    (path, commandClass) => {
-      expect(AUTH_REQUIREMENTS[path]).toBeDefined()
+    '%s declares an authentication requirement and shows it in an Authentication section',
+    (_path, commandClass) => {
+      expect(getAuthRequirement(commandClass)).toBeDefined()
 
       const section = getAuthenticationSection(renderHelp(commandClass))
       expect(section).toMatch(/^This command /)
@@ -45,7 +46,7 @@ describe('authentication in --help', () => {
   test.each(ORG_ACTION_COMMANDS)('%s documents the access token and the identity mapping', (path) => {
     const commandClass = allCommands.find((c) => getPath(c) === path)!
 
-    expect(AUTH_REQUIREMENTS[path]).toStrictEqual({kind: 'orgAction'})
+    expect(getAuthRequirement(commandClass)).toBe(orgActionAuth)
     expect(getAuthenticationSection(renderHelp(commandClass))).toBe(
       stripVTControlCharacters(formatAuthHelp(AUTH_HELP.orgAction))
     )
@@ -61,6 +62,12 @@ describe('authentication in --help', () => {
     const plain = stripVTControlCharacters(help)
     expect(plain.indexOf('━━━ Details')).toBeLessThan(plain.indexOf('━━━ Authentication'))
     expect(plain.indexOf('━━━ Authentication')).toBeLessThan(plain.indexOf('━━━ Examples'))
+  })
+
+  test('plugin commands inherit the requirement of their base command', () => {
+    class PluginCommand extends SbomUploadCommand {}
+
+    expect(getAuthRequirement(PluginCommand)).toBe(orgActionAuth)
   })
 
   test('the section is not added to non-detailed usage or to commands without a requirement', () => {

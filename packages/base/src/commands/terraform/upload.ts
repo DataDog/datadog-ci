@@ -3,6 +3,8 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 export class TerraformUploadCommand extends BaseCommand {
@@ -28,6 +30,8 @@ export class TerraformUploadCommand extends BaseCommand {
       ['Dry run mode', 'datadog-ci terraform upload plan terraform-plan.json --dry-run'],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   // Artifact type: 'plan' or 'state'
   protected artifactType = Option.String({required: true, validator: t.isEnum(['plan', 'state'] as const)})

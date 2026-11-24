@@ -13,6 +13,7 @@ import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
+import {apiKeyAuth} from '../../helpers/auth'
 import type {RequestError} from '../../helpers/request'
 import {datadogRoute} from '../../helpers/request/datadog-route'
 
@@ -53,6 +54,8 @@ export class MeasureCommand extends BaseCommand {
       ['Add measures in bulk using a JSON file', 'datadog-ci measure --level job --measures-file my_measures.json'],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private level = Option.String('--level')
   private measures = Option.Array('--measures')

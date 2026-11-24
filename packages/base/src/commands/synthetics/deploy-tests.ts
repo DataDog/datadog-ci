@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
+import {orgActionAuth} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/terminal-link'
 
@@ -38,6 +39,8 @@ export class SyntheticsDeployTestsCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = orgActionAuth
 
   // BASE COMMAND START
   protected accessToken = Option.String('--accessToken', {

@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {noAuth} from '../../helpers/auth'
 import {messageBox} from '../../helpers/message-box'
 import {installPlugin, scopeToPackageName} from '../../helpers/plugin'
 
@@ -28,6 +29,8 @@ export class PluginInstallCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = noAuth
 
   // Positional
   public packageOrScope = Option.String()

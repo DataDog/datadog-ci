@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {CustomSpanCommand} from '../trace/helper'
 
 export class SpanCommand extends CustomSpanCommand {
@@ -33,6 +35,8 @@ export class SpanCommand extends CustomSpanCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private name = Option.String('--name')
   private durationInMs: number | undefined = Option.String('--duration', {

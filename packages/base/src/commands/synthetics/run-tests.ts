@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
+import {orgActionAuth} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/terminal-link'
 import * as validation from '../../helpers/validation'
@@ -56,6 +57,8 @@ export class SyntheticsRunTestsCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = orgActionAuth
 
   // JUnit options
   public jUnitReport = Option.String('-j,--jUnitReport', {

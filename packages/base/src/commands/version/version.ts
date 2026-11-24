@@ -2,6 +2,7 @@ import {Command} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
+import {noAuth} from '../../helpers/auth'
 import {cliVersion} from '../../version'
 
 export class VersionCommand extends BaseCommand {
@@ -13,6 +14,8 @@ export class VersionCommand extends BaseCommand {
     description:
       'Get the current version of datadog-ci. This command outputs a prefixed version, e.g. `v1.0.0`. If you want the raw version, use `datadog-ci --version`.',
   })
+
+  public static authRequirement = noAuth
 
   public async execute() {
     this.context.stdout.write(`v${cliVersion}\n`)

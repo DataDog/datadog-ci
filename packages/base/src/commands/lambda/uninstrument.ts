@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {customAuth, getCloudCredentialsOnlyAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -11,6 +12,8 @@ export class LambdaUninstrumentCommand extends BaseCommand {
     category: 'Serverless',
     description: 'Revert Datadog instrumentation in a Lambda.',
   })
+
+  public static authRequirement = customAuth(getCloudCredentialsOnlyAuthHelp('AWS credentials'))
 
   protected configPath = Option.String('--config', {
     description: 'Path to the configuration file',
