@@ -217,7 +217,7 @@ export const verifyMultiLanguageSsiInstrumented = (
     name: TRACER_VOLUME_NAME,
     mountPath: COMPOSITE_TRACER_MOUNT_PATH,
   })
-  expect(tracerCopy!.resources?.limits?.memory).toBe('2Gi')
+  expect(tracerCopy!.resources?.limits?.memory).toBe('3Gi')
   expect(tracerCopy!.startupProbe?.tcpSocket?.port).toBe(TRACER_READINESS_PORT)
   expect(tracerCopy!.args).toEqual(
     expect.arrayContaining([COMPOSITE_TRACER_MOUNT_PATH, COMPOSITE_COMPLETION_MARKER, String(TRACER_READINESS_PORT)])

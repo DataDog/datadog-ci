@@ -19,7 +19,11 @@ import {
   TRACER_VOLUME_NAME,
   TRACER_VOLUME_SIZE_LIMIT,
 } from '@datadog/datadog-ci-base/helpers/serverless/ssi/constants'
-import {getTracerCopyCompletionMarker, LANGUAGE_METADATA} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
+import {
+  getTracerCopyCompletionMarker,
+  LANGUAGE_METADATA,
+  type Language,
+} from '@datadog/datadog-ci-base/helpers/serverless/ssi/tracer'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {
@@ -46,8 +50,29 @@ const MULTI_LANGUAGE_SSI_MODE = 'multi_language'
 const LEGACY_TRACER_CONTAINER_NAME = 'datadog-tracer-copy'
 const MANAGED_TRACER_CONTAINER_NAMES = new Set([TRACER_CONTAINER_NAME, LEGACY_TRACER_CONTAINER_NAME])
 const MANAGED_TRACER_MOUNT_PATHS = new Set([TRACER_MOUNT_PATH, COMPOSITE_TRACER_MOUNT_PATH])
-const MULTI_LANGUAGE_VOLUME_SIZE_LIMIT = '1.5Gi'
-const MULTI_LANGUAGE_TRACER_MEMORY_LIMIT = '2Gi'
+
+// Files in a memory volume count against the tracer container that copies them. On the second generation execution
+// environment, copying also fills reclaimable page cache, so peak usage is about 2.5 times the package size. Each
+// memory limit holds that peak, so the copy never runs at the limit. Each volume is half its memory limit, so a tracer
+// that outgrows its tier fails to deploy instead of being killed on later instance starts.
+interface TracerMemorySizing {
+  readonly volumeSize: string
+  readonly memoryLimit: string
+}
+// Java, Node.js, .NET, and Ruby peak at 220 MiB.
+const SMALL_TRACER_MEMORY: TracerMemorySizing = {volumeSize: '256Mi', memoryLimit: '512Mi'}
+// Python and PHP peak at 710 MiB.
+const LARGE_TRACER_MEMORY: TracerMemorySizing = {volumeSize: TRACER_VOLUME_SIZE_LIMIT, memoryLimit: '1Gi'}
+const SINGLE_LANGUAGE_TRACER_MEMORY: Record<Language, TracerMemorySizing> = {
+  java: SMALL_TRACER_MEMORY,
+  nodejs: SMALL_TRACER_MEMORY,
+  csharp: SMALL_TRACER_MEMORY,
+  ruby: SMALL_TRACER_MEMORY,
+  python: LARGE_TRACER_MEMORY,
+  php: LARGE_TRACER_MEMORY,
+}
+// The composite tracer peaks at 2.1 GiB.
+const MULTI_LANGUAGE_TRACER_MEMORY: TracerMemorySizing = {volumeSize: '1.5Gi', memoryLimit: '3Gi'}
 const UNIFIED_SERVICE_TAG_LABELS = {
   service: 'service',
   environment: 'env',
@@ -223,9 +248,9 @@ export const instrumentServiceConfig = (service: IService, options: InstrumentSe
         mountPath,
         readinessPort: tracerReadinessPort,
         tracerVolumeMedium: ssiConfig.tracerVolumeMedium,
-        memoryVolumeSize: isMultiLanguage ? MULTI_LANGUAGE_VOLUME_SIZE_LIMIT : TRACER_VOLUME_SIZE_LIMIT,
-        memoryLimit:
-          isMultiLanguage && ssiConfig.tracerVolumeMedium === 'memory' ? MULTI_LANGUAGE_TRACER_MEMORY_LIMIT : undefined,
+        memorySizing: isMultiLanguage
+          ? MULTI_LANGUAGE_TRACER_MEMORY
+          : SINGLE_LANGUAGE_TRACER_MEMORY[ssiConfig.language],
       },
       configuredMainContainer,
       [options.sidecarName]
@@ -298,8 +323,7 @@ interface TracerContainerConfig {
   mountPath: string
   readinessPort: number
   tracerVolumeMedium: TracerVolumeMedium
-  memoryVolumeSize: string
-  memoryLimit: string | undefined
+  memorySizing: TracerMemorySizing
 }
 
 const buildTracerContainer = (config: TracerContainerConfig): IContainer => ({
@@ -315,7 +339,7 @@ const buildTracerContainer = (config: TracerContainerConfig): IContainer => ({
     String(config.readinessPort),
   ],
   volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: config.mountPath}],
-  ...(config.memoryLimit ? {resources: {limits: {memory: config.memoryLimit}}} : {}),
+  ...(config.tracerVolumeMedium === 'memory' ? {resources: {limits: {memory: config.memorySizing.memoryLimit}}} : {}),
   startupProbe: {
     tcpSocket: {port: config.readinessPort},
     initialDelaySeconds: 0,
@@ -359,7 +383,7 @@ const applyTracerContainer = (
       ...(template.volumes ?? []),
       {
         name: TRACER_VOLUME_NAME,
-        emptyDir: tracerVolumeConfig(config.tracerVolumeMedium, config.memoryVolumeSize),
+        emptyDir: tracerVolumeConfig(config.tracerVolumeMedium, config.memorySizing.volumeSize),
       },
     ],
   }
