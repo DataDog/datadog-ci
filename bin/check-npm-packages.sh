@@ -89,19 +89,19 @@ if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	if [ -n "$PR_NUMBER" ]; then
 		PR_REVIEWS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
 			"https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews")
-		# Keep only each reviewer's latest approval, then require an admin approval.
+		# Keep only each reviewer's latest approval, then require a repo owner or admin approval.
 		APPROVING_REVIEWERS=$(echo "$PR_REVIEWS" | jq -r '[group_by(.user.login) | .[] | max_by(.submitted_at) | select(.state == "APPROVED") | .user.login] | .[]')
 		PR_APPROVALS=$(echo "$APPROVING_REVIEWERS" | jq -Rsc 'split("\n") | map(select(length > 0)) | length')
 		ADMIN_PR_APPROVALS=0
 		while IFS= read -r reviewer; do
 			[ -z "$reviewer" ] && continue
-			REVIEWER_PERMISSION=$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
-				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '.permission // empty')
-			if [ "$REVIEWER_PERMISSION" = "admin" ]; then
+			REVIEWER_ROLE=$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
+				"https://api.github.com/repos/$GITHUB_REPOSITORY/collaborators/$reviewer/permission" | jq -r '.role_name // empty')
+			if [ "$REVIEWER_ROLE" = "dd-repo-owner" ] || [ "$REVIEWER_ROLE" = "admin" ]; then
 				ADMIN_PR_APPROVALS=$((ADMIN_PR_APPROVALS + 1))
 			fi
 		done <<< "$APPROVING_REVIEWERS"
-		echo -e "${BLUE}PR approvals:${NC} $PR_APPROVALS ($ADMIN_PR_APPROVALS from admins)"
+		echo -e "${BLUE}PR approvals:${NC} $PR_APPROVALS ($ADMIN_PR_APPROVALS from admins/owners)"
 	fi
 	echo
 fi
@@ -134,9 +134,9 @@ if [ ${#missing_packages[@]} -eq 0 ]; then
 	echo -e "${GREEN}All local packages exist on NPM ✅${NC}"
 	echo
 
-	# Check that the PR has at least one approval from a repository admin
+	# Check that the PR has at least one approval from a repository owner or admin
 	if [ -n "$PR_NUMBER" ] && [ "$ADMIN_PR_APPROVALS" -lt 1 ]; then
-		echo -e "${RED}This PR requires at least one repository-admin approval before approving the NPM deployment. Please ask an admin to approve the PR. ❌${NC}"
+		echo -e "${RED}This PR requires at least one repository-owner or admin approval before approving the NPM deployment. Please ask an admin to approve the PR. ❌${NC}"
 		echo
 		exit 1
 	fi
