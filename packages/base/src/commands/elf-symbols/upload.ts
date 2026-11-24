@@ -40,7 +40,7 @@ import {
   copyElfDebugInfo,
   isSupportedArch,
 } from './elf'
-import {getElfRequestBuilder, uploadMultipartHelper} from './helpers'
+import {compressFileWithZstd, getElfRequestBuilder, supportsZstdCompression, uploadMultipartHelper} from './helpers'
 import {ELF_DEBUG_INFOS_FILENAME, TYPE_ELF_DEBUG_INFOS, VALUE_NAME_ELF_DEBUG_INFOS} from './interfaces'
 import {
   renderArgumentMissingError,
@@ -340,6 +340,16 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
           return UploadStatus.Success
         }
 
+        let uploadFilePath = outputFilePath
+        let useGzip = true
+        if (supportsZstdCompression()) {
+          const compressedFilePath = `${outputFilePath}.zst`
+          await compressFileWithZstd(outputFilePath, compressedFilePath)
+          await fs.promises.rm(outputFilePath, {force: true})
+          uploadFilePath = compressedFilePath
+          useGzip = false
+        }
+
         const payload = {
           content: new Map<string, MultipartValue>([
             [
@@ -354,7 +364,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
               VALUE_NAME_ELF_DEBUG_INFOS,
               {
                 type: 'file',
-                path: outputFilePath,
+                path: uploadFilePath,
                 options: {filename: ELF_DEBUG_INFOS_FILENAME},
               },
             ],
@@ -379,10 +389,10 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
             this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
           },
           retries: 5,
-          useGzip: true,
+          useGzip,
         }).finally(() => {
           // ignore errors when removing the file
-          fs.rm(outputFilePath, () => {})
+          fs.rm(uploadFilePath, () => {})
         })
       })
 
