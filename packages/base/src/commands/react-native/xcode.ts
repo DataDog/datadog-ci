@@ -10,6 +10,8 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {parsePlist} from '@datadog/datadog-ci-base/helpers/plist'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {ReactNativeUploadCommand} from './upload'
 import {getReactNativeVersion} from './utils'
 
@@ -88,6 +90,8 @@ export class ReactNativeXcodeCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private composeSourcemapsPath = Option.String(
     '--compose-sourcemaps-path',

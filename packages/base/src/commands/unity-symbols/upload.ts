@@ -32,6 +32,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import * as elf from '../elf-symbols/elf'
 
 import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
@@ -70,6 +72,8 @@ export class UnitySymbolsUploadCommand extends BaseCommand {
         `,
     examples: [['Upload all symbol files from the default location', 'datadog-ci unity-symbols upload']],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private disableGit = Option.Boolean('--disable-git', false)
   private dryRun = Option.Boolean('--dry-run', false)

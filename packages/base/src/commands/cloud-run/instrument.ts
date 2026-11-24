@@ -1,6 +1,7 @@
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
+import {customAuth, getServerlessInstrumentAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {
   DEFAULT_VOLUME_PATH,
@@ -26,6 +27,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to a Cloud Run app.',
   })
+
+  public static authRequirement = customAuth(
+    getServerlessInstrumentAuthHelp('Google Cloud credentials', 'a Datadog API key (DD_API_KEY)')
+  )
 
   // protected configPath = Option.String('--config') implement if requested by customers
   protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {

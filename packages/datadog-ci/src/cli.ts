@@ -5,9 +5,10 @@ import type {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
+import {CliWithAuthHelp} from '@datadog/datadog-ci-base/helpers/auth'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {cliVersion, printVersion} from '@datadog/datadog-ci-base/version'
-import {Builtins, Cli} from 'clipanion'
+import {Builtins} from 'clipanion'
 
 import packageJson from '@datadog/datadog-ci/package.json'
 
@@ -31,7 +32,8 @@ const onError = (err: any) => {
 process.on('uncaughtException', onError)
 process.on('unhandledRejection', onError)
 
-const cli = new Cli<CommandContext>({
+// Adds an "Authentication" section to each command's detailed `--help`.
+const cli = new CliWithAuthHelp<CommandContext>({
   binaryLabel: 'Datadog CI',
   binaryName: 'datadog-ci',
   binaryVersion: cliVersion,

@@ -3,6 +3,8 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {orgActionAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 export class GateEvaluateCommand extends BaseCommand {
@@ -44,6 +46,8 @@ export class GateEvaluateCommand extends BaseCommand {
       ['Evaluate matching quality gate rules in Datadog without waiting', 'datadog-ci gate evaluate --no-wait'],
     ],
   })
+
+  public static authRequirement = orgActionAuth
 
   protected dryRun = Option.Boolean('--dry-run', false)
   protected failOnEmpty = Option.Boolean('--fail-on-empty', false)

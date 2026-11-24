@@ -9,6 +9,8 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 
+import {noAuth} from '../../helpers/auth'
+
 /**
  * The Debug ID is injected in the bundle as a plain string, using this prefix.
  */
@@ -35,6 +37,8 @@ export class ReactNativeInjectDebugIdCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = noAuth
 
   private assetsPath = Option.String({required: false})
   private bundlePath = Option.String('--bundle', {required: false})

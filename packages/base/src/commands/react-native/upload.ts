@@ -25,6 +25,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {RNSourcemap, RN_SOURCEMAP_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
@@ -67,6 +69,8 @@ export class ReactNativeUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private buildVersion = Option.String('--build-version')
   private bundle = Option.String('--bundle')

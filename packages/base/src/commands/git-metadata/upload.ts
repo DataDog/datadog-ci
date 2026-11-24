@@ -6,6 +6,7 @@ import {Command, Option} from 'clipanion'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import type {ApiKeyValidator} from '../../helpers/apikey'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {apiKeyAuth} from '../../helpers/auth'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
@@ -46,6 +47,8 @@ export class GitMetadataUploadCommand extends BaseCommand {
     `,
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private repositoryURL = Option.String('--repository-url')
   private dryRun = Option.Boolean('--dry-run', false)

@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {customAuth, getFlareAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -12,6 +13,8 @@ export class LambdaFlareCommand extends BaseCommand {
     description:
       'Gather config, logs, tags, project files, and more from a Lambda function and sends them to Datadog support.',
   })
+
+  public static authRequirement = customAuth(getFlareAuthHelp('AWS credentials'))
 
   protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false, {
     description: 'Preview collected data which would be sent to Datadog support',

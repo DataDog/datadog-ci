@@ -1,3 +1,4 @@
+import type {AuthRequirement} from './helpers/auth'
 import type {BaseContext} from 'clipanion'
 
 import {Command, Option} from 'clipanion'
@@ -14,6 +15,12 @@ export type CommandContext = BaseContext & {
  * This command should be extended by **every** command in the monorepo.
  */
 export abstract class BaseCommand<Context extends CommandContext = CommandContext> extends Command<Context> {
+  /**
+   * The credentials the command needs, shown in the "Authentication" section of its `--help`.
+   * Every command declares one; plugin commands inherit it from their base command.
+   */
+  public static authRequirement?: AuthRequirement
+
   // Hidden while the JSON logging migration is in progress: most commands do not
   // honour it yet. Unhide once coverage is broad enough.
   // Resolution order (handled by clipanion): CLI flag > DD_LOG_FORMAT env var > default.

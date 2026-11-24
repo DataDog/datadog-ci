@@ -1,4 +1,5 @@
 import type {ScaRequest} from './types'
+import type {OrgCredentials} from '@datadog/datadog-ci-base/helpers/auth'
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '@datadog/datadog-ci-base/constants'
@@ -8,11 +9,10 @@ import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 /**
  * Get the function to upload our results to the intake.
- * @param apiKey
+ * @param credentials - an access token, or an API key and an application key
  */
 export const getApiHelper = (
-  apiKey: string,
-  appKey: string,
+  credentials: OrgCredentials,
   source?: string
 ): ((scaRequest: ScaRequest) => Promise<RequestResponse>) => {
   /**
@@ -43,7 +43,7 @@ export const getApiHelper = (
     }
 
   const url = getBaseUrl()
-  const requestIntake = getRequestBuilder({baseUrl: url, apiKey, appKey})
+  const requestIntake = getRequestBuilder({baseUrl: url, ...credentials})
 
   return uploadSBomPayload(requestIntake)
 }

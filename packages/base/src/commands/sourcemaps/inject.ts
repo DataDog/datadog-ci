@@ -9,6 +9,8 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
+import {noAuth} from '../../helpers/auth'
+
 import {addDebugIdToPayloads, injectMissingDebugIds} from './debugId'
 import {findSourcemaps} from './findSourcemaps'
 import {Sourcemap} from './interfaces'
@@ -28,6 +30,8 @@ export class SourcemapsInjectCommand extends BaseCommand {
       ['Preview injection without modifying files', 'datadog-ci sourcemaps inject ./dist --dry-run'],
     ],
   })
+
+  public static authRequirement = noAuth
 
   private basePath = Option.String({required: true})
   private dryRun = Option.Boolean('--dry-run', false)

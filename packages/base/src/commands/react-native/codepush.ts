@@ -9,6 +9,8 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RN_CODEPUSH_SUPPORTED_PLATFORMS} from './interfaces'
 import {ReactNativeUploadCommand} from './upload'
@@ -35,6 +37,8 @@ export class ReactNativeCodepushCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private appCenterAppName = Option.String('--app')
   private appCenterDeployment = Option.String('--deployment')

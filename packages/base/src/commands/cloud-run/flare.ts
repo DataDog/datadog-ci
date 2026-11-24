@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {customAuth, getFlareAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
@@ -11,6 +12,8 @@ export class CloudRunFlareCommand extends BaseCommand {
     category: 'Serverless',
     description: 'Gather Cloud Run service configuration and sends it to Datadog.',
   })
+
+  public static authRequirement = customAuth(getFlareAuthHelp('Google Cloud credentials'))
 
   protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false, {
     description: 'Preview data that will be sent to Datadog support.',

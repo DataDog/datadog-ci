@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 export class CoverageUploadCommand extends BaseCommand {
@@ -43,6 +45,8 @@ export class CoverageUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   protected reportPaths = Option.Rest({required: 1})
   protected flags = Option.Array('--flags', {

@@ -3,6 +3,7 @@ import type {ContainerAppConfigOptions} from './common'
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
+import {customAuth, getServerlessInstrumentAuthHelp} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {
   DEFAULT_VOLUME_PATH,
@@ -30,6 +31,10 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to an Azure Container App.',
   })
+
+  public static authRequirement = customAuth(
+    getServerlessInstrumentAuthHelp('Azure credentials', 'a Datadog API key (DD_API_KEY)')
+  )
 
   private service = Option.String('--service', {
     description:

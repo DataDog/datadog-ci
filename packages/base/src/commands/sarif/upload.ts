@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
 
+import {apiKeyAuth} from '../../helpers/auth'
 import {executePluginCommand} from '../../helpers/plugin'
 import {isInteger} from '../../helpers/validation'
 
@@ -31,6 +32,8 @@ export class SarifUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

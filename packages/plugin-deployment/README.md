@@ -114,9 +114,13 @@ Example configuration file:
 
 ### Environment variables
 
-- `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_APP_KEY` (**required** for `correlate-image` and `gate`): APP key used to authenticate the requests.
-- `DD_SITE`: choose your Datadog site. For example, datadoghq.com or datadoghq.eu.
+The following environment variables must be defined:
+
+- `DD_SITE`: Your [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site). For example, `datadoghq.com` or `datadoghq.eu`.
+- For `mark` and `correlate`:
+  - `DD_API_KEY` only
+- For `correlate-image` and `gate`:
+  - Either `DD_ACCESS_TOKEN`, or both `DD_API_KEY` and `DD_APP_KEY`. See [Authentication](https://github.com/DataDog/datadog-ci#authentication).
 
 ## Further reading
 

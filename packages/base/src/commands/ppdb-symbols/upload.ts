@@ -30,6 +30,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {getPpdbSymbolsRequestBuilder, uploadMultipartHelper} from './helpers'
 import {PORTABLE_PDB_FILENAME, TYPE_PORTABLE_PDB, VALUE_NAME_PORTABLE_PDB} from './interfaces'
 import {AmbiguousManifestEntryError, lookupDebugId, readDebugIdManifest} from './manifest'
@@ -68,6 +70,8 @@ export class PpdbSymbolsUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private disableGit = Option.Boolean('--disable-git', false)
   private dryRun = Option.Boolean('--dry-run', false)

@@ -3,6 +3,7 @@ import * as t from 'typanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
+import {noAuth} from '../../helpers/auth'
 import {getCISpanTags} from '../../helpers/ci'
 import {
   CI_ENV_VARS,
@@ -160,6 +161,8 @@ export class CiEnvReadCommand extends BaseCommand {
       ['Get Datadog tags format', 'datadog-ci ci-env read --format tags'],
     ],
   })
+
+  public static authRequirement = noAuth
 
   private format = Option.String('--format', 'bash', {
     description: 'Output format: bash (default), json, or tags',

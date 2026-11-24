@@ -30,6 +30,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {getWasmRequestBuilder, uploadMultipartHelper} from './helpers'
 import {TYPE_WASM_DEBUG_INFOS, VALUE_NAME_WASM_DEBUG_INFOS, WASM_DEBUG_INFOS_FILENAME} from './interfaces'
 import {
@@ -58,6 +60,8 @@ export class WasmSymbolsUploadCommand extends BaseCommand {
         `,
     examples: [['Upload debug infos for all WASM files in the current directory', 'datadog-ci wasm-symbols upload .']],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private disableGit = Option.Boolean('--disable-git', false)
   private dryRun = Option.Boolean('--dry-run', false)

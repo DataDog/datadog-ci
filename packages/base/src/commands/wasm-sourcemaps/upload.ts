@@ -29,6 +29,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {getWasmSourcemapRequestBuilder, uploadMultipartHelper} from './helpers'
 import {SOURCE_MAP_FILE_NAME, TYPE_WASM_SOURCEMAP, VALUE_NAME_SOURCE_MAP} from './interfaces'
 import {
@@ -61,6 +63,8 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private basePath = Option.String({required: true})
   private service = Option.String('--service')

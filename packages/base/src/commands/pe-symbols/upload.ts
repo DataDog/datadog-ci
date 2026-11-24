@@ -31,6 +31,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {getBreakpadSymMetadata} from './breakpad'
 import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {
@@ -68,6 +70,8 @@ export class PeSymbolsUploadCommand extends BaseCommand {
         `,
     examples: [['Upload debug infos for all PE files in the current directory', 'datadog-ci pe-symbols upload .']],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private disableGit = Option.Boolean('--disable-git', false)
   private dryRun = Option.Boolean('--dry-run', false)

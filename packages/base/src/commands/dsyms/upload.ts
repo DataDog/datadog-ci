@@ -28,6 +28,8 @@ import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
+import {apiKeyAuth} from '../../helpers/auth'
+
 import {CompressedDsym} from './interfaces'
 import {
   renderCommandDetail,
@@ -70,6 +72,8 @@ export class DsymsUploadCommand extends BaseCommand<DsymsUploadContext> {
       ],
     ],
   })
+
+  public static authRequirement = apiKeyAuth
 
   private basePath = Option.String({required: true})
   private configPath = Option.String('--config')

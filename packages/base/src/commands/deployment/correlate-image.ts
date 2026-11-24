@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {orgActionAuth} from '../../helpers/auth'
+
 import {BaseCommand} from '../..'
 
 export class DeploymentCorrelateImageCommand extends BaseCommand {
@@ -12,6 +14,8 @@ export class DeploymentCorrelateImageCommand extends BaseCommand {
     description: 'Correlate images with their source commit.',
     details: 'This command will correlate the image with a commit of the application repository.',
   })
+
+  public static authRequirement = orgActionAuth
 
   protected commitSha = Option.String('--commit-sha')
   protected repositoryUrl = Option.String('--repository-url')
