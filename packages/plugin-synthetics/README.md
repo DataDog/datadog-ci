@@ -39,7 +39,7 @@ For more information about plugins, see [Installing a plugin](/packages/datadog-
 
 ### Setup the client
 
-To setup the client, configure either a Datadog access token, or your Datadog API and application keys. These credentials can be defined in three different ways:
+To set up the client, configure either a Datadog access token, or your Datadog API and application keys. You can define these credentials in three different ways:
 
 1. Defined in a [global configuration file](#global-configuration-file):
 
@@ -63,7 +63,7 @@ To setup the client, configure either a Datadog access token, or your Datadog AP
     yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
     ```
 
-To use an access token instead, see [Authentication][wif-auth].
+To use an access token instead, see [`accessToken`](#accesstoken).
 
 ### Global configuration file
 
@@ -1172,7 +1172,7 @@ Additional helpful documentation, links, and articles:
 [18]: https://docs.datadoghq.com/synthetics/mobile_app_testing/
 [19]: https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/src/interfaces.ts#L223-L254
 [20]: https://docs.datadoghq.com/synthetics/test_suites/
-[wif-auth]: https://github.com/DataDog/datadog-ci#authentication
+[21]: https://github.com/DataDog/datadog-ci#authentication
 
 <!--
   This page is single-sourced:

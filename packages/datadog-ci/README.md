@@ -296,7 +296,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 When both forms of a variable are set, `DATADOG_*` takes precedence.
 
-All `datadog-ci` commands that communicate with Datadog are either only **Sending telemetry to your org**, or **Calling Datadog API endpoints** (and optionally sending telemetry to your org).
+Commands that communicate with Datadog fall into two groups: commands that only **send telemetry** to your org, and commands that **call Datadog API endpoints**, which can also send telemetry.
 
 Run `datadog-ci <command> --help` to see which credentials a command needs.
 
@@ -306,7 +306,7 @@ Run `datadog-ci <command> --help` to see which credentials a command needs.
   - With [Workload Identity Federation][wif-docs], use an **identity mapping** to produce short-lived access tokens.
 
 > [!NOTE]
-> Use a long-lived API key with Serverless `instrument` commands: they save it in the instrumented service to send telemetry.
+> Serverless `instrument` commands that save an API key in the instrumented service (`aas`, `cloud-run`, `container-app`, `ecs-fargate`, and `lambda`) need a long-lived API key. A short-lived key from an intake mapping passes validation when you instrument, then expires, and the service stops sending telemetry.
 
 [wif-docs]: https://docs.datadoghq.com/account_management/workload_identity_federation/
 
