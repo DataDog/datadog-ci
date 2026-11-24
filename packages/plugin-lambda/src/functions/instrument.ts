@@ -337,26 +337,6 @@ export const calculateUpdateRequest = async (
     layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
   }
 
-  // Enable App and API Protection
-  if (settings['appsecEnabled'] === true) {
-    if (supportsInTracerAppsec(runtime, layerOrTraceVersion)) {
-      newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
-      delete newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR]
-    } else {
-      delete newEnvVars[APPSEC_ENABLED_ENV_VAR]
-      newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
-      newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
-    }
-
-    if (
-      [APPSEC_ENABLED_ENV_VAR, SERVERLESS_APPSEC_ENABLED_ENV_VAR, AWS_LAMBDA_EXEC_WRAPPER_VAR].some(
-        (name) => oldEnvVars[name] !== newEnvVars[name]
-      )
-    ) {
-      needsUpdate = true
-    }
-  }
-
   const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
   let fullExtensionLayerARN: string | undefined
   let extensionVersion: number | undefined
@@ -380,6 +360,26 @@ export const calculateUpdateRequest = async (
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
+
+  // Enable App and API Protection
+  if (settings['appsecEnabled'] === true) {
+    if (supportsInTracerAppsec(runtime, layerOrTraceVersion, extensionVersion)) {
+      newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
+      delete newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR]
+    } else {
+      delete newEnvVars[APPSEC_ENABLED_ENV_VAR]
+      newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
+      newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+    }
+
+    if (
+      [APPSEC_ENABLED_ENV_VAR, SERVERLESS_APPSEC_ENABLED_ENV_VAR, AWS_LAMBDA_EXEC_WRAPPER_VAR].some(
+        (name) => oldEnvVars[name] !== newEnvVars[name]
+      )
+    ) {
+      needsUpdate = true
+    }
+  }
 
   // Special handling for .NET and Java to support universal instrumentation
   if (runtimeType === RuntimeType.DOTNET || runtimeType === RuntimeType.JAVA) {
