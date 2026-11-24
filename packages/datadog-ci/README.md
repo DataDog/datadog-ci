@@ -302,11 +302,13 @@ Run `datadog-ci <command> --help` to see which credentials a command needs.
 
 - Sending telemetry requires an **API key** only.
   - With [Workload Identity Federation][wif-docs], use an **intake mapping** to produce short-lived API keys.
-- Calling Datadog API endpoints requires you to authenticate as a Datadog user or service account. This requires either an **API key and an application key**, or an **access token**.
+- Calling Datadog API endpoints requires either an **API key and an application key**, or an **access token**.
   - With [Workload Identity Federation][wif-docs], use an **identity mapping** to produce short-lived access tokens.
 
 > [!NOTE]
-> Serverless `instrument` commands that save an API key in the instrumented service (`aas`, `cloud-run`, `container-app`, `ecs-fargate`, and `lambda`) need a long-lived API key. A short-lived key from an intake mapping passes validation when you instrument, then expires, and the service stops sending telemetry.
+> Use a long-lived API key for Serverless `instrument` commands that save an API key in the instrumented service (`aas`, `cloud-run`, `container-app`, `ecs-fargate`, and `lambda`).
+>
+> Short-lived keys from an intake mapping would pass the initial setup validation, but your service would silently stop sending telemetry after the key expires.
 
 [wif-docs]: https://docs.datadoghq.com/account_management/workload_identity_federation/
 

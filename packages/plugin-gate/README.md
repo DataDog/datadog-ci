@@ -37,11 +37,14 @@ datadog-ci gate evaluate --scope team:backend --scope team:frontend --fail-on-em
 
 ### Environment variables
 
-Additionally, you can configure the `gate` command with the following environment variables:
+The following environment variables must be defined:
 
+- `DD_SITE`: Your [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site). For example, `datadoghq.com` or `datadoghq.eu`.
 - Either `DD_ACCESS_TOKEN`, or both `DD_API_KEY` and `DD_APP_KEY`. See [Authentication](https://github.com/DataDog/datadog-ci#authentication).
+
+Optional environment variables:
+
 - `DD_TAGS`: Sets global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `DD_SITE`: Your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
 ### Dependencies
 

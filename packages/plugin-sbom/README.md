@@ -26,7 +26,7 @@ datadog-ci sbom upload [--env] [--no-ci-tags] [--git-repository] [--debug] <path
 
 The following environment variables must be defined:
 
- - `DD_SITE`: the [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
+ - `DD_SITE`: Your [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site). For example, `datadoghq.com` or `datadoghq.eu`.
  - Either `DD_ACCESS_TOKEN`, or both `DD_API_KEY` and `DD_APP_KEY`. See [Authentication](https://github.com/DataDog/datadog-ci#authentication).
 
 Optional environment variables:
