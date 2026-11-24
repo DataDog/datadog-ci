@@ -238,6 +238,30 @@ describe('utils', () => {
       )
       expect(ciUtils.getProxyUrl({auth, protocol: 'http'})).toBe('')
     })
+
+    test.each([
+      ['pa#ss', 'john'],
+      ['pa/ss?x', 'john'],
+      ['p@ss:w%rd', 'john'],
+      ['100%25', 'john'],
+      ['pwd', 'domain\\john'],
+      ['pwd', 'john@example.com'],
+    ])('should keep password %p and username %p in the userinfo', (password, username) => {
+      const proxyUrl = ciUtils.getProxyUrl({
+        auth: {password, username},
+        host: '127.0.0.1',
+        port: 1234,
+        protocol: 'http',
+      })
+      const parsed = new URL(proxyUrl)
+
+      expect(parsed.host).toBe('127.0.0.1:1234')
+      expect(parsed.pathname).toBe('/')
+      expect(parsed.search).toBe('')
+      expect(parsed.hash).toBe('')
+      expect(decodeURIComponent(parsed.username)).toBe(username)
+      expect(decodeURIComponent(parsed.password)).toBe(password)
+    })
   })
 
   // Integration tests for proxy configuration using real HTTP servers.
@@ -304,6 +328,40 @@ describe('utils', () => {
         expect(targetServer.spy.mock.calls.length).toBe(1)
       } finally {
         await targetServer.close()
+      }
+    })
+
+    test('Send credentials with reserved characters to the proxy unchanged', async () => {
+      const auth = {password: 'pa#ss/w?rd%1', username: 'domain\\john'}
+      const proxyAuthorizationHeaders: (string | undefined)[] = []
+      const proxyServer = http.createServer()
+      proxyServer.on('connect', (req, socket) => {
+        proxyAuthorizationHeaders.push(req.headers['proxy-authorization'])
+        socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n')
+      })
+      await new Promise<void>((resolve, reject) => {
+        proxyServer.listen(0, '127.0.0.1').once('listening', resolve).once('error', reject)
+      })
+
+      try {
+        const requestBuilder = ciUtils.getRequestBuilder({
+          apiKey: 'abc',
+          baseUrl: 'https://datadog.invalid',
+          proxyOpts: {
+            auth,
+            host: '127.0.0.1',
+            port: (proxyServer.address() as AddressInfo).port,
+            protocol: 'http',
+          },
+        })
+        await expect(
+          requestBuilder({method: 'GET', url: datadogRoute('/api/v2/git/repository/packfile')})
+        ).rejects.toThrow()
+
+        const expectedCredentials = Buffer.from(`${auth.username}:${auth.password}`).toString('base64')
+        expect(proxyAuthorizationHeaders).toEqual([`Basic ${expectedCredentials}`])
+      } finally {
+        await new Promise<void>((resolve) => proxyServer.close(() => resolve()))
       }
     })
 
