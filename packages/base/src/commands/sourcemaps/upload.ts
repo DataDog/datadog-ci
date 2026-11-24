@@ -89,7 +89,9 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
   private repositoryURL = Option.String('--repository-url')
   private commitSha = Option.String('--commit-sha')
   private debugId = Option.Boolean('--debug-id', false)
-  private experimentalDuplicateCheck = Option.Boolean('--experimental-duplicate-check', false)
+  private duplicateCheck = Option.Boolean('--duplicate-check,--experimental-duplicate-check', true, {
+    description: 'Skip existing sourcemaps in Debug-ID mode. Specify `--no-duplicate-check` to disable.',
+  })
   private service = Option.String('--service')
 
   private cliVersion = cliVersion
@@ -329,12 +331,11 @@ export class SourcemapsUploadCommand extends BaseCommand<SourcemapsUploadContext
     }
   }
 
-  // Applies the opt-in duplicate check before upload; failures fall back to uploading everything.
   private maybeFilterExistingDebugIds = async (
     payloads: Sourcemap[],
     metricsLogger: MetricsLogger
   ): Promise<[Sourcemap[], number]> => {
-    if (!this.experimentalDuplicateCheck || !this.debugId || payloads.length === 0 || !this.config.apiKey) {
+    if (!this.duplicateCheck || !this.debugId || payloads.length === 0 || !this.config.apiKey) {
       return [payloads, 0]
     }
     try {

@@ -726,7 +726,6 @@ describe('maybeFilterExistingDebugIds', () => {
   const createDebugIdCommand = () => {
     const command = createCommand(SourcemapsUploadCommand)
     command['debugId'] = true
-    command['experimentalDuplicateCheck'] = true
     command['config'].apiKey = 'test-api-key'
 
     return command
@@ -795,7 +794,6 @@ describe('maybeFilterExistingDebugIds', () => {
   test('does not run the check without --debug-id', async () => {
     const command = createCommand(SourcemapsUploadCommand)
     command['debugId'] = false
-    command['experimentalDuplicateCheck'] = true
     command['config'].apiKey = 'test-api-key'
 
     await command['maybeFilterExistingDebugIds']([makePayload('id-a')], stubMetricsLogger())
@@ -823,7 +821,6 @@ describe('execute with check_exists', () => {
     'sourcemaps',
     'upload',
     '--debug-id',
-    '--experimental-duplicate-check',
     '--disable-git',
   ])
 
@@ -831,6 +828,7 @@ describe('execute with check_exists', () => {
     'sourcemaps',
     'upload',
     '--debug-id',
+    '--no-duplicate-check',
     '--disable-git',
   ])
 
@@ -838,7 +836,6 @@ describe('execute with check_exists', () => {
     'sourcemaps',
     'upload',
     '--debug-id',
-    '--experimental-duplicate-check',
     '--dry-run',
     '--disable-git',
   ])
@@ -852,7 +849,7 @@ describe('execute with check_exists', () => {
     mockedHttpRequest.mockResolvedValue({config: {}, data: {}, headers: {}, status: 200, statusText: 'OK'})
   })
 
-  test('does not query for duplicates without --experimental-duplicate-check', async () => {
+  test('does not query for duplicates with --no-duplicate-check', async () => {
     const {context, code} = await runCLIWithDebugIdNoDuplicateCheck([debugIdFixture])
 
     expect(code).toBe(0)
@@ -872,19 +869,22 @@ describe('execute with check_exists', () => {
     expect(result.code).toBe(code)
   })
 
-  test.each([{options: []}, {options: ['--strict']}])('skips an existing debug ID with $options', async ({options}) => {
-    mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: true})
+  test.each([{options: []}, {options: ['--strict']}, {options: ['--experimental-duplicate-check']}])(
+    'skips an existing debug ID with $options',
+    async ({options}) => {
+      mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: true})
 
-    const {context, code} = await runCLIWithDebugIdNoDryRun([...options, debugIdFixture])
+      const {context, code} = await runCLIWithDebugIdNoDryRun([...options, debugIdFixture])
 
-    expect(code).toBe(0)
-    expect(mockedCheckExistingDebugIds).toHaveBeenCalledTimes(1)
-    expect(mockedHttpRequest).not.toHaveBeenCalled()
-    const stdout = context.stdout.toString()
-    expect(stdout).toContain('Skipping sourcemap')
-    expect(stdout).toContain('1 sourcemap already exists in Datadog, nothing to upload.')
-    expect(stdout).not.toContain('Uploading sourcemap')
-  })
+      expect(code).toBe(0)
+      expect(mockedCheckExistingDebugIds).toHaveBeenCalledTimes(1)
+      expect(mockedHttpRequest).not.toHaveBeenCalled()
+      const stdout = context.stdout.toString()
+      expect(stdout).toContain('Skipping sourcemap')
+      expect(stdout).toContain('1 sourcemap already exists in Datadog, nothing to upload.')
+      expect(stdout).not.toContain('Uploading sourcemap')
+    }
+  )
 
   test('uploads when the debug ID does not exist in Datadog', async () => {
     mockedCheckExistingDebugIds.mockResolvedValue({[fixtureDebugId]: false})
