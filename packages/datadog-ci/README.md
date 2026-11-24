@@ -113,6 +113,12 @@ The following `<scope>` and `<command>` values are available.
 
 - `upload`: Upload code coverage report files to Datadog.
 
+#### `android-symbols`
+
+<sub>**README:** [📚](/packages/plugin-android-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/error_tracking/frontend/mobile/android/)</sub>
+
+- `upload`: Upload an Android ProGuard or R8 mapping file using its application build ID.
+
 #### `dora`
 
 <sub>**README:** [📚](/packages/plugin-dora) | **Documentation:** [🔗](https://docs.datadoghq.com/dora_metrics/)</sub>

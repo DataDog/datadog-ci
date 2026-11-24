@@ -1,5 +1,6 @@
 /* eslint-disable quote-props */
 export const builtinPluginCommands = {
+  'android-symbols': ['upload'],
   'coverage': ['upload'],
   'deployment': ['correlate-image', 'correlate', 'gate', 'mark'],
   'dora': ['deployment'],
@@ -11,6 +12,7 @@ export const builtinPluginCommands = {
 
 export const allPluginCommands = {
   'aas': ['instrument', 'uninstrument'],
+  'android-symbols': ['upload'],
   'cloud-run': ['flare', 'instrument', 'uninstrument'],
   'container-app': ['instrument', 'uninstrument'],
   'coverage': ['upload'],

@@ -64,6 +64,7 @@
   },
   "peerDependencies": {
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
+    "@datadog/datadog-ci-plugin-android-symbols": "workspace:*",
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*",
     "@datadog/datadog-ci-plugin-container-app": "workspace:*",
     "@datadog/datadog-ci-plugin-coverage": "workspace:*",
@@ -81,6 +82,9 @@
   },
   "peerDependenciesMeta": {
     "@datadog/datadog-ci-plugin-aas": {
+      "optional": true
+    },
+    "@datadog/datadog-ci-plugin-android-symbols": {
       "optional": true
     },
     "@datadog/datadog-ci-plugin-cloud-run": {

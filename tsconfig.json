@@ -9,6 +9,7 @@
     {"path": "./packages/datadog-ci"},
     {"path": "./packages/ci-visibility"},
     {"path": "./packages/plugin-aas"},
+    {"path": "./packages/plugin-android-symbols"},
     {"path": "./packages/plugin-cloud-run"},
     {"path": "./packages/plugin-container-app"},
     {"path": "./packages/plugin-coverage"},

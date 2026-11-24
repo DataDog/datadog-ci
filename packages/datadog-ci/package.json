@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
+    "@datadog/datadog-ci-plugin-android-symbols": "workspace:*",
     "@datadog/datadog-ci-plugin-coverage": "workspace:*",
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",

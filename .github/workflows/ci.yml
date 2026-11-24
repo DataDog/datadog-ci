@@ -146,6 +146,7 @@ jobs:
           echo '{
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
+              "@datadog/datadog-ci-plugin-android-symbols": "file:./artifacts/@datadog-datadog-ci-plugin-android-symbols-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
@@ -293,6 +294,7 @@ jobs:
           echo '{
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
+              "@datadog/datadog-ci-plugin-android-symbols": "file:./artifacts/@datadog-datadog-ci-plugin-android-symbols-24.tgz",
               "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-24.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-24.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-24.tgz",
@@ -542,6 +544,7 @@ jobs:
           echo '{
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
+              "@datadog/datadog-ci-plugin-android-symbols": "file:./artifacts/@datadog-datadog-ci-plugin-android-symbols-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
@@ -606,6 +609,7 @@ jobs:
         run: |
           output=$(npx \
               -p ./artifacts/@datadog-datadog-ci-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-android-symbols-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz \
@@ -650,6 +654,7 @@ jobs:
           echo '{
             "name": "datadog-ci-plugin-auto-install-npm",
             "overrides": {
+              "@datadog/datadog-ci-plugin-android-symbols": "file:./artifacts/@datadog-datadog-ci-plugin-android-symbols-20.tgz",
               "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
@@ -727,6 +732,7 @@ jobs:
           echo '{
             "name": "datadog-ci-plugin-auto-install-yarn",
             "resolutions": {
+              "@datadog/datadog-ci-plugin-android-symbols": "file:./artifacts/@datadog-datadog-ci-plugin-android-symbols-20.tgz",
               "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
