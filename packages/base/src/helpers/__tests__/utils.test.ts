@@ -18,6 +18,19 @@ import {formatBytes, isFile, maskString} from '../utils'
 import {MOCK_DATADOG_API_KEY} from './testing-tools'
 
 describe('utils', () => {
+  test.each([
+    ['A'.repeat(40), 'a'.repeat(40)],
+    ['B'.repeat(64), 'b'.repeat(64)],
+    ['ABCDEF', 'ABCDEF'],
+    ['A'.repeat(39) + '\n', 'A'.repeat(39) + '\n'],
+    ['A'.repeat(40) + '\n', 'A'.repeat(40) + '\n'],
+    ['Z'.repeat(40), 'Z'.repeat(40)],
+    ['', ''],
+    [undefined, undefined],
+  ])('normalizes complete Git object IDs: %s', (input, expected) => {
+    expect(ciUtils.normalizeGitSha(input)).toBe(expected)
+  })
+
   beforeEach(() => {
     jest.restoreAllMocks()
   })

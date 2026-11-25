@@ -33,6 +33,7 @@ import {
 import {globSync} from '../glob'
 import {
   CI_ENV_VARS,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_NODE_LABELS,
   CI_NODE_NAME,
   CI_PIPELINE_DISPLAY_NAME,
@@ -205,7 +206,10 @@ describe('getCIMetadata', () => {
       delete ciMetadata?.[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]
       // there is no DD_CI_PIPELINE_DISPLAY_NAME override, so this tag cannot be overridden by DD env variables
       delete ciMetadata?.[CI_PIPELINE_DISPLAY_NAME]
-      expect(ciMetadata).toEqual(expectedMetadata)
+      expect(ciMetadata).toEqual({
+        ...expectedMetadata,
+        ...(tags[CI_GIT_MERGE_COMMIT_SHA] ? {[CI_GIT_MERGE_COMMIT_SHA]: tags[CI_GIT_MERGE_COMMIT_SHA]} : {}),
+      })
     })
   })
 })
@@ -1689,6 +1693,30 @@ describe('processLevels', () => {
     expect(anyFailed).toBe(false)
     // The orchestrationId match runs once for the whole command, not once per level.
     expect(context.stdout.toString().match(/Found Worker log via system\.orchestrationId/g)).toHaveLength(1)
+  })
+})
+
+describe('AppVeyor merge evidence', () => {
+  const build = 'a'.repeat(40)
+  const head = 'b'.repeat(40)
+
+  test.each([
+    {APPVEYOR_PULL_REQUEST_NUMBER: 'not-a-number'},
+    {APPVEYOR_PULL_REQUEST_NUMBER: ''},
+    {APPVEYOR_PULL_REQUEST_HEAD_COMMIT: build.toUpperCase()},
+    {APPVEYOR_PULL_REQUEST_HEAD_COMMIT: 'invalid'},
+    {APPVEYOR_REPO_COMMIT: 'invalid'},
+    {APPVEYOR_REPO_PROVIDER: 'bitbucket'},
+  ])('does not infer a merge from %p', (override) => {
+    process.env = {
+      APPVEYOR: 'true',
+      APPVEYOR_REPO_PROVIDER: 'github',
+      APPVEYOR_REPO_COMMIT: build,
+      APPVEYOR_PULL_REQUEST_NUMBER: '42',
+      APPVEYOR_PULL_REQUEST_HEAD_COMMIT: head,
+      ...override,
+    }
+    expect(getCISpanTags()?.[CI_GIT_MERGE_COMMIT_SHA]).toBeUndefined()
   })
 })
 

@@ -287,6 +287,12 @@ export const recursivelyRemoveUndefinedValues = <T extends Record<string, unknow
   return newObject
 }
 
+export const isFullGitSha = (sha: string | undefined): sha is string =>
+  typeof sha === 'string' && (sha.length === 40 || sha.length === 64) && !/[^0-9a-f]/i.test(sha)
+
+export const normalizeGitSha = (sha: string | undefined): string | undefined =>
+  isFullGitSha(sha) ? sha.toLowerCase() : sha
+
 export const normalizeRef = (ref: string | undefined) => {
   if (!ref) {
     return ref

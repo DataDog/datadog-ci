@@ -38,10 +38,13 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   CI_JOB_ID,
+  CI_GIT_MERGE_COMMIT_SHA,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {
   normalizeRef,
+  normalizeGitSha,
+  isFullGitSha,
   removeEmptyValues,
   removeUndefinedValues,
   filterSensitiveInfoFromRepository,
@@ -824,6 +827,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       [CI_PIPELINE_NAME]: BUILD_DEFINITIONNAME,
       [CI_PIPELINE_NUMBER]: BUILD_BUILDID,
       [GIT_SHA]: SYSTEM_PULLREQUEST_SOURCECOMMITID || BUILD_SOURCEVERSION,
+      [GIT_HEAD_SHA]: SYSTEM_PULLREQUEST_SOURCECOMMITID,
       [CI_WORKSPACE_PATH]: BUILD_SOURCESDIRECTORY,
       [GIT_REPOSITORY_URL]: SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI || BUILD_REPOSITORY_URI,
       [GIT_BRANCH]: SYSTEM_PULLREQUEST_SOURCEBRANCH || BUILD_SOURCEBRANCH || BUILD_SOURCEBRANCHNAME,
@@ -971,6 +975,59 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = CODEBUILD_WEBHOOK_BASE_REF
       tags[GIT_HEAD_SHA] = CODEBUILD_RESOLVED_SOURCE_VERSION
     }
+  }
+
+  let mergeSha: string | undefined
+  switch (tags[CI_PROVIDER_NAME]) {
+    case CI_ENGINES.GITHUB:
+      if (/^refs\/pull\/\d+\/merge$/.test(env.GITHUB_REF ?? '')) {
+        mergeSha = env.GITHUB_SHA
+      }
+      break
+    case CI_ENGINES.GITLAB:
+      if (
+        env.CI_MERGE_REQUEST_IID &&
+        ['merged_result', 'merge_train'].includes(env.CI_MERGE_REQUEST_EVENT_TYPE ?? '')
+      ) {
+        mergeSha = env.CI_COMMIT_SHA
+      }
+      break
+    case CI_ENGINES.AZURE:
+      if (env.BUILD_REASON === 'PullRequest' && /^refs\/pull\/\d+\/merge$/.test(env.BUILD_SOURCEBRANCH ?? '')) {
+        mergeSha = env.BUILD_SOURCEVERSION
+      }
+      break
+    case CI_ENGINES.TRAVIS:
+      if (env.TRAVIS_EVENT_TYPE === 'pull_request' && /^\d+$/.test(env.TRAVIS_PULL_REQUEST ?? '')) {
+        mergeSha = env.TRAVIS_COMMIT
+      }
+      break
+    case CI_ENGINES.APPVEYOR:
+      if (
+        env.APPVEYOR_REPO_PROVIDER === 'github' &&
+        /^\d+$/.test(env.APPVEYOR_PULL_REQUEST_NUMBER ?? '') &&
+        isFullGitSha(env.APPVEYOR_PULL_REQUEST_HEAD_COMMIT) &&
+        env.APPVEYOR_REPO_COMMIT?.toLowerCase() !== env.APPVEYOR_PULL_REQUEST_HEAD_COMMIT?.toLowerCase()
+      ) {
+        mergeSha = env.APPVEYOR_REPO_COMMIT
+      }
+      break
+  }
+  if (isFullGitSha(mergeSha)) {
+    tags[CI_GIT_MERGE_COMMIT_SHA] = mergeSha.toLowerCase()
+  }
+  for (const key of [
+    GIT_SHA,
+    GIT_HEAD_SHA,
+    GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+    GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
+  ] as const) {
+    if (tags[key]) {
+      tags[key] = normalizeGitSha(tags[key])
+    }
+  }
+  if (tags[GIT_PULL_REQUEST_BASE_BRANCH]) {
+    tags[GIT_PULL_REQUEST_BASE_BRANCH] = normalizeRef(tags[GIT_PULL_REQUEST_BASE_BRANCH])
   }
 
   if (tags[CI_WORKSPACE_PATH]) {

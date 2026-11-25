@@ -25,7 +25,7 @@ import {
   GIT_TAG,
   PR_NUMBER,
 } from './tags'
-import {normalizeRef, removeEmptyValues, filterSensitiveInfoFromRepository} from './utils'
+import {normalizeGitSha, normalizeRef, removeEmptyValues, filterSensitiveInfoFromRepository} from './utils'
 
 export const getUserGitSpanTags = () => {
   const {
@@ -57,7 +57,7 @@ export const getUserGitSpanTags = () => {
   return removeEmptyValues({
     [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(DD_GIT_REPOSITORY_URL),
     [GIT_BRANCH]: branch,
-    [GIT_SHA]: DD_GIT_COMMIT_SHA,
+    [GIT_SHA]: normalizeGitSha(DD_GIT_COMMIT_SHA),
     [GIT_TAG]: tag,
     [GIT_COMMIT_MESSAGE]: DD_GIT_COMMIT_MESSAGE,
     [GIT_COMMIT_COMMITTER_DATE]: DD_GIT_COMMIT_COMMITTER_DATE,
@@ -67,8 +67,8 @@ export const getUserGitSpanTags = () => {
     [GIT_COMMIT_AUTHOR_EMAIL]: DD_GIT_COMMIT_AUTHOR_EMAIL,
     [GIT_COMMIT_AUTHOR_NAME]: DD_GIT_COMMIT_AUTHOR_NAME,
     [GIT_PULL_REQUEST_BASE_BRANCH]: DD_GIT_PULL_REQUEST_BASE_BRANCH,
-    [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA,
-    [GIT_HEAD_SHA]: DD_GIT_COMMIT_HEAD_SHA,
+    [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: normalizeGitSha(DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA),
+    [GIT_HEAD_SHA]: normalizeGitSha(DD_GIT_COMMIT_HEAD_SHA),
     [PR_NUMBER]: DD_PR_NUMBER,
   })
 }
