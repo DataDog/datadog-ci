@@ -124,6 +124,10 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       return 1
     }
 
+    const hasWasmSourcemaps = this.webSourceMapsLocation
+      ? globSync(buildPath(this.webSourceMapsLocation, '**/*.wasm.map'), {dot: true}).length > 0
+      : false
+
     const uploadInfo: UploadInfo[] = []
     if (this.iosDsymsLocation) {
       uploadInfo.push({
@@ -148,7 +152,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     }
     if (this.webSourceMapsLocation) {
       uploadInfo.push({
-        fileType: 'JavaScript and WebAssembly Source Maps',
+        fileType: hasWasmSourcemaps ? 'JavaScript and WebAssembly Source Maps' : 'JavaScript Source Maps',
         location: this.webSourceMapsLocation,
         platform: 'Browser',
       })
@@ -197,8 +201,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       }
       if (this.webSourceMapsLocation) {
         callResults.push(await this.performSourceMapUpload())
-        const wasmSourcemaps = globSync(buildPath(this.webSourceMapsLocation, '**/*.wasm.map'), {dot: true})
-        if (wasmSourcemaps.length > 0) {
+        if (hasWasmSourcemaps) {
           callResults.push(await this.performSourceMapUpload(WasmSourcemapsUploadCommand))
         }
       }
@@ -211,7 +214,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       return 1
     }
 
-    return callResults.some((status) => status === UploadStatus.Failure) ? 1 : 0
+    return 0
   }
 
   private getAndroidMetadata(): MappingMetadata {

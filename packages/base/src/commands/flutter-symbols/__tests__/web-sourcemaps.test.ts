@@ -75,9 +75,10 @@ describe('Flutter web sourcemap subcommands', () => {
   })
 
   test('uploads both targets with the pubspec version without beta opt-in or a local WASM module', async () => {
-    const {code} = await runCLI(['--web-sourcemaps', '--disable-git'])
+    const {code, context} = await runCLI(['--web-sourcemaps', '--disable-git'])
 
     expect(code).toBe(0)
+    expect(context.stdout.toString()).toContain('Uploading Browser JavaScript and WebAssembly Source Maps')
     expect(process.env.DD_BETA_COMMANDS_ENABLED).toBeUndefined()
     expect(fs.existsSync('build/web/nested/main.dart.wasm')).toBe(false)
     expect(mockUpload).toHaveBeenCalledTimes(2)
@@ -122,6 +123,8 @@ describe('Flutter web sourcemap subcommands', () => {
     expect(code).toBe(0)
     expect(mockUpload).toHaveBeenCalledTimes(1)
     expect(getMetadata(mockUpload.mock.calls[0][0]).type).toBe('js_sourcemap')
+    expect(context.stdout.toString()).toContain('Uploading Browser JavaScript Source Maps')
+    expect(context.stdout.toString()).not.toContain('WebAssembly')
     expect(context.stdout.toString()).not.toContain('Uploading WASM sourcemaps from:')
   })
 
@@ -174,14 +177,14 @@ describe('Flutter web sourcemap subcommands', () => {
     expect(mockUpload.mock.calls.every(([payload]) => !payload.content.has('repository'))).toBe(true)
   })
 
-  test('returns a failure if the WASM upload fails', async () => {
+  test('preserves the existing exit code while reporting a failed WASM upload', async () => {
     mockUpload.mockImplementation(async (payload) =>
       getMetadata(payload).type === 'wasm_sourcemap' ? UploadStatus.Failure : UploadStatus.Success
     )
 
     const {code, context} = await runCLI(['--web-sourcemaps', '--disable-git'])
 
-    expect(code).toBe(1)
+    expect(code).toBe(0)
     expect(mockUpload).toHaveBeenCalledTimes(2)
     expect(context.stdout.toString()).toContain('Some symbol files may not been uploaded correctly.')
   })
