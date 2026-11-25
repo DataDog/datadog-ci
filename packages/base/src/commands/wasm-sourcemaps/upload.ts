@@ -2,6 +2,7 @@ import fs from 'fs'
 import {URL} from 'url'
 
 import type {WasmSourcemapFile, WasmSourcemapMetadata} from './interfaces'
+import type {CommandContext} from '@datadog/datadog-ci-base'
 import type {RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import type {MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import type {MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
@@ -46,7 +47,7 @@ import {
   renderUpload,
 } from './renderer'
 
-export class WasmSourcemapsUploadCommand extends BaseCommand {
+export class WasmSourcemapsUploadCommand extends BaseCommand<CommandContext & {repositoryData?: RepositoryData}> {
   public static paths = [['wasm-sourcemaps', 'upload']]
 
   public static usage = Command.Usage({
@@ -119,7 +120,7 @@ export class WasmSourcemapsUploadCommand extends BaseCommand {
     )
 
     if (!this.disableGit) {
-      this.gitData = await this.getGitMetadata()
+      this.gitData = this.context.repositoryData ?? (await this.getGitMetadata())
     }
 
     const initialTime = Date.now()

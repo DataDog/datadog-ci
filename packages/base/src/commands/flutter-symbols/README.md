@@ -50,8 +50,8 @@ datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service
 | `--ios-dsyms-location`       | Optional  | Specify the location of iOS dSYM files. By default, these are located at `./build/ios/archive/Runner.xcarchive/dSYMs`. Adding this parameter automatically sets `--ios-dsyms`.                                                                                                                                   |
 | `--android-mapping`          | Optional  | Upload Android Proguard mapping file. This is usually only necessary if you specify `--obfuscate` as a parameter to `flutter build`.                                                                                                                                                                             |
 | `--android-mapping-location` | Optional  | Specify the location of your Android Proguard mapping file. By default, this is located at `./build/app/outputs/mapping/[flavor]/mapping.txt`. Adding this parameter automatically sets `--android-mapping`.                                                                                                     |
-| `--web-sourcemaps`           | Optional  | Upload a JavaScript mapping file to Datadog.                                                                                                                                                                                                                                                                     |
-| `--web-sourcemaps-location`  | Optional  | Specify the directory of your Flutter Web source maps. Defaults to `./build/web`                                                                                                                                                                                                                                 |
+| `--web-sourcemaps`           | Optional  | Upload JavaScript and WebAssembly source maps to Datadog.                                                                                                                                                                                                                                                                     |
+| `--web-sourcemaps-location`  | Optional  | Specify the directory of your Flutter Web JavaScript and WebAssembly source maps. Defaults to `./build/web`. Enables web uploads without `--web-sourcemaps`.                                                                                                                                                                                                                                 |
 | `--minified-path-prefix`     | Optional  | For Flutter Web, a prefix common to all your source files, depending on the URL they are served from. Required if `--web-sourcemaps` is specified                                                                                                                                                                |
 | `--pubspec`                  | Optional  | The location of the pubspec for this application. The pubspec is used to automatically determine the version number of the application. Defaults to the current directory.                                                                                                                                       |
 | `--version`                  | Optional  | The version of your application. This defaults to the version specified in your pubspec. Only one upload is needed for a specific `version`, `service`, and `flavor` combination. Subsequent uploads are ignored until one parameter changes.                                                                    |
@@ -59,6 +59,23 @@ datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service
 | `--disable-git`              | Optional  | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).                                                                                  |
 | `--repository-url`           | Optional  | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                                                                                                      |
 
+
+### Flutter Web with WebAssembly
+
+Build your application with source maps, then upload both JavaScript and WebAssembly source maps with one command:
+
+```bash
+flutter build web --wasm --source-maps
+
+datadog-ci flutter-symbols upload \
+  --service-name com.companyname.application \
+  --web-sourcemaps \
+  --minified-path-prefix https://example.com/
+```
+
+The web flags upload JavaScript source maps and recursively discover `*.wasm.map` files in the same directory. The `.wasm` modules do not need to be present locally. JavaScript-only builds skip the WASM upload step. No `DD_BETA_COMMANDS_ENABLED` setting is required when uploading through `flutter-symbols`.
+
+Both uploads use the same service, version resolved from `pubspec.yaml` (or `--version`), and minified path prefix. The prefix must match the deployed JavaScript and WASM module URLs. For example, `build/web/nested/main.dart.wasm.map` with prefix `https://example.com/` is associated with `https://example.com/nested/main.dart.wasm`. The `--dry-run` and `--disable-git` flags apply to both uploads, and Git metadata is collected once and shared.
 
 ## Further reading
 
