@@ -89,7 +89,7 @@ For this to be safe:
 
 - For Go reports, which carry the `go.version` property: a quarantined subtest also excuses its failing parent, but
   quarantining a parent doesn't cover its subtests, so quarantine the subtests themselves. The last rerun of a test
-  counts. A parent that also fails on its own assertion is not detected. A panic or timeout keeps the job red.
+  in a report counts; a failure in one report isn't undone by a pass in another. A parent that also fails on its own assertion is not detected. A panic or timeout keeps the job red.
 
 #### Environment variables
 

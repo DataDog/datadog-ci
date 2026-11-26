@@ -236,6 +236,8 @@ export const parseReport = (
 }
 
 const keyOf = (run: TestRun) => `${run.suite}\u0000${run.name}`
+// Reruns, duplicates and Go parents only make sense within one report: another report is another execution.
+const reportKeyOf = (run: TestRun) => `${run.report ?? run.module}\u0000${keyOf(run)}`
 
 /** The runs that count as failing: for Go the last attempt of a test wins (gotestsum --rerun-fails), else any failure. */
 export const failingRuns = (runs: TestRun[]): TestRun[] => {
@@ -243,7 +245,7 @@ export const failingRuns = (runs: TestRun[]): TestRun[] => {
   const failing: TestRun[] = []
   for (const run of runs) {
     if (run.go) {
-      lastGoAttempt.set(keyOf(run), run)
+      lastGoAttempt.set(reportKeyOf(run), run)
     } else if (run.failed) {
       failing.push(run)
     }
@@ -386,9 +388,16 @@ export const excusedState = (run: TestRun, excused: ExcusedTests): ExcusedState 
  * a parent that also fails on its own assertion is missed.
  */
 export const decide = (failing: TestRun[], excused: ExcusedTests): Verdict => {
-  const unique = [...new Map(failing.map((run) => [`${run.module}\u0000${keyOf(run)}`, run])).values()]
+  const unique = [...new Map(failing.map((run) => [reportKeyOf(run), run])).values()]
   const isParent = (run: TestRun) =>
-    run.go && unique.some((other) => other.go && other.suite === run.suite && other.name.startsWith(`${run.name}/`))
+    run.go &&
+    unique.some(
+      (other) =>
+        other.go &&
+        (other.report ?? other.module) === (run.report ?? run.module) &&
+        other.suite === run.suite &&
+        other.name.startsWith(`${run.name}/`)
+    )
   const verdict: Verdict = {excused: [], real: []}
   for (const run of unique.filter((r) => !isParent(r))) {
     const state = run.aborted ? undefined : excusedState(run, excused)
@@ -535,19 +544,24 @@ export const judge = async (input: JudgeInput): Promise<JudgeResult> => {
     return state ? [{...run, state}] : []
   })
   const {excused, real} = decide(failing, excusedTests)
-  const lines = excused.map(
+  // The same test can fail in several reports: list and count it once.
+  const once = <T extends TestRun>(list: T[], line: (run: T) => string) => [...new Set(list.map(line))]
+  const count = (list: TestRun[]) => new Set(list.map(keyOf)).size
+  const lines = once(
+    excused,
     (t) => `${t.state === 'disabled' ? 'Disabled' : 'Quarantined'}, ignored: ${t.suite} ${t.name}`
   )
   if (real.length) {
-    for (const t of real) {
-      lines.push(
-        `${t.aborted ? 'Failing, and the test binary died (panic or timeout)' : 'Failing'}: ${t.suite} ${t.name}`
+    lines.push(
+      ...once(
+        real,
+        (t) => `${t.aborted ? 'Failing, and the test binary died (panic or timeout)' : 'Failing'}: ${t.suite} ${t.name}`
       )
-    }
+    )
 
-    return keep(`${real.length} failing test(s) are not quarantined or disabled, or aborted the run`, lines, toTag)
+    return keep(`${count(real)} failing test(s) are not quarantined or disabled, or aborted the run`, lines, toTag)
   }
-  lines.push(`All ${excused.length} failing test(s) are quarantined or disabled: exiting 0 instead of ${exitCode}`)
+  lines.push(`All ${count(excused)} failing test(s) are quarantined or disabled: exiting 0 instead of ${exitCode}`)
 
   return {exitCode: 0, lines, toTag}
 }

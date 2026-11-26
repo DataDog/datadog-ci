@@ -380,6 +380,58 @@ describe('judge', () => {
     ])
   })
 
+  test('a Go test that passes in another report still failed: reruns only count within one report', async () => {
+    const goSuite = (cases: string) => `<testsuite name="pkg">${GO_PROPS}${cases}</testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [
+          {
+            path: 'a/junit.xml',
+            xml: goSuite(
+              '<testcase name="TestReal"><failure/></testcase><testcase name="TestFlaky"><failure/></testcase>'
+            ),
+          },
+          {path: 'b/junit.xml', xml: goSuite('<testcase name="TestReal"/>')},
+        ],
+        fetch: async () => excusedOf([['', 'pkg', 'TestFlaky']]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.lines).toContain('Failing: pkg TestReal')
+  })
+
+  test("a Go parent's own failure in one report isn't hidden by a quarantined subtest failing in another", async () => {
+    const goSuite = (cases: string) => `<testsuite name="pkg">${GO_PROPS}${cases}</testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [
+          {path: 'a/junit.xml', xml: goSuite('<testcase name="TestP/x"/><testcase name="TestP"><failure/></testcase>')},
+          {
+            path: 'b/junit.xml',
+            xml: goSuite('<testcase name="TestP/x"><failure/></testcase><testcase name="TestP"><failure/></testcase>'),
+          },
+        ],
+        fetch: async () => excusedOf([['', 'pkg', 'TestP/x']]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.lines).toContain('Failing: pkg TestP')
+  })
+
+  test('a panic in any report keeps the job red, even if another report has the same test failing normally', async () => {
+    const goSuite = (cases: string) => `<testsuite name="pkg">${GO_PROPS}${cases}</testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [
+          {path: 'a/junit.xml', xml: goSuite('<testcase name="TestQ"><failure>panic: boom</failure></testcase>')},
+          {path: 'b/junit.xml', xml: goSuite('<testcase name="TestQ"><failure>assert</failure></testcase>')},
+        ],
+        fetch: async () => excusedOf([['', 'pkg', 'TestQ']]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+  })
+
   test('tags nothing when it never fetched the states', async () => {
     expect((await judge(input({isEnabled: async () => false}))).toTag).toEqual([])
   })
