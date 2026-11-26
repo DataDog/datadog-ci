@@ -1,9 +1,8 @@
+import {getCheckExistsBatches} from '@datadog/sourcemaps-shared'
+
 import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-route'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-
-// The check_exists endpoint accepts at most 1000 debug IDs per request.
-const MAX_DEBUG_IDS_PER_REQUEST = 1000
 
 // Best effort: a failed or slow check uploads everything anyway, so fail fast.
 const CHECK_EXISTS_TIMEOUT_MS = 1000
@@ -28,9 +27,8 @@ export const checkExistingDebugIds = async (
   cliVersion: string,
   debugIds: string[]
 ): Promise<Record<string, unknown>> => {
-  const uniqueIds = [...new Set(debugIds)]
   const results: Record<string, unknown> = {}
-  if (uniqueIds.length === 0) {
+  if (debugIds.length === 0) {
     return results
   }
 
@@ -44,8 +42,7 @@ export const checkExistingDebugIds = async (
     ]),
   })
 
-  for (let i = 0; i < uniqueIds.length; i += MAX_DEBUG_IDS_PER_REQUEST) {
-    const chunk = uniqueIds.slice(i, i + MAX_DEBUG_IDS_PER_REQUEST)
+  for (const chunk of getCheckExistsBatches(debugIds)) {
     const response = await requestBuilder({
       method: 'POST',
       url: datadogRoute('/api/unstable/sourcemaps/check_exists'),

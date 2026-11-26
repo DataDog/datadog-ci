@@ -1334,6 +1334,7 @@ __metadata:
   dependencies:
     "@antfu/install-pkg": "npm:^1.1.0"
     "@babel/parser": "npm:^7.29.0"
+    "@datadog/sourcemaps-shared": "npm:3.5.2"
     "@simple-git/argv-parser": "npm:^2.0.1"
     "@types/async-retry": "npm:^1.4.8"
     "@types/datadog-metrics": "npm:^0.6.1"
@@ -1757,6 +1758,13 @@ __metadata:
     pprof-format: "npm:^2.3.2"
     source-map: "npm:^0.8.0"
   checksum: 10/528edcc0d50d1795709f89ffd7471c96750cf9a6bd8bb788ea50caddb47ec0f0d17866156909e40317238dfc6a7a0fd4bb73570ad8692f8f3b2aec4ffc314b30
+  languageName: node
+  linkType: hard
+
+"@datadog/sourcemaps-shared@npm:3.5.2":
+  version: 3.5.2
+  resolution: "@datadog/sourcemaps-shared@npm:3.5.2"
+  checksum: 10/5e5e78cd5212622a0e50416204c2df4c208ca28ef67c01c4d0c2939f635d15a25e7bf176212ef86521ebcd097da3d0ca334549ea59890dae87fcb3a404aaa4b3
   languageName: node
   linkType: hard
 
