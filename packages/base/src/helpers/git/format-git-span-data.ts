@@ -13,43 +13,57 @@ import {
   GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
+  GIT_TAG,
 } from '../tags'
-import {filterSensitiveInfoFromRepository} from '../utils'
+import {filterSensitiveInfoFromRepository, normalizeGitSha, removeEmptyValues} from '../utils'
 
 import {DEFAULT_GIT_OPTIONS} from './default-options'
-import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
+import {gitAuthorAndCommitter, gitCurrentBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
+import {withGitRepositoryEnvironment} from './repository-environment'
+
+const createGit = (repositoryPath?: string) =>
+  withGitRepositoryEnvironment(
+    simpleGit({...DEFAULT_GIT_OPTIONS, baseDir: repositoryPath || process.cwd(), maxConcurrentProcesses: 5}),
+    process.cwd()
+  )
+
+const readOptional = async <T>(read: () => Promise<T>): Promise<T | undefined> => {
+  try {
+    return await read()
+  } catch {
+    return undefined
+  }
+}
+
+export const getGitRoot = (repositoryPath?: string) =>
+  readOptional(() => createGit(repositoryPath).revparse('--show-toplevel'))
 
 export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags> => {
   try {
-    const git = simpleGit({
-      ...DEFAULT_GIT_OPTIONS,
-      baseDir: repositoryPath || process.cwd(),
-      // We are invoking at most 5 git commands at the same time.
-      maxConcurrentProcesses: 5,
-    })
-
-    const [commitSHA, branch, repositoryUrl, message, authorAndCommitter] = await Promise.all([
-      gitHash(git),
-      gitBranch(git),
-      gitRepositoryURL(git),
-      gitMessage(git),
-      gitAuthorAndCommitter(git),
+    const git = createGit(repositoryPath)
+    // Only an unreadable HEAD makes the checkout unavailable. Optional fields must not select a different source.
+    const commitSHA = await gitHash(git)
+    const [branch, repositoryUrl, message, authorAndCommitter, tag] = await Promise.all([
+      readOptional(() => gitCurrentBranch(git)),
+      readOptional(() => gitRepositoryURL(git)),
+      readOptional(() => gitMessage(git, commitSHA)),
+      readOptional(() => gitAuthorAndCommitter(git, commitSHA)),
+      readOptional(() => git.raw(['describe', '--tags', '--exact-match', commitSHA])),
     ])
 
-    const {authorName, authorEmail, authorDate, committerName, committerEmail, committerDate} = authorAndCommitter
-
-    return {
-      [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(repositoryUrl.trim()),
-      [GIT_BRANCH]: branch.current,
-      [GIT_SHA]: commitSHA,
-      [GIT_COMMIT_MESSAGE]: message.trim(),
-      [GIT_COMMIT_COMMITTER_DATE]: committerDate.trim(),
-      [GIT_COMMIT_COMMITTER_EMAIL]: committerEmail.trim(),
-      [GIT_COMMIT_COMMITTER_NAME]: committerName.trim(),
-      [GIT_COMMIT_AUTHOR_DATE]: authorDate.trim(),
-      [GIT_COMMIT_AUTHOR_EMAIL]: authorEmail.trim(),
-      [GIT_COMMIT_AUTHOR_NAME]: authorName.trim(),
-    }
+    return removeEmptyValues({
+      [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(repositoryUrl?.trim()),
+      [GIT_BRANCH]: branch,
+      [GIT_SHA]: normalizeGitSha(commitSHA.trim()),
+      [GIT_TAG]: tag?.trim(),
+      [GIT_COMMIT_MESSAGE]: message?.trim(),
+      [GIT_COMMIT_COMMITTER_DATE]: authorAndCommitter?.committerDate?.trim(),
+      [GIT_COMMIT_COMMITTER_EMAIL]: authorAndCommitter?.committerEmail?.trim(),
+      [GIT_COMMIT_COMMITTER_NAME]: authorAndCommitter?.committerName?.trim(),
+      [GIT_COMMIT_AUTHOR_DATE]: authorAndCommitter?.authorDate?.trim(),
+      [GIT_COMMIT_AUTHOR_EMAIL]: authorAndCommitter?.authorEmail?.trim(),
+      [GIT_COMMIT_AUTHOR_NAME]: authorAndCommitter?.authorName?.trim(),
+    })
   } catch (e) {
     return {}
   }

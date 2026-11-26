@@ -61,13 +61,21 @@ export const gitCurrentBranch = async (git: simpleGit.SimpleGit): Promise<string
   return branch.trim()
 }
 
-export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
+export const gitMessage = async (git: simpleGit.SimpleGit, revision = 'HEAD'): Promise<string> =>
+  git.raw(['log', '-1', '--no-walk=unsorted', '--no-show-signature', '--format=%s', revision])
 
 // Returns the author and committer information of the current commit.
-export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<GitAuthorAndCommitterMetadata> => {
-  const info = await git.show([
-    '-s',
+export const gitAuthorAndCommitter = async (
+  git: simpleGit.SimpleGit,
+  revision = 'HEAD'
+): Promise<GitAuthorAndCommitterMetadata> => {
+  const info = await git.raw([
+    'log',
+    '-1',
+    '--no-walk=unsorted',
+    '--no-show-signature',
     `--format=${['authorName:%an', 'authorEmail:%ae', 'authorDate:%aI', 'committerName:%cn', 'committerEmail:%ce', 'committerDate:%cI'].join('%n')}`,
+    revision,
   ])
   const output: {[_: string]: any} = {}
   for (const line of info.split('\n')) {

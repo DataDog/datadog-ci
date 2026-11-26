@@ -1,8 +1,14 @@
 import {Cli} from 'clipanion'
 
 import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 
 import {CiEnvReadCommand} from '../read'
+
+jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-span-data', () => ({
+  getGitMetadata: jest.fn().mockResolvedValue({}),
+  getGitRoot: jest.fn(),
+}))
 
 const makeCLI = () => {
   const cli = new Cli()
@@ -12,6 +18,10 @@ const makeCLI = () => {
 }
 
 describe('ci-env read', () => {
+  beforeEach(() => {
+    jest.mocked(getGitMetadata).mockResolvedValue({})
+  })
+
   const runCLI = async (env: Record<string, string>, format?: string) => {
     const cli = makeCLI()
     const context = createMockContext()
@@ -174,6 +184,18 @@ describe('ci-env read', () => {
       const {context, code} = await runCLI(githubMergeEnv, 'tags')
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain(`ci.git.merge_commit_sha:"${mergeSha}"`)
+    })
+
+    test('preserves merge metadata when exported variables are reloaded without provider variables', async () => {
+      const first = await runCLI(githubMergeEnv, 'json')
+      expect(first.code).toBe(0)
+      const exported = JSON.parse(first.context.stdout.toString())
+      const reloaded = await runCLI(exported, 'json')
+      expect(reloaded.code).toBe(0)
+      expect(JSON.parse(reloaded.context.stdout.toString())).toMatchObject({
+        DD_GIT_COMMIT_SHA: mergeSha,
+        DD_CI_GIT_MERGE_COMMIT_SHA: mergeSha,
+      })
     })
   })
 

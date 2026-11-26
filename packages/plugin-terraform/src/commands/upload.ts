@@ -12,11 +12,10 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {getRepositoryTags} from '@datadog/datadog-ci-base/helpers/git/get-repository-tags'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
@@ -193,13 +192,10 @@ export class PluginCommand extends TerraformUploadCommand {
 
   private async getSpanTags(): Promise<SpanTags> {
     const ciSpanTags = getCISpanTags()
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
+    const repositoryTags = await getRepositoryTags(ciSpanTags)
 
     return {
-      ...gitSpanTags,
-      ...ciSpanTags,
-      ...userGitSpanTags,
+      ...repositoryTags,
     }
   }
 }

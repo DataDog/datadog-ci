@@ -80,6 +80,13 @@ const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => 
 }
 
 describe('getCIMetadata', () => {
+  test('formats resolved checkout metadata without restoring conflicting provider Git fields', () => {
+    process.env = {GITHUB_ACTIONS: 'true', GITHUB_SHA: 'a'.repeat(40)}
+    const result = getCIMetadata(undefined, {[GIT_SHA]: 'b'.repeat(40)})
+    expect(result?.git.commit.sha).toBe('b'.repeat(40))
+    expect(result?.git.repository_url).toBeUndefined()
+  })
+
   test('non-recognized CI returns undefined', () => {
     process.env = {}
     expect(getCIMetadata()).toBeUndefined()

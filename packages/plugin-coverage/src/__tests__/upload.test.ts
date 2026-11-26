@@ -1,6 +1,7 @@
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as gitMetadata from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import upath from 'upath'
 
 import {PluginCommand as CoverageUploadCommand} from '../commands/upload'
@@ -221,6 +222,33 @@ describe('upload', () => {
   })
 
   describe('getSpanTags', () => {
+    test('uses the checkout identity instead of conflicting CI Git metadata', async () => {
+      const savedEnv = process.env
+      process.env = {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SHA: 'a'.repeat(40),
+        GITHUB_REF: 'refs/heads/workflow',
+        GITHUB_REPOSITORY: 'example/workflow',
+      }
+      const spy = jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValue({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.branch': 'checkout',
+        'git.repository_url': 'https://github.com/example/checkout',
+      })
+      try {
+        const command = createCommand(CoverageUploadCommand)
+        expect(await command['getSpanTags']()).toMatchObject({
+          'git.commit.sha': 'b'.repeat(40),
+          'git.branch': 'checkout',
+          'git.repository_url': 'https://github.com/example/checkout',
+          'ci.provider.name': 'github',
+        })
+      } finally {
+        spy.mockRestore()
+        process.env = savedEnv
+      }
+    })
+
     test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
       const context = createMockContext()

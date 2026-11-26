@@ -1044,12 +1044,17 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
   return removeEmptyValues(tags)
 }
 
-export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}): Metadata | undefined => {
-  const tags = {
-    ...getCISpanTags(),
-    ...getUserCISpanTags(),
-    ...getUserGitSpanTags(),
-  }
+export const getCIMetadata = (
+  tagSizeLimits?: {[key in keyof SpanTags]?: number},
+  repositoryTags?: SpanTags
+): Metadata | undefined => {
+  const tags = repositoryTags
+    ? {...repositoryTags}
+    : {
+        ...getCISpanTags(),
+        ...getUserCISpanTags(),
+        ...getUserGitSpanTags(),
+      }
 
   if (!tags || !Object.keys(tags).length) {
     return

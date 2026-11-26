@@ -1,5 +1,6 @@
 import {
   CI_JOB_NAME,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_JOB_URL,
   CI_PIPELINE_ID,
   CI_PIPELINE_NAME,
@@ -114,6 +115,16 @@ describe('getUserGitSpanTags', () => {
 })
 
 describe('getUserCISpanTags', () => {
+  it('normalizes the exported merge SHA without requiring provider variables', () => {
+    process.env = {DD_CI_GIT_MERGE_COMMIT_SHA: 'ABCDEF0123456789ABCDEF0123456789ABCDEF01'}
+    expect(getUserCISpanTags()).toEqual({[CI_GIT_MERGE_COMMIT_SHA]: 'abcdef0123456789abcdef0123456789abcdef01'})
+  })
+
+  it.each(['', 'invalid', 'a'.repeat(39)])('ignores an invalid exported merge SHA: %s', (sha) => {
+    process.env = {DD_CI_GIT_MERGE_COMMIT_SHA: sha}
+    expect(getUserCISpanTags()).toEqual({})
+  })
+
   const DD_CI_METADATA = {
     DD_CI_JOB_ID: 'DD_CI_JOB_ID',
     DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',

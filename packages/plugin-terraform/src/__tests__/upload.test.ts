@@ -1,4 +1,5 @@
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as gitMetadata from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 
 import * as api from '../api'
 import {PluginCommand as TerraformUploadCommand} from '../commands/upload'
@@ -192,6 +193,33 @@ describe('upload', () => {
   })
 
   describe('getSpanTags', () => {
+    test('uses the checkout identity instead of conflicting CI Git metadata', async () => {
+      const savedEnv = process.env
+      process.env = {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SHA: 'a'.repeat(40),
+        GITHUB_REF: 'refs/heads/workflow',
+        GITHUB_REPOSITORY: 'example/workflow',
+      }
+      const spy = jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValue({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.branch': 'checkout',
+        'git.repository_url': 'https://github.com/example/checkout',
+      })
+      try {
+        const command = createCommand(TerraformUploadCommand)
+        expect(await command['getSpanTags']()).toMatchObject({
+          'git.commit.sha': 'b'.repeat(40),
+          'git.branch': 'checkout',
+          'git.repository_url': 'https://github.com/example/checkout',
+          'ci.provider.name': 'github',
+        })
+      } finally {
+        spy.mockRestore()
+        process.env = savedEnv
+      }
+    })
+
     test('should merge CI, git, and user-provided tags', async () => {
       process.env = {
         DD_API_KEY: 'test-key',
