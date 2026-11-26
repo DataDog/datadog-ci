@@ -1,6 +1,7 @@
 import {execSync} from 'child_process'
 import fs from 'fs'
 import os from 'os'
+import zlib from 'zlib'
 
 import type {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
 
@@ -17,9 +18,41 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {getElfFileMetadata} from '../elf'
 import {ElfClass} from '../elf-constants'
-import {uploadMultipartHelper} from '../helpers'
-import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
+import {supportsZstdCompression, uploadMultipartHelper} from '../helpers'
+import {renderArgumentMissingError, renderCompressionInfo, renderInvalidSymbolsLocation} from '../renderer'
 import {ElfSymbolsUploadCommand} from '../upload'
+
+type ZlibWithZstd = typeof zlib & {
+  zstdDecompressSync?: (buf: Buffer) => Buffer
+}
+
+const ZSTD_MAGIC = Buffer.from([0x28, 0xb5, 0x2f, 0xfd])
+
+const readUploadedElfPath = async (filePath: string) => {
+  const bytes = await fs.promises.readFile(filePath)
+  const isZstd = bytes.subarray(0, 4).equals(ZSTD_MAGIC)
+  const fhd = isZstd && bytes.length > 4 ? bytes[4] : 0
+  // eslint-disable-next-line no-bitwise
+  const hasFrameContentSize = isZstd && (fhd & 0xe0) !== 0
+  // eslint-disable-next-line no-bitwise
+  const hasChecksum = isZstd && (fhd & 0x04) !== 0
+  const zstdDecompressSync = (zlib as ZlibWithZstd).zstdDecompressSync
+  if (!isZstd || typeof zstdDecompressSync !== 'function') {
+    return {path: filePath, isZstd, hasFrameContentSize, hasChecksum, cleanup: async () => {}}
+  }
+
+  const tmpDir = await fs.promises.mkdtemp(upath.join(os.tmpdir(), 'elf-zstd-test-'))
+  const decompressedPath = upath.join(tmpDir, 'decompressed')
+  await fs.promises.writeFile(decompressedPath, zstdDecompressSync(bytes))
+
+  return {
+    path: decompressedPath,
+    isZstd,
+    hasFrameContentSize,
+    hasChecksum,
+    cleanup: () => fs.promises.rm(tmpDir, {recursive: true, force: true}),
+  }
+}
 
 jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
   ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
@@ -31,10 +64,15 @@ jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () 
   getRepositoryData: jest.fn(),
 }))
 
-jest.mock('../helpers', () => ({
-  ...jest.requireActual('../helpers'),
-  uploadMultipartHelper: jest.fn(() => Promise.resolve(UploadStatus.Success)),
-}))
+jest.mock('../helpers', () => {
+  const actual = jest.requireActual('../helpers')
+
+  return {
+    ...actual,
+    supportsZstdCompression: jest.fn(() => actual.supportsZstdCompression()),
+    uploadMultipartHelper: jest.fn(() => Promise.resolve(UploadStatus.Success)),
+  }
+})
 
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
 const commonMetadata = {
@@ -222,11 +260,16 @@ describe('elf-symbols upload', () => {
       uploadMock.mockImplementationOnce(async (_requestBuilder, payload) => {
         const metadata = JSON.parse((payload.content.get('event') as MultipartStringValue).value)
         const file = payload.content.get('elf_symbol_file') as MultipartFileValue
-        const uploadedElf = await getElfFileMetadata(file.path)
+        const uploaded = await readUploadedElfPath(file.path)
+        try {
+          const uploadedElf = await getElfFileMetadata(uploaded.path)
 
-        expect(metadata.generate_cfi_cache).toBe(includeUnwindInfo)
-        expect(uploadedElf.hasEhFrame).toBe(includeUnwindInfo)
-        expect(uploadedElf.hasDebugInfo).toBe(true)
+          expect(metadata.generate_cfi_cache).toBe(includeUnwindInfo)
+          expect(uploadedElf.hasEhFrame).toBe(includeUnwindInfo)
+          expect(uploadedElf.hasDebugInfo).toBe(true)
+        } finally {
+          await uploaded.cleanup()
+        }
 
         return UploadStatus.Success
       })
@@ -239,6 +282,72 @@ describe('elf-symbols upload', () => {
       const {code} = await runCLI(args, {DD_BETA_COMMANDS_ENABLED: '1'})
 
       expect(code).toBe(0)
+      expect(uploadMock).toHaveBeenCalledTimes(1)
+    })
+
+    test('compresses elf symbol file with zstd and disables HTTP gzip when supported', async () => {
+      requireObjcopy()
+      const hasZstd = supportsZstdCompression()
+      const uploadMock = jest.mocked(uploadMultipartHelper)
+      uploadMock.mockImplementationOnce(async (_requestBuilder, payload, opts) => {
+        const file = payload.content.get('elf_symbol_file') as MultipartFileValue
+        expect(file.options.filename).toBe('elf_symbol_file')
+        expect(opts.useGzip).toBe(!hasZstd)
+
+        const uploaded = await readUploadedElfPath(file.path)
+        try {
+          expect(uploaded.isZstd).toBe(hasZstd)
+          expect(uploaded.hasFrameContentSize).toBe(hasZstd)
+          expect(uploaded.hasChecksum).toBe(hasZstd)
+          const uploadedElf = await getElfFileMetadata(uploaded.path)
+          expect(uploadedElf.isElf).toBe(true)
+          expect(uploadedElf.hasDebugInfo).toBe(true)
+        } finally {
+          await uploaded.cleanup()
+        }
+
+        return UploadStatus.Success
+      })
+
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['disableGit'] = true
+        cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`]
+      })
+
+      expect(exitCode).toBe(0)
+      expect(context.stdout.toString()).toContain(renderCompressionInfo(hasZstd))
+      expect(uploadMock).toHaveBeenCalledTimes(1)
+    })
+
+    test('falls back to uncompressed file with HTTP gzip when zstd is not supported', async () => {
+      requireObjcopy()
+      jest.mocked(supportsZstdCompression).mockReturnValueOnce(false)
+      const uploadMock = jest.mocked(uploadMultipartHelper)
+      uploadMock.mockImplementationOnce(async (_requestBuilder, payload, opts) => {
+        const file = payload.content.get('elf_symbol_file') as MultipartFileValue
+        expect(file.options.filename).toBe('elf_symbol_file')
+        expect(opts.useGzip).toBe(true)
+
+        const uploaded = await readUploadedElfPath(file.path)
+        try {
+          expect(uploaded.isZstd).toBe(false)
+          const uploadedElf = await getElfFileMetadata(uploaded.path)
+          expect(uploadedElf.isElf).toBe(true)
+          expect(uploadedElf.hasDebugInfo).toBe(true)
+        } finally {
+          await uploaded.cleanup()
+        }
+
+        return UploadStatus.Success
+      })
+
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['disableGit'] = true
+        cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`]
+      })
+
+      expect(exitCode).toBe(0)
+      expect(context.stdout.toString()).toContain(renderCompressionInfo(false))
       expect(uploadMock).toHaveBeenCalledTimes(1)
     })
 

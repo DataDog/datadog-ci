@@ -42,12 +42,13 @@ import {
   copyElfDebugInfo,
   isSupportedArch,
 } from './elf'
-import {getElfRequestBuilder, uploadMultipartHelper} from './helpers'
+import {compressFileWithZstd, getElfRequestBuilder, supportsZstdCompression, uploadMultipartHelper} from './helpers'
 import {ELF_DEBUG_INFOS_FILENAME, TYPE_ELF_DEBUG_INFOS, VALUE_NAME_ELF_DEBUG_INFOS} from './interfaces'
 import {
   renderArgumentMissingError,
   renderCommandInfo,
   renderCommandSummary,
+  renderCompressionInfo,
   renderFailedUpload,
   renderGeneralizedError,
   renderGitWarning,
@@ -330,6 +331,10 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
 
     const requestBuilder = getElfRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     const tmpDirectory = await createUniqueTmpDirectory()
+    const useZstd = supportsZstdCompression()
+    if (!this.dryRun && elfFilesMetadata.length > 0) {
+      this.context.stdout.write(renderCompressionInfo(useZstd))
+    }
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, elfFilesMetadata, async (fileMetadata) => {
@@ -342,6 +347,16 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
 
           return UploadStatus.Success
+        }
+
+        let uploadFilePath = outputFilePath
+        let useGzip = true
+        if (useZstd) {
+          const compressedFilePath = `${outputFilePath}.zst`
+          await compressFileWithZstd(outputFilePath, compressedFilePath)
+          await fs.promises.rm(outputFilePath, {force: true})
+          uploadFilePath = compressedFilePath
+          useGzip = false
         }
 
         const payload = {
@@ -358,7 +373,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
               VALUE_NAME_ELF_DEBUG_INFOS,
               {
                 type: 'file',
-                path: outputFilePath,
+                path: uploadFilePath,
                 options: {filename: ELF_DEBUG_INFOS_FILENAME},
               },
             ],
@@ -383,10 +398,10 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
             this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
           },
           retries: 5,
-          useGzip: true,
+          useGzip,
         }).finally(() => {
           // ignore errors when removing the file
-          fs.rm(outputFilePath, () => {})
+          fs.rm(uploadFilePath, () => {})
         })
       })
 

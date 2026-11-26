@@ -29,6 +29,13 @@ export const renderCommandInfo = (dryRun: boolean, symbolsLocations: string[]) =
   return fullString
 }
 
+export const renderCompressionInfo = (useZstd: boolean): string =>
+  useZstd
+    ? chalk.green('Compressing symbol files with zstd before upload.\n')
+    : chalk.yellow(
+        `${ICONS.WARNING} Full-file zstd compression requires Node.js >= 22.15; falling back to gzip HTTP compression. Upgrade Node.js (or use the standalone binary) for smaller uploads.\n`
+      )
+
 export const renderCommandSummary = (statuses: UploadStatus[], duration: number, dryRun: boolean) => {
   const results = new Map<UploadStatus, number>()
   statuses.forEach((status) => {
