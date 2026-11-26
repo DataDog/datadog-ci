@@ -7,6 +7,7 @@ import {noAuth} from '../../helpers/auth'
 import {getCISpanTags} from '../../helpers/ci'
 import {
   CI_ENV_VARS,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_JOB_ID,
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -43,6 +44,7 @@ import {getUserCISpanTags, getUserGitSpanTags} from '../../helpers/user-provided
  */
 const TAG_TO_ENV_VAR: Record<string, string> = {
   // CI tags
+  [CI_GIT_MERGE_COMMIT_SHA]: 'DD_CI_GIT_MERGE_COMMIT_SHA',
   [CI_JOB_ID]: 'DD_CI_JOB_ID',
   [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
   [CI_JOB_URL]: 'DD_CI_JOB_URL',
