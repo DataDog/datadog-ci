@@ -432,6 +432,36 @@ describe('judge', () => {
     expect(verdict.exitCode).toBe(1)
   })
 
+  test('a Go parent that panicked keeps the job red, even when its failing subtest is quarantined', async () => {
+    const xml = `<testsuite name="pkg">${GO_PROPS}
+      <testcase name="TestS/flaky"><failure>flaky</failure></testcase>
+      <testcase name="TestS"><failure>panic: runtime error: invalid memory address or nil pointer dereference</failure></testcase>
+    </testsuite>`
+    const verdict = await judge(
+      input({reports: [{path: 'r.xml', xml}], fetch: async () => excusedOf([['', 'pkg', 'TestS/flaky']])})
+    )
+    expect(verdict.exitCode).toBe(1)
+  })
+
+  test("testcases that share a suite and name but not a classname can't be excused (pytest's default suite)", async () => {
+    const xml = `<testsuite name="pytest">
+      <testcase classname="tests.test_a" name="test_create"><failure/></testcase>
+      <testcase classname="tests.test_b" name="test_create"><failure/></testcase>
+    </testsuite>`
+    const verdict = await judge(
+      input({reports: [{path: 'r.xml', xml}], fetch: async () => excusedOf([['', 'pytest', 'test_create']])})
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.toTag).toEqual([])
+  })
+
+  test.each([[256], [-1], [3221225477]])(
+    'keeps an exit code outside 1..255 (%s) as 1, so it cannot wrap to 0',
+    async (exitCode) => {
+      expect((await judge(input({exitCode}))).exitCode).toBe(1)
+    }
+  )
+
   test('tags nothing when it never fetched the states', async () => {
     expect((await judge(input({isEnabled: async () => false}))).toTag).toEqual([])
   })

@@ -68,8 +68,12 @@ The job stays red, with the reason printed, when:
 - a report can't be read;
 - there is no failing testcase in the reports, for example after a crash or a build error;
 - the commit is unknown, or Flaky Test Management can't be reached;
-- Flaky Test Management is turned off for the repository in the settings the test libraries read (`test_management.enabled`);
-- a failing testcase is not quarantined or disabled.
+- Flaky Test Management is turned off for the repository in the settings the test libraries read
+  (`test_management.enabled`);
+- a failing testcase is not quarantined or disabled, or shares its suite and name with a testcase of another
+  `classname`.
+
+An exit code outside 1–255 is kept as `1`, so it can't wrap to `0`.
 
 For this to be safe:
 
@@ -77,6 +81,9 @@ For this to be safe:
   Failures that aren't in the reports can't be checked.
 - **Don't stop at the first failure.** Without Maven's `--fail-at-end`, Gradle's `--continue`, or with `pytest -x`,
   `jest --bail` or `go test -failfast`, tests after a quarantined failure never run.
+- **Keep suite + name unique.** Datadog identifies a JUnit test by its suite and name. When testcases with different
+  `classname`s share both, as with pytest's default `<testsuite name="pytest">`, none of them is excused: set
+  `--xpath-tag test.suite=/testcase/@classname`.
 - **Tell it your runner's "tests failed" exit code** when it isn't `1`:
 
   | Runner                                                                                   | Setting                                                                          |
@@ -88,8 +95,10 @@ For this to be safe:
   | Mocha, Cypress (they exit with the number of failures)                                   | run them with `--posix-exit-codes`                                               |
 
 - For Go reports, which carry the `go.version` property: a quarantined subtest also excuses its failing parent, but
-  quarantining a parent doesn't cover its subtests, so quarantine the subtests themselves. The last rerun of a test
-  in a report counts; a failure in one report isn't undone by a pass in another. A parent that also fails on its own assertion is not detected. A panic or timeout keeps the job red.
+  quarantining a parent doesn't cover its subtests, so quarantine the subtests themselves. The last run of a test in a
+  report counts, for `gotestsum --rerun-fails`; with `go test -count`, a later pass hides an earlier failure. A failure
+  in one report isn't undone by a pass in another. A parent that also fails on its own assertion is not detected. A
+  panic or timeout keeps the job red.
 
 #### Environment variables
 

@@ -28,6 +28,9 @@ export interface TestRun {
   index?: number
   /** The testcase's own name attribute, to check that the position still points at it when tagging. */
   rawName?: string
+  classname?: string
+  /** Another testcase has the same suite and name but another classname: Datadog merges them, so neither is excused. */
+  ambiguous?: boolean
 }
 
 /** The Flaky Test Management state that excuses a failure. */
@@ -199,6 +202,7 @@ export const parseReport = (
       report: reportPath,
       index: position === undefined ? undefined : Number(position),
       rawName: attribute(testcase, 'name'),
+      classname: attribute(testcase, 'classname'),
     })
   }
 
@@ -363,7 +367,7 @@ export const excusedState = (run: TestRun, excused: ExcusedTests): ExcusedState 
   const stateIn = (module: string, suite: string) => excused.get(module)?.get(suite)?.get(run.name)
   // JUnit entries: the empty module, or a report file name. Entries added through the public API from a JUnit event
   // keep that event's file name as module, so they must match from any report.
-  // ponytail: the *.xml modules are only needed until the API stops storing a file name as module for JUnit tests.
+  // The *.xml modules can go once the API stops storing a file name as module for JUnit tests.
   for (const module of excused.keys()) {
     const state = module === '' || module.endsWith('.xml') ? stateIn(module, run.suite) : undefined
     if (state) {
@@ -371,7 +375,7 @@ export const excusedState = (run: TestRun, excused: ExcusedTests): ExcusedState 
     }
   }
   // dd-trace-go keys the same test by module = import path (the JUnit suite) and suite = source file.
-  // ponytail: Go only; other native identities aren't mapped to JUnit ones.
+  // Go only: other native identities aren't mapped to JUnit ones.
   if (run.go) {
     for (const suite of excused.get(run.suite)?.keys() ?? []) {
       const state = stateIn(run.suite, suite)
@@ -399,8 +403,9 @@ export const decide = (failing: TestRun[], excused: ExcusedTests): Verdict => {
         other.name.startsWith(`${run.name}/`)
     )
   const verdict: Verdict = {excused: [], real: []}
-  for (const run of unique.filter((r) => !isParent(r))) {
-    const state = run.aborted ? undefined : excusedState(run, excused)
+  // A parent that panicked or timed out is judged anyway: its failure isn't only its subtests'.
+  for (const run of unique.filter((r) => r.aborted || !isParent(r))) {
+    const state = run.aborted || run.ambiguous ? undefined : excusedState(run, excused)
     if (state) {
       verdict.excused.push({...run, state})
     } else {
@@ -492,9 +497,11 @@ export const judge = async (input: JudgeInput): Promise<JudgeResult> => {
   if (exitCode === 0) {
     return {exitCode, lines: [], toTag: []}
   }
+  // Exit codes wrap modulo 256 on POSIX: keep anything outside 1..255 as 1, so it can't become 0.
+  const kept = exitCode >= 1 && exitCode <= 255 ? exitCode : 1
   const keep = (reason: string, details: string[] = [], tagged: ExcusedRun[] = []) => ({
-    exitCode,
-    lines: [...details, `Test exit code ${exitCode} kept: ${reason}`],
+    exitCode: kept,
+    lines: [...details, `Test exit code ${exitCode} kept${kept === exitCode ? '' : ` (as ${kept})`}: ${reason}`],
     toTag: tagged,
   })
 
@@ -511,6 +518,15 @@ export const judge = async (input: JudgeInput): Promise<JudgeResult> => {
     runs = input.reports.flatMap((r) => parseReport(r.xml, r.path, input.xpathTags, input.customTags))
   } catch (error) {
     return keep(`a report could not be read (${(error as Error).message})`)
+  }
+  // Datadog identifies a JUnit test by suite + name. The same pair with different classnames is two tests merged into
+  // one (pytest's default <testsuite name="pytest">, for example), so a quarantined one must not excuse the other.
+  const classnames = new Map<string, Set<string>>()
+  for (const run of runs) {
+    classnames.set(keyOf(run), (classnames.get(keyOf(run)) ?? new Set()).add(run.classname ?? ''))
+  }
+  for (const run of runs) {
+    run.ambiguous = (classnames.get(keyOf(run))?.size ?? 0) > 1
   }
   const failing = failingRuns(runs)
   if (!failing.length) {
@@ -539,7 +555,7 @@ export const judge = async (input: JudgeInput): Promise<JudgeResult> => {
   }
 
   const toTag = runs.flatMap((run) => {
-    const state = run.aborted ? undefined : excusedState(run, excusedTests)
+    const state = run.aborted || run.ambiguous ? undefined : excusedState(run, excusedTests)
 
     return state ? [{...run, state}] : []
   })
@@ -555,7 +571,14 @@ export const judge = async (input: JudgeInput): Promise<JudgeResult> => {
     lines.push(
       ...once(
         real,
-        (t) => `${t.aborted ? 'Failing, and the test binary died (panic or timeout)' : 'Failing'}: ${t.suite} ${t.name}`
+        (t) =>
+          `${
+            t.aborted
+              ? 'Failing, and the test binary died (panic or timeout)'
+              : t.ambiguous
+                ? 'Failing, and another testcase has the same suite and name'
+                : 'Failing'
+          }: ${t.suite} ${t.name}`
       )
     )
 
