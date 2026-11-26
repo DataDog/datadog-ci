@@ -136,7 +136,9 @@ export const getProxyUrl = (options?: ProxyConfiguration): string => {
     return ''
   }
 
-  const authFragment = auth ? `${auth.username}:${auth.password}@` : ''
+  // Credentials are percent-encoded so that reserved characters (`#`, `/`, `?`, `%`...) stay part of the userinfo.
+  // Both `undici` and `proxy-agent` decode them before building the `Proxy-Authorization` header.
+  const authFragment = auth ? `${encodeURIComponent(auth.username)}:${encodeURIComponent(auth.password)}@` : ''
 
   return `${protocol}://${authFragment}${host}:${port}`
 }
