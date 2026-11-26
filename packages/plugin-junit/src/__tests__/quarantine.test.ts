@@ -237,7 +237,7 @@ describe('decide', () => {
 })
 
 describe('fetchExcusedTests', () => {
-  test('sends no module and keeps quarantined and disabled tests per module', async () => {
+  test('sends no module, branch or commit message, and keeps quarantined and disabled tests per module', async () => {
     const request = jest.fn().mockResolvedValue({
       data: {
         data: {
@@ -277,12 +277,7 @@ describe('fetchExcusedTests', () => {
     expect([...excused.get('native-module')!.get('S')!]).toEqual([['n', 'quarantined']])
     const sent = request.mock.calls[0][0]
     expect(sent.url).toBe('/api/v2/test/libraries/test-management/tests')
-    expect(sent.data.data.attributes).toEqual({
-      repository_url: 'https://github.com/o/r',
-      sha: 'abc',
-      branch: 'main',
-      commit_message: undefined,
-    })
+    expect(sent.data.data.attributes).toEqual({repository_url: 'https://github.com/o/r', sha: 'abc'})
   })
 })
 

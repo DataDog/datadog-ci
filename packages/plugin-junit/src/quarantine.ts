@@ -307,7 +307,9 @@ export const fetchQuarantineEnabled = async (
 
 /**
  * Asks Datadog which tests are quarantined or disabled, with the API-key endpoint the test libraries use.
- * No module is sent: JUnit tests have no module and come back under `modules[""]`.
+ * No module is sent: JUnit tests have no module and come back under `modules[""]`. Nor are the branch and commit
+ * message: they only drive attempt-to-fix, which JUnit reports can't run, and with a branch the endpoint fails with a
+ * 500 for repositories without Flaky Test Management settings.
  */
 export const fetchExcusedTests = async (request: RequestBuilder, attributes: Git): Promise<ExcusedTests> => {
   const response = await retryRequest(
@@ -322,8 +324,6 @@ export const fetchExcusedTests = async (request: RequestBuilder, attributes: Git
             attributes: {
               repository_url: attributes.repositoryUrl,
               sha: attributes.sha,
-              branch: attributes.branch,
-              commit_message: attributes.commitMessage,
             },
           },
         },
