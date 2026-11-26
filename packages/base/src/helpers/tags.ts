@@ -30,6 +30,7 @@ export const CI_STAGE_NAME = 'ci.stage.name'
 export const CI_NODE_NAME = 'ci.node.name'
 export const CI_NODE_LABELS = 'ci.node.labels'
 export const CI_ENV_VARS = '_dd.ci.env_vars'
+export const CI_GIT_MERGE_COMMIT_SHA = 'ci.git.merge_commit_sha'
 
 // Git
 export const GIT_BRANCH = 'git.branch'

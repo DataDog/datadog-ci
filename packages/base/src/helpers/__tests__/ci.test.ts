@@ -33,6 +33,7 @@ import {
 import {globSync} from '../glob'
 import {
   CI_ENV_VARS,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_NODE_LABELS,
   CI_NODE_NAME,
   CI_PIPELINE_DISPLAY_NAME,
@@ -40,6 +41,7 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_SHA,
   PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
@@ -199,6 +201,7 @@ describe('getCIMetadata', () => {
       // the tags below are deleted as they cannot be overridden by DD env variables
       // so we should ignore them in the comparison
       delete ciMetadata?.[CI_ENV_VARS]
+      delete ciMetadata?.[CI_GIT_MERGE_COMMIT_SHA]
       delete ciMetadata?.[CI_NODE_LABELS]
       delete ciMetadata?.[CI_NODE_NAME]
       delete ciMetadata?.[PR_NUMBER]
@@ -319,6 +322,60 @@ describe('ci spec', () => {
           expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
         }
       })
+    })
+  })
+})
+
+describe('CI merge commit metadata', () => {
+  const mergeSha = 'B9F0FB3FDBb94c9d24b2c75b49663122a529e123'
+  const headSha = '724FACA55Efebf66fc15bfccc34577c64c5480bd'
+
+  test.each([
+    {GITHUB_ACTIONS: 'true', GITHUB_REF: 'refs/pull/not-a-number/merge', GITHUB_SHA: mergeSha},
+    {GITHUB_ACTIONS: 'true', GITHUB_REF: 'refs/pull/42/merge', GITHUB_SHA: 'invalid'},
+    {GITLAB_CI: 'true', CI_MERGE_REQUEST_EVENT_TYPE: 'merged_result', CI_COMMIT_SHA: mergeSha},
+    {
+      GITLAB_CI: 'true',
+      CI_MERGE_REQUEST_EVENT_TYPE: 'merge_train',
+      CI_MERGE_REQUEST_IID: '42',
+      CI_COMMIT_SHA: 'invalid',
+    },
+    {TRAVIS: 'true', TRAVIS_EVENT_TYPE: 'pull_request', TRAVIS_PULL_REQUEST: 'false', TRAVIS_COMMIT: mergeSha},
+  ])('does not infer a merge commit from incomplete or invalid context: %j', (env) => {
+    process.env = {...env}
+    expect(getCISpanTags()?.[CI_GIT_MERGE_COMMIT_SHA]).toBeUndefined()
+  })
+
+  test.each([
+    {APPVEYOR_REPO_PROVIDER: 'bitbucket'},
+    {APPVEYOR_PULL_REQUEST_NUMBER: undefined},
+    {APPVEYOR_PULL_REQUEST_NUMBER: 'not-a-number'},
+    {APPVEYOR_PULL_REQUEST_HEAD_COMMIT: undefined},
+    {APPVEYOR_PULL_REQUEST_HEAD_COMMIT: 'invalid'},
+    {APPVEYOR_PULL_REQUEST_HEAD_COMMIT: mergeSha.toLowerCase()},
+    {APPVEYOR_REPO_COMMIT: 'invalid'},
+  ])('does not infer an AppVeyor merge without distinct valid GitHub PR SHAs: %j', (env) => {
+    process.env = {
+      APPVEYOR: 'true',
+      APPVEYOR_REPO_PROVIDER: 'github',
+      APPVEYOR_PULL_REQUEST_NUMBER: '42',
+      APPVEYOR_REPO_COMMIT: mergeSha,
+      APPVEYOR_PULL_REQUEST_HEAD_COMMIT: headSha,
+      ...env,
+    }
+    expect(getCISpanTags()?.[CI_GIT_MERGE_COMMIT_SHA]).toBeUndefined()
+  })
+
+  test('keeps the CI merge SHA separate from an explicit commit override', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_REF: 'refs/pull/42/merge',
+      GITHUB_SHA: mergeSha,
+      DD_GIT_COMMIT_SHA: headSha,
+    }
+    expect(getTags()).toMatchObject({
+      [GIT_SHA]: headSha.toLowerCase(),
+      [CI_GIT_MERGE_COMMIT_SHA]: mergeSha.toLowerCase(),
     })
   })
 })

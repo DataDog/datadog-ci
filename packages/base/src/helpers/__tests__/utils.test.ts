@@ -33,6 +33,23 @@ describe('utils', () => {
     expect(Object.keys(resultHash).length).toBe(0)
   })
 
+  test.each([
+    [undefined, false, undefined],
+    ['', false, ''],
+    ['B9F0FB3FDBb94c9d24b2c75b49663122a529e123', true, 'b9f0fb3fdbb94c9d24b2c75b49663122a529e123'],
+    ['abcdef0123456789abcdef0123456789abcdef01', true, 'abcdef0123456789abcdef0123456789abcdef01'],
+    ['ABCDEF0', false, 'ABCDEF0'],
+    ['G'.repeat(40), false, 'G'.repeat(40)],
+    ['A'.repeat(39), false, 'A'.repeat(39)],
+    ['A'.repeat(41), false, 'A'.repeat(41)],
+    [`${'A'.repeat(39)}\n`, false, `${'A'.repeat(39)}\n`],
+    [`${'A'.repeat(40)}\n`, false, `${'A'.repeat(40)}\n`],
+    [` ${'A'.repeat(40)}`, false, ` ${'A'.repeat(40)}`],
+  ] as const)('validates and normalizes only full Git SHAs: %j', (sha, valid, normalized) => {
+    expect(ciUtils.isValidGitSha(sha)).toBe(valid)
+    expect(ciUtils.normalizeGitSha(sha)).toBe(normalized)
+  })
+
   describe('resolveConfigFromFile', () => {
     test('should read a config file', async () => {
       const config: any = await ciUtils.resolveConfigFromFile(

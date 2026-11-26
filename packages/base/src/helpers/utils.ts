@@ -295,6 +295,11 @@ export const normalizeRef = (ref: string | undefined) => {
   return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
 }
 
+export const isValidGitSha = (sha: string | undefined): sha is string =>
+  sha?.length === 40 && /^[0-9a-f]{40}$/i.test(sha)
+
+export const normalizeGitSha = (sha: string | undefined) => (isValidGitSha(sha) ? sha.toLowerCase() : sha)
+
 export const pluralize = (nb: number, singular: string, plural: string) => {
   if (nb >= 2) {
     return `${nb} ${plural}`

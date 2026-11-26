@@ -9,6 +9,7 @@ import upath from 'upath'
 import {globSync, hasMagic} from './glob'
 import {
   CI_ENV_VARS,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_NODE_NAME,
@@ -41,6 +42,8 @@ import {
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {
+  isValidGitSha,
+  normalizeGitSha,
   normalizeRef,
   removeEmptyValues,
   removeUndefinedValues,
@@ -399,6 +402,9 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       tags[PR_NUMBER] = TRAVIS_PULL_REQUEST
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = normalizeRef(TRAVIS_BRANCH)
       tags[GIT_HEAD_SHA] = TRAVIS_PULL_REQUEST_SHA
+      if (/^\d+$/.test(TRAVIS_PULL_REQUEST || '') && isValidGitSha(TRAVIS_COMMIT)) {
+        tags[CI_GIT_MERGE_COMMIT_SHA] = TRAVIS_COMMIT
+      }
     }
   }
 
@@ -424,6 +430,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       CI_RUNNER_ID,
       CI_RUNNER_TAGS,
       CI_MERGE_REQUEST_IID,
+      CI_MERGE_REQUEST_EVENT_TYPE,
       CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
       CI_MERGE_REQUEST_SOURCE_BRANCH_SHA,
       CI_MERGE_REQUEST_DIFF_BASE_SHA,
@@ -463,10 +470,16 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
 
     if (CI_MERGE_REQUEST_IID) {
       tags[PR_NUMBER] = CI_MERGE_REQUEST_IID
-      tags[GIT_PULL_REQUEST_BASE_BRANCH] = CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = normalizeRef(CI_MERGE_REQUEST_TARGET_BRANCH_NAME)
       tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] = CI_MERGE_REQUEST_DIFF_BASE_SHA
       tags[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA] = CI_MERGE_REQUEST_TARGET_BRANCH_SHA
       tags[GIT_HEAD_SHA] = CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+      if (
+        (CI_MERGE_REQUEST_EVENT_TYPE === 'merged_result' || CI_MERGE_REQUEST_EVENT_TYPE === 'merge_train') &&
+        isValidGitSha(CI_COMMIT_SHA)
+      ) {
+        tags[CI_GIT_MERGE_COMMIT_SHA] = CI_COMMIT_SHA
+      }
     }
   }
 
@@ -524,6 +537,10 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
         GITHUB_RUN_ATTEMPT,
         DD_GITHUB_JOB_NAME: DD_GITHUB_JOB_NAME ?? fallbackGithubJobName,
       }),
+    }
+
+    if (/^refs\/pull\/\d+\/merge$/.test(GITHUB_REF || '') && isValidGitSha(GITHUB_SHA)) {
+      tags[CI_GIT_MERGE_COMMIT_SHA] = GITHUB_SHA
     }
 
     if (GITHUB_BASE_REF) {
@@ -811,6 +828,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       SYSTEM_PULLREQUEST_TARGETBRANCH,
       BUILD_REPOSITORY_URI,
       BUILD_SOURCEVERSION,
+      BUILD_REASON,
       BUILD_REQUESTEDFORID,
       BUILD_REQUESTEDFOREMAIL,
       BUILD_SOURCEVERSIONMESSAGE,
@@ -824,6 +842,7 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       [CI_PIPELINE_NAME]: BUILD_DEFINITIONNAME,
       [CI_PIPELINE_NUMBER]: BUILD_BUILDID,
       [GIT_SHA]: SYSTEM_PULLREQUEST_SOURCECOMMITID || BUILD_SOURCEVERSION,
+      [GIT_HEAD_SHA]: SYSTEM_PULLREQUEST_SOURCECOMMITID,
       [CI_WORKSPACE_PATH]: BUILD_SOURCESDIRECTORY,
       [GIT_REPOSITORY_URL]: SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI || BUILD_REPOSITORY_URI,
       [GIT_BRANCH]: SYSTEM_PULLREQUEST_SOURCEBRANCH || BUILD_SOURCEBRANCH || BUILD_SOURCEBRANCHNAME,
@@ -852,10 +871,17 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
       }
     }
 
+    if (
+      BUILD_REASON === 'PullRequest' &&
+      /^refs\/pull\/\d+\/merge$/.test(BUILD_SOURCEBRANCH || '') &&
+      isValidGitSha(BUILD_SOURCEVERSION)
+    ) {
+      tags[CI_GIT_MERGE_COMMIT_SHA] = BUILD_SOURCEVERSION
+    }
+
     if (SYSTEM_PULLREQUEST_PULLREQUESTNUMBER) {
       tags[PR_NUMBER] = SYSTEM_PULLREQUEST_PULLREQUESTNUMBER
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = SYSTEM_PULLREQUEST_TARGETBRANCH?.replace('refs/heads/', '')
-      tags[GIT_HEAD_SHA] = SYSTEM_PULLREQUEST_SOURCECOMMITID
     }
   }
 
@@ -900,6 +926,14 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
         [GIT_SHA]: APPVEYOR_REPO_COMMIT,
         [GIT_TAG]: APPVEYOR_REPO_TAG_NAME,
         [GIT_BRANCH]: APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH || APPVEYOR_REPO_BRANCH,
+      }
+      if (
+        /^\d+$/.test(APPVEYOR_PULL_REQUEST_NUMBER || '') &&
+        isValidGitSha(APPVEYOR_REPO_COMMIT) &&
+        isValidGitSha(APPVEYOR_PULL_REQUEST_HEAD_COMMIT) &&
+        APPVEYOR_REPO_COMMIT.toLowerCase() !== APPVEYOR_PULL_REQUEST_HEAD_COMMIT.toLowerCase()
+      ) {
+        tags[CI_GIT_MERGE_COMMIT_SHA] = APPVEYOR_REPO_COMMIT
       }
     }
 
@@ -995,6 +1029,16 @@ export const getCISpanTags = (fallbackGithubJobName?: string, fallbackGithubJobI
     } else {
       tags[GIT_BRANCH] = normalizeRef(branch)
     }
+  }
+
+  for (const shaTag of [
+    GIT_SHA,
+    GIT_HEAD_SHA,
+    GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+    GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
+    CI_GIT_MERGE_COMMIT_SHA,
+  ] as const) {
+    tags[shaTag] = normalizeGitSha(tags[shaTag])
   }
 
   return removeEmptyValues(tags)
