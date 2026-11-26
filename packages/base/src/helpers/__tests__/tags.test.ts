@@ -168,6 +168,9 @@ describe('parseMetricsFile', () => {
 
 describe('getSpanTags', () => {
   beforeEach(() => {
+    process.env.DD_GIT_REPOSITORY_URL = ''
+    process.env.DD_GIT_BRANCH = ''
+    process.env.DD_GIT_COMMIT_SHA = ''
     // CI defined by default env vars - clearing them is needed for tests to pass in the CI
     process.env.GITHUB_ACTIONS = ''
     process.env.GITHUB_REPOSITORY = ''
