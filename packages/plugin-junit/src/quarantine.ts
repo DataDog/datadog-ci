@@ -270,8 +270,8 @@ export const effectiveGit = (
 type Git = {repositoryUrl: string; sha: string; branch?: string; commitMessage?: string}
 
 /**
- * Whether Flaky Test Management applies quarantine for this repository: the `test_management.enabled` setting the
- * test libraries read before a run. It reflects the repository's Quarantine setting.
+ * Whether Flaky Test Management is on for this repository, as the test libraries see it: the `test_management.enabled`
+ * setting they read before a run. The CLI then applies quarantine exactly when they do.
  */
 export const fetchQuarantineEnabled = async (
   request: RequestBuilder,

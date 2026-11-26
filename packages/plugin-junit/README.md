@@ -68,7 +68,7 @@ The job stays red, with the reason printed, when:
 - a report can't be read;
 - there is no failing testcase in the reports, for example after a crash or a build error;
 - the commit is unknown, or Flaky Test Management can't be reached;
-- quarantine is turned off for the repository in Flaky Test Management;
+- Flaky Test Management is turned off for the repository in the settings the test libraries read (`test_management.enabled`);
 - a failing testcase is not quarantined or disabled.
 
 For this to be safe:
