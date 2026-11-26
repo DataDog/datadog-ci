@@ -46,6 +46,7 @@ import {
   renderArgumentMissingError,
   renderCommandInfo,
   renderCommandSummary,
+  renderCompressionInfo,
   renderFailedUpload,
   renderGeneralizedError,
   renderGitWarning,
@@ -326,6 +327,10 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
 
     const requestBuilder = getElfRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     const tmpDirectory = await createUniqueTmpDirectory()
+    const useZstd = supportsZstdCompression()
+    if (!this.dryRun && elfFilesMetadata.length > 0) {
+      this.context.stdout.write(renderCompressionInfo(useZstd))
+    }
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, elfFilesMetadata, async (fileMetadata) => {
@@ -342,7 +347,7 @@ export class ElfSymbolsUploadCommand extends BaseCommand {
 
         let uploadFilePath = outputFilePath
         let useGzip = true
-        if (supportsZstdCompression()) {
+        if (useZstd) {
           const compressedFilePath = `${outputFilePath}.zst`
           await compressFileWithZstd(outputFilePath, compressedFilePath)
           await fs.promises.rm(outputFilePath, {force: true})

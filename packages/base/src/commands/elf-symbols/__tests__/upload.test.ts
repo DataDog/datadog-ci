@@ -19,7 +19,7 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {getElfFileMetadata} from '../elf'
 import {ElfClass} from '../elf-constants'
 import {supportsZstdCompression, uploadMultipartHelper} from '../helpers'
-import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
+import {renderArgumentMissingError, renderCompressionInfo, renderInvalidSymbolsLocation} from '../renderer'
 import {ElfSymbolsUploadCommand} from '../upload'
 
 type ZlibWithZstd = typeof zlib & {
@@ -300,12 +300,13 @@ describe('elf-symbols upload', () => {
         return UploadStatus.Success
       })
 
-      const {exitCode} = await runCommand((cmd) => {
+      const {exitCode, context} = await runCommand((cmd) => {
         cmd['disableGit'] = true
         cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`]
       })
 
       expect(exitCode).toBe(0)
+      expect(context.stdout.toString()).toContain(renderCompressionInfo(hasZstd))
       expect(uploadMock).toHaveBeenCalledTimes(1)
     })
 
@@ -331,12 +332,13 @@ describe('elf-symbols upload', () => {
         return UploadStatus.Success
       })
 
-      const {exitCode} = await runCommand((cmd) => {
+      const {exitCode, context} = await runCommand((cmd) => {
         cmd['disableGit'] = true
         cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`]
       })
 
       expect(exitCode).toBe(0)
+      expect(context.stdout.toString()).toContain(renderCompressionInfo(false))
       expect(uploadMock).toHaveBeenCalledTimes(1)
     })
 
