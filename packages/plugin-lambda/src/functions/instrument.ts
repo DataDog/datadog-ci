@@ -277,7 +277,7 @@ export const calculateUpdateRequest = async (
   for (const [key, environmentVar] of environmentVarsTupleArray) {
     if (settings[key] !== undefined && oldEnvVars[environmentVar] !== settings[key]?.toString()) {
       needsUpdate = true
-      changedEnvVars[environmentVar] = settings[key]!.toString()
+      changedEnvVars[environmentVar] = settings[key].toString()
     }
   }
 
