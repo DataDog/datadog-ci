@@ -46,6 +46,10 @@
   "latest": true,
   "mobileApplicationId": "example-abc",
   "mobileApplicationVersionFilePath": "example_path/example_app.apk",
+  "pageLevelVrt": {
+    "captureScreenshots": true,
+    "recordNetwork": true
+  },
   "proxy": {
     "auth": {
       "username": "login",
