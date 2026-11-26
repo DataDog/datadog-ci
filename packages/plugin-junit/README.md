@@ -55,9 +55,11 @@ datadog-ci junit upload --service my-service --test-exit-code "$code" reports/
 
 On GitLab CI, run both in `script`, not the upload in `after_script`: GitLab ignores the exit code of `after_script`.
 
-The runs of quarantined and disabled tests are tagged `@test.test_management.is_quarantined:true` or
-`@test.test_management.is_test_disabled:true` in Datadog, as with the test libraries. Unlike with the test libraries,
-a disabled test still runs: its failure is ignored, but the test isn't skipped.
+When the tests failed with the runner's "tests failed" code, the command looks up the states, and the runs of
+quarantined and disabled tests in the reports are tagged `@test.test_management.is_quarantined:true` or
+`@test.test_management.is_test_disabled:true` in Datadog, as with the test libraries. When the tests passed, nothing is
+looked up or tagged. Unlike with the test libraries, a disabled test still runs: its failure is ignored, but the test
+isn't skipped.
 
 The job stays red, with the reason printed, when:
 

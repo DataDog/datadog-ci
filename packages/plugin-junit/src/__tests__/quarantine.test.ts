@@ -433,6 +433,18 @@ describe('tagReport', () => {
     expect(tagged).toContain('<!-- <testcase name="c"/> -->')
   })
 
+  test('does not count other elements whose name starts with "testcase", or a DOCTYPE internal subset', () => {
+    const xml = `<?xml version="1.0"?>
+<!DOCTYPE testsuite [ <!ENTITY e "<testcase name='x'/>"> ]>
+<testsuite name="S"><testcase.step name="one"/><testcase-info name="one"/><testcase name="one"/></testsuite>`
+    const tagged = tagReport(xml, [{index: 0, rawName: 'one', state: 'quarantined'}])
+    expect(tagged).toContain(
+      `<testcase.step name="one"/><testcase-info name="one"/><testcase name="one">${quarantinedTag}</testcase>`
+    )
+    expect(tagged).toContain(`<!ENTITY e "<testcase name='x'/>">`)
+    expect(parseReport(xml, 'r.xml').map((r) => r.index)).toEqual([0])
+  })
+
   test('leaves the report alone when a position does not point at the expected testcase', () => {
     const xml = '<testsuite name="S"><testcase name="one"/><testcase name="two"/></testsuite>'
     expect(tagReport(xml, [{index: 1, rawName: 'one', state: 'quarantined'}])).toBeUndefined()
@@ -469,6 +481,7 @@ describe('fetchQuarantineEnabled', () => {
     expect(sent.data.data.attributes).toMatchObject({
       service: 'svc',
       env: 'none',
+      branch: 'auto:git-detached-head',
       repository_url: 'https://github.com/o/r',
       sha: 'abc',
       test_level: 'test',

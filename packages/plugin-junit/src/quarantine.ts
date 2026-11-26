@@ -282,7 +282,7 @@ export const fetchQuarantineEnabled = async (
       request({
         method: 'POST',
         url: datadogRoute('/api/v2/libraries/tests/services/setting'),
-        timeout: 20_000,
+        timeout: 10_000,
         data: {
           data: {
             id: '1',
@@ -292,7 +292,8 @@ export const fetchQuarantineEnabled = async (
               env: attributes.env ?? 'none',
               repository_url: attributes.repositoryUrl,
               sha: attributes.sha,
-              branch: attributes.branch,
+              // Required by the endpoint. dd-trace-go sends the same value when it has no branch.
+              branch: attributes.branch ?? 'auto:git-detached-head',
               configurations: {},
               test_level: 'test',
             },
@@ -317,7 +318,7 @@ export const fetchExcusedTests = async (request: RequestBuilder, attributes: Git
       request({
         method: 'POST',
         url: datadogRoute('/api/v2/test/libraries/test-management/tests'),
-        timeout: 20_000,
+        timeout: 10_000,
         data: {
           data: {
             type: 'ci_app_libraries_tests_request',
@@ -406,10 +407,11 @@ const TAG_OF_STATE: Record<ExcusedState, string> = {
   disabled: 'test.test_management.is_test_disabled',
 }
 
-// A <testcase> start tag, with its attributes and whether it closes itself. Comments, CDATA sections and processing
-// instructions are matched only to be skipped, so a "<testcase" inside them isn't counted.
+// A <testcase> start tag, with its attributes and whether it closes itself. Comments, CDATA sections, processing
+// instructions and the DOCTYPE (with its internal subset) are matched only to be skipped, so a "<testcase" inside them
+// isn't counted. The name must end there: <testcase.step> or <testcase-info> are other elements.
 const TESTCASE_START =
-  /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|<\?[\s\S]*?\?>|<testcase\b((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?)>/g
+  /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|<\?[\s\S]*?\?>|<!DOCTYPE(?:[^[>]|\[[\s\S]*?])*>|<testcase(?=[\s/>])((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?)>/g
 const NAME_ATTRIBUTE = /(?:^|\s)name\s*=\s*(?:"([^"]*)"|'([^']*)')/i
 
 /**
