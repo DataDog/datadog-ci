@@ -11,19 +11,34 @@ import {datadogRoute} from '@datadog/datadog-ci-base/helpers/request/datadog-rou
 import {upload} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
+interface ZstdOptions {
+  pledgedSrcSize?: number
+  params?: Record<number, number>
+}
+
 type ZlibWithZstd = typeof zlib & {
-  createZstdCompress?: () => Transform
+  createZstdCompress?: (options?: ZstdOptions) => Transform
+  constants: typeof zlib.constants & {
+    ZSTD_c_checksumFlag?: number
+  }
 }
 
 export const supportsZstdCompression = (): boolean => typeof (zlib as ZlibWithZstd).createZstdCompress === 'function'
 
 export const compressFileWithZstd = async (inputPath: string, outputPath: string): Promise<void> => {
-  const createZstdCompress = (zlib as ZlibWithZstd).createZstdCompress
+  const zlibWithZstd = zlib as ZlibWithZstd
+  const createZstdCompress = zlibWithZstd.createZstdCompress
   if (typeof createZstdCompress !== 'function') {
     throw new Error('zstd compression is not supported in this Node.js version')
   }
 
-  await pipeline(fs.createReadStream(inputPath), createZstdCompress(), fs.createWriteStream(outputPath))
+  const {size} = await fs.promises.stat(inputPath)
+  const options: ZstdOptions = {pledgedSrcSize: size}
+  if (zlibWithZstd.constants.ZSTD_c_checksumFlag !== undefined) {
+    options.params = {[zlibWithZstd.constants.ZSTD_c_checksumFlag]: 1}
+  }
+
+  await pipeline(fs.createReadStream(inputPath), createZstdCompress(options), fs.createWriteStream(outputPath))
 }
 
 export const getElfRequestBuilder = (apiKey: string, cliVersion: string, site: string) =>

@@ -31,9 +31,14 @@ const ZSTD_MAGIC = Buffer.from([0x28, 0xb5, 0x2f, 0xfd])
 const readUploadedElfPath = async (filePath: string) => {
   const bytes = await fs.promises.readFile(filePath)
   const isZstd = bytes.subarray(0, 4).equals(ZSTD_MAGIC)
+  const fhd = isZstd && bytes.length > 4 ? bytes[4] : 0
+  // eslint-disable-next-line no-bitwise
+  const hasFrameContentSize = isZstd && (fhd & 0xe0) !== 0
+  // eslint-disable-next-line no-bitwise
+  const hasChecksum = isZstd && (fhd & 0x04) !== 0
   const zstdDecompressSync = (zlib as ZlibWithZstd).zstdDecompressSync
   if (!isZstd || typeof zstdDecompressSync !== 'function') {
-    return {path: filePath, isZstd, cleanup: async () => {}}
+    return {path: filePath, isZstd, hasFrameContentSize, hasChecksum, cleanup: async () => {}}
   }
 
   const tmpDir = await fs.promises.mkdtemp(upath.join(os.tmpdir(), 'elf-zstd-test-'))
@@ -43,6 +48,8 @@ const readUploadedElfPath = async (filePath: string) => {
   return {
     path: decompressedPath,
     isZstd,
+    hasFrameContentSize,
+    hasChecksum,
     cleanup: () => fs.promises.rm(tmpDir, {recursive: true, force: true}),
   }
 }
@@ -290,6 +297,8 @@ describe('elf-symbols upload', () => {
         const uploaded = await readUploadedElfPath(file.path)
         try {
           expect(uploaded.isZstd).toBe(hasZstd)
+          expect(uploaded.hasFrameContentSize).toBe(hasZstd)
+          expect(uploaded.hasChecksum).toBe(hasZstd)
           const uploadedElf = await getElfFileMetadata(uploaded.path)
           expect(uploadedElf.isElf).toBe(true)
           expect(uploadedElf.hasDebugInfo).toBe(true)
