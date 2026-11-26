@@ -9,8 +9,8 @@ import upath from 'upath'
  * Flaky Test Management verdict for JUnit XML uploads.
  *
  * Decides, after the tests ran, whether a failed run should still pass CI because every failing testcase is
- * quarantined or disabled in Datadog. Go reports get Go rules: failures are judged at the leaves, a quarantined ancestor
- * covers its subtests, and the last rerun wins.
+ * quarantined or disabled in Datadog. Go reports get Go rules: failures are judged at the leaves, and the last rerun
+ * wins.
  */
 
 export interface TestRun {
@@ -350,21 +350,14 @@ export const fetchExcusedTests = async (request: RequestBuilder, attributes: Git
   return excused
 }
 
-/** "A/b/c" -> "A/b/c", "A/b", "A": in Go, quarantining a parent covers its subtests. */
-const testAndAncestors = (name: string): string[] =>
-  name.split('/').map((_, i, parts) => parts.slice(0, parts.length - i).join('/'))
-
-/** The state that excuses this run, if any. */
+/**
+ * The state that excuses this run, if any: its own. A quarantined Go parent doesn't cover its subtests, unlike in
+ * dd-trace-go: in JUnit reports a parent fails whenever a subtest does, so Flaky Test Management sees a parent as flaky
+ * as soon as one subtest is, and its policies can quarantine it. Covering the subtests would then hide their real
+ * failures.
+ */
 export const excusedState = (run: TestRun, excused: ExcusedTests): ExcusedState | undefined => {
-  const names = run.go ? testAndAncestors(run.name) : [run.name]
-  const stateIn = (module: string, suite: string) => {
-    for (const name of names) {
-      const state = excused.get(module)?.get(suite)?.get(name)
-      if (state) {
-        return state
-      }
-    }
-  }
+  const stateIn = (module: string, suite: string) => excused.get(module)?.get(suite)?.get(run.name)
   // JUnit entries: the empty module, or a report file name. Entries added through the public API from a JUnit event
   // keep that event's file name as module, so they must match from any report.
   // ponytail: the *.xml modules are only needed until the API stops storing a file name as module for JUnit tests.

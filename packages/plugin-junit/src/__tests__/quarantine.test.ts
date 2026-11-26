@@ -185,13 +185,25 @@ describe('decide', () => {
     ])
   })
 
-  test('a quarantined Go parent covers all its subtests', () => {
+  test('a quarantined Go parent does not cover its subtests: policies quarantine parents of flaky subtests', () => {
     const failing = [
       run('S', 'TestA/one', {go: true}),
       run('S', 'TestA/two', {go: true}),
       run('S', 'TestA', {go: true}),
     ]
-    expect(decide(failing, excusedOf([['', 'S', 'TestA']])).real).toEqual([])
+    const verdict = decide(
+      failing,
+      excusedOf([
+        ['', 'S', 'TestA'],
+        ['', 'S', 'TestA/one'],
+      ])
+    )
+    expect(verdict.excused.map((r) => r.name)).toEqual(['TestA/one'])
+    expect(verdict.real.map((r) => r.name)).toEqual(['TestA/two'])
+  })
+
+  test('a quarantined Go parent that fails on its own, with no failing subtest, is excused', () => {
+    expect(decide([run('S', 'TestA', {go: true})], excusedOf([['', 'S', 'TestA']])).real).toEqual([])
   })
 
   test('outside Go, "/" in a name is not a hierarchy', () => {

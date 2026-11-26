@@ -85,9 +85,9 @@ For this to be safe:
   | ctest                                                                                    | `--test-failure-exit-code 8`                                                     |
   | Mocha, Cypress (they exit with the number of failures)                                   | run them with `--posix-exit-codes`                                               |
 
-- For Go reports, which carry the `go.version` property: a quarantined subtest also excuses its failing parent, and
-  quarantining a parent covers its subtests. The last rerun of a test counts. A parent that also fails on its own
-  assertion is not detected. A panic or timeout keeps the job red.
+- For Go reports, which carry the `go.version` property: a quarantined subtest also excuses its failing parent, but
+  quarantining a parent doesn't cover its subtests, so quarantine the subtests themselves. The last rerun of a test
+  counts. A parent that also fails on its own assertion is not detected. A panic or timeout keeps the job red.
 
 #### Environment variables
 
