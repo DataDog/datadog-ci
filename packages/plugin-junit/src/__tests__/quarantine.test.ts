@@ -1,0 +1,575 @@
+import type {ExcusedState, ExcusedTests, JudgeInput, TestRun} from '../quarantine'
+
+import {XMLValidator} from 'fast-xml-parser'
+
+import {
+  decide,
+  effectiveGit,
+  failingRuns,
+  fetchExcusedTests,
+  fetchQuarantineEnabled,
+  judge,
+  parseReport,
+  tagReport,
+  UnreadableReportError,
+} from '../quarantine'
+
+const AGENT_SUITE = 'github.com/DataDog/datadog-agent/test/new-e2e/tests/containers'
+const GO_PROPS = '<properties><property name="go.version" value="go1.24.1 linux/amd64"></property></properties>'
+
+// Shape of a real gotestsum report from datadog-agent's end-to-end tests:
+// the quarantined subtest fails, and so does its parent.
+const goReport = `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="2">
+  <testsuite name="${AGENT_SUITE}" tests="3" failures="2">
+    ${GO_PROPS}
+    <testcase classname="${AGENT_SUITE}" name="TestKindSuite/Test00UpAndRunning" time="1.0"></testcase>
+    <testcase classname="${AGENT_SUITE}" name="TestKindSuite/TestContainerLifecycleEvents" time="120.0">
+      <failure message="Failed" type="">Error Trace: k8s_test.go:1957</failure>
+    </testcase>
+    <testcase classname="${AGENT_SUITE}" name="TestKindSuite" time="700.0">
+      <failure message="Failed" type="">suite.go:673: ========= Some tests failed, diagnosing environment</failure>
+    </testcase>
+  </testsuite>
+</testsuites>`
+
+const excusedOf = (entries: ([string, string, string] | [string, string, string, ExcusedState])[]): ExcusedTests => {
+  const excused: ExcusedTests = new Map()
+  for (const [module, suite, name, state = 'quarantined'] of entries) {
+    const bySuite = excused.get(module) ?? new Map<string, Map<string, ExcusedState>>()
+    bySuite.set(suite, (bySuite.get(suite) ?? new Map()).set(name, state))
+    excused.set(module, bySuite)
+  }
+
+  return excused
+}
+
+const run = (suite: string, name: string, extra: Partial<TestRun> = {}): TestRun => ({
+  suite,
+  name,
+  module: 'report.xml',
+  failed: true,
+  go: false,
+  aborted: false,
+  ...extra,
+})
+
+const failingOf = (xml: string, path = 'junit.xml', xpathTags = {}, customTags = {}) =>
+  failingRuns(parseReport(xml, path, xpathTags, customTags)).map(({suite, name}) => ({suite, name}))
+
+describe('parseReport', () => {
+  test('keys testcases by suite and name, with the file name as module, and detects Go reports', () => {
+    const runs = parseReport(goReport, 'reports/junit-out-AgentFlavor.base-0.xml')
+    expect(runs.map((r) => [r.name, r.failed, r.go, r.module])).toEqual([
+      ['TestKindSuite/Test00UpAndRunning', false, true, 'junit-out-AgentFlavor.base-0.xml'],
+      ['TestKindSuite/TestContainerLifecycleEvents', true, true, 'junit-out-AgentFlavor.base-0.xml'],
+      ['TestKindSuite', true, true, 'junit-out-AgentFlavor.base-0.xml'],
+    ])
+    expect(runs.every((r) => r.suite === AGENT_SUITE && !r.aborted)).toBe(true)
+  })
+
+  test('counts <error> as a failure, not skipped or passing testcases, and survives attribute-less elements', () => {
+    const xml = `<testsuite name="S">
+      <testcase name="errored"><error message="boom"/></testcase>
+      <testcase name="skipped"><skipped/></testcase>
+      <testcase name="passed"/>
+      <testcase/>
+      <testcase name="failed"><failure/></testcase>
+    </testsuite>`
+    expect(failingOf(xml)).toEqual([
+      {suite: 'S', name: 'errored'},
+      {suite: 'S', name: 'failed'},
+    ])
+  })
+
+  test('joins nested suite names with "." and finds suites under wrapper elements', () => {
+    const xml = `<testsuites name="ignored root">
+      <group><testsuite name="Outer"><testsuite name="Inner"><testcase name="t"><failure/></testcase></testsuite></testsuite></group>
+      <testcase name="orphan"><failure/></testcase>
+    </testsuites>`
+    expect(failingOf(xml)).toEqual([
+      {suite: 'Outer.Inner', name: 't'},
+      {suite: '', name: 'orphan'},
+    ])
+  })
+
+  test('a <testsuite> without a name is unreadable, as the backend drops the file, unless an xpath sets the suite', () => {
+    const xml = '<testsuite name=""><testcase name="t" classname="C"><failure/></testcase></testsuite>'
+    expect(() => parseReport(xml, 'r.xml')).toThrow(UnreadableReportError)
+    expect(failingOf(xml, 'r.xml', {'test.suite': '/testcase/@classname'})).toEqual([{suite: 'C', name: 't'}])
+  })
+
+  test('applies dd_tags properties, then --xpath-tag, then --tags, in that order', () => {
+    const xml = `<testsuite name="jest tests">
+      <properties><property name="dd_tags[test.suite]" value="from-suite-property"/></properties>
+      <testcase name="a" classname="com.example.A"><failure/></testcase>
+      <testcase name="b"><failure/></testcase>
+    </testsuite>`
+    expect(failingOf(xml)).toEqual([
+      {suite: 'from-suite-property', name: 'a'},
+      {suite: 'from-suite-property', name: 'b'},
+    ])
+    expect(failingOf(xml, 'j.xml', {'test.suite': '/testcase/@classname'})).toEqual([
+      {suite: 'com.example.A', name: 'a'},
+      {suite: 'from-suite-property', name: 'b'},
+    ])
+    expect(failingOf(xml, 'j.xml', {'test.suite': '/testcase/@classname'}, {'test.suite': 'forced'})).toEqual([
+      {suite: 'forced', name: 'a'},
+      {suite: 'forced', name: 'b'},
+    ])
+  })
+
+  test('reads the backend xpath forms: case-insensitive attributes, single-quoted properties', () => {
+    const xml = `<testsuite name="S" package="pkg">
+      <testcase name="t" ClassName="C"><properties><property name="nodeid" value="tests/test_x.py::t"/></properties><failure/></testcase>
+    </testsuite>`
+    expect(failingOf(xml, 'r.xml', {'test.suite': '/testcase/../@package'})).toEqual([{suite: 'pkg', name: 't'}])
+    expect(failingOf(xml, 'r.xml', {'test.suite': '/testcase/@classname'})).toEqual([{suite: 'C', name: 't'}])
+    expect(failingOf(xml, 'r.xml', {'test.name': "/testcase//property[@name='nodeid']"})).toEqual([
+      {suite: 'S', name: 'tests/test_x.py::t'},
+    ])
+    // The backend only accepts single quotes, so a double-quoted expression is ignored there too.
+    expect(failingOf(xml, 'r.xml', {'test.name': '/testcase//property[@name="nodeid"]'})).toEqual([
+      {suite: 'S', name: 't'},
+    ])
+  })
+
+  test('decodes entities and keeps surrounding spaces, as the backend does', () => {
+    const xml = `<testsuite name="A &amp; B">
+      <testcase name=" renders &lt;Button&gt; with &#34;quotes&#34; &#x27;x&#x27;"><failure/></testcase>
+    </testsuite>`
+    expect(failingOf(xml)).toEqual([{suite: 'A & B', name: ` renders <Button> with "quotes" 'x'`}])
+  })
+
+  test('marks a Go failure as aborted when the test binary panicked or timed out', () => {
+    const xml = `<testsuite name="pkg">${GO_PROPS}
+      <testcase name="TestA"><failure message="Failed">panic: runtime error: index out of range</failure></testcase>
+      <testcase name="TestB"><failure message="Failed">panic: test timed out after 10m0s</failure></testcase>
+      <testcase name="TestC"><failure message="Failed">x_test.go:12: want 1, got 2</failure></testcase>
+    </testsuite>`
+    expect(parseReport(xml, 'r.xml').map((r) => r.aborted)).toEqual([true, true, false])
+  })
+})
+
+describe('failingRuns', () => {
+  test('for Go the last attempt wins (gotestsum --rerun-fails), for others any failure counts', () => {
+    const xml = `<testsuites>
+      <testsuite name="pkg">${GO_PROPS}
+        <testcase name="TestFlaky"><failure/></testcase>
+        <testcase name="TestFlaky"/>
+        <testcase name="TestBroken"/>
+        <testcase name="TestBroken"><failure/></testcase>
+      </testsuite>
+      <testsuite name="jest"><testcase name="retried"><failure/></testcase><testcase name="retried"/></testsuite>
+    </testsuites>`
+    expect(failingOf(xml)).toEqual([
+      {suite: 'jest', name: 'retried'},
+      {suite: 'pkg', name: 'TestBroken'},
+    ])
+  })
+})
+
+describe('decide', () => {
+  test('a quarantined Go subtest excuses its failing parent (the datadog-agent case)', () => {
+    const verdict = decide(
+      failingRuns(parseReport(goReport, 'r.xml')),
+      excusedOf([['', AGENT_SUITE, 'TestKindSuite/TestContainerLifecycleEvents']])
+    )
+    expect(verdict.real).toEqual([])
+    expect(verdict.excused.map((r) => r.name)).toEqual(['TestKindSuite/TestContainerLifecycleEvents'])
+  })
+
+  test('nothing quarantined keeps the leaf failure real', () => {
+    expect(decide(failingRuns(parseReport(goReport, 'r.xml')), new Map()).real.map((r) => r.name)).toEqual([
+      'TestKindSuite/TestContainerLifecycleEvents',
+    ])
+  })
+
+  test('a quarantined Go parent does not cover its subtests: policies quarantine parents of flaky subtests', () => {
+    const failing = [
+      run('S', 'TestA/one', {go: true}),
+      run('S', 'TestA/two', {go: true}),
+      run('S', 'TestA', {go: true}),
+    ]
+    const verdict = decide(
+      failing,
+      excusedOf([
+        ['', 'S', 'TestA'],
+        ['', 'S', 'TestA/one'],
+      ])
+    )
+    expect(verdict.excused.map((r) => r.name)).toEqual(['TestA/one'])
+    expect(verdict.real.map((r) => r.name)).toEqual(['TestA/two'])
+  })
+
+  test('a quarantined Go parent that fails on its own, with no failing subtest, is excused', () => {
+    expect(decide([run('S', 'TestA', {go: true})], excusedOf([['', 'S', 'TestA']])).real).toEqual([])
+  })
+
+  test('outside Go, "/" in a name is not a hierarchy', () => {
+    const failing = [run('routes', 'users/list'), run('routes', 'users')]
+    const verdict = decide(failing, excusedOf([['', 'routes', 'users']]))
+    expect(verdict.real.map((r) => r.name)).toEqual(['users/list'])
+    expect(verdict.excused.map((r) => r.name)).toEqual(['users'])
+  })
+
+  test('one non-quarantined failure keeps the run red, and the same name in another suite is not excused', () => {
+    const failing = [run('S', 'flaky'), run('S', 'broken'), run('S', 'flaky'), run('Other', 'flaky')]
+    const verdict = decide(failing, excusedOf([['', 'S', 'flaky']]))
+    expect(verdict.excused.map((r) => [r.suite, r.name])).toEqual([['S', 'flaky']])
+    expect(verdict.real.map((r) => [r.suite, r.name])).toEqual([
+      ['S', 'broken'],
+      ['Other', 'flaky'],
+    ])
+  })
+
+  test('matches the empty module and any report file name, not unrelated native modules (except Go import paths)', () => {
+    const excused = excusedOf([
+      ['another-report.xml', 'S', 'added-from-a-junit-event'],
+      ['some-native-module', 'S', 'native-only'],
+      ['github.com/o/r/pkg', 'pkg_test.go', 'TestNative'],
+    ])
+    const verdict = decide(
+      [
+        run('S', 'added-from-a-junit-event'),
+        run('S', 'native-only'),
+        run('github.com/o/r/pkg', 'TestNative', {go: true}),
+      ],
+      excused
+    )
+    expect(verdict.excused.map((r) => r.name)).toEqual(['added-from-a-junit-event', 'TestNative'])
+    expect(verdict.real.map((r) => r.name)).toEqual(['native-only'])
+  })
+
+  test('a quarantined Go test that aborted the run stays real', () => {
+    expect(
+      decide([run('pkg', 'TestA', {go: true, aborted: true})], excusedOf([['', 'pkg', 'TestA']])).real
+    ).toHaveLength(1)
+  })
+})
+
+describe('fetchExcusedTests', () => {
+  test('sends no module, branch or commit message, and keeps quarantined and disabled tests per module', async () => {
+    const request = jest.fn().mockResolvedValue({
+      data: {
+        data: {
+          attributes: {
+            modules: {
+              '': {
+                suites: {
+                  S: {
+                    tests: {
+                      q: {properties: {quarantined: true, disabled: false, attempt_to_fix: false}},
+                      d: {properties: {quarantined: false, disabled: true, attempt_to_fix: false}},
+                      both: {properties: {quarantined: true, disabled: true}},
+                      fix: {properties: {quarantined: false, disabled: false, attempt_to_fix: true}},
+                      odd: {properties: {quarantined: 'true'}},
+                    },
+                  },
+                },
+              },
+              'native-module': {suites: {S: {tests: {n: {properties: {quarantined: true}}}}}},
+            },
+          },
+        },
+      },
+    })
+
+    const excused = await fetchExcusedTests(request, {
+      repositoryUrl: 'https://github.com/o/r',
+      sha: 'abc',
+      branch: 'main',
+    })
+
+    expect([...excused.get('')!.get('S')!].sort()).toEqual([
+      ['both', 'disabled'],
+      ['d', 'disabled'],
+      ['q', 'quarantined'],
+    ])
+    expect([...excused.get('native-module')!.get('S')!]).toEqual([['n', 'quarantined']])
+    const sent = request.mock.calls[0][0]
+    expect(sent.url).toBe('/api/v2/test/libraries/test-management/tests')
+    expect(sent.data.data.attributes).toEqual({repository_url: 'https://github.com/o/r', sha: 'abc'})
+  })
+})
+
+describe('judge', () => {
+  const input = (overrides: Partial<JudgeInput> = {}): JudgeInput => ({
+    exitCode: 1,
+    reports: [{path: 'reports/r.xml', xml: goReport}],
+    invalidReports: [],
+    git: {repositoryUrl: 'https://github.com/DataDog/datadog-agent', sha: 'abc'},
+    isEnabled: async () => true,
+    fetch: async () => excusedOf([['', AGENT_SUITE, 'TestKindSuite/TestContainerLifecycleEvents']]),
+    ...overrides,
+  })
+
+  test('exits 0 when every failure is quarantined', async () => {
+    const verdict = await judge(input())
+    expect(verdict.exitCode).toBe(0)
+    expect(verdict.lines).toContain(`Quarantined, ignored: ${AGENT_SUITE} TestKindSuite/TestContainerLifecycleEvents`)
+    // Only the quarantined subtest is tagged: its parent and the passing sibling aren't quarantined.
+    expect(verdict.toTag.map((r) => [r.name, r.index, r.state])).toEqual([
+      ['TestKindSuite/TestContainerLifecycleEvents', 1, 'quarantined'],
+    ])
+  })
+
+  test.each([
+    ['exit code 0', {exitCode: 0}, 0],
+    ['an exit code other than 1 (runner error)', {exitCode: 2}, 2],
+    ['a killed job', {exitCode: 137}, 137],
+    ['a report that failed validation', {invalidReports: ['reports/broken.xml']}, 1],
+    [
+      'a report Datadog drops',
+      {reports: [{path: 'x.xml', xml: '<testsuite name=""><testcase name="t"><failure/></testcase></testsuite>'}]},
+      1,
+    ],
+    [
+      'no failing testcase',
+      {reports: [{path: 'x.xml', xml: '<testsuite name="S"><testcase name="t"/></testsuite>'}]},
+      1,
+    ],
+    ['an unknown commit', {git: {repositoryUrl: 'https://github.com/o/r'}}, 1],
+    ['a failed fetch', {fetch: async () => Promise.reject(new Error('403'))}, 1],
+    ['nothing quarantined', {fetch: async () => new Map()}, 1],
+    ['quarantine turned off for the repository', {isEnabled: async () => false}, 1],
+    ['a failed settings call', {isEnabled: async () => Promise.reject(new Error('500'))}, 1],
+  ])('keeps the test exit code with %s', async (_, overrides: Partial<JudgeInput>, expected) => {
+    const fetch = jest.fn(input().fetch)
+    const verdict = await judge(input({fetch, ...overrides}))
+    expect(verdict.exitCode).toBe(expected)
+  })
+
+  test('excuses the runner-specific "tests failed" exit code instead of 1 when given (Bazel: 3)', async () => {
+    expect((await judge(input({exitCode: 3, testFailureExitCode: 3}))).exitCode).toBe(0)
+    expect((await judge(input({exitCode: 1, testFailureExitCode: 3}))).exitCode).toBe(1)
+    expect((await judge(input({exitCode: 3}))).exitCode).toBe(3)
+  })
+
+  test('does not call the API when the verdict is already decided', async () => {
+    const fetch = jest.fn()
+    await judge(input({exitCode: 2, fetch}))
+    await judge(input({invalidReports: ['b.xml'], fetch}))
+    await judge(input({isEnabled: async () => false, fetch}))
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  test('tags every run of a quarantined or disabled test, also when another failure keeps the job red', async () => {
+    const xml = `<testsuite name="S">
+      <testcase name="flaky"><failure/></testcase>
+      <testcase name="broken"><failure/></testcase>
+      <testcase name="flaky"/>
+      <testcase name="off"><failure/></testcase>
+    </testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [{path: 'r.xml', xml}],
+        fetch: async () =>
+          excusedOf([
+            ['', 'S', 'flaky'],
+            ['', 'S', 'off', 'disabled'],
+          ]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.lines).toContain('Disabled, ignored: S off')
+    expect(verdict.toTag.map((r) => [r.name, r.index, r.state, r.report])).toEqual([
+      ['flaky', 0, 'quarantined', 'r.xml'],
+      ['flaky', 2, 'quarantined', 'r.xml'],
+      ['off', 3, 'disabled', 'r.xml'],
+    ])
+  })
+
+  test('a Go test that passes in another report still failed: reruns only count within one report', async () => {
+    const goSuite = (cases: string) => `<testsuite name="pkg">${GO_PROPS}${cases}</testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [
+          {
+            path: 'a/junit.xml',
+            xml: goSuite(
+              '<testcase name="TestReal"><failure/></testcase><testcase name="TestFlaky"><failure/></testcase>'
+            ),
+          },
+          {path: 'b/junit.xml', xml: goSuite('<testcase name="TestReal"/>')},
+        ],
+        fetch: async () => excusedOf([['', 'pkg', 'TestFlaky']]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.lines).toContain('Failing: pkg TestReal')
+  })
+
+  test("a Go parent's own failure in one report isn't hidden by a quarantined subtest failing in another", async () => {
+    const goSuite = (cases: string) => `<testsuite name="pkg">${GO_PROPS}${cases}</testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [
+          {path: 'a/junit.xml', xml: goSuite('<testcase name="TestP/x"/><testcase name="TestP"><failure/></testcase>')},
+          {
+            path: 'b/junit.xml',
+            xml: goSuite('<testcase name="TestP/x"><failure/></testcase><testcase name="TestP"><failure/></testcase>'),
+          },
+        ],
+        fetch: async () => excusedOf([['', 'pkg', 'TestP/x']]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.lines).toContain('Failing: pkg TestP')
+  })
+
+  test('a panic in any report keeps the job red, even if another report has the same test failing normally', async () => {
+    const goSuite = (cases: string) => `<testsuite name="pkg">${GO_PROPS}${cases}</testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [
+          {path: 'a/junit.xml', xml: goSuite('<testcase name="TestQ"><failure>panic: boom</failure></testcase>')},
+          {path: 'b/junit.xml', xml: goSuite('<testcase name="TestQ"><failure>assert</failure></testcase>')},
+        ],
+        fetch: async () => excusedOf([['', 'pkg', 'TestQ']]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+  })
+
+  test('a Go parent that panicked keeps the job red, even when its failing subtest is quarantined', async () => {
+    const xml = `<testsuite name="pkg">${GO_PROPS}
+      <testcase name="TestS/flaky"><failure>flaky</failure></testcase>
+      <testcase name="TestS"><failure>panic: runtime error: invalid memory address or nil pointer dereference</failure></testcase>
+    </testsuite>`
+    const verdict = await judge(
+      input({reports: [{path: 'r.xml', xml}], fetch: async () => excusedOf([['', 'pkg', 'TestS/flaky']])})
+    )
+    expect(verdict.exitCode).toBe(1)
+  })
+
+  test("testcases that share a suite and name but not a classname can't be excused (pytest's default suite)", async () => {
+    const xml = `<testsuite name="pytest">
+      <testcase classname="tests.test_a" name="test_create"><failure/></testcase>
+      <testcase classname="tests.test_b" name="test_create"><failure/></testcase>
+    </testsuite>`
+    const verdict = await judge(
+      input({reports: [{path: 'r.xml', xml}], fetch: async () => excusedOf([['', 'pytest', 'test_create']])})
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.toTag).toEqual([])
+  })
+
+  test.each([[256], [-1], [3221225477]])(
+    'keeps an exit code outside 1..255 (%s) as 1, so it cannot wrap to 0',
+    async (exitCode) => {
+      expect((await judge(input({exitCode}))).exitCode).toBe(1)
+    }
+  )
+
+  test('tags nothing when it never fetched the states', async () => {
+    expect((await judge(input({isEnabled: async () => false}))).toTag).toEqual([])
+  })
+})
+
+describe('parseReport positions', () => {
+  test('numbers testcases in document order, also across nested suites, and keeps their name attribute', () => {
+    const xml = `<testsuite name="A">
+      <testcase name="t1"/>
+      <!-- <testcase name="commented"/> -->
+      <testsuite name="B"><testcase name="t2"><failure/></testcase></testsuite>
+      <testcase name="a &amp; b"/>
+    </testsuite>`
+    expect(parseReport(xml, 'r.xml').map((r) => [r.name, r.index, r.rawName, r.report])).toEqual([
+      ['t1', 0, 't1', 'r.xml'],
+      ['a & b', 2, 'a & b', 'r.xml'],
+      ['t2', 1, 't2', 'r.xml'],
+    ])
+  })
+})
+
+describe('tagReport', () => {
+  const quarantinedTag =
+    '<properties><property name="dd_tags[test.test_management.is_quarantined]" value="true"></property></properties>'
+
+  test('adds the tag after the start tag, or opens a self-closing testcase, and changes nothing else', () => {
+    const xml = `<?xml version="1.0"?>
+<testsuite name="S">
+  <testcase name="one" time="1"><properties><property name="owner" value="x"/></properties><failure>boom</failure></testcase>
+  <testcase name='two' time="2"/>
+  <testcase name="three"></testcase>
+</testsuite>`
+    const tagged = tagReport(xml, [
+      {index: 0, rawName: 'one', state: 'quarantined'},
+      {index: 1, rawName: 'two', state: 'disabled'},
+    ])
+    expect(tagged).toBe(`<?xml version="1.0"?>
+<testsuite name="S">
+  <testcase name="one" time="1">${quarantinedTag}<properties><property name="owner" value="x"/></properties><failure>boom</failure></testcase>
+  <testcase name='two' time="2"><properties><property name="dd_tags[test.test_management.is_test_disabled]" value="true"></property></properties></testcase>
+  <testcase name="three"></testcase>
+</testsuite>`)
+    expect(XMLValidator.validate(tagged!)).toBe(true)
+  })
+
+  test('skips testcases in comments and CDATA, handles ">" in attributes and decodes names', () => {
+    const xml = `<testsuite name="S"><!-- <testcase name="c"/> --><system-out><![CDATA[<testcase name="d">]]></system-out>
+      <testcase name="a &gt; b" message="x > y"><failure/></testcase></testsuite>`
+    const tagged = tagReport(xml, [{index: 0, rawName: 'a > b', state: 'quarantined'}])
+    expect(tagged).toContain(`<testcase name="a &gt; b" message="x > y">${quarantinedTag}<failure/>`)
+    expect(tagged).toContain('<!-- <testcase name="c"/> -->')
+  })
+
+  test('does not count other elements whose name starts with "testcase", or a DOCTYPE internal subset', () => {
+    const xml = `<?xml version="1.0"?>
+<!DOCTYPE testsuite [ <!ENTITY e "<testcase name='x'/>"> ]>
+<testsuite name="S"><testcase.step name="one"/><testcase-info name="one"/><testcase name="one"/></testsuite>`
+    const tagged = tagReport(xml, [{index: 0, rawName: 'one', state: 'quarantined'}])
+    expect(tagged).toContain(
+      `<testcase.step name="one"/><testcase-info name="one"/><testcase name="one">${quarantinedTag}</testcase>`
+    )
+    expect(tagged).toContain(`<!ENTITY e "<testcase name='x'/>">`)
+    expect(parseReport(xml, 'r.xml').map((r) => r.index)).toEqual([0])
+  })
+
+  test('leaves the report alone when a position does not point at the expected testcase', () => {
+    const xml = '<testsuite name="S"><testcase name="one"/><testcase name="two"/></testsuite>'
+    expect(tagReport(xml, [{index: 1, rawName: 'one', state: 'quarantined'}])).toBeUndefined()
+    expect(tagReport(xml, [{index: 5, rawName: 'one', state: 'quarantined'}])).toBeUndefined()
+  })
+
+  test('the positions parseReport gives point at the right testcases', () => {
+    const xml = `<testsuites><testsuite name="A"><testcase name="t1"/><testsuite name="B"><testcase name="t2"><failure/></testcase></testsuite><testcase name="t3"/></testsuite></testsuites>`
+    const t2 = parseReport(xml, 'r.xml').find((r) => r.name === 't2')!
+    const tagged = tagReport(xml, [{index: t2.index!, rawName: t2.rawName, state: 'quarantined'}])
+    expect(tagged).toContain(`<testcase name="t2">${quarantinedTag}<failure/>`)
+  })
+})
+
+describe('effectiveGit', () => {
+  test('--tags and DD_TAGS win over the CI and git metadata, as in the backend', () => {
+    expect(
+      effectiveGit(
+        {'git.repository_url': 'https://gitlab.example/o/r.git', 'git.commit.sha': 'abc', 'git.branch': 'main'},
+        {'git.repository_url': 'https://github.com/o/r'}
+      )
+    ).toEqual({repositoryUrl: 'https://github.com/o/r', sha: 'abc', branch: 'main', commitMessage: undefined})
+  })
+})
+
+describe('fetchQuarantineEnabled', () => {
+  test('reads test_management.enabled from the settings the test libraries use', async () => {
+    const request = jest.fn().mockResolvedValue({data: {data: {attributes: {test_management: {enabled: true}}}}})
+    expect(
+      await fetchQuarantineEnabled(request, {repositoryUrl: 'https://github.com/o/r', sha: 'abc', service: 'svc'})
+    ).toBe(true)
+    const sent = request.mock.calls[0][0]
+    expect(sent.url).toBe('/api/v2/libraries/tests/services/setting')
+    expect(sent.data.data.attributes).toMatchObject({
+      service: 'svc',
+      env: 'none',
+      branch: 'auto:git-detached-head',
+      repository_url: 'https://github.com/o/r',
+      sha: 'abc',
+      test_level: 'test',
+    })
+
+    request.mockResolvedValue({data: {data: {attributes: {}}}})
+    expect(await fetchQuarantineEnabled(request, {repositoryUrl: 'r', sha: 's', service: 'svc'})).toBe(false)
+  })
+})

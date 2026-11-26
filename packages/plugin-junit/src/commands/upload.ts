@@ -27,6 +27,7 @@ import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
+import {effectiveGit, fetchExcusedTests, fetchQuarantineEnabled, judge, tagReport} from '../quarantine'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -88,6 +89,7 @@ export class PluginCommand extends JunitUploadCommand {
   }
 
   private xpathTags?: Record<string, string>
+  private invalidReports: string[] = []
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -130,6 +132,11 @@ export class PluginCommand extends JunitUploadCommand {
       reportTags,
       reportMeasures
     )
+    // With --test-exit-code the verdict comes first, so the failures it ignores are tagged in the uploaded reports.
+    const verdict =
+      this.testExitCode === undefined
+        ? undefined
+        : await this.testVerdict(this.testExitCode, payloads, spanTags, customTags)
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -171,6 +178,59 @@ export class PluginCommand extends JunitUploadCommand {
     if (!this.dryRun) {
       this.context.stdout.write(renderSuccessfulCommand(spanTags, this.service, this.config.env))
     }
+
+    if (verdict) {
+      for (const line of verdict.lines) {
+        this.context.stdout.write(`${line}\n`)
+      }
+
+      return verdict.exitCode
+    }
+  }
+
+  /**
+   * Exit 0 when the tests failed only because of quarantined or disabled tests, else keep the test command's exit code.
+   * See ../quarantine.ts: anything the reports cannot explain keeps it red. The runs of quarantined or disabled tests
+   * are tagged in the payloads, so Datadog shows them as the test libraries' runs.
+   */
+  private async testVerdict(
+    exitCode: number,
+    payloads: Payload[],
+    spanTags: SpanTags,
+    customTags: Record<string, string>
+  ): Promise<{exitCode: number; lines: string[]}> {
+    const reports = payloads.map((p) => ({path: p.xmlPath, xml: String(fs.readFileSync(p.xmlPath))}))
+    const request = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
+    const verdict = await judge({
+      exitCode,
+      testFailureExitCode: this.testFailureExitCode,
+      reports,
+      invalidReports: this.invalidReports,
+      git: effectiveGit(spanTags, customTags),
+      xpathTags: this.xpathTags,
+      customTags,
+      isEnabled: (git) =>
+        fetchQuarantineEnabled(request, {...git, service: this.service!, env: customTags.env ?? this.config.env}),
+      fetch: (git) => fetchExcusedTests(request, git),
+    })
+
+    for (const [i, payload] of payloads.entries()) {
+      const runs = verdict.toTag.flatMap((run) =>
+        run.report === payload.xmlPath && run.index !== undefined ? [{...run, index: run.index}] : []
+      )
+      if (runs.length) {
+        const tagged = tagReport(reports[i].xml, runs)
+        if (tagged === undefined) {
+          this.logger.warn(
+            `Could not tag the quarantined or disabled tests in ${payload.xmlPath}: uploading it as it is`
+          )
+        } else {
+          payload.xmlContent = tagged
+        }
+      }
+    }
+
+    return verdict
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
@@ -228,14 +288,19 @@ export class PluginCommand extends JunitUploadCommand {
       filterFile = (file) => upath.extname(file) === '.xml'
     }
 
+    const invalidReports: string[] = []
     const validUniqueFiles = findFiles(
       basePaths,
       searchFoldersRecursively,
       parsePathsList(this.ignoredPaths),
       filterFile,
       validateXml,
-      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+      (filePath: string, errorMessage: string) => {
+        invalidReports.push(filePath)
+        this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+      }
     )
+    this.invalidReports = invalidReports
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
       hostname: os.hostname(),
