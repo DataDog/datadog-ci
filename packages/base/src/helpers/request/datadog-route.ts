@@ -20,6 +20,7 @@ export const DATADOG_ROUTE_PATHS = [
   '/api/v2/dora/deployment',
   '/api/v2/git/repository/packfile',
   '/api/v2/git/repository/search_commits',
+  '/api/v2/libraries/tests/services/setting',
   '/api/v2/quality-gates/evaluate',
   '/api/unstable/sourcemaps/check_exists',
   '/api/v2/srcmap',

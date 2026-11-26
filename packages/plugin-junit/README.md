@@ -53,28 +53,38 @@ code=0; go test ./... || code=$?
 datadog-ci junit upload --service my-service --test-exit-code "$code" reports/
 ```
 
+On GitLab CI, run both in `script`, not the upload in `after_script`: GitLab ignores the exit code of `after_script`.
+
+The runs of quarantined and disabled tests are tagged `@test.test_management.is_quarantined:true` or
+`@test.test_management.is_test_disabled:true` in Datadog, as with the test libraries. Unlike with the test libraries,
+a disabled test still runs: its failure is ignored, but the test isn't skipped.
+
 The job stays red, with the reason printed, when:
+
 - the exit code is not the runner's "tests failed" code (`1` by default), because other codes mean the runner itself
   failed or the job was killed;
 - a report can't be read;
 - there is no failing testcase in the reports, for example after a crash or a build error;
 - the commit is unknown, or Flaky Test Management can't be reached;
+- quarantine is turned off for the repository in Flaky Test Management;
 - a failing testcase is not quarantined or disabled.
 
 For this to be safe:
+
 - **Pass your test runner's own exit code**, not one that includes other steps such as lint or coverage thresholds.
   Failures that aren't in the reports can't be checked.
 - **Don't stop at the first failure.** Without Maven's `--fail-at-end`, Gradle's `--continue`, or with `pytest -x`,
   `jest --bail` or `go test -failfast`, tests after a quarantined failure never run.
 - **Tell it your runner's "tests failed" exit code** when it isn't `1`:
 
-  | Runner | Setting |
-  |---|---|
-  | Most runners (Go, Maven, Gradle, pytest, Jest, Vitest, Playwright, RSpec, `dotnet test`) | nothing (`1`) |
-  | Bazel | `--test-failure-exit-code 3`, and upload with `--auto-discovery bazel-testlogs/` |
-  | cargo-nextest | `--test-failure-exit-code 100`, and run with `--no-fail-fast` |
-  | ctest | `--test-failure-exit-code 8` |
-  | Mocha, Cypress (they exit with the number of failures) | run them with `--posix-exit-codes` |
+  | Runner                                                                                   | Setting                                                                          |
+  | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+  | Most runners (Go, Maven, Gradle, pytest, Jest, Vitest, Playwright, RSpec, `dotnet test`) | nothing (`1`)                                                                    |
+  | Bazel                                                                                    | `--test-failure-exit-code 3`, and upload with `--auto-discovery bazel-testlogs/` |
+  | cargo-nextest                                                                            | `--test-failure-exit-code 100`, and run with `--no-fail-fast`                    |
+  | ctest                                                                                    | `--test-failure-exit-code 8`                                                     |
+  | Mocha, Cypress (they exit with the number of failures)                                   | run them with `--posix-exit-codes`                                               |
+
 - For Go reports, which carry the `go.version` property: a quarantined subtest also excuses its failing parent, and
   quarantining a parent covers its subtests. The last rerun of a test counts. A parent that also fails on its own
   assertion is not detected. A panic or timeout keeps the job red.

@@ -1,6 +1,18 @@
-import type {ExcusedTests, JudgeInput, TestRun} from '../quarantine'
+import type {ExcusedState, ExcusedTests, JudgeInput, TestRun} from '../quarantine'
 
-import {decide, failingRuns, fetchExcusedTests, judge, parseReport, UnreadableReportError} from '../quarantine'
+import {XMLValidator} from 'fast-xml-parser'
+
+import {
+  decide,
+  effectiveGit,
+  failingRuns,
+  fetchExcusedTests,
+  fetchQuarantineEnabled,
+  judge,
+  parseReport,
+  tagReport,
+  UnreadableReportError,
+} from '../quarantine'
 
 const AGENT_SUITE = 'github.com/DataDog/datadog-agent/test/new-e2e/tests/containers'
 const GO_PROPS = '<properties><property name="go.version" value="go1.24.1 linux/amd64"></property></properties>'
@@ -21,11 +33,11 @@ const goReport = `<?xml version="1.0" encoding="UTF-8"?>
   </testsuite>
 </testsuites>`
 
-const excusedOf = (entries: [string, string, string][]): ExcusedTests => {
+const excusedOf = (entries: ([string, string, string] | [string, string, string, ExcusedState])[]): ExcusedTests => {
   const excused: ExcusedTests = new Map()
-  for (const [module, suite, name] of entries) {
-    const bySuite = excused.get(module) ?? new Map<string, Set<string>>()
-    bySuite.set(suite, (bySuite.get(suite) ?? new Set()).add(name))
+  for (const [module, suite, name, state = 'quarantined'] of entries) {
+    const bySuite = excused.get(module) ?? new Map<string, Map<string, ExcusedState>>()
+    bySuite.set(suite, (bySuite.get(suite) ?? new Map()).set(name, state))
     excused.set(module, bySuite)
   }
 
@@ -237,6 +249,7 @@ describe('fetchExcusedTests', () => {
                     tests: {
                       q: {properties: {quarantined: true, disabled: false, attempt_to_fix: false}},
                       d: {properties: {quarantined: false, disabled: true, attempt_to_fix: false}},
+                      both: {properties: {quarantined: true, disabled: true}},
                       fix: {properties: {quarantined: false, disabled: false, attempt_to_fix: true}},
                       odd: {properties: {quarantined: 'true'}},
                     },
@@ -256,8 +269,12 @@ describe('fetchExcusedTests', () => {
       branch: 'main',
     })
 
-    expect([...excused.get('')!.get('S')!].sort()).toEqual(['d', 'q'])
-    expect([...excused.get('native-module')!.get('S')!]).toEqual(['n'])
+    expect([...excused.get('')!.get('S')!].sort()).toEqual([
+      ['both', 'disabled'],
+      ['d', 'disabled'],
+      ['q', 'quarantined'],
+    ])
+    expect([...excused.get('native-module')!.get('S')!]).toEqual([['n', 'quarantined']])
     const sent = request.mock.calls[0][0]
     expect(sent.url).toBe('/api/v2/test/libraries/test-management/tests')
     expect(sent.data.data.attributes).toEqual({
@@ -275,6 +292,7 @@ describe('judge', () => {
     reports: [{path: 'reports/r.xml', xml: goReport}],
     invalidReports: [],
     git: {repositoryUrl: 'https://github.com/DataDog/datadog-agent', sha: 'abc'},
+    isEnabled: async () => true,
     fetch: async () => excusedOf([['', AGENT_SUITE, 'TestKindSuite/TestContainerLifecycleEvents']]),
     ...overrides,
   })
@@ -282,9 +300,11 @@ describe('judge', () => {
   test('exits 0 when every failure is quarantined', async () => {
     const verdict = await judge(input())
     expect(verdict.exitCode).toBe(0)
-    expect(verdict.lines).toContain(
-      `Quarantined or disabled, ignored: ${AGENT_SUITE} TestKindSuite/TestContainerLifecycleEvents`
-    )
+    expect(verdict.lines).toContain(`Quarantined, ignored: ${AGENT_SUITE} TestKindSuite/TestContainerLifecycleEvents`)
+    // Only the quarantined subtest is tagged: its parent and the passing sibling aren't quarantined.
+    expect(verdict.toTag.map((r) => [r.name, r.index, r.state])).toEqual([
+      ['TestKindSuite/TestContainerLifecycleEvents', 1, 'quarantined'],
+    ])
   })
 
   test.each([
@@ -305,6 +325,8 @@ describe('judge', () => {
     ['an unknown commit', {git: {repositoryUrl: 'https://github.com/o/r'}}, 1],
     ['a failed fetch', {fetch: async () => Promise.reject(new Error('403'))}, 1],
     ['nothing quarantined', {fetch: async () => new Map()}, 1],
+    ['quarantine turned off for the repository', {isEnabled: async () => false}, 1],
+    ['a failed settings call', {isEnabled: async () => Promise.reject(new Error('500'))}, 1],
   ])('keeps the test exit code with %s', async (_, overrides: Partial<JudgeInput>, expected) => {
     const fetch = jest.fn(input().fetch)
     const verdict = await judge(input({fetch, ...overrides}))
@@ -321,6 +343,131 @@ describe('judge', () => {
     const fetch = jest.fn()
     await judge(input({exitCode: 2, fetch}))
     await judge(input({invalidReports: ['b.xml'], fetch}))
+    await judge(input({isEnabled: async () => false, fetch}))
     expect(fetch).not.toHaveBeenCalled()
+  })
+
+  test('tags every run of a quarantined or disabled test, also when another failure keeps the job red', async () => {
+    const xml = `<testsuite name="S">
+      <testcase name="flaky"><failure/></testcase>
+      <testcase name="broken"><failure/></testcase>
+      <testcase name="flaky"/>
+      <testcase name="off"><failure/></testcase>
+    </testsuite>`
+    const verdict = await judge(
+      input({
+        reports: [{path: 'r.xml', xml}],
+        fetch: async () =>
+          excusedOf([
+            ['', 'S', 'flaky'],
+            ['', 'S', 'off', 'disabled'],
+          ]),
+      })
+    )
+    expect(verdict.exitCode).toBe(1)
+    expect(verdict.lines).toContain('Disabled, ignored: S off')
+    expect(verdict.toTag.map((r) => [r.name, r.index, r.state, r.report])).toEqual([
+      ['flaky', 0, 'quarantined', 'r.xml'],
+      ['flaky', 2, 'quarantined', 'r.xml'],
+      ['off', 3, 'disabled', 'r.xml'],
+    ])
+  })
+
+  test('tags nothing when it never fetched the states', async () => {
+    expect((await judge(input({isEnabled: async () => false}))).toTag).toEqual([])
+  })
+})
+
+describe('parseReport positions', () => {
+  test('numbers testcases in document order, also across nested suites, and keeps their name attribute', () => {
+    const xml = `<testsuite name="A">
+      <testcase name="t1"/>
+      <!-- <testcase name="commented"/> -->
+      <testsuite name="B"><testcase name="t2"><failure/></testcase></testsuite>
+      <testcase name="a &amp; b"/>
+    </testsuite>`
+    expect(parseReport(xml, 'r.xml').map((r) => [r.name, r.index, r.rawName, r.report])).toEqual([
+      ['t1', 0, 't1', 'r.xml'],
+      ['a & b', 2, 'a & b', 'r.xml'],
+      ['t2', 1, 't2', 'r.xml'],
+    ])
+  })
+})
+
+describe('tagReport', () => {
+  const quarantinedTag =
+    '<properties><property name="dd_tags[test.test_management.is_quarantined]" value="true"></property></properties>'
+
+  test('adds the tag after the start tag, or opens a self-closing testcase, and changes nothing else', () => {
+    const xml = `<?xml version="1.0"?>
+<testsuite name="S">
+  <testcase name="one" time="1"><properties><property name="owner" value="x"/></properties><failure>boom</failure></testcase>
+  <testcase name='two' time="2"/>
+  <testcase name="three"></testcase>
+</testsuite>`
+    const tagged = tagReport(xml, [
+      {index: 0, rawName: 'one', state: 'quarantined'},
+      {index: 1, rawName: 'two', state: 'disabled'},
+    ])
+    expect(tagged).toBe(`<?xml version="1.0"?>
+<testsuite name="S">
+  <testcase name="one" time="1">${quarantinedTag}<properties><property name="owner" value="x"/></properties><failure>boom</failure></testcase>
+  <testcase name='two' time="2"><properties><property name="dd_tags[test.test_management.is_test_disabled]" value="true"></property></properties></testcase>
+  <testcase name="three"></testcase>
+</testsuite>`)
+    expect(XMLValidator.validate(tagged!)).toBe(true)
+  })
+
+  test('skips testcases in comments and CDATA, handles ">" in attributes and decodes names', () => {
+    const xml = `<testsuite name="S"><!-- <testcase name="c"/> --><system-out><![CDATA[<testcase name="d">]]></system-out>
+      <testcase name="a &gt; b" message="x > y"><failure/></testcase></testsuite>`
+    const tagged = tagReport(xml, [{index: 0, rawName: 'a > b', state: 'quarantined'}])
+    expect(tagged).toContain(`<testcase name="a &gt; b" message="x > y">${quarantinedTag}<failure/>`)
+    expect(tagged).toContain('<!-- <testcase name="c"/> -->')
+  })
+
+  test('leaves the report alone when a position does not point at the expected testcase', () => {
+    const xml = '<testsuite name="S"><testcase name="one"/><testcase name="two"/></testsuite>'
+    expect(tagReport(xml, [{index: 1, rawName: 'one', state: 'quarantined'}])).toBeUndefined()
+    expect(tagReport(xml, [{index: 5, rawName: 'one', state: 'quarantined'}])).toBeUndefined()
+  })
+
+  test('the positions parseReport gives point at the right testcases', () => {
+    const xml = `<testsuites><testsuite name="A"><testcase name="t1"/><testsuite name="B"><testcase name="t2"><failure/></testcase></testsuite><testcase name="t3"/></testsuite></testsuites>`
+    const t2 = parseReport(xml, 'r.xml').find((r) => r.name === 't2')!
+    const tagged = tagReport(xml, [{index: t2.index!, rawName: t2.rawName, state: 'quarantined'}])
+    expect(tagged).toContain(`<testcase name="t2">${quarantinedTag}<failure/>`)
+  })
+})
+
+describe('effectiveGit', () => {
+  test('--tags and DD_TAGS win over the CI and git metadata, as in the backend', () => {
+    expect(
+      effectiveGit(
+        {'git.repository_url': 'https://gitlab.example/o/r.git', 'git.commit.sha': 'abc', 'git.branch': 'main'},
+        {'git.repository_url': 'https://github.com/o/r'}
+      )
+    ).toEqual({repositoryUrl: 'https://github.com/o/r', sha: 'abc', branch: 'main', commitMessage: undefined})
+  })
+})
+
+describe('fetchQuarantineEnabled', () => {
+  test('reads test_management.enabled from the settings the test libraries use', async () => {
+    const request = jest.fn().mockResolvedValue({data: {data: {attributes: {test_management: {enabled: true}}}}})
+    expect(
+      await fetchQuarantineEnabled(request, {repositoryUrl: 'https://github.com/o/r', sha: 'abc', service: 'svc'})
+    ).toBe(true)
+    const sent = request.mock.calls[0][0]
+    expect(sent.url).toBe('/api/v2/libraries/tests/services/setting')
+    expect(sent.data.data.attributes).toMatchObject({
+      service: 'svc',
+      env: 'none',
+      repository_url: 'https://github.com/o/r',
+      sha: 'abc',
+      test_level: 'test',
+    })
+
+    request.mockResolvedValue({data: {data: {attributes: {}}}})
+    expect(await fetchQuarantineEnabled(request, {repositoryUrl: 'r', sha: 's', service: 'svc'})).toBe(false)
   })
 })

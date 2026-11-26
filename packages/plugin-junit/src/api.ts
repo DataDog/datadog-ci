@@ -1,4 +1,5 @@
 import fs from 'fs'
+import {Readable} from 'stream'
 import {createGzip} from 'zlib'
 
 import type {Payload} from './interfaces'
@@ -50,7 +51,9 @@ export const uploadJUnitXML =
 
     form.append('event', JSON.stringify(custom), {filename: 'event.json'})
 
-    form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
+    const report =
+      jUnitXML.xmlContent === undefined ? fs.createReadStream(jUnitXML.xmlPath) : Readable.from([jUnitXML.xmlContent])
+    form.append('junit_xml_report_file', report.pipe(createGzip()), {
       filename: `${uuidv4()}.xml.gz`,
     })
 

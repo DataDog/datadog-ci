@@ -23,13 +23,25 @@ export interface TestRun {
   go: boolean
   /** A Go failure whose output shows the test binary died (panic or timeout), so later tests may not have run. */
   aborted: boolean
+  /** The report file, and the testcase's position in it in document order: where to tag it before the upload. */
+  report?: string
+  index?: number
+  /** The testcase's own name attribute, to check that the position still points at it when tagging. */
+  rawName?: string
 }
 
-/** module -> suite -> names of quarantined or disabled tests. JUnit tests normally sit under the empty module. */
-export type ExcusedTests = Map<string, Map<string, Set<string>>>
+/** The Flaky Test Management state that excuses a failure. */
+export type ExcusedState = 'quarantined' | 'disabled'
+
+/** module -> suite -> test name -> state of quarantined or disabled tests. JUnit tests normally sit under the empty module. */
+export type ExcusedTests = Map<string, Map<string, Map<string, ExcusedState>>>
+
+export interface ExcusedRun extends TestRun {
+  state: ExcusedState
+}
 
 export interface Verdict {
-  excused: TestRun[]
+  excused: ExcusedRun[]
   real: TestRun[]
 }
 
@@ -46,15 +58,33 @@ const PROPERTY_TAG = /^dd_tags\[(.+)\]$/
 const XPATH = /^\/testcase(\/\.\.)?(?:\/@([^/]+)|\/(?:properties)?\/property\[@name='(.+)'\])$/
 const GO_ABORT = /^panic: |\btest timed out after\b/m
 
+// Set on each parsed <testcase>: its position among the report's <testcase> start tags, in document order.
+const POSITION = '@_\u0000position'
+
 // processEntities stays off (no DOCTYPE expansion); the five predefined entities and character references are
 // decoded by hand, like the backend's encoding/xml does. trimValues is off because the backend doesn't trim.
-const parser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: '@_',
-  processEntities: false,
-  trimValues: false,
-  isArray: (name) => name === 'testsuite' || name === 'testcase' || name === 'property',
-})
+const newParser = () => {
+  let testcases = 0
+
+  return new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: '@_',
+    processEntities: false,
+    trimValues: false,
+    isArray: (name) => name === 'testsuite' || name === 'testcase' || name === 'property',
+    // Called for each element in document order, which the parsed object doesn't keep across element names.
+    updateTag: (tagName, _jPath, attributes) => {
+      if (tagName === 'testcase') {
+        const position = testcases++
+        if (attributes) {
+          attributes[POSITION] = String(position)
+        }
+      }
+
+      return tagName
+    },
+  })
+}
 
 const ENTITIES: Record<string, string> = {lt: '<', gt: '>', amp: '&', apos: "'", quot: '"'}
 const decode = (value: unknown): string =>
@@ -157,6 +187,7 @@ export const parseReport = (
   const visitTestcase = (testcase: XmlNode, suite: Suite | undefined) => {
     const body = failureBody(testcase)
     const go = suite?.go ?? false
+    const position = testcase[POSITION] as string | undefined
     runs.push({
       // A testcase outside any <testsuite> can't be matched: an empty suite keeps it unexcused.
       suite: suite ? resolveTag(SUITE_TAG, suite.fullName, testcase, suite.node, xpathTags, customTags) : '',
@@ -165,6 +196,9 @@ export const parseReport = (
       failed: body !== undefined,
       go,
       aborted: go && body !== undefined && GO_ABORT.test(body),
+      report: reportPath,
+      index: position === undefined ? undefined : Number(position),
+      rawName: attribute(testcase, 'name'),
     })
   }
 
@@ -196,7 +230,7 @@ export const parseReport = (
       }
     }
   }
-  visit(parser.parse(xml), undefined)
+  visit(newParser().parse(xml), undefined)
 
   return runs
 }
@@ -218,14 +252,64 @@ export const failingRuns = (runs: TestRun[]): TestRun[] => {
   return [...failing, ...[...lastGoAttempt.values()].filter((run) => run.failed)]
 }
 
+/** The git values the uploaded tests get: --tags and DD_TAGS win over the CI and git metadata, as in the backend. */
+export const effectiveGit = (
+  spanTags: Record<string, string | undefined>,
+  customTags: Record<string, string>
+): {repositoryUrl?: string; sha?: string; branch?: string; commitMessage?: string} => {
+  const value = (tag: string) => customTags[tag] ?? spanTags[tag]
+
+  return {
+    repositoryUrl: value('git.repository_url'),
+    sha: value('git.commit.sha'),
+    branch: value('git.branch'),
+    commitMessage: value('git.commit.message'),
+  }
+}
+
+type Git = {repositoryUrl: string; sha: string; branch?: string; commitMessage?: string}
+
+/**
+ * Whether Flaky Test Management applies quarantine for this repository: the `test_management.enabled` setting the
+ * test libraries read before a run. It reflects the repository's Quarantine setting.
+ */
+export const fetchQuarantineEnabled = async (
+  request: RequestBuilder,
+  attributes: Git & {service: string; env?: string}
+): Promise<boolean> => {
+  const response = await retryRequest(
+    () =>
+      request({
+        method: 'POST',
+        url: datadogRoute('/api/v2/libraries/tests/services/setting'),
+        timeout: 20_000,
+        data: {
+          data: {
+            id: '1',
+            type: 'ci_app_test_service_libraries_settings',
+            attributes: {
+              service: attributes.service,
+              env: attributes.env ?? 'none',
+              repository_url: attributes.repositoryUrl,
+              sha: attributes.sha,
+              branch: attributes.branch,
+              configurations: {},
+              test_level: 'test',
+            },
+          },
+        },
+      }),
+    {retries: 2}
+  )
+
+  return response.data?.data?.attributes?.test_management?.enabled === true
+}
+
 /**
  * Asks Datadog which tests are quarantined or disabled, with the API-key endpoint the test libraries use.
  * No module is sent: JUnit tests have no module and come back under `modules[""]`.
  */
-export const fetchExcusedTests = async (
-  request: RequestBuilder,
-  attributes: {repositoryUrl: string; sha: string; branch?: string; commitMessage?: string}
-): Promise<ExcusedTests> => {
+export const fetchExcusedTests = async (request: RequestBuilder, attributes: Git): Promise<ExcusedTests> => {
   const response = await retryRequest(
     () =>
       request({
@@ -251,9 +335,12 @@ export const fetchExcusedTests = async (
   for (const [module, {suites}] of Object.entries<XmlNode>(response.data?.data?.attributes?.modules ?? {})) {
     for (const [suite, {tests}] of Object.entries<XmlNode>(suites ?? {})) {
       for (const [name, {properties: props}] of Object.entries<XmlNode>(tests ?? {})) {
-        if (props?.quarantined === true || props?.disabled === true) {
-          const bySuite = excused.get(module) ?? new Map<string, Set<string>>()
-          bySuite.set(suite, (bySuite.get(suite) ?? new Set()).add(name))
+        // A disabled test is skipped by the test libraries, so its state wins.
+        const state: ExcusedState | undefined =
+          props?.disabled === true ? 'disabled' : props?.quarantined === true ? 'quarantined' : undefined
+        if (state) {
+          const bySuite = excused.get(module) ?? new Map<string, Map<string, ExcusedState>>()
+          bySuite.set(suite, (bySuite.get(suite) ?? new Map()).set(name, state))
           excused.set(module, bySuite)
         }
       }
@@ -267,19 +354,36 @@ export const fetchExcusedTests = async (
 const testAndAncestors = (name: string): string[] =>
   name.split('/').map((_, i, parts) => parts.slice(0, parts.length - i).join('/'))
 
-const isExcused = (run: TestRun, excused: ExcusedTests): boolean => {
+/** The state that excuses this run, if any. */
+export const excusedState = (run: TestRun, excused: ExcusedTests): ExcusedState | undefined => {
   const names = run.go ? testAndAncestors(run.name) : [run.name]
-  const has = (module: string, suite: string) => names.some((n) => excused.get(module)?.get(suite)?.has(n))
+  const stateIn = (module: string, suite: string) => {
+    for (const name of names) {
+      const state = excused.get(module)?.get(suite)?.get(name)
+      if (state) {
+        return state
+      }
+    }
+  }
   // JUnit entries: the empty module, or a report file name. Entries added through the public API from a JUnit event
   // keep that event's file name as module, so they must match from any report.
   // ponytail: the *.xml modules are only needed until the API stops storing a file name as module for JUnit tests.
-  if ([...excused.keys()].some((module) => (module === '' || module.endsWith('.xml')) && has(module, run.suite))) {
-    return true
+  for (const module of excused.keys()) {
+    const state = module === '' || module.endsWith('.xml') ? stateIn(module, run.suite) : undefined
+    if (state) {
+      return state
+    }
   }
   // dd-trace-go keys the same test by module = import path (the JUnit suite) and suite = source file.
   // ponytail: Go only; other native identities aren't mapped to JUnit ones.
-
-  return run.go && [...(excused.get(run.suite)?.keys() ?? [])].some((suite) => has(run.suite, suite))
+  if (run.go) {
+    for (const suite of excused.get(run.suite)?.keys() ?? []) {
+      const state = stateIn(run.suite, suite)
+      if (state) {
+        return state
+      }
+    }
+  }
 }
 
 /**
@@ -293,10 +397,64 @@ export const decide = (failing: TestRun[], excused: ExcusedTests): Verdict => {
     run.go && unique.some((other) => other.go && other.suite === run.suite && other.name.startsWith(`${run.name}/`))
   const verdict: Verdict = {excused: [], real: []}
   for (const run of unique.filter((r) => !isParent(r))) {
-    ;(!run.aborted && isExcused(run, excused) ? verdict.excused : verdict.real).push(run)
+    const state = run.aborted ? undefined : excusedState(run, excused)
+    if (state) {
+      verdict.excused.push({...run, state})
+    } else {
+      verdict.real.push(run)
+    }
   }
 
   return verdict
+}
+
+const TAG_OF_STATE: Record<ExcusedState, string> = {
+  quarantined: 'test.test_management.is_quarantined',
+  disabled: 'test.test_management.is_test_disabled',
+}
+
+// A <testcase> start tag, with its attributes and whether it closes itself. Comments, CDATA sections and processing
+// instructions are matched only to be skipped, so a "<testcase" inside them isn't counted.
+const TESTCASE_START =
+  /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|<\?[\s\S]*?\?>|<testcase\b((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?)>/g
+const NAME_ATTRIBUTE = /(?:^|\s)name\s*=\s*(?:"([^"]*)"|'([^']*)')/i
+
+/**
+ * Adds the Flaky Test Management tags to the given testcases, found by position, as `dd_tags[...]` properties: the
+ * backend then shows those runs as quarantined or disabled, as the test libraries do. Nothing else in the report
+ * changes. Returns undefined, so the report is uploaded as it is, when a position doesn't point at the expected
+ * testcase.
+ */
+export const tagReport = (
+  xml: string,
+  runs: {index: number; rawName?: string; state: ExcusedState}[]
+): string | undefined => {
+  const wanted = new Map(runs.map((run) => [run.index, run]))
+  let position = -1
+  let tagged = 0
+  let mismatch = false
+  const result = xml.replace(TESTCASE_START, (match: string, attributes?: string, selfClosing?: string) => {
+    if (attributes === undefined) {
+      return match
+    }
+    position++
+    const run = wanted.get(position)
+    if (!run) {
+      return match
+    }
+    const name = NAME_ATTRIBUTE.exec(attributes)
+    if ((name ? decode(name[1] ?? name[2]) : undefined) !== run.rawName) {
+      mismatch = true
+
+      return match
+    }
+    tagged++
+    const tag = `<properties><property name="dd_tags[${TAG_OF_STATE[run.state]}]" value="true"></property></properties>`
+
+    return selfClosing ? `<testcase${attributes}>${tag}</testcase>` : `${match}${tag}`
+  })
+
+  return mismatch || tagged !== wanted.size ? undefined : result
 }
 
 export interface JudgeInput {
@@ -312,18 +470,28 @@ export interface JudgeInput {
   git: {repositoryUrl?: string; sha?: string; branch?: string; commitMessage?: string}
   xpathTags?: Record<string, string>
   customTags?: Record<string, string>
-  fetch: (git: {repositoryUrl: string; sha: string; branch?: string; commitMessage?: string}) => Promise<ExcusedTests>
+  /** Whether quarantine is on for the repository, as the test libraries see it. */
+  isEnabled: (git: Git) => Promise<boolean>
+  fetch: (git: Git) => Promise<ExcusedTests>
+}
+
+export interface JudgeResult {
+  exitCode: number
+  lines: string[]
+  /** Runs of quarantined or disabled tests, failing or not, to tag in the uploaded reports. */
+  toTag: ExcusedRun[]
 }
 
 /** The exit code to use, and what to print. Anything the reports cannot explain keeps the test command's code. */
-export const judge = async (input: JudgeInput): Promise<{exitCode: number; lines: string[]}> => {
+export const judge = async (input: JudgeInput): Promise<JudgeResult> => {
   const {exitCode} = input
   if (exitCode === 0) {
-    return {exitCode, lines: []}
+    return {exitCode, lines: [], toTag: []}
   }
-  const keep = (reason: string, details: string[] = []) => ({
+  const keep = (reason: string, details: string[] = [], tagged: ExcusedRun[] = []) => ({
     exitCode,
     lines: [...details, `Test exit code ${exitCode} kept: ${reason}`],
+    toTag: tagged,
   })
 
   const testFailureExitCode = input.testFailureExitCode ?? DEFAULT_TEST_FAILURE_EXIT_CODE
@@ -349,16 +517,32 @@ export const judge = async (input: JudgeInput): Promise<{exitCode: number; lines
   if (!repositoryUrl || !sha) {
     return keep('the git repository URL or commit SHA is unknown')
   }
+  const git = {repositoryUrl, sha, branch, commitMessage}
+
+  try {
+    if (!(await input.isEnabled(git))) {
+      return keep('quarantine is turned off for this repository in Flaky Test Management')
+    }
+  } catch (error) {
+    return keep(`could not read the Flaky Test Management settings (${(error as Error).message})`)
+  }
 
   let excusedTests: ExcusedTests
   try {
-    excusedTests = await input.fetch({repositoryUrl, sha, branch, commitMessage})
+    excusedTests = await input.fetch(git)
   } catch (error) {
     return keep(`could not fetch Flaky Test Management states (${(error as Error).message})`)
   }
 
+  const toTag = runs.flatMap((run) => {
+    const state = run.aborted ? undefined : excusedState(run, excusedTests)
+
+    return state ? [{...run, state}] : []
+  })
   const {excused, real} = decide(failing, excusedTests)
-  const lines = excused.map((t) => `Quarantined or disabled, ignored: ${t.suite} ${t.name}`)
+  const lines = excused.map(
+    (t) => `${t.state === 'disabled' ? 'Disabled' : 'Quarantined'}, ignored: ${t.suite} ${t.name}`
+  )
   if (real.length) {
     for (const t of real) {
       lines.push(
@@ -366,9 +550,9 @@ export const judge = async (input: JudgeInput): Promise<{exitCode: number; lines
       )
     }
 
-    return keep(`${real.length} failing test(s) are not quarantined or disabled, or aborted the run`, lines)
+    return keep(`${real.length} failing test(s) are not quarantined or disabled, or aborted the run`, lines, toTag)
   }
   lines.push(`All ${excused.length} failing test(s) are quarantined or disabled: exiting 0 instead of ${exitCode}`)
 
-  return {exitCode: 0, lines}
+  return {exitCode: 0, lines, toTag}
 }

@@ -10,6 +10,8 @@ export interface Payload {
   reportTags: Record<string, string>
   reportMeasures: Record<string, number>
   xmlPath: string
+  /** The report to send instead of the file's content: the file with Flaky Test Management tags added. */
+  xmlContent?: string
   xpathTags?: Record<string, string>
 }
 
