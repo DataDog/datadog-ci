@@ -1579,6 +1579,26 @@ describe('isGithubWindowsRunner', () => {
   })
 })
 
+describe('GitLab PR target branch names', () => {
+  test.each([
+    ['refs/heads/main', 'main'],
+    ['release/tags/v1', 'release/tags/v1'],
+    ['release/origin/v1', 'release/origin/v1'],
+    ['refs/heads/release/tags/v1', 'release/tags/v1'],
+    ['refs/heads/release/origin/v1', 'release/origin/v1'],
+    ['feature/refs/heads/nested', 'feature/refs/heads/nested'],
+    ['origin/main', 'origin/main'],
+    ['tags/v1', 'tags/v1'],
+  ])('preserves branch components in %s', (targetBranch, expected) => {
+    process.env = {
+      GITLAB_CI: 'true',
+      CI_MERGE_REQUEST_IID: '42',
+      CI_MERGE_REQUEST_TARGET_BRANCH_NAME: targetBranch,
+    }
+    expect(getCISpanTags()?.[GIT_PULL_REQUEST_BASE_BRANCH]).toBe(expected)
+  })
+})
+
 describe('Bitbucket PR pipeline tags', () => {
   const BASE_ENV = {
     BITBUCKET_BRANCH: 'feature/my-branch',
