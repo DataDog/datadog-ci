@@ -54,8 +54,9 @@ describe('library', () => {
 
         return new CommitInfo('hash', 'url', ['file1', 'file2'])
       })
-      jest.spyOn(gitdb, 'uploadToGitDB').mockImplementation((log, req, simplegit, dryRun, repositoryURL) => {
+      jest.spyOn(gitdb, 'uploadToGitDB').mockImplementation((log, req, simplegit, dryRun, repositoryURL, commitSha) => {
         expect(repositoryURL).toEqual('url')
+        expect(commitSha).toBe('hash')
         expect(dryRun).toBe(false)
 
         return Promise.resolve()
@@ -82,8 +83,9 @@ describe('library', () => {
 
         return new CommitInfo('hash', 'customUrl', ['file1', 'file2'])
       })
-      jest.spyOn(gitdb, 'uploadToGitDB').mockImplementation((log, req, simplegit, dryRun, repositoryURL) => {
+      jest.spyOn(gitdb, 'uploadToGitDB').mockImplementation((log, req, simplegit, dryRun, repositoryURL, commitSha) => {
         expect(repositoryURL).toEqual('customUrl')
+        expect(commitSha).toBe('hash')
         expect(dryRun).toBe(false)
 
         return Promise.resolve()

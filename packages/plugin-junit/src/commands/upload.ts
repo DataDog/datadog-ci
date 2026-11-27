@@ -19,7 +19,7 @@ import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
-import {GIT_REPOSITORY_URL, parseTags, parseMetrics} from '@datadog/datadog-ci-base/helpers/tags'
+import {GIT_REPOSITORY_URL, GIT_SHA, parseTags, parseMetrics} from '@datadog/datadog-ci-base/helpers/tags'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
@@ -157,6 +157,7 @@ export class PluginCommand extends JunitUploadCommand {
             elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
               requestBuilder,
               repositoryURL: spanTags[GIT_REPOSITORY_URL],
+              commitSha: spanTags[GIT_SHA],
             })
           }
           this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
@@ -175,13 +176,14 @@ export class PluginCommand extends JunitUploadCommand {
     }
   }
 
-  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder; repositoryURL?: string}) {
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder; repositoryURL?: string; commitSha?: string}) {
     await uploadToGitDB(
       this.logger,
       opts.requestBuilder,
       await newSimpleGit(),
       this.dryRun,
-      this.gitRepositoryURL || opts.repositoryURL
+      this.gitRepositoryURL || opts.repositoryURL,
+      opts.commitSha
     )
   }
 

@@ -16,6 +16,8 @@ import {isRequestError} from '../../helpers/request'
 import type {RequestResponse} from '../../helpers/request'
 import {datadogRoute} from '../../helpers/request/datadog-route'
 import {retryRequest} from '../../helpers/retry'
+import {GIT_SHA} from '../../helpers/tags'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 const API_TIMEOUT = 15000
 
@@ -45,11 +47,12 @@ const getCommitsToInclude = async (
   log: Logger,
   request: RequestBuilder,
   git: simpleGit.SimpleGit,
-  repositoryURL: string
+  repositoryURL: string,
+  commitSha?: string
 ) => {
   let latestCommits: string[]
   try {
-    latestCommits = await getLatestLocalCommits(git)
+    latestCommits = await getLatestLocalCommits(git, commitSha)
     if (latestCommits.length === 0) {
       log.debug('No local commits found.')
 
@@ -77,7 +80,7 @@ const getCommitsToInclude = async (
   return {
     commitsToInclude: latestCommits.filter((x) => !commitsToExclude.includes(x)),
     commitsToExclude,
-    headCommit: latestCommits[0],
+    headCommit: commitSha || latestCommits[0],
   }
 }
 
@@ -86,8 +89,12 @@ export const uploadToGitDB = async (
   request: RequestBuilder,
   git: simpleGit.SimpleGit,
   dryRun: boolean,
-  repositoryURL?: string
+  repositoryURL?: string,
+  commitSha = getUserGitSpanTags()[GIT_SHA]
 ) => {
+  if (commitSha !== undefined) {
+    commitSha = validateCommit(commitSha.toLowerCase())
+  }
   let repoURL
   if (repositoryURL) {
     repoURL = repositoryURL
@@ -105,7 +112,7 @@ export const uploadToGitDB = async (
   let commitsToExclude: string[]
   let headCommit: string
 
-  const getCommitsBeforeUnshallowing = await getCommitsToInclude(log, request, git, repoURL)
+  const getCommitsBeforeUnshallowing = await getCommitsToInclude(log, request, git, repoURL, commitSha)
 
   commitsToInclude = getCommitsBeforeUnshallowing.commitsToInclude
   commitsToExclude = getCommitsBeforeUnshallowing.commitsToExclude
@@ -118,11 +125,14 @@ export const uploadToGitDB = async (
   // If there are commits to include and the repository is shallow, we need to repeat the process after unshallowing
   const isShallow = await isShallowRepository(git)
   if (isShallow) {
-    await unshallowRepository(log, git)
-    const getCommitsAfterUnshallowing = await getCommitsToInclude(log, request, git, repoURL)
+    await unshallowRepository(log, git, commitSha)
+    const getCommitsAfterUnshallowing = await getCommitsToInclude(log, request, git, repoURL, commitSha)
     commitsToInclude = getCommitsAfterUnshallowing.commitsToInclude
     commitsToExclude = getCommitsAfterUnshallowing.commitsToExclude
-    headCommit = getCommitsBeforeUnshallowing.headCommit
+    headCommit = getCommitsAfterUnshallowing.headCommit
+    if (commitsToInclude.length === 0) {
+      return
+    }
   }
 
   // Get the list of all objects (commits, trees) to upload. This list can be quite long
@@ -130,6 +140,19 @@ export const uploadToGitDB = async (
   let objectsToUpload
   try {
     objectsToUpload = await getObjectsToUpload(git, commitsToInclude, commitsToExclude)
+    if (commitSha && commitsToInclude.includes(commitSha)) {
+      // The selected tip can predate the history window (or have a skewed timestamp).
+      const selectedObjects = await git.raw([
+        'rev-list',
+        '--objects',
+        '--no-object-names',
+        '--no-walk=unsorted',
+        '--filter=blob:none',
+        commitSha,
+        '--',
+      ])
+      objectsToUpload = [...new Set([...objectsToUpload, ...selectedObjects.split('\n').filter(Boolean)])]
+    }
     log.debug(`${objectsToUpload.length} objects to upload.`)
   } catch (err) {
     log.warn(`Failed getting objects to upload: ${err}`)
@@ -165,11 +188,23 @@ export const uploadToGitDB = async (
   }
 }
 
-const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
+const getLatestLocalCommits = async (git: simpleGit.SimpleGit, commitSha?: string) => {
   // we add some boundaries to avoid retrieving ALL commits here.
-  const logResult = await git.log([`-n ${MAX_HISTORY.maxCommits}`, `--since="${MAX_HISTORY.oldestCommits}"`])
+  const logResult = await git.log([
+    `-n ${MAX_HISTORY.maxCommits}`,
+    `--since="${MAX_HISTORY.oldestCommits}"`,
+    ...(commitSha ? [commitSha, '--'] : []),
+  ])
+  const commits = logResult.all.map((c) => c.hash)
+  if (commitSha && !commits.includes(commitSha)) {
+    // Verify an empty/date-filtered walk did not select a non-commit object.
+    if ((await git.revparse(['--verify', `${commitSha}^{commit}`])).trim() !== commitSha) {
+      throw new Error('Selected Git commit is unavailable')
+    }
+    commits.unshift(commitSha)
+  }
 
-  return logResult.all.map((c) => c.hash)
+  return commits.slice(0, MAX_HISTORY.maxCommits)
 }
 
 const isShallowRepository = async (git: simpleGit.SimpleGit) => {
@@ -181,13 +216,15 @@ const isShallowRepository = async (git: simpleGit.SimpleGit) => {
   return (await git.revparse('--is-shallow-repository')) === 'true'
 }
 
-const unshallowRepository = async (log: Logger, git: simpleGit.SimpleGit) => {
+const unshallowRepository = async (log: Logger, git: simpleGit.SimpleGit, commitSha?: string) => {
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
 
-  const [headCommit, remoteName] = await Promise.all([git.revparse('HEAD'), getDefaultRemoteName(git)])
+  const [headCommit, remoteName] = await Promise.all([commitSha || git.revparse('HEAD'), getDefaultRemoteName(git)])
   const baseCommandLogLine = `[unshallow] Running git fetch --shallow-since="${MAX_HISTORY.oldestCommits}" --update-shallow --filter=blob:none --recurse-submodules=no`
 
-  log.info(`${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`)
+  log.info(
+    `${baseCommandLogLine} $(git config --default origin --get clone.defaultRemoteName) ${commitSha || '$(git rev-parse HEAD)'}`
+  )
 
   try {
     await git.fetch([

@@ -7,6 +7,8 @@ import {isCI} from '../../helpers/ci'
 import {DEFAULT_GIT_OPTIONS} from '../../helpers/git/default-options'
 import {gitRemote} from '../../helpers/git/get-git-data'
 import {withGitRepositoryEnvironment} from '../../helpers/git/repository-environment'
+import {GIT_SHA} from '../../helpers/tags'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 import {CommitInfo} from './interfaces'
 
@@ -55,17 +57,22 @@ export const stripCredentials = (remote: string) => {
 }
 
 // Returns the hash of the current repository.
-const gitHash = async (git: simpleGit.SimpleGit): Promise<string> => git.revparse('HEAD')
+const gitHash = async (git: simpleGit.SimpleGit, commitSha?: string): Promise<string> =>
+  commitSha ? git.revparse(['--verify', `${commitSha}^{commit}`]) : git.revparse('HEAD')
 
 // Returns the tracked files of the current repository.
-export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[]> => {
-  const files = await git.raw('ls-files')
+export const gitTrackedFiles = async (git: simpleGit.SimpleGit, commitSha?: string): Promise<string[]> => {
+  const files = await git.raw(commitSha ? ['ls-tree', '-r', '--name-only', commitSha, '--'] : 'ls-files')
 
   return files.split(/\r\n|\r|\n/).filter((s) => s !== '')
 }
 
 // Returns the current hash, remote URL and tracked files paths.
 export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: string): Promise<CommitInfo> => {
+  const commitSha = getUserGitSpanTags()[GIT_SHA]
+  if (commitSha !== undefined && !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(commitSha)) {
+    throw new Error(`Invalid commit format: ${commitSha}`)
+  }
   // Invoke git commands to retrieve the remote, hash and tracked files.
   // We're using Promise.all instead of Promise.allSettled since we want to fail early if
   // any of the promises fails.
@@ -73,10 +80,14 @@ export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: st
   let hash: string
   let trackedFiles: string[]
   if (repositoryURL) {
-    ;[hash, trackedFiles] = await Promise.all([gitHash(git), gitTrackedFiles(git)])
+    ;[hash, trackedFiles] = await Promise.all([gitHash(git, commitSha), gitTrackedFiles(git, commitSha)])
     remote = repositoryURL
   } else {
-    ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
+    ;[remote, hash, trackedFiles] = await Promise.all([
+      gitRemote(git),
+      gitHash(git, commitSha),
+      gitTrackedFiles(git, commitSha),
+    ])
   }
 
   return new CommitInfo(hash, remote, trackedFiles)

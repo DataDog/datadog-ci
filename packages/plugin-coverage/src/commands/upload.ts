@@ -144,6 +144,7 @@ export class PluginCommand extends CoverageUploadCommand {
             elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
               requestBuilder,
               repositoryURL: spanTags[GIT_REPOSITORY_URL],
+              commitSha: spanTags[GIT_SHA],
             })
           }
           this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
@@ -160,7 +161,7 @@ export class PluginCommand extends CoverageUploadCommand {
     await this.uploadCodeCoverageReports(spanTags)
   }
 
-  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder; repositoryURL?: string}) {
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder; repositoryURL?: string; commitSha?: string}) {
     if (!this.git) {
       return
     }
@@ -170,7 +171,8 @@ export class PluginCommand extends CoverageUploadCommand {
       opts.requestBuilder,
       this.git,
       this.dryRun,
-      this.gitRepositoryURL || opts.repositoryURL
+      this.gitRepositoryURL || opts.repositoryURL,
+      opts.commitSha
     )
   }
 
