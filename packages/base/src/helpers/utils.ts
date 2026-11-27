@@ -292,6 +292,10 @@ export const normalizeRef = (ref: string | undefined) => {
     return ref
   }
 
+  if (ref.startsWith('refs/tags/')) {
+    return ref.slice('refs/tags/'.length)
+  }
+
   return ref.replace(/origin\/|refs\/heads\/|tags\//gm, '')
 }
 

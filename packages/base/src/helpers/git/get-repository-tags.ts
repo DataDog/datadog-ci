@@ -13,9 +13,10 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
-import {normalizeGitSha} from '../utils'
+import {filterSensitiveInfoFromRepository, normalizeGitSha} from '../utils'
 
 import {getGitMetadata, getGitRoot} from './format-git-span-data'
 
@@ -30,6 +31,16 @@ const canonicalPath = (value: string) => {
 }
 
 const sameSha = (left?: string, right?: string) => !!left && !!right && normalizeGitSha(left) === normalizeGitSha(right)
+
+const sameRepository = (left?: string, right?: string) => {
+  const normalize = (value?: string) => {
+    const remote = filterSensitiveInfoFromRepository(value)
+
+    return remote && /^https?:\/\//.test(remote) ? remote.replace(/(?:\.git)?\/?$/, '') : remote
+  }
+
+  return !!left && !!right && normalize(left) === normalize(right)
+}
 
 // A readable checkout supplies Git identity as one source; CI still supplies workflow relationships.
 export const getRepositoryTags = async (
@@ -47,24 +58,27 @@ export const getRepositoryTags = async (
     const workspace = provider[CI_WORKSPACE_PATH]
     const root = workspace ? await getGitRoot(repositoryPath) : undefined
     const matchingRoot = !!workspace && !!root && canonicalPath(workspace) === canonicalPath(root)
+    const matchingRepository =
+      matchingRoot || sameRepository(checkout[GIT_REPOSITORY_URL], provider[GIT_REPOSITORY_URL])
     const providerRevisions = [provider[GIT_SHA], provider[CI_GIT_MERGE_COMMIT_SHA], provider[GIT_HEAD_SHA]].filter(
       Boolean
     )
     const matchingRevision =
       providerRevisions.length === 0 || providerRevisions.some((sha) => sameSha(sha, selectedSha))
-    const relatedCheckout = (!workspace || !root || matchingRoot) && matchingRevision
+    const relatedCheckout = (!workspace || !root || matchingRepository) && matchingRevision
     selectedProvider = Object.fromEntries(
       Object.entries(provider).filter(([key]) => {
-        const relationship = key.startsWith('git.commit.head.') || key.startsWith('git.pull_request.')
+        const relationship =
+          key === PR_NUMBER || key.startsWith('git.commit.head.') || key.startsWith('git.pull_request.')
 
-        return !key.startsWith('git.') || (relationship && relatedCheckout)
+        return relationship ? relatedCheckout : !key.startsWith('git.')
       })
     )
 
     if (
-      matchingRoot &&
+      matchingRepository &&
       !checkout[GIT_BRANCH] &&
-      [provider[GIT_SHA], provider[CI_GIT_MERGE_COMMIT_SHA]].some((sha) => sameSha(sha, checkout[GIT_SHA]))
+      providerRevisions.some((sha) => sameSha(sha, checkout[GIT_SHA]))
     ) {
       // Matched detached CI checkouts may use an internal mirror; retain their canonical CI identity.
       for (const key of [GIT_BRANCH, GIT_TAG, GIT_REPOSITORY_URL] as const) {

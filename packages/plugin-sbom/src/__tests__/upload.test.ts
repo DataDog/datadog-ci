@@ -1,4 +1,5 @@
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as gitMetadata from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import * as requestModule from '@datadog/datadog-ci-base/helpers/request'
 
 import {PluginCommand as SbomUploadCommand} from '../commands/upload'
@@ -30,6 +31,48 @@ const createSimpleMockContext = () => {
 }
 
 describe('execute', () => {
+  test.each([undefined, 'v1.2.3'])('uploads a detached checkout without inventing a branch (tag: %s)', async (tag) => {
+    const originalEnv = process.env
+    const sha = 'a'.repeat(40)
+    process.env = {
+      DD_API_KEY: 'fake-api-key',
+      DD_APP_KEY: 'fake-app-key',
+      GITHUB_ACTIONS: 'true',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REPOSITORY: 'example/repository',
+      GITHUB_SHA: sha,
+      GITHUB_REF: tag ? `refs/tags/${tag}` : undefined,
+      GITHUB_WORKSPACE: '/workspace',
+    }
+    jest.spyOn(gitMetadata, 'getGitRoot').mockResolvedValue('/workspace')
+    jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValue({
+      'git.commit.sha': sha,
+      'git.repository_url': 'https://github.com/example/repository.git',
+      'git.commit.author.name': 'Author',
+      'git.commit.author.email': 'author@example.com',
+      'git.commit.committer.name': 'Committer',
+      'git.commit.committer.email': 'committer@example.com',
+      'git.tag': tag,
+    })
+    const request = jest
+      .spyOn(requestModule, 'httpRequest')
+      .mockResolvedValue({config: {}, data: {}, headers: {}, status: 200, statusText: 'OK'})
+    try {
+      const command = createCommand(SbomUploadCommand)
+      command['basePath'] = './src/__tests__/fixtures/sbom-python.json'
+      expect(await command.execute()).toBe(0)
+      expect(request).toHaveBeenCalledTimes(1)
+      const payload = JSON.parse(request.mock.calls[0][0].data as string).data.attributes
+      expect(payload.commit).not.toHaveProperty('branch')
+      expect(payload.commit.sha).toBe(sha)
+      expect(payload.tags['git.tag']).toBe(tag)
+      expect(payload.tags).not.toHaveProperty('git.branch')
+    } finally {
+      process.env = originalEnv
+      jest.restoreAllMocks()
+    }
+  })
+
   describe('CI event validation', () => {
     test('should exit with error for GitHub pull_request event', async () => {
       const originalEnv = {...process.env}

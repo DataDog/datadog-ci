@@ -18,6 +18,16 @@ import {formatBytes, isFile, maskString} from '../utils'
 import {MOCK_DATADOG_API_KEY} from './testing-tools'
 
 describe('utils', () => {
+  test.each([
+    ['refs/tags/v1.2.3', 'v1.2.3'],
+    ['refs/tags/releases/tags/v1.2.3', 'releases/tags/v1.2.3'],
+    ['tags/v1.2.3', 'v1.2.3'],
+    ['refs/heads/main', 'main'],
+    ['origin/main', 'main'],
+  ])('normalizes a Git reference without leaving a tag ref prefix: %s', (ref, expected) => {
+    expect(ciUtils.normalizeRef(ref)).toBe(expected)
+  })
+
   beforeEach(() => {
     jest.restoreAllMocks()
   })

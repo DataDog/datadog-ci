@@ -10,6 +10,7 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  PR_NUMBER,
 } from '../../tags'
 
 import {getGitMetadata, getGitRoot} from '../format-git-span-data'
@@ -32,6 +33,7 @@ describe('repository metadata precedence', () => {
     [GIT_BRANCH]: 'workflow-branch',
     [GIT_TAG]: 'workflow-tag',
     [GIT_COMMIT_MESSAGE]: 'workflow commit',
+    [PR_NUMBER]: '42',
   }
 
   beforeEach(() => {
@@ -120,6 +122,65 @@ describe('repository metadata precedence', () => {
     const tags = await getRepositoryTags(provider)
     expect(tags[GIT_REPOSITORY_URL]).toBe('https://example.com/nested')
     expect(tags[GIT_BRANCH]).toBeUndefined()
+    expect(tags[PR_NUMBER]).toBeUndefined()
+  })
+
+  test('preserves CI identity for a detached PR-head checkout', async () => {
+    jest
+      .mocked(getGitMetadata)
+      .mockResolvedValue({[GIT_SHA]: headSha, [GIT_REPOSITORY_URL]: 'https://mirror.internal/repo'})
+    jest.mocked(getGitRoot).mockResolvedValue('/workspace')
+    expect(await getRepositoryTags(provider)).toMatchObject({
+      [GIT_SHA]: headSha,
+      [GIT_HEAD_SHA]: headSha,
+      [GIT_BRANCH]: 'workflow-branch',
+      [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL],
+      [PR_NUMBER]: '42',
+    })
+  })
+
+  test.each([mergeSha, headSha])('preserves a detached checkout remounted in a container: %s', async (sha) => {
+    jest.mocked(getGitMetadata).mockResolvedValue({
+      [GIT_SHA]: sha,
+      [GIT_REPOSITORY_URL]: `${provider[GIT_REPOSITORY_URL]}.git`,
+    })
+    jest.mocked(getGitRoot).mockResolvedValue('/container/repository')
+    expect(await getRepositoryTags(provider)).toMatchObject({
+      [GIT_SHA]: sha,
+      [GIT_BRANCH]: 'workflow-branch',
+      [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL],
+      [CI_WORKSPACE_PATH]: '/workspace',
+      [GIT_HEAD_SHA]: headSha,
+      [PR_NUMBER]: '42',
+    })
+  })
+
+  test('requires a matching revision when a remounted repository URL matches', async () => {
+    jest.mocked(getGitMetadata).mockResolvedValue({
+      [GIT_SHA]: checkoutSha,
+      [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL],
+    })
+    const tags = await getRepositoryTags(provider)
+    expect(tags[GIT_BRANCH]).toBeUndefined()
+    expect(tags[GIT_HEAD_SHA]).toBeUndefined()
+    expect(tags[PR_NUMBER]).toBeUndefined()
+  })
+
+  test.each([
+    ['https://github.com/example/workflow-other', 'https://github.com/example/workflow'],
+    ['file:///tmp/workflow.git', 'file:///tmp/workflow'],
+    ['/tmp/workflow.git', '/tmp/workflow'],
+  ])('does not equate unrelated repository URLs: %s and %s', async (checkoutUrl, ciUrl) => {
+    jest.mocked(getGitMetadata).mockResolvedValue({[GIT_SHA]: mergeSha, [GIT_REPOSITORY_URL]: checkoutUrl})
+    const tags = await getRepositoryTags({...provider, [GIT_REPOSITORY_URL]: ciUrl})
+    expect(tags[GIT_REPOSITORY_URL]).toBe(checkoutUrl)
+    expect(tags[GIT_BRANCH]).toBeUndefined()
+    expect(tags[PR_NUMBER]).toBeUndefined()
+  })
+
+  test('retains explicit PR-number overrides for an unrelated checkout', async () => {
+    process.env.DD_PR_NUMBER = '99'
+    expect((await getRepositoryTags(provider))[PR_NUMBER]).toBe('99')
   })
 
   test('does not apply the detached exception to a different checkout revision', async () => {

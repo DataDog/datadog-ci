@@ -216,7 +216,6 @@ export const parseMeasuresFile = (
  */
 export const REQUIRED_GIT_TAGS: SpanTag[] = [
   GIT_REPOSITORY_URL,
-  GIT_BRANCH,
   GIT_SHA,
   GIT_COMMIT_AUTHOR_EMAIL,
   GIT_COMMIT_AUTHOR_NAME,
@@ -230,7 +229,9 @@ export const REQUIRED_GIT_TAGS: SpanTag[] = [
  * @returns an array of the missing required git tags (ex. ['git.repository_url', 'git.branch'])
  */
 export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
-  const missingTags = REQUIRED_GIT_TAGS.reduce((acc: string[], tag: SpanTag) => {
+  const tagsToValidate: SpanTag[] =
+    tags[GIT_BRANCH] === undefined ? REQUIRED_GIT_TAGS : [...REQUIRED_GIT_TAGS, GIT_BRANCH]
+  const missingTags = tagsToValidate.reduce((acc: string[], tag: SpanTag) => {
     if (!tags[tag] || (tags[tag] as string).trim() === '') {
       acc.push(tag)
     }

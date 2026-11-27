@@ -282,6 +282,21 @@ describe('getSpanTags', () => {
 })
 
 describe('sarif and sbom upload required git tags', () => {
+  test.each([undefined, 'v1.2.3'])('allows a branchless checkout (tag: %s)', (tag) => {
+    const tags: SpanTags = {
+      [GIT_REPOSITORY_URL]: 'https://github.com/example/repository',
+      [GIT_SHA]: 'a'.repeat(40),
+      [GIT_COMMIT_AUTHOR_EMAIL]: 'author@example.com',
+      [GIT_COMMIT_AUTHOR_NAME]: 'Author',
+      [GIT_COMMIT_COMMITTER_EMAIL]: 'committer@example.com',
+      [GIT_COMMIT_COMMITTER_NAME]: 'Committer',
+      'git.tag': tag,
+    }
+    expect(getMissingRequiredGitTags(tags)).toEqual([])
+    delete tags[GIT_SHA]
+    expect(getMissingRequiredGitTags(tags)).toEqual([GIT_SHA])
+  })
+
   // throwError will be used to simulate an error being thrown from simple-git
   // commands and is used to condense the tests code.
   const throwError = () => {
@@ -410,8 +425,8 @@ describe('sarif and sbom upload required git tags', () => {
       true
     )
     const missingTags = getMissingRequiredGitTags(spanTags)
-    expect(missingTags).toHaveLength(6)
-    expect(missingTags).toContain(GIT_BRANCH)
+    expect(missingTags).toHaveLength(5)
+    expect(missingTags).not.toContain(GIT_BRANCH)
     expect(missingTags).toContain(GIT_SHA)
     expect(missingTags).toContain(GIT_COMMIT_AUTHOR_EMAIL)
     expect(missingTags).toContain(GIT_COMMIT_AUTHOR_NAME)

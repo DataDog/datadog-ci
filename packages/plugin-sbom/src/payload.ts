@@ -194,7 +194,7 @@ export const generatePayload = (
       committer_name: tags[GIT_COMMIT_COMMITTER_NAME] ?? '',
       committer_email: tags[GIT_COMMIT_COMMITTER_EMAIL] ?? '',
       sha: tags[GIT_SHA] ?? '',
-      branch: tags[GIT_BRANCH] ?? '',
+      ...(tags[GIT_BRANCH] ? {branch: tags[GIT_BRANCH]} : {}),
     },
     repository: {
       url: tags[GIT_REPOSITORY_URL] ?? '',

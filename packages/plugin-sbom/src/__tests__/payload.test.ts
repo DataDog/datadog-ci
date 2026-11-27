@@ -17,6 +17,14 @@ import {generatePayload} from '../payload'
 import {DependencyLanguage} from '../types'
 
 describe('generation of payload', () => {
+  test.each([undefined, 'v1.2.3'])('omits an unknown branch from the payload (tag: %s)', (tag) => {
+    const sbomContent = JSON.parse(fs.readFileSync('./src/__tests__/fixtures/sbom.1.4.ok.json', 'utf8'))
+    const payload = generatePayload(sbomContent, {'git.commit.sha': 'a'.repeat(40), 'git.tag': tag}, 'service', 'ci')
+    expect(payload?.commit).not.toHaveProperty('branch')
+    expect(payload?.commit.sha).toBe('a'.repeat(40))
+    expect(payload?.tags['git.tag']).toBe(tag)
+  })
+
   beforeEach(() => {
     jest.spyOn(console, 'debug').mockImplementation()
     jest.spyOn(console, 'log').mockImplementation()

@@ -34,11 +34,14 @@ Optional environment variables:
 
 ### Git context resolution
 
-The Git context is resolved in the following order of priority:
-1. Current process location
-2. CI environment variables (can be disabled with: `--no-ci-tags` option)
-3. Explicitly provided Git repository (through --git-repository option)
-4. Override environment variables (`DD_GIT_*` variables)
+The Git context is resolved in the following order of priority (highest first):
+1. Override environment variables (`DD_GIT_*`).
+2. The readable checkout selected by `--git-repository`, or the current process location.
+3. CI environment variables when the checkout cannot be read (unless `--no-ci-tags` is set).
+
+For a detached checkout, CI can supply its branch, tag and canonical repository URL when the checkout revision and repository identity match. Identity is established by a matching workspace root or repository URL, including a checkout remounted inside a container.
+
+A branch is optional for detached or tag-triggered checkouts. Known tags remain in `git.tag`; the CLI does not substitute a tag name or `HEAD` for an unknown branch.
 
 ## Development
 
