@@ -19,6 +19,7 @@ import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
 import {commands as junitCommands} from './commands/junit/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as measureCommands} from './commands/measure/cli'
+import {commands as ndkSymbolsCommands} from './commands/ndk-symbols/cli'
 import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
 import {commands as ppdbSymbolsCommands} from './commands/ppdb-symbols/cli'
@@ -57,6 +58,7 @@ export const commands = {
   'junit': junitCommands,
   'lambda': lambdaCommands,
   'measure': measureCommands,
+  'ndk-symbols': ndkSymbolsCommands,
   'pe-symbols': peSymbolsCommands,
   'plugin': pluginCommands,
   'ppdb-symbols': ppdbSymbolsCommands,
@@ -88,6 +90,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'flutter-symbols',
   'git-metadata',
   'measure',
+  'ndk-symbols',
   'pe-symbols',
   'plugin',
   'ppdb-symbols',

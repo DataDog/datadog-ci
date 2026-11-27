@@ -19,6 +19,7 @@ const noPluginExceptions = new Set([
   'flutter-symbols',
   'git-metadata',
   'measure',
+  'ndk-symbols',
   'pe-symbols',
   'plugin',
   'ppdb-symbols',

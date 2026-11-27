@@ -176,6 +176,12 @@ The following `<scope>` and `<command>` values are available.
 
 - Add measures to a CI Visibility pipeline trace or job span in Datadog.
 
+#### `ndk-symbols`
+
+<sub>**README:** [📚](/packages/base/src/commands/ndk-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/application_monitoring/android/error_tracking/)</sub>
+
+- `upload`: Upload Android native libraries (NDK symbol files) for Error Tracking.
+
 #### `pe-symbols`
 
 <sub>**README:** [📚](/packages/base/src/commands/pe-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/profiler/enabling/ddprof/)</sub>

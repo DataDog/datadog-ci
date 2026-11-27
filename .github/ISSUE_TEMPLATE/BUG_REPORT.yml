@@ -38,6 +38,7 @@ body:
         - junit
         - lambda
         - metric
+        - ndk-symbols
         - react-native
         - sourcemaps
         - synthetics

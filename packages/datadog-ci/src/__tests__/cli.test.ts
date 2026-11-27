@@ -137,6 +137,7 @@ describe('cli', () => {
       'ecs-fargate instrument': ['--task-definition', 'my-task-definition'],
       'ecs-fargate uninstrument': ['--task-definition', 'my-task-definition'],
       'elf-symbols upload': [NONEXISTENT_FILE],
+      'ndk-symbols upload': [NONEXISTENT_FILE, '--build-id', '01234567-89ab-cdef-0123-456789abcdef'],
       'pe-symbols upload': [NONEXISTENT_FILE],
       'ppdb-symbols upload': [NONEXISTENT_FILE, '--debug-id-manifest', NONEXISTENT_FILE],
       'gate evaluate': ['--no-wait'],
