@@ -107,7 +107,9 @@ export const getRepositoryTags = async (
             parents.some((parent) => sameSha(parent, destination))))
       matchingRevision = verifiedBitbucketMerge
     }
-    const relatedCheckout = (!workspace || !root || matchingRepository) && matchingRevision
+    const knownRepositoryMismatch =
+      !!checkout[GIT_REPOSITORY_URL] && !!provider[GIT_REPOSITORY_URL] && !matchingRepository
+    const relatedCheckout = !knownRepositoryMismatch && (!workspace || !root || matchingRepository) && matchingRevision
     selectedProvider = Object.fromEntries(
       Object.entries(provider).filter(([key]) => {
         const relationship =

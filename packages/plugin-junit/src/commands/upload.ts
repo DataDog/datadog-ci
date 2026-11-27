@@ -117,6 +117,7 @@ export class PluginCommand extends JunitUploadCommand {
     this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
     this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
+    const isGitRepository = await isGitRepo()
     const spanTags = await this.getSpanTags()
     const customTags = this.getCustomTags()
     const customMeasures = this.getCustomMeasures()
@@ -139,7 +140,7 @@ export class PluginCommand extends JunitUploadCommand {
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
     if (!this.skipGitMetadataUpload) {
-      if (await isGitRepo()) {
+      if (isGitRepository) {
         const traceId = id()
 
         const requestBuilder = getRequestBuilder({

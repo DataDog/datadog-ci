@@ -140,7 +140,7 @@ export const uploadToGitDB = async (
   let objectsToUpload
   try {
     objectsToUpload = await getObjectsToUpload(git, commitsToInclude, commitsToExclude)
-    if (commitSha && commitsToInclude.includes(commitSha)) {
+    if (commitSha && commitsToInclude.includes(commitSha) && !objectsToUpload.includes(commitSha)) {
       // The selected tip can predate the history window (or have a skewed timestamp).
       const selectedObjects = await git.raw([
         'rev-list',

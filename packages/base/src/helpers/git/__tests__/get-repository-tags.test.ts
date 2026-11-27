@@ -65,6 +65,39 @@ describe('repository metadata precedence', () => {
     expect(await getRepositoryTags(provider)).toEqual(provider)
   })
 
+  test.each([undefined, '/unmounted/workspace'])(
+    'drops another repository’s PR relationships when CI workspace matching is unavailable: %s',
+    async (workspace) => {
+      jest.mocked(getGitRoot).mockResolvedValue(undefined)
+      const tags = await getRepositoryTags({
+        ...provider,
+        [CI_PROVIDER_NAME]: 'buddy',
+        [CI_WORKSPACE_PATH]: workspace,
+        [GIT_SHA]: checkoutSha,
+      })
+
+      expect(tags[GIT_SHA]).toBe(checkoutSha)
+      expect(tags[GIT_REPOSITORY_URL]).toBe('https://github.com/example/checkout')
+      expect(tags[CI_PROVIDER_NAME]).toBe('buddy')
+      expect(tags[PR_NUMBER]).toBeUndefined()
+      expect(tags[GIT_HEAD_SHA]).toBeUndefined()
+      expect(tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]).toBeUndefined()
+    }
+  )
+
+  test.each(['https://github.com/example/workflow.git', 'git@github.com:example/workflow.git'])(
+    'keeps same-repository PR relationships without a workspace path: %s',
+    async (remote) => {
+      jest.mocked(getGitMetadata).mockResolvedValue({[GIT_SHA]: headSha, [GIT_REPOSITORY_URL]: remote})
+      const tags = await getRepositoryTags({...provider, [CI_PROVIDER_NAME]: 'buddy', [CI_WORKSPACE_PATH]: undefined})
+
+      expect(tags[GIT_SHA]).toBe(headSha)
+      expect(tags[PR_NUMBER]).toBe('42')
+      expect(tags[GIT_HEAD_SHA]).toBe(headSha)
+      expect(tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]).toBe('d'.repeat(40))
+    }
+  )
+
   test('does not fill missing checkout fields with fields from a different CI revision', async () => {
     jest.mocked(getGitMetadata).mockResolvedValue({[GIT_SHA]: checkoutSha})
     const tags = await getRepositoryTags(provider)

@@ -40,7 +40,7 @@ describe('selected commit upload', () => {
         `data ${Buffer.byteLength(message)}`,
         message,
         ...(parent ? [`from :${parent}`] : []),
-        `M 100644 inline file-${mark}.txt`,
+        `M 100644 inline ${mark === 1 ? 'unchanged/' : ''}file-${mark}.txt`,
         `data ${Buffer.byteLength(content)}`,
         content,
         '',
@@ -122,7 +122,7 @@ describe('selected commit upload', () => {
 
     expect(tags[GIT_SHA]).toBe(selected)
     expect(info.hash).toBe(selected)
-    expect(info.trackedFiles).toEqual(['file-1.txt', 'file-3.txt'])
+    expect(info.trackedFiles).toEqual(['file-3.txt', 'unchanged/file-1.txt'])
     expect(searched[0]).toContain(selected)
     expect(searched.flat()).not.toContain(head)
     expect(declarations.length).toBeGreaterThan(0)
@@ -143,6 +143,43 @@ describe('selected commit upload', () => {
     const target = unpack(packfiles)
     expect(git([`--git-dir=${target}`, 'cat-file', '-t', selected])).toBe('commit')
     expect(() => git([`--git-dir=${target}`, 'cat-file', '-t', head])).toThrow()
+  })
+
+  test('does not repack unchanged trees from a known parent during an incremental upload', async () => {
+    const {selected} = createHistory()
+    const parent = git(['rev-parse', 'selected^'])
+    const unchangedTree = git(['rev-parse', `${parent}:unchanged`])
+    const {request, packfiles, declarations} = captureUpload()
+    const respond = request.getMockImplementation()!
+    request.mockImplementation(async (config) => {
+      const response = await respond(config)
+      if (typeof config.data === 'string') {
+        response.data.data = [{id: parent, type: 'commit'}]
+      }
+
+      return response
+    })
+
+    await uploadToGitDB(logger, request, simpleGit(directory), false, repositoryURL, selected)
+
+    expect(declarations).toEqual([selected])
+    const target = unpack(packfiles)
+    const objects = git([`--git-dir=${target}`, 'cat-file', '--batch-all-objects', '--batch-check=%(objectname)'])
+      .split('\n')
+      .sort()
+    const expected = git([
+      'rev-list',
+      '--objects',
+      '--no-object-names',
+      '--filter=blob:none',
+      `^${parent}`,
+      selected,
+      '--',
+    ])
+      .split('\n')
+      .sort()
+    expect(objects).toEqual(expected)
+    expect(objects).not.toContain(unchangedTree)
   })
 
   test('keeps HEAD upload behavior when no revision is selected', async () => {

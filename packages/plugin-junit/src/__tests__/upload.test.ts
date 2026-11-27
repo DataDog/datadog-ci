@@ -20,6 +20,56 @@ jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
+  test.each([false, true])('initializes checkout access before resolving tags (skip GitDB: %s)', async (skip) => {
+    const originalEnv = process.env
+    process.env = {
+      DD_API_KEY: 'placeholder',
+      GITHUB_ACTIONS: 'true',
+      GITHUB_SHA: 'a'.repeat(40),
+      GITHUB_REPOSITORY: 'example/workflow',
+      GITHUB_SERVER_URL: 'https://github.com',
+      GITHUB_WORKSPACE: CWD,
+    }
+    try {
+      const command = createCommand(JunitUploadCommand)
+      command['basePaths'] = ['results.xml']
+      command['skipGitMetadataUpload'] = skip
+      const client = {} as Awaited<ReturnType<typeof git.newSimpleGit>>
+      let readable = false
+      const initialize = jest.spyOn(gitLibrary, 'isGitRepo').mockImplementation(async () => {
+        readable = true
+
+        return true
+      })
+      jest
+        .spyOn(gitMetadata, 'getGitMetadata')
+        .mockImplementation(async () =>
+          readable
+            ? {'git.commit.sha': 'b'.repeat(40), 'git.repository_url': 'https://github.com/example/checkout'}
+            : {}
+        )
+      jest.spyOn(gitMetadata, 'getGitRoot').mockResolvedValue(`${CWD}/nested`)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(client)
+      const upload = jest.spyOn(gitdb, 'uploadToGitDB').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'getApiHelper').mockResolvedValue({})
+      const reports = jest.spyOn(command as any, 'getMatchingJUnitXMLFiles').mockResolvedValue([])
+
+      await command.execute()
+
+      expect(initialize).toHaveBeenCalledTimes(1)
+      expect(reports.mock.calls[0][0]).toMatchObject({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.repository_url': 'https://github.com/example/checkout',
+      })
+      expect(upload.mock.calls.map((call) => call.slice(2))).toEqual(
+        skip ? [] : [[client, false, 'https://github.com/example/checkout', 'b'.repeat(40)]]
+      )
+    } finally {
+      jest.restoreAllMocks()
+      process.env = originalEnv
+    }
+  })
+
   test('syncs GitDB with the resolved report SHA and repository', async () => {
     const originalEnv = process.env
     process.env = {DD_API_KEY: 'placeholder', DD_GIT_COMMIT_SHA: 'a'.repeat(40)}
