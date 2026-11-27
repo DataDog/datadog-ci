@@ -168,6 +168,7 @@ describe('repository metadata precedence', () => {
 
   test.each([
     ['https://github.com/example/workflow-other', 'https://github.com/example/workflow'],
+    ['https://example.git', 'https://example'],
     ['file:///tmp/workflow.git', 'file:///tmp/workflow'],
     ['/tmp/workflow.git', '/tmp/workflow'],
   ])('does not equate unrelated repository URLs: %s and %s', async (checkoutUrl, ciUrl) => {

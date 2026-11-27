@@ -36,7 +36,7 @@ const sameRepository = (left?: string, right?: string) => {
   const normalize = (value?: string) => {
     const remote = filterSensitiveInfoFromRepository(value)
 
-    return remote && /^https?:\/\//.test(remote) ? remote.replace(/(?:\.git)?\/?$/, '') : remote
+    return remote && /^https?:\/\/[^/]+\//.test(remote) ? remote.replace(/(?:\.git)?\/?$/, '') : remote
   }
 
   return !!left && !!right && normalize(left) === normalize(right)
