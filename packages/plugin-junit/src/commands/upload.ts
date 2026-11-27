@@ -14,13 +14,12 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {getRepositoryTags} from '@datadog/datadog-ci-base/helpers/git/get-repository-tags'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
-import {parseTags, parseMetrics} from '@datadog/datadog-ci-base/helpers/tags'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
+import {GIT_REPOSITORY_URL, GIT_SHA, parseTags, parseMetrics} from '@datadog/datadog-ci-base/helpers/tags'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
@@ -118,6 +117,7 @@ export class PluginCommand extends JunitUploadCommand {
     this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
     this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
+    const isGitRepository = await isGitRepo()
     const spanTags = await this.getSpanTags()
     const customTags = this.getCustomTags()
     const customMeasures = this.getCustomMeasures()
@@ -140,7 +140,7 @@ export class PluginCommand extends JunitUploadCommand {
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
     if (!this.skipGitMetadataUpload) {
-      if (await isGitRepo()) {
+      if (isGitRepository) {
         const traceId = id()
 
         const requestBuilder = getRequestBuilder({
@@ -155,7 +155,11 @@ export class PluginCommand extends JunitUploadCommand {
           this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
           let elapsed = 0
           if (!this.dryRun) {
-            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
+              requestBuilder,
+              repositoryURL: spanTags[GIT_REPOSITORY_URL],
+              commitSha: spanTags[GIT_SHA],
+            })
           }
           this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
         } catch (err) {
@@ -173,8 +177,15 @@ export class PluginCommand extends JunitUploadCommand {
     }
   }
 
-  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder; repositoryURL?: string; commitSha?: string}) {
+    await uploadToGitDB(
+      this.logger,
+      opts.requestBuilder,
+      await newSimpleGit(),
+      this.dryRun,
+      this.gitRepositoryURL || opts.repositoryURL,
+      opts.commitSha
+    )
   }
 
   private async getApiHelper(): Promise<APIHelper> {
@@ -254,13 +265,10 @@ export class PluginCommand extends JunitUploadCommand {
     const jobName = getGithubJobNameFromLogs(this.context)
     const jobID = process.env.JOB_CHECK_RUN_ID ?? getGithubJobIDFromLogs(this.context)
     const ciSpanTags = getCISpanTags(jobName, jobID)
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
+    const repositoryTags = await getRepositoryTags(ciSpanTags)
 
     return {
-      ...gitSpanTags,
-      ...ciSpanTags,
-      ...userGitSpanTags,
+      ...repositoryTags,
       ...(this.config.env ? {env: this.config.env} : {}),
       service: this.service!,
     }

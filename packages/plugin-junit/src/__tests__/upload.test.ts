@@ -3,7 +3,11 @@ import os from 'os'
 
 import type {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 
+import * as git from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import * as gitdb from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
+import * as gitLibrary from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as gitMetadata from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import upath from 'upath'
 
@@ -16,6 +20,89 @@ jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
+  test.each([false, true])('initializes checkout access before resolving tags (skip GitDB: %s)', async (skip) => {
+    const originalEnv = process.env
+    process.env = {
+      DD_API_KEY: 'placeholder',
+      GITHUB_ACTIONS: 'true',
+      GITHUB_SHA: 'a'.repeat(40),
+      GITHUB_REPOSITORY: 'example/workflow',
+      GITHUB_SERVER_URL: 'https://github.com',
+      GITHUB_WORKSPACE: CWD,
+    }
+    try {
+      const command = createCommand(JunitUploadCommand)
+      command['basePaths'] = ['results.xml']
+      command['skipGitMetadataUpload'] = skip
+      const client = {} as Awaited<ReturnType<typeof git.newSimpleGit>>
+      let readable = false
+      const initialize = jest.spyOn(gitLibrary, 'isGitRepo').mockImplementation(async () => {
+        readable = true
+
+        return true
+      })
+      jest
+        .spyOn(gitMetadata, 'getGitMetadata')
+        .mockImplementation(async () =>
+          readable
+            ? {'git.commit.sha': 'b'.repeat(40), 'git.repository_url': 'https://github.com/example/checkout'}
+            : {}
+        )
+      jest.spyOn(gitMetadata, 'getGitRoot').mockResolvedValue(`${CWD}/nested`)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(client)
+      const upload = jest.spyOn(gitdb, 'uploadToGitDB').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'getApiHelper').mockResolvedValue({})
+      const reports = jest.spyOn(command as any, 'getMatchingJUnitXMLFiles').mockResolvedValue([])
+
+      await command.execute()
+
+      expect(initialize).toHaveBeenCalledTimes(1)
+      expect(reports.mock.calls[0][0]).toMatchObject({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.repository_url': 'https://github.com/example/checkout',
+      })
+      expect(upload.mock.calls.map((call) => call.slice(2))).toEqual(
+        skip ? [] : [[client, false, 'https://github.com/example/checkout', 'b'.repeat(40)]]
+      )
+    } finally {
+      jest.restoreAllMocks()
+      process.env = originalEnv
+    }
+  })
+
+  test('syncs GitDB with the resolved report SHA and repository', async () => {
+    const originalEnv = process.env
+    process.env = {DD_API_KEY: 'placeholder', DD_GIT_COMMIT_SHA: 'a'.repeat(40)}
+    try {
+      const command = createCommand(JunitUploadCommand)
+      command['basePaths'] = ['results.xml']
+      const client = {} as Awaited<ReturnType<typeof git.newSimpleGit>>
+      jest.spyOn(gitLibrary, 'isGitRepo').mockResolvedValue(true)
+      jest.spyOn(git, 'newSimpleGit').mockResolvedValue(client)
+      const upload = jest.spyOn(gitdb, 'uploadToGitDB').mockResolvedValue(undefined)
+      jest.spyOn(command as any, 'getApiHelper').mockResolvedValue({})
+      jest.spyOn(command as any, 'getMatchingJUnitXMLFiles').mockResolvedValue([])
+      jest.spyOn(command as any, 'getSpanTags').mockResolvedValue({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.repository_url': 'https://github.com/example/application',
+      })
+
+      await command.execute()
+
+      expect(upload).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(Function),
+        client,
+        false,
+        'https://github.com/example/application',
+        'b'.repeat(40)
+      )
+    } finally {
+      jest.restoreAllMocks()
+      process.env = originalEnv
+    }
+  })
+
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
@@ -437,6 +524,33 @@ describe('upload', () => {
     })
   })
   describe('getSpanTags', () => {
+    test('uses the checkout identity instead of conflicting CI Git metadata', async () => {
+      const savedEnv = process.env
+      process.env = {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SHA: 'a'.repeat(40),
+        GITHUB_REF: 'refs/heads/workflow',
+        GITHUB_REPOSITORY: 'example/workflow',
+      }
+      const spy = jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValue({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.branch': 'checkout',
+        'git.repository_url': 'https://github.com/example/checkout',
+      })
+      try {
+        const command = createCommand(JunitUploadCommand)
+        expect(await command['getSpanTags']()).toMatchObject({
+          'git.commit.sha': 'b'.repeat(40),
+          'git.branch': 'checkout',
+          'git.repository_url': 'https://github.com/example/checkout',
+          'ci.provider.name': 'github',
+        })
+      } finally {
+        spy.mockRestore()
+        process.env = savedEnv
+      }
+    })
+
     test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
       const command = createCommand(JunitUploadCommand)

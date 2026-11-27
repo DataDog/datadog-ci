@@ -2,6 +2,7 @@ import fs from 'fs'
 import os from 'os'
 
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as gitMetadata from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {simpleGit} from 'simple-git'
 import upath from 'upath'
 
@@ -57,6 +58,45 @@ const createSimpleMockContext = () => {
 const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
+  test.each([undefined, 'v1.2.3'])('uploads a detached checkout without inventing a branch (tag: %s)', async (tag) => {
+    const originalEnv = process.env
+    const sha = 'a'.repeat(40)
+    process.env = {
+      DD_API_KEY: 'fake-api-key',
+      GITHUB_ACTIONS: 'true',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REPOSITORY: 'example/repository',
+      GITHUB_SHA: sha,
+      GITHUB_REF: tag ? `refs/tags/${tag}` : undefined,
+      GITHUB_WORKSPACE: '/workspace',
+    }
+    jest.spyOn(gitMetadata, 'getGitRoot').mockResolvedValue('/workspace')
+    jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValue({
+      'git.commit.sha': sha,
+      'git.repository_url': 'https://github.com/example/repository.git',
+      'git.commit.author.name': 'Author',
+      'git.commit.author.email': 'author@example.com',
+      'git.commit.committer.name': 'Committer',
+      'git.commit.committer.email': 'committer@example.com',
+      'git.tag': tag,
+    })
+    try {
+      const uploadSarifReport = jest.fn().mockResolvedValue({})
+      const command = createCommand(SarifUploadCommand)
+      command['basePaths'] = ['./src/__tests__/fixtures/valid-results.sarif']
+      command['getApiHelper'] = jest.fn().mockResolvedValue({uploadSarifReport})
+      expect(await command.execute()).not.toBe(1)
+      expect(uploadSarifReport).toHaveBeenCalledTimes(1)
+      const tags = uploadSarifReport.mock.calls[0][0].spanTags
+      expect(tags).not.toHaveProperty('git.branch')
+      expect(tags['git.commit.sha']).toBe(sha)
+      expect(tags['git.tag']).toBe(tag)
+    } finally {
+      process.env = originalEnv
+      jest.restoreAllMocks()
+    }
+  })
+
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}

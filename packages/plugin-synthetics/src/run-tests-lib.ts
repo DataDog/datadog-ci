@@ -17,6 +17,7 @@ import type {
 import type {InitialSummary} from './utils/public'
 
 import {getCIMetadata} from '@datadog/datadog-ci-base/helpers/ci'
+import {getRepositoryTags} from '@datadog/datadog-ci-base/helpers/git/get-repository-tags'
 import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
 import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -185,9 +186,7 @@ export const executeTests = async (
     }
   }
 
-  const metadata = getCIMetadata({
-    [GIT_COMMIT_MESSAGE]: 500,
-  })
+  const metadata = getCIMetadata({[GIT_COMMIT_MESSAGE]: 500}, await getRepositoryTags())
 
   let trigger: TriggerInfo
   try {

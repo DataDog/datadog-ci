@@ -1,6 +1,7 @@
 import type {RequestConfig, RequestResponse} from './request'
 import type {
   CI_ENV_VARS,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_NODE_LABELS,
@@ -111,6 +112,7 @@ export type SpanTag =
   | typeof GIT_COMMIT_COMMITTER_EMAIL
   | typeof GIT_COMMIT_COMMITTER_NAME
   | typeof CI_ENV_VARS
+  | typeof CI_GIT_MERGE_COMMIT_SHA
   | typeof CI_NODE_NAME
   | typeof CI_NODE_LABELS
   | typeof SERVICE

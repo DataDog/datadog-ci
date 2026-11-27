@@ -168,6 +168,9 @@ describe('parseMetricsFile', () => {
 
 describe('getSpanTags', () => {
   beforeEach(() => {
+    process.env.DD_GIT_REPOSITORY_URL = ''
+    process.env.DD_GIT_BRANCH = ''
+    process.env.DD_GIT_COMMIT_SHA = ''
     // CI defined by default env vars - clearing them is needed for tests to pass in the CI
     process.env.GITHUB_ACTIONS = ''
     process.env.GITHUB_REPOSITORY = ''
@@ -212,7 +215,7 @@ describe('getSpanTags', () => {
     })
   })
 
-  test('should prioritized git context accordingly', async () => {
+  test('prefers the checkout over CI metadata, with or without an explicit Git path', async () => {
     const config: DatadogCiConfig = {
       apiKey: undefined,
       env: undefined,
@@ -228,11 +231,16 @@ describe('getSpanTags', () => {
 
     // Mock simpleGit (used to read git context)
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
-      branch: () => ({current: 'main'}),
       listRemote: async (git: any): Promise<string> => 'https://www.github.com/datadog/safe-repository',
       revparse: () => 'mockSHA',
-      show: (input: string[]) => {
-        if (input[1] === '--format=%s') {
+      raw: (input: string[]) => {
+        if (input[0] === 'branch') {
+          return 'main'
+        }
+        if (input[0] === 'describe') {
+          return ''
+        }
+        if (input.includes('--format=%s')) {
           return 'commit message'
         }
 
@@ -240,12 +248,12 @@ describe('getSpanTags', () => {
       },
     }))
 
-    // By default, the 'git' tags reported are the CI env variables
+    // A readable checkout is authoritative even without an explicit Git path.
     let spanTags: SpanTags = await getSpanTags(config, [], true)
     expect(spanTags['ci.pipeline.id']).toEqual('17')
-    expect(spanTags['git.repository_url']).toContain('DataDog/datadog-ci')
-    expect(spanTags['git.branch']).toEqual('prod')
-    expect(spanTags['git.commit.sha']).toEqual('commitSHA')
+    expect(spanTags['git.repository_url']).toEqual('https://www.github.com/datadog/safe-repository')
+    expect(spanTags['git.branch']).toEqual('main')
+    expect(spanTags['git.commit.sha']).toEqual('mockSHA')
 
     // re-query span tags while specifying a git directory:
     // if should prefer the git directory over env variables.
@@ -274,6 +282,21 @@ describe('getSpanTags', () => {
 })
 
 describe('sarif and sbom upload required git tags', () => {
+  test.each([undefined, 'v1.2.3'])('allows a branchless checkout (tag: %s)', (tag) => {
+    const tags: SpanTags = {
+      [GIT_REPOSITORY_URL]: 'https://github.com/example/repository',
+      [GIT_SHA]: 'a'.repeat(40),
+      [GIT_COMMIT_AUTHOR_EMAIL]: 'author@example.com',
+      [GIT_COMMIT_AUTHOR_NAME]: 'Author',
+      [GIT_COMMIT_COMMITTER_EMAIL]: 'committer@example.com',
+      [GIT_COMMIT_COMMITTER_NAME]: 'Committer',
+      'git.tag': tag,
+    }
+    expect(getMissingRequiredGitTags(tags)).toEqual([])
+    delete tags[GIT_SHA]
+    expect(getMissingRequiredGitTags(tags)).toEqual([GIT_SHA])
+  })
+
   // throwError will be used to simulate an error being thrown from simple-git
   // commands and is used to condense the tests code.
   const throwError = () => {
@@ -297,11 +320,16 @@ describe('sarif and sbom upload required git tags', () => {
 
   test('should be valid as we have all required git fields', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
-      branch: () => ({current: 'main'}),
       listRemote: async (git: any): Promise<string> => 'https://www.github.com/datadog/safe-repository',
       revparse: () => 'commitSHA',
-      show: (input: string[]) => {
-        if (input[1] === '--format=%s') {
+      raw: (input: string[]) => {
+        if (input[0] === 'branch') {
+          return 'main'
+        }
+        if (input[0] === 'describe') {
+          return ''
+        }
+        if (input.includes('--format=%s')) {
           return 'commit message'
         }
 
@@ -397,8 +425,8 @@ describe('sarif and sbom upload required git tags', () => {
       true
     )
     const missingTags = getMissingRequiredGitTags(spanTags)
-    expect(missingTags).toHaveLength(6)
-    expect(missingTags).toContain(GIT_BRANCH)
+    expect(missingTags).toHaveLength(5)
+    expect(missingTags).not.toContain(GIT_BRANCH)
     expect(missingTags).toContain(GIT_SHA)
     expect(missingTags).toContain(GIT_COMMIT_AUTHOR_EMAIL)
     expect(missingTags).toContain(GIT_COMMIT_AUTHOR_NAME)
@@ -408,11 +436,16 @@ describe('sarif and sbom upload required git tags', () => {
 
   test('should be invalid when an env var overrides a value retrieved from git', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
-      branch: () => ({current: 'main'}),
       listRemote: async (git: any): Promise<string> => 'https://www.github.com/datadog/safe-repository',
       revparse: () => 'commitSHA',
-      show: (input: string[]) => {
-        if (input[1] === '--format=%s') {
+      raw: (input: string[]) => {
+        if (input[0] === 'branch') {
+          return 'main'
+        }
+        if (input[0] === 'describe') {
+          return ''
+        }
+        if (input.includes('--format=%s')) {
           return 'commit message'
         }
 

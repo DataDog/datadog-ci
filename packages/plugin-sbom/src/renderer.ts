@@ -92,7 +92,7 @@ export const renderUploading = (sbomReport: string, scaRequest: ScaRequest): str
     scaRequest.dependencies.length
   } dependencies detected for languages ${Array.from(languages).join(',')})\nUpload for repository ${
     scaRequest.repository.url
-  }, branch ${scaRequest.commit.branch}, sha ${scaRequest.commit.sha}\n`
+  }${scaRequest.commit.branch ? `, branch ${scaRequest.commit.branch}` : ''}, sha ${scaRequest.commit.sha}\n`
 }
 
 export const renderSuccessfulCommand = (duration: number) => {

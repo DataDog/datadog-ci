@@ -4,9 +4,10 @@ import * as t from 'typanion'
 import {BaseCommand} from '@datadog/datadog-ci-base'
 
 import {noAuth} from '../../helpers/auth'
-import {getCISpanTags} from '../../helpers/ci'
+import {getRepositoryTags} from '../../helpers/git/get-repository-tags'
 import {
   CI_ENV_VARS,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_JOB_ID,
   CI_JOB_NAME,
   CI_JOB_URL,
@@ -36,13 +37,13 @@ import {
   GIT_TAG,
   PR_NUMBER,
 } from '../../helpers/tags'
-import {getUserCISpanTags, getUserGitSpanTags} from '../../helpers/user-provided-git'
 
 /**
  * Explicit mapping from internal tag keys to DD_* environment variable names.
  */
 const TAG_TO_ENV_VAR: Record<string, string> = {
   // CI tags
+  [CI_GIT_MERGE_COMMIT_SHA]: 'DD_CI_GIT_MERGE_COMMIT_SHA',
   [CI_JOB_ID]: 'DD_CI_JOB_ID',
   [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
   [CI_JOB_URL]: 'DD_CI_JOB_URL',
@@ -170,16 +171,7 @@ export class CiEnvReadCommand extends BaseCommand {
   })
 
   public async execute() {
-    // Merge CI-detected tags with user-provided tags (user-provided takes precedence)
-    const ciTags = getCISpanTags()
-    const userCITags = getUserCISpanTags()
-    const userGitTags = getUserGitSpanTags()
-
-    const tags = {
-      ...ciTags,
-      ...userCITags,
-      ...userGitTags,
-    }
+    const tags = await getRepositoryTags()
 
     if (!tags || Object.keys(tags).length === 0) {
       this.context.stderr.write(

@@ -13,10 +13,9 @@ import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {getRepositoryTags} from '@datadog/datadog-ci-base/helpers/git/get-repository-tags'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 
 import {apiConstructor} from '../api'
 import {
@@ -96,16 +95,13 @@ export class PluginCommand extends GateEvaluateCommand {
 
   private async getSpanTags(): Promise<SpanTags> {
     const ciSpanTags = getCISpanTags()
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
+    const repositoryTags = await getRepositoryTags(ciSpanTags)
 
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
 
     return {
-      ...ciSpanTags,
-      ...gitSpanTags,
-      ...userGitSpanTags,
+      ...repositoryTags,
       ...cliTags,
       ...envVarTags,
     }

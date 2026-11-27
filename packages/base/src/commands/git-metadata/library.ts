@@ -50,12 +50,18 @@ export const uploadGitCommitHash = async (
   const payload = await getCommitInfo(simpleGit, repositoryURL)
 
   return Promise.all([
-    syncGitDB(simpleGit, apiKey, datadogSite, payload.remote),
+    syncGitDB(simpleGit, apiKey, datadogSite, payload.remote, payload.hash),
     uploadToSrcmapTrack(apiKey, datadogSite, payload),
   ]).then(() => [payload.remote, payload.hash])
 }
 
-const syncGitDB = async (simpleGit: SimpleGit, apiKey: string, datadogSite: string, repositoryURL: string) => {
+const syncGitDB = async (
+  simpleGit: SimpleGit,
+  apiKey: string,
+  datadogSite: string,
+  repositoryURL: string,
+  commitSha: string
+) => {
   // no-op logger
   const log = new Logger((s: string) => {}, LogLevel.INFO)
 
@@ -64,7 +70,7 @@ const syncGitDB = async (simpleGit: SimpleGit, apiKey: string, datadogSite: stri
     baseUrl: 'https://api.' + datadogSite,
   })
 
-  await uploadToGitDB(log, requestBuilder, simpleGit, false, repositoryURL)
+  await uploadToGitDB(log, requestBuilder, simpleGit, false, repositoryURL, commitSha)
 }
 
 // uploadToSrcmapTrack uploads the payload with tracked files to the sourcemap intake

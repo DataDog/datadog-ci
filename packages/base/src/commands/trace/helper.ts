@@ -16,10 +16,9 @@ import {
 } from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {getRepositoryTags} from '@datadog/datadog-ci-base/helpers/git/get-repository-tags'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseTags} from '@datadog/datadog-ci-base/helpers/tags'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 
 import type {RequestError} from '../../helpers/request'
 
@@ -80,8 +79,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
       return acc
     }, {})
 
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
+    const repositoryTags = await getRepositoryTags(ciSpanTags)
 
     await this.reportCustomSpan({
       start_time: startTime.toISOString(),
@@ -89,7 +87,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
       ci_provider: provider,
       span_id: id,
       ...(parentId ? {parent_id: parentId} : {}),
-      tags: {...gitSpanTags, ...ciSpanTags, ...userGitSpanTags, ...cliTags, ...envVarTags},
+      tags: {...repositoryTags, ...cliTags, ...envVarTags},
       measures,
       command: extraTags.command,
       name: extraTags.name,

@@ -20,7 +20,7 @@ import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {partitionFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {getRepositoryTags} from '@datadog/datadog-ci-base/helpers/git/get-repository-tags'
 import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
@@ -34,7 +34,6 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
 } from '@datadog/datadog-ci-base/helpers/tags'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import upath from 'upath'
@@ -124,6 +123,8 @@ export class PluginCommand extends CoverageUploadCommand {
       this.git = await newSimpleGit()
     }
 
+    const spanTags = await this.getSpanTags()
+
     if (!this.skipGitMetadataUpload) {
       if (isGitRepository) {
         const traceId = id()
@@ -140,7 +141,11 @@ export class PluginCommand extends CoverageUploadCommand {
           this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
           let elapsed = 0
           if (!this.dryRun) {
-            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {
+              requestBuilder,
+              repositoryURL: spanTags[GIT_REPOSITORY_URL],
+              commitSha: spanTags[GIT_SHA],
+            })
           }
           this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
         } catch (err) {
@@ -153,24 +158,30 @@ export class PluginCommand extends CoverageUploadCommand {
       this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
     }
 
-    await this.uploadCodeCoverageReports()
+    await this.uploadCodeCoverageReports(spanTags)
   }
 
-  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder; repositoryURL?: string; commitSha?: string}) {
     if (!this.git) {
       return
     }
 
-    await uploadToGitDB(this.logger, opts.requestBuilder, this.git, this.dryRun, this.gitRepositoryURL)
+    await uploadToGitDB(
+      this.logger,
+      opts.requestBuilder,
+      this.git,
+      this.dryRun,
+      this.gitRepositoryURL || opts.repositoryURL,
+      opts.commitSha
+    )
   }
 
-  private async uploadCodeCoverageReports() {
+  private async uploadCodeCoverageReports(spanTags: SpanTags) {
     // Normalizing the report paths to resolve .. and .
     this.reportPaths = this.reportPaths.map((reportPath) => upath.normalize(reportPath))
 
     this.logger.info(renderCommandInfo(this.reportPaths, this.dryRun))
 
-    const spanTags = await this.getSpanTags()
     const api = this.getApiHelper()
     const payloads = await this.generatePayloads(spanTags)
 
@@ -355,13 +366,10 @@ export class PluginCommand extends CoverageUploadCommand {
 
   private async getSpanTags(): Promise<SpanTags> {
     const ciSpanTags = getCISpanTags()
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
+    const repositoryTags = await getRepositoryTags(ciSpanTags)
 
     const spanTags = {
-      ...gitSpanTags,
-      ...ciSpanTags,
-      ...userGitSpanTags,
+      ...repositoryTags,
       ...(this.config.env ? {env: this.config.env} : {}),
     }
 

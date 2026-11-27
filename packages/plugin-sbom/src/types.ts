@@ -116,7 +116,7 @@ export interface CommitInformation {
   committer_name: string
   committer_email: string
   sha: string
-  branch: string
+  branch?: string
 }
 
 export interface RepositoryInformation {

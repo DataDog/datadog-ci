@@ -1,5 +1,8 @@
+import type {SpanTags} from './interfaces'
+
 import {
   CI_JOB_ID,
+  CI_GIT_MERGE_COMMIT_SHA,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -25,9 +28,15 @@ import {
   GIT_TAG,
   PR_NUMBER,
 } from './tags'
-import {normalizeRef, removeEmptyValues, filterSensitiveInfoFromRepository} from './utils'
+import {
+  isValidGitSha,
+  normalizeGitSha,
+  normalizeRef,
+  removeEmptyValues,
+  filterSensitiveInfoFromRepository,
+} from './utils'
 
-export const getUserGitSpanTags = () => {
+export const getUserGitSpanTags = (): SpanTags => {
   const {
     DD_GIT_REPOSITORY_URL,
     DD_GIT_COMMIT_SHA,
@@ -57,7 +66,7 @@ export const getUserGitSpanTags = () => {
   return removeEmptyValues({
     [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(DD_GIT_REPOSITORY_URL),
     [GIT_BRANCH]: branch,
-    [GIT_SHA]: DD_GIT_COMMIT_SHA,
+    [GIT_SHA]: normalizeGitSha(DD_GIT_COMMIT_SHA),
     [GIT_TAG]: tag,
     [GIT_COMMIT_MESSAGE]: DD_GIT_COMMIT_MESSAGE,
     [GIT_COMMIT_COMMITTER_DATE]: DD_GIT_COMMIT_COMMITTER_DATE,
@@ -67,14 +76,15 @@ export const getUserGitSpanTags = () => {
     [GIT_COMMIT_AUTHOR_EMAIL]: DD_GIT_COMMIT_AUTHOR_EMAIL,
     [GIT_COMMIT_AUTHOR_NAME]: DD_GIT_COMMIT_AUTHOR_NAME,
     [GIT_PULL_REQUEST_BASE_BRANCH]: DD_GIT_PULL_REQUEST_BASE_BRANCH,
-    [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA,
-    [GIT_HEAD_SHA]: DD_GIT_COMMIT_HEAD_SHA,
+    [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: normalizeGitSha(DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA),
+    [GIT_HEAD_SHA]: normalizeGitSha(DD_GIT_COMMIT_HEAD_SHA),
     [PR_NUMBER]: DD_PR_NUMBER,
   })
 }
 
-export const getUserCISpanTags = () => {
+export const getUserCISpanTags = (): SpanTags => {
   const {
+    DD_CI_GIT_MERGE_COMMIT_SHA,
     DD_CI_JOB_ID,
     DD_CI_JOB_NAME,
     DD_CI_JOB_URL,
@@ -88,6 +98,9 @@ export const getUserCISpanTags = () => {
   } = process.env
 
   return removeEmptyValues({
+    [CI_GIT_MERGE_COMMIT_SHA]: isValidGitSha(DD_CI_GIT_MERGE_COMMIT_SHA)
+      ? normalizeGitSha(DD_CI_GIT_MERGE_COMMIT_SHA)
+      : undefined,
     [CI_JOB_ID]: DD_CI_JOB_ID,
     [CI_JOB_NAME]: DD_CI_JOB_NAME,
     [CI_JOB_URL]: DD_CI_JOB_URL,

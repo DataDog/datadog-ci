@@ -11,20 +11,78 @@ import {
   GIT_COMMIT_MESSAGE,
   GIT_REPOSITORY_URL,
   GIT_SHA,
+  GIT_TAG,
 } from '../../tags'
 
-import {getGitMetadata} from '../format-git-span-data'
+import {getGitCommitParents, getGitMetadata} from '../format-git-span-data'
 
 jest.mock('simple-git')
 
+describe('getGitCommitParents', () => {
+  test('reads only parent headers of a pinned commit, without walking parent objects', async () => {
+    const raw = jest
+      .fn()
+      .mockResolvedValue(
+        `tree ${'d'.repeat(40)}\nparent ${'a'.repeat(40)}\nparent ${'b'.repeat(40)}\nauthor Author\n\nparent ${'c'.repeat(40)}\n`
+      )
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({raw}))
+    expect(await getGitCommitParents('e'.repeat(40))).toEqual(['a'.repeat(40), 'b'.repeat(40)])
+    expect(raw).toHaveBeenCalledWith(['cat-file', 'commit', 'e'.repeat(40)])
+  })
+
+  test('treats an unavailable commit as inconclusive', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      raw: jest.fn().mockRejectedValue(new Error('unavailable')),
+    }))
+    expect(await getGitCommitParents('a'.repeat(40))).toBeUndefined()
+  })
+
+  test('does not execute an arbitrary revision expression', async () => {
+    jest.mocked(simpleGit).mockClear()
+    expect(await getGitCommitParents('HEAD^')).toBeUndefined()
+    expect(simpleGit).not.toHaveBeenCalled()
+  })
+})
+
 describe('getGitMetadata', () => {
+  it('retains a readable commit when optional repository metadata is unavailable', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      revparse: async () => 'a'.repeat(40),
+      raw: async () => {
+        throw new Error('branch unavailable')
+      },
+      listRemote: async () => {
+        throw new Error('no remote')
+      },
+      show: async () => {
+        throw new Error('metadata unavailable')
+      },
+    }))
+    expect(await getGitMetadata()).toEqual({[GIT_SHA]: 'a'.repeat(40)})
+  })
+
+  it('does not report HEAD as a branch and retains a local tag', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      revparse: async () => 'a'.repeat(40),
+      listRemote: async () => '',
+      show: async () => '',
+      raw: async (args: string[]) => (args[0] === 'describe' ? 'v1\n' : ''),
+    }))
+    expect(await getGitMetadata()).toEqual({[GIT_SHA]: 'a'.repeat(40), [GIT_TAG]: 'v1'})
+  })
+
   it('reads git metadata successfully', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
-      branch: () => ({current: 'main'}),
       listRemote: async (git: any): Promise<string> => 'repository_url',
       revparse: () => 'commitSHA',
-      show: (input: string[]) => {
-        if (input[1] === '--format=%s') {
+      raw: (input: string[]) => {
+        if (input[0] === 'branch') {
+          return 'main'
+        }
+        if (input[0] === 'describe') {
+          return ''
+        }
+        if (input.includes('--format=%s')) {
           return 'commit message'
         }
 
@@ -67,12 +125,17 @@ describe('getGitMetadata', () => {
 
   it('scrubs credentials from https repository url', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
-      branch: () => ({current: 'main'}),
       listRemote: async (git: any): Promise<string> =>
         'https://x-oauth-basic:ghp_safe_characters@github.com/datadog/safe-repository.git',
       revparse: () => 'commitSHA',
-      show: (input: string[]) => {
-        if (input[1] === '--format=%s') {
+      raw: (input: string[]) => {
+        if (input[0] === 'branch') {
+          return 'main'
+        }
+        if (input[0] === 'describe') {
+          return ''
+        }
+        if (input.includes('--format=%s')) {
           return 'commit message'
         }
 
@@ -96,11 +159,16 @@ describe('getGitMetadata', () => {
 
   it('scrubs credentials from ssh repository url', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
-      branch: () => ({current: 'main'}),
       listRemote: async (git: any): Promise<string> => 'ssh://username@host.xz:port/path/to/repo.git/',
       revparse: () => 'commitSHA',
-      show: (input: string[]) => {
-        if (input[1] === '--format=%s') {
+      raw: (input: string[]) => {
+        if (input[0] === 'branch') {
+          return 'main'
+        }
+        if (input[0] === 'describe') {
+          return ''
+        }
+        if (input.includes('--format=%s')) {
           return 'commit message'
         }
 

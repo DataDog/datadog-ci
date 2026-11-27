@@ -543,13 +543,15 @@ describe('run-test', () => {
         // no `selectiveRerun` provided
       })
 
-      expect(triggerTestsSpy).toHaveBeenCalledWith({
-        tests: expect.any(Array),
-        options: {
-          batch_timeout: ciConfig.batchTimeout,
-          selective_rerun: undefined,
-        },
-      })
+      expect(triggerTestsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tests: expect.any(Array),
+          options: {
+            batch_timeout: ciConfig.batchTimeout,
+            selective_rerun: undefined,
+          },
+        })
+      )
     })
   })
 

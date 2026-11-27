@@ -4,11 +4,39 @@ import type {EvaluationResponse, EvaluationResponsePayload, Payload} from '../in
 import type {RequestConfig, RequestResponse} from '@datadog/datadog-ci-base/helpers/request'
 
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as gitMetadata from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 
 import {apiConstructor} from '../api'
 import {PluginCommand as GateEvaluateCommand} from '../commands/evaluate'
 
 describe('evaluate', () => {
+  test('uses the checkout identity instead of conflicting CI Git metadata', async () => {
+    const savedEnv = process.env
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_SHA: 'a'.repeat(40),
+      GITHUB_REF: 'refs/heads/workflow',
+      GITHUB_REPOSITORY: 'example/workflow',
+    }
+    const spy = jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValue({
+      'git.commit.sha': 'b'.repeat(40),
+      'git.branch': 'checkout',
+      'git.repository_url': 'https://github.com/example/checkout',
+    })
+    try {
+      const command = createCommand(GateEvaluateCommand)
+      expect(await command['getSpanTags']()).toMatchObject({
+        'git.commit.sha': 'b'.repeat(40),
+        'git.branch': 'checkout',
+        'git.repository_url': 'https://github.com/example/checkout',
+        'ci.provider.name': 'github',
+      })
+    } finally {
+      spy.mockRestore()
+      process.env = savedEnv
+    }
+  })
+
   describe('deprecation notice', () => {
     test('prints deprecation warning at start of execute()', async () => {
       process.env = {DD_API_KEY: 'PLACEHOLDER', DD_APP_KEY: 'PLACEHOLDER'}
@@ -422,7 +450,8 @@ describe('evaluate', () => {
     })
 
     test('should include head SHA if it is a pull_request or pull_request_target event', async () => {
-      const HEAD_SHA = '1234567'
+      const HEAD_SHA = 'a'.repeat(40)
+      jest.spyOn(gitMetadata, 'getGitMetadata').mockResolvedValueOnce({'git.commit.sha': HEAD_SHA})
       const fakeWebhookPayloadPath = './event.json'
       const oldEnvGitHubActions = process.env.GITHUB_ACTIONS
       const oldEnvGitHubEventPath = process.env.GITHUB_EVENT_PATH

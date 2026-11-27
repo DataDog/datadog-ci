@@ -10,9 +10,7 @@ import upath from 'upath'
 
 import {cliVersion} from '../version'
 
-import {getCISpanTags} from './ci'
-import {getGitMetadata} from './git/format-git-span-data'
-import {getUserGitSpanTags} from './user-provided-git'
+import {getRepositoryTags} from './git/get-repository-tags'
 import {isFile} from './utils'
 
 export const CI_PIPELINE_URL = 'ci.pipeline.url'
@@ -30,6 +28,7 @@ export const CI_STAGE_NAME = 'ci.stage.name'
 export const CI_NODE_NAME = 'ci.node.name'
 export const CI_NODE_LABELS = 'ci.node.labels'
 export const CI_ENV_VARS = '_dd.ci.env_vars'
+export const CI_GIT_MERGE_COMMIT_SHA = 'ci.git.merge_commit_sha'
 
 // Git
 export const GIT_BRANCH = 'git.branch'
@@ -217,7 +216,6 @@ export const parseMeasuresFile = (
  */
 export const REQUIRED_GIT_TAGS: SpanTag[] = [
   GIT_REPOSITORY_URL,
-  GIT_BRANCH,
   GIT_SHA,
   GIT_COMMIT_AUTHOR_EMAIL,
   GIT_COMMIT_AUTHOR_NAME,
@@ -231,7 +229,9 @@ export const REQUIRED_GIT_TAGS: SpanTag[] = [
  * @returns an array of the missing required git tags (ex. ['git.repository_url', 'git.branch'])
  */
 export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
-  const missingTags = REQUIRED_GIT_TAGS.reduce((acc: string[], tag: SpanTag) => {
+  const tagsToValidate: SpanTag[] =
+    tags[GIT_BRANCH] === undefined ? REQUIRED_GIT_TAGS : [...REQUIRED_GIT_TAGS, GIT_BRANCH]
+  const missingTags = tagsToValidate.reduce((acc: string[], tag: SpanTag) => {
     if (!tags[tag] || (tags[tag] as string).trim() === '') {
       acc.push(tag)
     }
@@ -254,17 +254,13 @@ export const getSpanTags = async (
   includeCiTags: boolean,
   gitPath?: string
 ): Promise<SpanTags> => {
-  const ciSpanTags = includeCiTags ? getCISpanTags() : []
-  const gitSpanTags = await getGitMetadata(gitPath)
-  const userGitSpanTags = getUserGitSpanTags()
+  const repositoryTags = await getRepositoryTags(undefined, gitPath, includeCiTags)
 
   const envVarTags = config.envVarTags ? parseTags(config.envVarTags.split(',')) : {}
   const cliTags = additionalTags ? parseTags(additionalTags) : {}
 
   return {
-    // if users specify a git path to read from, we prefer git env variables over the CI context one
-    ...(gitPath ? {...ciSpanTags, ...gitSpanTags} : {...gitSpanTags, ...ciSpanTags}),
-    ...userGitSpanTags, // User-provided git tags have precedence over the ones we get from the git command
+    ...repositoryTags,
     ...cliTags,
     ...envVarTags,
     ...(config.env ? {env: config.env} : {}),

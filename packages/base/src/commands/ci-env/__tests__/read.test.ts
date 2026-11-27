@@ -1,8 +1,14 @@
 import {Cli} from 'clipanion'
 
 import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 
 import {CiEnvReadCommand} from '../read'
+
+jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-span-data', () => ({
+  getGitMetadata: jest.fn().mockResolvedValue({}),
+  getGitRoot: jest.fn(),
+}))
 
 const makeCLI = () => {
   const cli = new Cli()
@@ -12,6 +18,10 @@ const makeCLI = () => {
 }
 
 describe('ci-env read', () => {
+  beforeEach(() => {
+    jest.mocked(getGitMetadata).mockResolvedValue({})
+  })
+
   const runCLI = async (env: Record<string, string>, format?: string) => {
     const cli = makeCLI()
     const context = createMockContext()
@@ -99,6 +109,93 @@ describe('ci-env read', () => {
       const output = context.stdout.toString()
       expect(output).toContain('ci.pipeline.name:"Test \\"quoted\\" and back\\\\slash"')
       expect(output).toContain('ci.job.name:"job\'s name"')
+    })
+  })
+
+  describe('PR merge commit output', () => {
+    const mergeSha = 'b9f0fb3fdbb94c9d24b2c75b49663122a529e123'
+    const headSha = '724faca55efebf66fc15bfccc34577c64c5480bd'
+    const githubMergeEnv = {
+      GITHUB_ACTIONS: 'true',
+      GITHUB_REF: 'refs/pull/42/merge',
+      GITHUB_SHA: mergeSha,
+    }
+    const providers: [string, Record<string, string>][] = [
+      ['GitHub Actions', githubMergeEnv],
+      [
+        'GitLab merged result',
+        {
+          GITLAB_CI: 'true',
+          CI_MERGE_REQUEST_IID: '42',
+          CI_MERGE_REQUEST_EVENT_TYPE: 'merged_result',
+          CI_COMMIT_SHA: mergeSha,
+        },
+      ],
+      [
+        'GitLab merge train',
+        {
+          GITLAB_CI: 'true',
+          CI_MERGE_REQUEST_IID: '42',
+          CI_MERGE_REQUEST_EVENT_TYPE: 'merge_train',
+          CI_COMMIT_SHA: mergeSha,
+        },
+      ],
+      [
+        'Azure Pipelines',
+        {
+          TF_BUILD: 'true',
+          BUILD_REASON: 'PullRequest',
+          BUILD_SOURCEBRANCH: 'refs/pull/42/merge',
+          BUILD_SOURCEVERSION: mergeSha,
+          SYSTEM_PULLREQUEST_SOURCECOMMITID: headSha,
+        },
+      ],
+      [
+        'Travis CI',
+        {TRAVIS: 'true', TRAVIS_EVENT_TYPE: 'pull_request', TRAVIS_PULL_REQUEST: '42', TRAVIS_COMMIT: mergeSha},
+      ],
+      [
+        'AppVeyor',
+        {
+          APPVEYOR: 'true',
+          APPVEYOR_REPO_PROVIDER: 'github',
+          APPVEYOR_PULL_REQUEST_NUMBER: '42',
+          APPVEYOR_REPO_COMMIT: mergeSha,
+          APPVEYOR_PULL_REQUEST_HEAD_COMMIT: headSha,
+        },
+      ],
+    ]
+
+    test.each(providers)('outputs shell-safe merge SHA assignments for %s', async (_, env) => {
+      const {context, code} = await runCLI(env)
+      const output = context.stdout.toString()
+      expect(code).toBe(0)
+      expect(output).toContain(`DD_CI_GIT_MERGE_COMMIT_SHA='${mergeSha}'`)
+      expect(output).not.toContain('ci.git.merge_commit_sha=')
+    })
+
+    test('uses the environment variable name in JSON output', async () => {
+      const {context, code} = await runCLI(githubMergeEnv, 'json')
+      expect(code).toBe(0)
+      expect(JSON.parse(context.stdout.toString())).toMatchObject({DD_CI_GIT_MERGE_COMMIT_SHA: mergeSha})
+    })
+
+    test('preserves the internal tag name in tags output', async () => {
+      const {context, code} = await runCLI(githubMergeEnv, 'tags')
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toContain(`ci.git.merge_commit_sha:"${mergeSha}"`)
+    })
+
+    test('preserves merge metadata when exported variables are reloaded without provider variables', async () => {
+      const first = await runCLI(githubMergeEnv, 'json')
+      expect(first.code).toBe(0)
+      const exported = JSON.parse(first.context.stdout.toString())
+      const reloaded = await runCLI(exported, 'json')
+      expect(reloaded.code).toBe(0)
+      expect(JSON.parse(reloaded.context.stdout.toString())).toMatchObject({
+        DD_GIT_COMMIT_SHA: mergeSha,
+        DD_CI_GIT_MERGE_COMMIT_SHA: mergeSha,
+      })
     })
   })
 
