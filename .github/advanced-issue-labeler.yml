@@ -24,6 +24,7 @@ policy:
             keys:
               - dsyms
               - flutter-symbols
+              - jvm-mapping-symbols
               - react-native
               - sourcemaps
               - unity-symbols

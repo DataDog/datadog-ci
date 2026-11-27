@@ -17,6 +17,7 @@ import {commands as flutterSymbolsCommands} from './commands/flutter-symbols/cli
 import {commands as gateCommands} from './commands/gate/cli'
 import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
 import {commands as junitCommands} from './commands/junit/cli'
+import {commands as jvmMappingSymbolsCommands} from './commands/jvm-mapping-symbols/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as measureCommands} from './commands/measure/cli'
 import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
@@ -55,6 +56,7 @@ export const commands = {
   'gate': gateCommands,
   'git-metadata': gitMetadataCommands,
   'junit': junitCommands,
+  'jvm-mapping-symbols': jvmMappingSymbolsCommands,
   'lambda': lambdaCommands,
   'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,
@@ -87,6 +89,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'elf-symbols',
   'flutter-symbols',
   'git-metadata',
+  'jvm-mapping-symbols',
   'measure',
   'pe-symbols',
   'plugin',

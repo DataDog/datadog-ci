@@ -9,6 +9,7 @@ See the [Usage section](#usage) for a list of available commands.
 ## How to install the CLI
 
 The `datadog-ci` CLI can be installed in three ways:
+
 - [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) NPM package
 - [Standalone binary](#standalone-binary)
 - [Docker image](#container-image)
@@ -48,6 +49,7 @@ yarn dlx @datadog/datadog-ci@v5 [scope]
 Plugins are NPM packages that were split from the main `@datadog/datadog-ci` NPM package to reduce its installation size.
 
 If you are using the NPM package, you can manage plugins with the following commands:
+
 ```sh
 # List available plugins
 datadog-ci plugin list
@@ -162,6 +164,12 @@ The following `<scope>` and `<command>` values are available.
 
 - `upload`: Upload JUnit test reports for Test Visibility.
 
+#### `jvm-mapping-symbols`
+
+<sub>**README:** [📚](/packages/base/src/commands/jvm-mapping-symbols) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/application_monitoring/android/error_tracking/)</sub>
+
+- `upload`: Upload a JVM (R8 or ProGuard) mapping file, keyed by a build ID, for Error Tracking.
+
 #### `lambda`
 
 <sub>**README:** [📚](/packages/plugin-lambda) | **Documentation:** [🔗](https://docs.datadoghq.com/serverless/aws_lambda/) | **Plugin:** `@datadog/datadog-ci-plugin-lambda`</sub>
@@ -193,7 +201,7 @@ The following `<scope>` and `<command>` values are available.
 <sub>**README:** [📚](/packages/base/src/commands/react-native) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)</sub>
 
 - `codepush`: Upload React Native CodePush sourcemaps for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
-- `upload`: Upload React Native sourcemaps for Error Tracking. 
+- `upload`: Upload React Native sourcemaps for Error Tracking.
 - `xcode`: Upload React Native sourcemaps for Error Tracking from the XCode bundle build phase.
 
 #### `sarif`
@@ -206,7 +214,7 @@ The following `<scope>` and `<command>` values are available.
 
 <sub>**README:** [📚](/packages/plugin-sbom) | **Documentation:** [🔗](https://docs.datadoghq.com/code_analysis/software_composition_analysis/)</sub>
 
-- `upload`: Upload Software Bill of Materials (SBOM) files to Datadog. 
+- `upload`: Upload Software Bill of Materials (SBOM) files to Datadog.
 
 #### `sourcemaps`
 
@@ -288,11 +296,11 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 `datadog-ci` reads Datadog credentials from environment variables:
 
-| Credential | Environment variables | Sent as |
-| --- | --- | --- |
-| API key | `DD_API_KEY` or `DATADOG_API_KEY` | `DD-API-KEY` header |
-| Application key | `DD_APP_KEY` or `DATADOG_APP_KEY` | `DD-APPLICATION-KEY` header |
-| Access token | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
+| Credential      | Environment variables                       | Sent as                                |
+| --------------- | ------------------------------------------- | -------------------------------------- |
+| API key         | `DD_API_KEY` or `DATADOG_API_KEY`           | `DD-API-KEY` header                    |
+| Application key | `DD_APP_KEY` or `DATADOG_APP_KEY`           | `DD-APPLICATION-KEY` header            |
+| Access token    | `DD_ACCESS_TOKEN` or `DATADOG_ACCESS_TOKEN` | `Authorization: Bearer <token>` header |
 
 When both forms of a variable are set, `DATADOG_*` takes precedence.
 
@@ -318,11 +326,11 @@ The [`datadog-workload-identity-federation-github-action`](https://github.com/Da
 
 Before using it, an administrator on your Datadog organization must create mappings with the GitHub OIDC token claims you want to allow. For example, to allow any branch of a workflow in your repository:
 
-| Claim | Pattern |
-| --- | --- |
-| `sub` | `repo:<owner>/<repo>:ref:refs/heads/.*` |
+| Claim              | Pattern                                                |
+| ------------------ | ------------------------------------------------------ |
+| `sub`              | `repo:<owner>/<repo>:ref:refs/heads/.*`                |
 | `job_workflow_ref` | `<owner>/<repo>/\.github/workflows/<workflow>\.yml@.*` |
-| `repository` | `<owner>/<repo>` |
+| `repository`       | `<owner>/<repo>`                                       |
 
 Then get the credentials in your workflow:
 
@@ -376,6 +384,7 @@ If you are using a Node.js version below 17, enabling the `fips` option causes t
 The option `fips-ignore-error` ignores this error.
 
 #### `fips`
+
 Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
 If you do not have a FIPS provider installed, `datadog-ci` does not raise an error.
 
@@ -383,6 +392,7 @@ If you do not have a FIPS provider installed, `datadog-ci` does not raise an err
 - CLI param: `--fips`
 
 #### `fips-ignore-error`
+
 Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
 **Note**: the absence of an error doesn't indicate that FIPS is enabled successfully.
@@ -396,16 +406,17 @@ Every invocation prints a `datadog-ci v<version>` banner to `stderr`. To silence
 
 - ENV variable: `DD_CI_SKIP_VERSION_BANNER=true`
 
-
 ## More ways to install the CLI
 
 ### Standalone binary
 
 If installing Node.js in the CI is an issue, you can download `datadog-ci` as a standalone binary:
+
 - It's built against the official Node.js distribution for supported architectures and attached to [GitHub releases](https://github.com/DataDog/datadog-ci/releases).
 - It includes all plugins, so you don't need to install them separately.
 
 Supported architectures:
+
 - `linux-x64`
 - `linux-arm64`
 - `alpine-x64`

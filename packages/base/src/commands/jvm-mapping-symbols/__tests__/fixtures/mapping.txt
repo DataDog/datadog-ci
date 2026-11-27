@@ -1,0 +1,9 @@
+# compiler: R8
+# compiler_version: 8.5.35
+# min_api: 24
+# pg_map_id: 0f4c2e1
+# common_typos_disable
+com.example.app.MainActivity -> com.example.app.MainActivity:
+    1:1:void <init>():12:12 -> <init>
+com.example.app.Helper -> a.a:
+    1:3:int compute(int):20:22 -> a

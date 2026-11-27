@@ -30,6 +30,7 @@ body:
         - dsyms
         - flutter-symbols
         - git-metadata
+        - jvm-mapping-symbols
         - junit
         - lambda
         - metric
