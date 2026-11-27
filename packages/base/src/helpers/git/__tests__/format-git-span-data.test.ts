@@ -14,9 +14,35 @@ import {
   GIT_TAG,
 } from '../../tags'
 
-import {getGitMetadata} from '../format-git-span-data'
+import {getGitCommitParents, getGitMetadata} from '../format-git-span-data'
 
 jest.mock('simple-git')
+
+describe('getGitCommitParents', () => {
+  test('reads only parent headers of a pinned commit, without walking parent objects', async () => {
+    const raw = jest
+      .fn()
+      .mockResolvedValue(
+        `tree ${'d'.repeat(40)}\nparent ${'a'.repeat(40)}\nparent ${'b'.repeat(40)}\nauthor Author\n\nparent ${'c'.repeat(40)}\n`
+      )
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({raw}))
+    expect(await getGitCommitParents('e'.repeat(40))).toEqual(['a'.repeat(40), 'b'.repeat(40)])
+    expect(raw).toHaveBeenCalledWith(['cat-file', 'commit', 'e'.repeat(40)])
+  })
+
+  test('treats an unavailable commit as inconclusive', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      raw: jest.fn().mockRejectedValue(new Error('unavailable')),
+    }))
+    expect(await getGitCommitParents('a'.repeat(40))).toBeUndefined()
+  })
+
+  test('does not execute an arbitrary revision expression', async () => {
+    jest.mocked(simpleGit).mockClear()
+    expect(await getGitCommitParents('HEAD^')).toBeUndefined()
+    expect(simpleGit).not.toHaveBeenCalled()
+  })
+})
 
 describe('getGitMetadata', () => {
   it('retains a readable commit when optional repository metadata is unavailable', async () => {

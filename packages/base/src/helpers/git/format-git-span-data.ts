@@ -15,7 +15,7 @@ import {
   GIT_SHA,
   GIT_TAG,
 } from '../tags'
-import {filterSensitiveInfoFromRepository, normalizeGitSha, removeEmptyValues} from '../utils'
+import {filterSensitiveInfoFromRepository, isValidGitSha, normalizeGitSha, removeEmptyValues} from '../utils'
 
 import {DEFAULT_GIT_OPTIONS} from './default-options'
 import {gitAuthorAndCommitter, gitCurrentBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
@@ -37,6 +37,19 @@ const readOptional = async <T>(read: () => Promise<T>): Promise<T | undefined> =
 
 export const getGitRoot = (repositoryPath?: string) =>
   readOptional(() => createGit(repositoryPath).revparse('--show-toplevel'))
+
+export const getGitCommitParents = async (revision: string, repositoryPath?: string): Promise<string[] | undefined> => {
+  if (!isValidGitSha(revision)) {
+    return undefined
+  }
+
+  return readOptional(async () => {
+    const commit = await createGit(repositoryPath).raw(['cat-file', 'commit', revision])
+    const header = commit.split('\n\n', 1)[0]
+
+    return [...header.matchAll(/^parent ([0-9a-f]{40})$/gm)].map((match) => match[1])
+  })
+}
 
 export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags> => {
   try {

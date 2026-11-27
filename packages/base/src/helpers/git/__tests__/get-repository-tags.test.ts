@@ -13,7 +13,7 @@ import {
   PR_NUMBER,
 } from '../../tags'
 
-import {getGitMetadata, getGitRoot} from '../format-git-span-data'
+import {getGitCommitParents, getGitMetadata, getGitRoot} from '../format-git-span-data'
 import {getRepositoryTags} from '../get-repository-tags'
 
 jest.mock('../format-git-span-data')
@@ -45,6 +45,7 @@ describe('repository metadata precedence', () => {
       [GIT_COMMIT_MESSAGE]: 'checkout commit',
     })
     jest.mocked(getGitRoot).mockResolvedValue('/workspace/nested')
+    jest.mocked(getGitCommitParents).mockResolvedValue(undefined)
   })
 
   test('selects the checkout while retaining CI workflow context and the separate merge SHA', async () => {
@@ -165,6 +166,132 @@ describe('repository metadata precedence', () => {
     expect(tags[GIT_HEAD_SHA]).toBeUndefined()
     expect(tags[PR_NUMBER]).toBeUndefined()
   })
+
+  test.each([
+    'git@github.com:example/workflow.git',
+    'ssh://git@github.com/example/workflow.git',
+    'ssh://git@github.com:22/example/workflow.git',
+    'ssh://git@GITHUB.COM/example/workflow',
+  ])('matches an equivalent SSH remote in a remounted checkout: %s', async (remote) => {
+    jest.mocked(getGitMetadata).mockResolvedValue({[GIT_SHA]: headSha, [GIT_REPOSITORY_URL]: remote})
+    expect(await getRepositoryTags(provider)).toMatchObject({
+      [GIT_SHA]: headSha,
+      [GIT_BRANCH]: 'workflow-branch',
+      [GIT_HEAD_SHA]: headSha,
+      [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL],
+      [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: 'd'.repeat(40),
+      [PR_NUMBER]: '42',
+    })
+  })
+
+  test.each([
+    ['ssh://git@github.com:2222/example/workflow.git', 'https://github.com/example/workflow'],
+    ['git@github.com:~user/workflow.git', 'https://github.com/~user/workflow'],
+    ['ssh://git@github.com/~user/workflow.git', 'https://github.com/~user/workflow'],
+    ['git@github-alias:example/workflow.git', 'https://github.com/example/workflow'],
+    ['git@github.com:example/Workflow.git', 'https://github.com/example/workflow'],
+    ['git@github.com:example/workflow.git?ref=other', 'https://github.com/example/workflow'],
+    ['ssh://git@github.com/example/workflow.git#other', 'https://github.com/example/workflow'],
+    ['ssh://git@github.com/%7Euser/workflow.git', 'https://github.com/%7Euser/workflow'],
+  ])('does not assume SSH aliases, ports or paths are equivalent: %s', async (remote, ciUrl) => {
+    jest.mocked(getGitMetadata).mockResolvedValue({[GIT_SHA]: headSha, [GIT_REPOSITORY_URL]: remote})
+    const tags = await getRepositoryTags({...provider, [GIT_REPOSITORY_URL]: ciUrl})
+    expect(tags[GIT_REPOSITORY_URL]).toBe(remote)
+    expect(tags[GIT_BRANCH]).toBeUndefined()
+    expect(tags[PR_NUMBER]).toBeUndefined()
+  })
+
+  test.each([false, true])('retains verified Bitbucket merge PR context (remounted: %s)', async (remounted) => {
+    jest
+      .mocked(getGitMetadata)
+      .mockResolvedValue({[GIT_SHA]: mergeSha, [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL]})
+    jest.mocked(getGitRoot).mockResolvedValue(remounted ? '/container/repository' : '/workspace')
+    jest.mocked(getGitCommitParents).mockResolvedValue([headSha, 'd'.repeat(40)])
+    expect(
+      await getRepositoryTags({
+        ...provider,
+        [CI_PROVIDER_NAME]: 'bitbucket',
+        [GIT_SHA]: headSha,
+        [CI_GIT_MERGE_COMMIT_SHA]: undefined,
+        [GIT_HEAD_SHA]: undefined,
+      })
+    ).toMatchObject({
+      [GIT_SHA]: mergeSha,
+      [GIT_BRANCH]: 'workflow-branch',
+      [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: 'd'.repeat(40),
+      [PR_NUMBER]: '42',
+    })
+  })
+
+  test.each([
+    undefined,
+    [headSha],
+    ['e'.repeat(40), 'd'.repeat(40)],
+    [headSha, 'e'.repeat(40)],
+    [headSha, headSha],
+    [headSha, 'd'.repeat(40), 'e'.repeat(40)],
+  ])('rejects an unverified Bitbucket merge relationship: %j', async (parents) => {
+    jest
+      .mocked(getGitMetadata)
+      .mockResolvedValue({[GIT_SHA]: mergeSha, [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL]})
+    jest.mocked(getGitCommitParents).mockResolvedValue(parents)
+    const tags = await getRepositoryTags({
+      ...provider,
+      [CI_PROVIDER_NAME]: 'bitbucket',
+      [GIT_SHA]: headSha,
+      [CI_GIT_MERGE_COMMIT_SHA]: undefined,
+      [GIT_HEAD_SHA]: undefined,
+    })
+    expect(tags[GIT_SHA]).toBe(mergeSha)
+    expect(tags[GIT_BRANCH]).toBeUndefined()
+    expect(tags[PR_NUMBER]).toBeUndefined()
+    expect(tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]).toBeUndefined()
+  })
+
+  test('can verify a Bitbucket merge with only its source revision available', async () => {
+    jest
+      .mocked(getGitMetadata)
+      .mockResolvedValue({[GIT_SHA]: mergeSha, [GIT_REPOSITORY_URL]: provider[GIT_REPOSITORY_URL]})
+    jest.mocked(getGitCommitParents).mockResolvedValue(['d'.repeat(40), headSha])
+    const tags = await getRepositoryTags({
+      ...provider,
+      [CI_PROVIDER_NAME]: 'bitbucket',
+      [GIT_SHA]: headSha,
+      [CI_GIT_MERGE_COMMIT_SHA]: undefined,
+      [GIT_HEAD_SHA]: undefined,
+      [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: undefined,
+    })
+    expect(tags[GIT_SHA]).toBe(mergeSha)
+    expect(tags[GIT_BRANCH]).toBe('workflow-branch')
+    expect(tags[PR_NUMBER]).toBe('42')
+    expect(getGitCommitParents).toHaveBeenCalledTimes(1)
+    expect(getGitCommitParents).toHaveBeenCalledWith(mergeSha, undefined)
+  })
+
+  test.each(['other-provider', 'invalid-pr', 'unrelated-repository', 'explicit-revision', 'invalid-source'])(
+    'does not inspect merge parents for an ineligible checkout: %s',
+    async (reason) => {
+      jest.mocked(getGitMetadata).mockResolvedValue({
+        [GIT_SHA]: mergeSha,
+        [GIT_REPOSITORY_URL]:
+          reason === 'unrelated-repository' ? 'https://github.com/other/repository' : provider[GIT_REPOSITORY_URL],
+      })
+      jest.mocked(getGitCommitParents).mockResolvedValue([headSha, 'd'.repeat(40)])
+      if (reason === 'explicit-revision') {
+        process.env.DD_GIT_COMMIT_SHA = checkoutSha
+      }
+      const tags = await getRepositoryTags({
+        ...provider,
+        [CI_PROVIDER_NAME]: reason === 'other-provider' ? 'github' : 'bitbucket',
+        [PR_NUMBER]: reason === 'invalid-pr' ? 'not-a-number' : '42',
+        [GIT_SHA]: reason === 'invalid-source' ? 'HEAD' : headSha,
+        [CI_GIT_MERGE_COMMIT_SHA]: undefined,
+        [GIT_HEAD_SHA]: undefined,
+      })
+      expect(tags[PR_NUMBER]).toBeUndefined()
+      expect(getGitCommitParents).not.toHaveBeenCalled()
+    }
+  )
 
   test.each([
     ['https://github.com/example/workflow-other', 'https://github.com/example/workflow'],

@@ -4,21 +4,23 @@ import type {SpanTags} from '../interfaces'
 
 import upath from 'upath'
 
-import {getCISpanTags} from '../ci'
+import {CI_ENGINES, getCISpanTags} from '../ci'
 import {
   CI_GIT_MERGE_COMMIT_SHA,
+  CI_PROVIDER_NAME,
   CI_WORKSPACE_PATH,
   GIT_BRANCH,
   GIT_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
   PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
-import {filterSensitiveInfoFromRepository, normalizeGitSha} from '../utils'
+import {filterSensitiveInfoFromRepository, isValidGitSha, normalizeGitSha} from '../utils'
 
-import {getGitMetadata, getGitRoot} from './format-git-span-data'
+import {getGitCommitParents, getGitMetadata, getGitRoot} from './format-git-span-data'
 
 const canonicalPath = (value: string) => {
   const resolved = upath.resolve(value)
@@ -35,8 +37,28 @@ const sameSha = (left?: string, right?: string) => !!left && !!right && normaliz
 const sameRepository = (left?: string, right?: string) => {
   const normalize = (value?: string) => {
     const remote = filterSensitiveInfoFromRepository(value)
+    const scp = remote && /^git@([^/:]+):([^/~].*)$/.exec(remote)
+    if (scp && /[?#%]/.test(scp[2])) {
+      return remote
+    }
+    try {
+      const url = new URL(scp ? `https://${scp[1]}/${scp[2]}` : remote || '')
+      const path = url.pathname.replace(/(?:\.git)?\/?$/, '')
+      if (url.protocol === 'ssh:') {
+        if ((url.port && url.port !== '22') || /^\/(~|%7e)/i.test(url.pathname) || url.search || url.hash) {
+          return remote
+        }
 
-    return remote && /^https?:\/\/[^/]+\//.test(remote) ? remote.replace(/(?:\.git)?\/?$/, '') : remote
+        return `https://${url.hostname.toLowerCase()}${path}`
+      }
+      if (url.protocol === 'https:' || url.protocol === 'http:') {
+        return `${url.origin}${path}`
+      }
+    } catch {
+      // Local paths, SSH aliases and unsupported remote forms retain their literal identity.
+    }
+
+    return remote
   }
 
   return !!left && !!right && normalize(left) === normalize(right)
@@ -63,8 +85,28 @@ export const getRepositoryTags = async (
     const providerRevisions = [provider[GIT_SHA], provider[CI_GIT_MERGE_COMMIT_SHA], provider[GIT_HEAD_SHA]].filter(
       Boolean
     )
-    const matchingRevision =
-      providerRevisions.length === 0 || providerRevisions.some((sha) => sameSha(sha, selectedSha))
+    let matchingRevision = providerRevisions.length === 0 || providerRevisions.some((sha) => sameSha(sha, selectedSha))
+    let verifiedBitbucketMerge = false
+    if (
+      !matchingRevision &&
+      matchingRepository &&
+      provider[CI_PROVIDER_NAME] === CI_ENGINES.BITBUCKET &&
+      /^\d+$/.test(provider[PR_NUMBER] || '') &&
+      isValidGitSha(provider[GIT_SHA]) &&
+      sameSha(selectedSha, checkout[GIT_SHA])
+    ) {
+      const parents = await getGitCommitParents(checkout[GIT_SHA], repositoryPath)
+      const destination = provider[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+      verifiedBitbucketMerge =
+        parents?.length === 2 &&
+        parents[0] !== parents[1] &&
+        parents.some((parent) => sameSha(parent, provider[GIT_SHA])) &&
+        (!destination ||
+          (isValidGitSha(destination) &&
+            !sameSha(destination, provider[GIT_SHA]) &&
+            parents.some((parent) => sameSha(parent, destination))))
+      matchingRevision = verifiedBitbucketMerge
+    }
     const relatedCheckout = (!workspace || !root || matchingRepository) && matchingRevision
     selectedProvider = Object.fromEntries(
       Object.entries(provider).filter(([key]) => {
@@ -78,7 +120,7 @@ export const getRepositoryTags = async (
     if (
       matchingRepository &&
       !checkout[GIT_BRANCH] &&
-      providerRevisions.some((sha) => sameSha(sha, checkout[GIT_SHA]))
+      (verifiedBitbucketMerge || providerRevisions.some((sha) => sameSha(sha, checkout[GIT_SHA])))
     ) {
       // Matched detached CI checkouts may use an internal mirror; retain their canonical CI identity.
       for (const key of [GIT_BRANCH, GIT_TAG, GIT_REPOSITORY_URL] as const) {
